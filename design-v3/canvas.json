@@ -1,0 +1,25 @@
+{
+  "artboards": [
+    { "file": "Tokens.dc.html", "x": 0, "y": 0, "w": 1320, "h": 760 },
+    { "file": "Main.dc.html", "x": 0, "y": 940, "w": 390, "h": 844 },
+    { "file": "Routine.dc.html", "x": 470, "y": 940, "w": 390, "h": 844 },
+    { "file": "CreateRoutine.dc.html", "x": 940, "y": 940, "w": 390, "h": 844 },
+    { "file": "Seance.dc.html", "x": 1410, "y": 940, "w": 390, "h": 844 },
+    { "file": "SeanceLive.dc.html", "x": 1880, "y": 940, "w": 390, "h": 844 },
+    { "file": "Progression.dc.html", "x": 2350, "y": 940, "w": 390, "h": 844 },
+    { "file": "ExerciseDetail.dc.html", "x": 2820, "y": 940, "w": 390, "h": 844 },
+    { "file": "Profil.dc.html", "x": 3290, "y": 940, "w": 390, "h": 844 }
+  ],
+  "annotations": [
+    { "id": "label-tokens", "x": 0, "y": -40, "w": 400, "text": "Tokens — Charte graphique V3" },
+    { "id": "label-1", "x": 0, "y": 900, "w": 390, "text": "1 — Dashboard" },
+    { "id": "label-2", "x": 470, "y": 900, "w": 390, "text": "2 — Routine" },
+    { "id": "label-3", "x": 940, "y": 900, "w": 390, "text": "3 — Créer une routine" },
+    { "id": "label-4", "x": 1410, "y": 900, "w": 390, "text": "4 — Séance" },
+    { "id": "label-5", "x": 1880, "y": 900, "w": 390, "text": "5 — Séance en direct" },
+    { "id": "label-6", "x": 2350, "y": 900, "w": 390, "text": "6 — Progression" },
+    { "id": "label-7", "x": 2820, "y": 900, "w": 390, "text": "7 — Détail exercice" },
+    { "id": "label-8", "x": 3290, "y": 900, "w": 390, "text": "8 — Profil" }
+  ],
+  "launch": { "view": "canvas" }
+}

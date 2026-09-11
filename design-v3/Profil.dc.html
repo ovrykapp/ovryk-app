@@ -1,0 +1,131 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#121110; --surface:#1B1815; --surface-2:#211E19;
+  --border:rgba(244,241,236,0.09); --border-soft:rgba(244,241,236,0.06); --border-strong:rgba(244,241,236,0.16);
+  --text:#F5F2EC; --text-muted:#A39D91; --text-faint:#86807D; --text-disabled:#5C574E;
+  --accent:#CDA655; --accent-soft:#E6CFA0; --accent-deep:#8F7038;
+  --font:'Inter Tight', system-ui, -apple-system, sans-serif;
+}
+body{margin:0;background:#0b0a09;font-family:var(--font)}
+a{color:var(--accent);text-decoration:none}
+a:hover{color:var(--accent-soft)}
+</style>
+</helmet>
+<div style="width:390px;height:844px;border-radius:56px;overflow:hidden;position:relative;background:var(--bg);box-shadow:0 40px 90px rgba(0,0,0,0.5),0 0 0 1px rgba(244,241,236,0.06);font-family:var(--font)">
+  <div style="position:absolute;top:12px;left:50%;transform:translateX(-50%);width:126px;height:37px;border-radius:24px;background:#000;z-index:50"></div>
+  <div style="display:flex;flex-direction:column;height:100%">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:20px 28px 0;box-sizing:border-box;position:relative;z-index:20">
+      <div style="font-family:var(--font);font-weight:600;font-size:16px;color:var(--text)">9:41</div>
+      <div style="display:flex;align-items:center;gap:6px">
+        <svg width="18" height="12" viewBox="0 0 19 12"><rect x="0" y="7.5" width="3.2" height="4.5" rx="0.7" fill="#F5F2EC"></rect><rect x="4.8" y="5" width="3.2" height="7" rx="0.7" fill="#F5F2EC"></rect><rect x="9.6" y="2.5" width="3.2" height="9.5" rx="0.7" fill="#F5F2EC"></rect><rect x="14.4" y="0" width="3.2" height="12" rx="0.7" fill="#F5F2EC"></rect></svg>
+        <svg width="16" height="12" viewBox="0 0 17 12"><path d="M8.5 3.2C10.8 3.2 12.9 4.1 14.4 5.6L15.5 4.5C13.7 2.7 11.2 1.5 8.5 1.5C5.8 1.5 3.3 2.7 1.5 4.5L2.6 5.6C4.1 4.1 6.2 3.2 8.5 3.2Z" fill="#F5F2EC"></path><path d="M8.5 6.8C9.9 6.8 11.1 7.3 12 8.2L13.1 7.1C11.8 5.9 10.2 5.1 8.5 5.1C6.8 5.1 5.2 5.9 3.9 7.1L5 8.2C5.9 7.3 7.1 6.8 8.5 6.8Z" fill="#F5F2EC"></path><circle cx="8.5" cy="10.5" r="1.5" fill="#F5F2EC"></circle></svg>
+        <svg width="25" height="13" viewBox="0 0 27 13"><rect x="0.5" y="0.5" width="23" height="12" rx="3.5" stroke="#F5F2EC" stroke-opacity="0.4" fill="none"></rect><rect x="2" y="2" width="20" height="9" rx="2" fill="#F5F2EC"></rect><path d="M25 4.5V8.5C25.8 8.2 26.5 7.2 26.5 6.5C26.5 5.8 25.8 4.8 25 4.5Z" fill="#F5F2EC" fill-opacity="0.4"></path></svg>
+      </div>
+    </div>
+    <div style="padding:40px 28px 4px;box-sizing:border-box">
+      <div style="font-family:var(--font);font-weight:800;font-size:18px;color:var(--text);letter-spacing:-0.01em">OVRYK<span style="color:var(--accent)">.</span></div>
+    </div>
+    <div style="flex:1;overflow:auto;padding:14px 28px 24px;box-sizing:border-box;display:flex;flex-direction:column;gap:22px">
+      <div>
+        <div style="font-family:var(--font);font-weight:800;font-size:28px;margin:0 0 8px;color:var(--text);letter-spacing:-0.01em">Profil</div>
+        <div style="font-size:14px;line-height:1.6;color:var(--text-muted)">Réglages et sauvegarde de tes données.</div>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:26px;padding:22px;display:flex;flex-direction:column;gap:16px;box-shadow:0 16px 32px -20px rgba(0,0,0,0.5)">
+        <div style="font-family:var(--font);font-weight:800;font-size:14px;color:var(--text);letter-spacing:0.01em">Objectifs hebdomadaires</div>
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div style="font-family:var(--font);font-weight:600;font-size:14px;color:var(--text)">Pecs</div>
+          <div style="display:flex;align-items:center;gap:12px">
+            <div style="width:28px;height:28px;border-radius:999px;border:1px solid var(--border-strong);display:flex;align-items:center;justify-content:center;font-family:var(--font);font-weight:800;font-size:15px;color:var(--text)">−</div>
+            <div style="font-family:var(--font);font-weight:800;font-size:15px;color:var(--text);min-width:20px;text-align:center">12</div>
+            <div style="width:28px;height:28px;border-radius:999px;border:1px solid var(--border-strong);display:flex;align-items:center;justify-content:center;font-family:var(--font);font-weight:800;font-size:15px;color:var(--text)">+</div>
+          </div>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div style="font-family:var(--font);font-weight:600;font-size:14px;color:var(--text)">Dos</div>
+          <div style="display:flex;align-items:center;gap:12px">
+            <div style="width:28px;height:28px;border-radius:999px;border:1px solid var(--border-strong);display:flex;align-items:center;justify-content:center;font-family:var(--font);font-weight:800;font-size:15px;color:var(--text)">−</div>
+            <div style="font-family:var(--font);font-weight:800;font-size:15px;color:var(--text);min-width:20px;text-align:center">12</div>
+            <div style="width:28px;height:28px;border-radius:999px;border:1px solid var(--border-strong);display:flex;align-items:center;justify-content:center;font-family:var(--font);font-weight:800;font-size:15px;color:var(--text)">+</div>
+          </div>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div style="font-family:var(--font);font-weight:600;font-size:14px;color:var(--text)">Épaules</div>
+          <div style="display:flex;align-items:center;gap:12px">
+            <div style="width:28px;height:28px;border-radius:999px;border:1px solid var(--border-strong);display:flex;align-items:center;justify-content:center;font-family:var(--font);font-weight:800;font-size:15px;color:var(--text)">−</div>
+            <div style="font-family:var(--font);font-weight:800;font-size:15px;color:var(--text);min-width:20px;text-align:center">11</div>
+            <div style="width:28px;height:28px;border-radius:999px;border:1px solid var(--border-strong);display:flex;align-items:center;justify-content:center;font-family:var(--font);font-weight:800;font-size:15px;color:var(--text)">+</div>
+          </div>
+        </div>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:26px;padding:22px;display:flex;flex-direction:column;gap:16px;box-shadow:0 16px 32px -20px rgba(0,0,0,0.5)">
+        <div>
+          <div style="font-family:var(--font);font-weight:800;font-size:14px;color:var(--text);margin-bottom:5px;letter-spacing:0.01em">Notifications</div>
+          <div style="font-size:13px;line-height:1.5;color:var(--text-muted)">Rappels pour ne pas manquer une séance.</div>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div style="font-family:var(--font);font-weight:600;font-size:14px;color:var(--text)">Rappel de séance</div>
+          <div style="width:44px;height:24px;border-radius:999px;background:var(--accent);position:relative;box-shadow:inset 0 1px 2px rgba(0,0,0,0.2)"><div style="width:18px;height:18px;border-radius:999px;background:var(--bg);position:absolute;top:3px;left:23px;box-shadow:0 1px 3px rgba(0,0,0,0.3)"></div></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div style="font-family:var(--font);font-weight:600;font-size:14px;color:var(--text)">Repos terminé</div>
+          <div style="width:44px;height:24px;border-radius:999px;background:var(--accent);position:relative;box-shadow:inset 0 1px 2px rgba(0,0,0,0.2)"><div style="width:18px;height:18px;border-radius:999px;background:var(--bg);position:absolute;top:3px;left:23px;box-shadow:0 1px 3px rgba(0,0,0,0.3)"></div></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div style="font-family:var(--font);font-weight:600;font-size:14px;color:var(--text)">Résumé hebdomadaire</div>
+          <div style="width:44px;height:24px;border-radius:999px;background:var(--border-strong);position:relative"><div style="width:18px;height:18px;border-radius:999px;background:var(--bg);position:absolute;top:3px;left:3px;box-shadow:0 1px 3px rgba(0,0,0,0.3)"></div></div>
+        </div>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:26px;padding:22px;display:flex;flex-direction:column;gap:12px;box-shadow:0 16px 32px -20px rgba(0,0,0,0.5)">
+        <div style="font-family:var(--font);font-weight:800;font-size:14px;color:var(--text);letter-spacing:0.01em">Sauvegarde</div>
+        <div style="font-family:var(--font);font-weight:700;font-size:12px;line-height:1.5;color:var(--accent);text-transform:uppercase;letter-spacing:0.01em">Tu n'as encore jamais exporté tes données. Pense à faire une sauvegarde.</div>
+        <div style="font-size:13px;line-height:1.5;color:var(--text-muted)">Exporte toutes tes données dans un fichier JSON, ou restaure une sauvegarde précédente.</div>
+        <div style="display:flex;gap:10px;margin-top:6px">
+          <button style="flex:1;background:transparent;border:1px solid var(--border-strong);border-radius:999px;color:var(--text);padding:13px;font-family:var(--font);font-weight:700;font-size:11px;cursor:pointer">Exporter (.json)</button>
+          <button style="flex:1;background:transparent;border:1px solid var(--border-strong);border-radius:999px;color:var(--text);padding:13px;font-family:var(--font);font-weight:700;font-size:11px;cursor:pointer">Importer (.json)</button>
+        </div>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:26px;padding:22px;display:flex;flex-direction:column;gap:12px;box-shadow:0 16px 32px -20px rgba(0,0,0,0.5)">
+        <div style="font-family:var(--font);font-weight:800;font-size:14px;color:var(--text);letter-spacing:0.01em">Réinitialisation</div>
+        <div style="font-size:13px;line-height:1.5;color:var(--text-muted)">Supprime définitivement toutes les données de l'app et repart de zéro. Pense à exporter une sauvegarde avant si besoin.</div>
+        <button style="background:transparent;border:1px solid var(--accent);border-radius:999px;color:var(--accent);padding:15px;font-family:var(--font);font-weight:800;font-size:12px;letter-spacing:0.03em;cursor:pointer">Réinitialiser l'app</button>
+      </div>
+    </div>
+    <div style="background:var(--surface);margin:0 20px 28px;border-radius:32px;padding:16px 12px;display:flex;justify-content:space-around;align-items:center;box-shadow:0 24px 48px -20px rgba(0,0,0,0.6);border:1px solid var(--border);box-sizing:border-box">
+      <div style="display:flex;flex-direction:column;align-items:center;gap:6px;color:var(--text-faint)">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="3" width="7.5" height="7.5"></rect><rect x="13.5" y="3" width="7.5" height="7.5"></rect><rect x="3" y="13.5" width="7.5" height="7.5"></rect><rect x="13.5" y="13.5" width="7.5" height="7.5"></rect></svg>
+        <div style="font-family:var(--font);font-weight:700;font-size:9px;letter-spacing:0.06em;text-transform:uppercase">Dashboard</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:6px;color:var(--text-faint)">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><line x1="4" y1="6" x2="20" y2="6"></line><line x1="4" y1="12" x2="20" y2="12"></line><line x1="4" y1="18" x2="20" y2="18"></line></svg>
+        <div style="font-family:var(--font);font-weight:700;font-size:9px;letter-spacing:0.06em;text-transform:uppercase">Routine</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:6px;color:var(--text-faint)">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="4" cy="12" r="1.8"></circle><circle cx="20" cy="12" r="1.8"></circle><line x1="6" y1="12" x2="18" y2="12"></line><line x1="8.5" y1="8" x2="8.5" y2="16"></line><line x1="15.5" y1="8" x2="15.5" y2="16"></line></svg>
+        <div style="font-family:var(--font);font-weight:700;font-size:9px;letter-spacing:0.06em;text-transform:uppercase">Séance</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:6px;color:var(--text-faint)">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><polyline points="3,17 9,11 13,15 21,7"></polyline><polyline points="15,7 21,7 21,13"></polyline></svg>
+        <div style="font-family:var(--font);font-weight:700;font-size:9px;letter-spacing:0.06em;text-transform:uppercase">Progression</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:6px;color:var(--accent)">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="8" r="3.6"></circle><path d="M4.5 20.5c0-4.1 3.4-7 7.5-7s7.5 2.9 7.5 7"></path></svg>
+        <div style="font-family:var(--font);font-weight:700;font-size:9px;letter-spacing:0.06em;text-transform:uppercase">Profil</div>
+      </div>
+    </div>
+  </div>
+  <div style="position:absolute;bottom:8px;left:50%;transform:translateX(-50%);width:139px;height:5px;border-radius:100px;background:rgba(244,241,236,0.35);pointer-events:none;z-index:60"></div>
+</div>
+</x-dc>
+</body>
+</html>

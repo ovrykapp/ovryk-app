@@ -1,0 +1,134 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#121110; --surface:#1B1815; --surface-2:#211E19;
+  --border:rgba(244,241,236,0.09); --border-soft:rgba(244,241,236,0.06); --border-strong:rgba(244,241,236,0.16);
+  --text:#F5F2EC; --text-muted:#A39D91; --text-faint:#86807D; --text-disabled:#5C574E;
+  --accent:#CDA655; --accent-soft:#E6CFA0; --accent-deep:#8F7038;
+  --font:'Inter Tight', system-ui, -apple-system, sans-serif;
+}
+body{margin:0;background:var(--bg);font-family:var(--font)}
+a{color:var(--accent);text-decoration:none}
+a:hover{color:var(--accent-soft)}
+.swatch{display:flex;flex-direction:column;gap:8px}
+.chip{width:100%;height:56px;border-radius:14px;border:1px solid var(--border)}
+.label{font-family:var(--font);font-weight:700;font-size:11px;color:var(--text)}
+.hex{font-family:var(--font);font-weight:500;font-size:11px;color:var(--text-faint);font-variant-numeric:tabular-nums}
+</style>
+</helmet>
+<div style="width:1320px;min-height:760px;background:var(--bg);padding:56px;box-sizing:border-box;display:flex;flex-direction:column;gap:40px">
+
+  <div>
+    <div style="font-family:var(--font);font-weight:700;font-size:11px;letter-spacing:0.16em;color:var(--accent);text-transform:uppercase;margin-bottom:10px">OVRYK — V3</div>
+    <div style="font-family:var(--font);font-weight:800;font-size:32px;color:var(--text);letter-spacing:-0.01em;margin-bottom:8px">Charte graphique — Sleek athlétique, raffinée</div>
+    <div style="font-size:14px;line-height:1.6;color:var(--text-muted);max-width:760px">Même univers que la V2 (fond encre, accent champagne, cartes flottantes très arrondies), avec une hiérarchie typographique plus travaillée, des ombres/glow plus subtils, un rythme vertical plus respirant et des micro-détails (focus rings, dividers, states) plus soignés.</div>
+  </div>
+
+  <div>
+    <div style="font-family:var(--font);font-weight:800;font-size:13px;color:var(--text);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:18px;border-bottom:1px solid var(--border-soft);padding-bottom:12px">Couleurs</div>
+    <div style="display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:16px">
+      <div class="swatch"><div class="chip" style="background:#121110"></div><div class="label">Fond</div><div class="hex">#121110</div></div>
+      <div class="swatch"><div class="chip" style="background:#1B1815"></div><div class="label">Surface</div><div class="hex">#1B1815</div></div>
+      <div class="swatch"><div class="chip" style="background:#211E19"></div><div class="label">Surface 2</div><div class="hex">#211E19</div></div>
+      <div class="swatch"><div class="chip" style="background:#F5F2EC"></div><div class="label">Texte</div><div class="hex">#F5F2EC</div></div>
+      <div class="swatch"><div class="chip" style="background:#A39D91"></div><div class="label">Texte muted</div><div class="hex">#A39D91</div></div>
+      <div class="swatch"><div class="chip" style="background:#86807D"></div><div class="label">Texte faint</div><div class="hex">#86807D</div></div>
+      <div class="swatch"><div class="chip" style="background:#5C574E"></div><div class="label">Texte disabled</div><div class="hex">#5C574E</div></div>
+      <div class="swatch"><div class="chip" style="background:#CDA655"></div><div class="label">Accent</div><div class="hex">#CDA655</div></div>
+    </div>
+  </div>
+
+  <div>
+    <div style="font-family:var(--font);font-weight:800;font-size:13px;color:var(--text);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:18px;border-bottom:1px solid var(--border-soft);padding-bottom:12px">Typographie — Inter Tight</div>
+    <div style="display:flex;flex-direction:column;gap:18px">
+      <div style="display:flex;align-items:baseline;gap:20px">
+        <div style="width:180px;font-family:var(--font);font-weight:700;font-size:11px;color:var(--text-faint);letter-spacing:0.08em;text-transform:uppercase">Display / Hero</div>
+        <div style="font-family:var(--font);font-weight:800;font-size:38px;color:var(--text);letter-spacing:-0.02em">Push</div>
+        <div style="font-family:var(--font);font-weight:500;font-size:12px;color:var(--text-faint)">800 · 38px · -0.02em</div>
+      </div>
+      <div style="display:flex;align-items:baseline;gap:20px">
+        <div style="width:180px;font-family:var(--font);font-weight:700;font-size:11px;color:var(--text-faint);letter-spacing:0.08em;text-transform:uppercase">Titre écran (H2)</div>
+        <div style="font-family:var(--font);font-weight:800;font-size:28px;color:var(--text);letter-spacing:-0.01em">Progression</div>
+        <div style="font-family:var(--font);font-weight:500;font-size:12px;color:var(--text-faint)">800 · 28px · -0.01em</div>
+      </div>
+      <div style="display:flex;align-items:baseline;gap:20px">
+        <div style="width:180px;font-family:var(--font);font-weight:700;font-size:11px;color:var(--text-faint);letter-spacing:0.08em;text-transform:uppercase">Kicker / eyebrow</div>
+        <div style="font-family:var(--font);font-weight:700;font-size:11px;color:var(--accent);letter-spacing:0.16em;text-transform:uppercase">Commence ici</div>
+        <div style="font-family:var(--font);font-weight:500;font-size:12px;color:var(--text-faint)">700 · 11px · 0.16em</div>
+      </div>
+      <div style="display:flex;align-items:baseline;gap:20px">
+        <div style="width:180px;font-family:var(--font);font-weight:700;font-size:11px;color:var(--text-faint);letter-spacing:0.08em;text-transform:uppercase">Corps</div>
+        <div style="font-family:var(--font);font-weight:400;font-size:14px;line-height:1.6;color:var(--text-muted);max-width:420px">Commence ta première séance pour voir apparaître ton volume, tes records et ta progression.</div>
+        <div style="font-family:var(--font);font-weight:500;font-size:12px;color:var(--text-faint)">400 · 14px · 1.6</div>
+      </div>
+      <div style="display:flex;align-items:baseline;gap:20px">
+        <div style="width:180px;font-family:var(--font);font-weight:700;font-size:11px;color:var(--text-faint);letter-spacing:0.08em;text-transform:uppercase">Numérique (stat)</div>
+        <div style="font-family:var(--font);font-weight:800;font-size:26px;color:var(--accent);font-variant-numeric:tabular-nums">126,7 kg</div>
+        <div style="font-family:var(--font);font-weight:500;font-size:12px;color:var(--text-faint)">800 · tabular-nums</div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:48px">
+    <div>
+      <div style="font-family:var(--font);font-weight:800;font-size:13px;color:var(--text);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:18px;border-bottom:1px solid var(--border-soft);padding-bottom:12px">Rayons & élévation</div>
+      <div style="display:flex;gap:20px;align-items:flex-end">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:8px">
+          <div style="width:110px;height:70px;background:var(--surface);border:1px solid var(--border);border-radius:28px;box-shadow:0 16px 32px -20px rgba(0,0,0,0.5)"></div>
+          <div class="label">Carte · 28px</div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:8px">
+          <div style="width:110px;height:70px;background:linear-gradient(160deg,#201C17,#141210);border:1px solid var(--border);border-radius:32px;box-shadow:0 24px 48px -20px rgba(0,0,0,0.6)"></div>
+          <div class="label">Hero · 32px</div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:8px">
+          <div style="width:110px;height:70px;background:var(--accent);border-radius:999px;box-shadow:0 14px 28px -12px rgba(205,166,85,0.45)"></div>
+          <div class="label">Bouton · pill</div>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div style="font-family:var(--font);font-weight:800;font-size:13px;color:var(--text);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:18px;border-bottom:1px solid var(--border-soft);padding-bottom:12px">Composants — états</div>
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <div style="display:flex;gap:12px;align-items:center">
+          <button style="background:var(--accent);color:var(--bg);border:none;border-radius:999px;padding:12px 22px;font-family:var(--font);font-weight:800;font-size:12px">Primaire</button>
+          <button style="background:transparent;border:1px solid var(--border-strong);border-radius:999px;color:var(--text);padding:12px 22px;font-family:var(--font);font-weight:700;font-size:12px">Secondaire</button>
+          <button style="background:transparent;border:1px solid var(--accent);border-radius:999px;color:var(--accent);padding:12px 22px;font-family:var(--font);font-weight:700;font-size:12px">Destructif</button>
+        </div>
+        <div style="display:flex;gap:20px;align-items:center">
+          <div style="width:44px;height:24px;border-radius:999px;background:var(--accent);position:relative"><div style="width:18px;height:18px;border-radius:999px;background:var(--bg);position:absolute;top:3px;left:23px"></div></div>
+          <div style="width:44px;height:24px;border-radius:999px;background:var(--border-strong);position:relative"><div style="width:18px;height:18px;border-radius:999px;background:var(--bg);position:absolute;top:3px;left:3px"></div></div>
+          <div style="border:1.5px solid var(--accent);border-radius:14px;background:var(--surface);padding:10px 16px;font-family:var(--font);font-size:12px;color:var(--text-faint);box-shadow:0 0 0 4px rgba(205,166,85,0.14)">Focus ring</div>
+        </div>
+        <div style="height:1px;background:var(--border-soft);width:260px"></div>
+        <div class="hex" style="font-size:11px">Hairline divider · rgba(245,242,236,0.06)</div>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <div style="font-family:var(--font);font-weight:800;font-size:13px;color:var(--text);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:18px;border-bottom:1px solid var(--border-soft);padding-bottom:12px">Rythme vertical</div>
+    <div style="display:flex;gap:14px;align-items:flex-end">
+      <div style="display:flex;flex-direction:column;align-items:center;gap:6px"><div style="width:8px;height:8px;background:var(--accent);border-radius:2px"></div><div class="hex">8</div></div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:6px"><div style="width:14px;height:14px;background:var(--accent);border-radius:2px"></div><div class="hex">14</div></div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:6px"><div style="width:22px;height:22px;background:var(--accent);border-radius:2px"></div><div class="hex">22</div></div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:6px"><div style="width:28px;height:28px;background:var(--accent);border-radius:2px"></div><div class="hex">28</div></div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:6px"><div style="width:40px;height:40px;background:var(--accent);border-radius:2px"></div><div class="hex">40</div></div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:6px"><div style="width:56px;height:56px;background:var(--accent);border-radius:2px"></div><div class="hex">56</div></div>
+    </div>
+  </div>
+
+</div>
+</x-dc>
+</body>
+</html>

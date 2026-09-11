@@ -1,0 +1,27 @@
+{
+  "name": "Ovryk — Suivi de musculation",
+  "short_name": "Ovryk",
+  "description": "Suivi de musculation personnel : routines, séances, progression et cycles de force.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "id": "/index.html",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#121110",
+  "theme_color": "#121110",
+  "lang": "fr",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "icon.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ]
+}
