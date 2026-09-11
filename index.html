@@ -11,7 +11,7 @@
 <title>OVRYK · Suivi de musculation</title>
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
-<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="icon" href="favicon.png" type="image/png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -292,6 +292,19 @@
     margin-bottom: 12px;
   }
   .empty-tag.is-record { color: var(--rust); border-color: var(--rust); }
+  /* same pill look as .empty-tag but without its block-context margin, so
+     it can sit inline next to a name/meta line or as a flex-row badge */
+  .stagnation-tag {
+    display: inline-block;
+    flex-shrink: 0;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--steel);
+    border: 1px solid var(--steel);
+    padding: 2px 8px;
+  }
   .empty-state h2 {
     font-size: 16px;
     margin-bottom: 8px;
@@ -374,14 +387,6 @@
   }
   .nav-btn.active {
     color: var(--rust);
-  }
-  .nav-btn.active::before {
-    content: '';
-    position: absolute;
-    inset: 5px 3px;
-    background: color-mix(in srgb, var(--rust) 16%, transparent);
-    border-radius: calc(var(--radius-pill) - 8px);
-    z-index: -1;
   }
   .nav-btn:active {
     background: color-mix(in srgb, var(--rust) 12%, transparent);
@@ -1390,22 +1395,60 @@
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 4px;
+    gap: 8px;
     padding: 10px 0;
   }
   .set-index {
-    width: 14px;
+    width: 36px;
+    height: 36px;
     flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--field);
+    border-radius: var(--radius-sm);
     font-family: var(--font-mono);
-    font-size: 12px;
-    color: var(--steel);
+    font-weight: 700;
+    font-size: 14px;
+    color: var(--ink);
   }
+
+  /* one-time column header above a set list, mirroring the actual row's
+     structural widths (badge/kg/reps/remove) so the SÉRIE/KG/REPS labels
+     land exactly above their column — the remove-button slot is a real
+     hidden clone (not a guessed width), which is what keeps this lined up
+     even if that column's sizing ever changes */
+  .set-header-row { gap: 8px; padding: 0 0 6px; border-bottom: 1px solid color-mix(in srgb, var(--steel) 30%, transparent); margin-bottom: 4px; }
+  .set-header-label {
+    font-family: var(--font-mono);
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    color: var(--steel);
+    text-transform: uppercase;
+    text-align: center;
+  }
+  .set-header-index { width: 36px; flex-shrink: 0; text-align: center; }
+  .set-header-spacer { visibility: hidden; }
+  /* REPS doubles as the Reps/Plage switch for the whole exercise — looks
+     like the other header labels but is a real button with a chevron */
+  .set-header-mode-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+  }
+  .set-header-mode-chevron { width: 10px; height: 10px; stroke: currentColor; fill: none; stroke-width: 2; flex-shrink: 0; }
 
   .rep-type-toggle { display: flex; border: 1px solid var(--steel); border-radius: var(--radius); overflow: hidden; flex-shrink: 0; }
   .rep-type-btn {
     background: transparent;
     border: none;
-    padding: 6px 4px;
+    padding: 6px 3px;
     min-height: 28px;
     font-family: var(--font-display);
     font-size: 10px;
@@ -1418,13 +1461,14 @@
   .rep-type-btn + .rep-type-btn { border-left: 1px solid var(--steel); }
   .rep-type-btn.active { background: var(--accent-info); color: var(--graphite); }
 
-  .set-reps-fields { display: flex; align-items: center; gap: 2px; flex-shrink: 0; }
-  .set-reps-fields .num-input { width: 52px; padding: 8px 4px; }
-  .reps-sep { font-family: var(--font-mono); color: var(--steel); }
+  .set-reps-fields { display: flex; align-items: center; justify-content: center; flex: 1 0 112px; min-width: 112px; }
+  .set-reps-values { display: flex; align-items: center; justify-content: center; gap: 2px; flex-shrink: 0; width: 112px; }
+  .set-reps-values .num-input { width: 46px; padding: 8px 4px; }
+  .reps-sep { width: 16px; flex-shrink: 0; text-align: center; font-size: 13px; font-family: var(--font-mono); color: var(--steel); }
   .field-suffix { font-size: 10px; color: var(--steel); text-transform: uppercase; flex-shrink: 0; }
 
-  .set-weight-field { display: flex; align-items: center; gap: 3px; flex-shrink: 0; margin-left: auto; }
-  .set-weight-field .load-input { width: 58px; }
+  .set-weight-field { display: flex; align-items: center; justify-content: center; gap: 3px; flex-shrink: 0; width: 92px; }
+  .set-weight-field .load-input { width: 70px; }
   /* computed kg is auto-derived from %1RM (read-only, shown in .set-summary
      below), so it borrows the same hero look as .load-input but needs
      display:inline-block since it's a <span>, not a naturally-boxed <input> */
@@ -2068,6 +2112,7 @@
     .nav-btn:hover:not(.active),
     .fullscreen-page-action.cancel:hover,
     .dash-cycle-row:hover .dash-cycle-name,
+    .set-header-mode-btn:hover,
     .set-remove-btn:hover:not(:disabled) { color: var(--rust); }
 
     .routine-action-btn.danger:hover,
@@ -2937,8 +2982,22 @@
   var viewLabelEl = document.getElementById('current-view-label');
   var mainScrollEl = document.querySelector('main');
 
-  function setActiveView(target) {
+  /* plain `scrollTop = 0` loses to iOS Safari's own momentum scroll when the
+     tap lands while the page is still coasting from a fling — the browser's
+     inertia keeps applying its own offset for a few more frames and undoes
+     the reset. Toggling overflow off kills that momentum outright (an
+     element mid-inertial-scroll stops being scrollable, so WebKit drops
+     it), then the reset actually sticks once overflow comes back. */
+  function scrollMainToTop() {
+    var prevOverflow = mainScrollEl.style.overflow;
+    mainScrollEl.style.overflow = 'hidden';
     mainScrollEl.scrollTop = 0;
+    void mainScrollEl.offsetHeight;
+    mainScrollEl.style.overflow = prevOverflow;
+  }
+
+  function setActiveView(target) {
+    scrollMainToTop();
     views.forEach(function (section) {
       section.classList.toggle('view-active', section.dataset.view === target);
     });
@@ -3296,6 +3355,13 @@
     var cycleBadge = buildCycleBadge(ex);
     if (cycleBadge) row.appendChild(cycleBadge);
 
+    if (ex.category !== 'Lifting' && detectStagnation(ex.id).isStagnant) {
+      var stagnationBadge = document.createElement('span');
+      stagnationBadge.className = 'stagnation-tag';
+      stagnationBadge.textContent = 'Stagnation';
+      row.appendChild(stagnationBadge);
+    }
+
     return row;
   }
 
@@ -3444,6 +3510,7 @@
 
   function closeCycleDetailPage() {
     document.getElementById('cycle-detail-page').hidden = true;
+    scrollMainToTop();
   }
 
   document.getElementById('cycle-detail-back-btn').addEventListener('click', closeCycleDetailPage);
@@ -3602,7 +3669,7 @@
     if (exercise && exercise.category === 'Lifting') {
       return { id: 'set-' + OvrykDB.generateId(), repType: 'fixed', reps: 5, percent1rm: 60 };
     }
-    return { id: 'set-' + OvrykDB.generateId(), repType: 'fixed', reps: null, weightKg: null };
+    return { id: 'set-' + OvrykDB.generateId(), repType: 'range', repsMin: null, repsMax: null, weightKg: null };
   }
 
   var DEFAULT_SET_COUNT = 3;
@@ -3722,6 +3789,7 @@
     currentRoutineId = null;
     document.getElementById('routine-editor-view').hidden = true;
     renderRoutineList();
+    scrollMainToTop();
   }
 
   function cancelRoutineEditor() {
@@ -4026,6 +4094,7 @@
 
     var setsWrap = document.createElement('div');
     setsWrap.className = 'rex-sets';
+    setsWrap.appendChild(buildSetsHeaderRow(routine, rex));
     rex.sets.forEach(function (set, setIndex) {
       setsWrap.appendChild(buildSetRow(routine, rex, exercise, set, setIndex));
     });
@@ -4090,6 +4159,68 @@
     return wrap;
   }
 
+  /* one-time SÉRIE / KG / REPS header above a set list. The toggle and
+     remove-button slots are real (hidden) clones of their row counterparts
+     rather than guessed widths, so the labels stay lined up with the
+     columns below even if those elements' own sizing changes later. */
+  /* Reps vs Plage is now chosen once per exercise from the header, not per
+     set — flips every set in rex.sets at once, using the same fixed<->range
+     conversion the old per-row toggle used. */
+  function applyRepTypeToAllSets(routine, rex, newType) {
+    rex.sets.forEach(function (set) {
+      if (newType === 'range') {
+        if (set.repType === 'range') return;
+        var base = set.reps;
+        set.repType = 'range';
+        set.repsMin = base != null ? base : null;
+        set.repsMax = base != null ? base + 2 : null;
+      } else {
+        if (set.repType !== 'range') return;
+        set.repType = 'fixed';
+        set.reps = set.repsMin != null ? set.repsMin : null;
+      }
+    });
+    OvrykDB.updateRoutine(routine);
+    renderRoutineEditor();
+  }
+
+  /* one-time SÉRIE / KG / REPS header above a set list. REPS doubles as the
+     mode switch (tap to flip every set between Reps and Plage) now that the
+     per-row toggle pill is gone — freeing that column's width for bigger
+     KG/REPS fields. The remove-button slot is still a real hidden clone of
+     its row counterpart so the header stays pixel-aligned with the rows. */
+  function buildSetsHeaderRow(routine, rex) {
+    var header = document.createElement('div');
+    header.className = 'set-row set-header-row';
+
+    var indexLabel = document.createElement('span');
+    indexLabel.className = 'set-header-label set-header-index';
+    indexLabel.textContent = 'Série';
+    header.appendChild(indexLabel);
+
+    var kgLabel = document.createElement('span');
+    kgLabel.className = 'set-weight-field set-header-label';
+    kgLabel.textContent = 'Kg';
+    header.appendChild(kgLabel);
+
+    var isRange = !!(rex.sets[0] && rex.sets[0].repType === 'range');
+    var repsModeBtn = document.createElement('button');
+    repsModeBtn.type = 'button';
+    repsModeBtn.className = 'set-reps-fields set-header-label set-header-mode-btn';
+    repsModeBtn.innerHTML = (isRange ? 'Plage' : 'Reps') +
+      ' <svg class="set-header-mode-chevron" viewBox="0 0 24 24"><polyline points="6,9 12,15 18,9"/></svg>';
+    repsModeBtn.addEventListener('click', function () {
+      applyRepTypeToAllSets(routine, rex, isRange ? 'fixed' : 'range');
+    });
+    header.appendChild(repsModeBtn);
+
+    var removeSpacer = document.createElement('span');
+    removeSpacer.className = 'set-remove-btn set-header-spacer';
+    header.appendChild(removeSpacer);
+
+    return header;
+  }
+
   function buildSetRow(routine, rex, exercise, set, setIndex) {
     var isLifting = !!(exercise && exercise.category === 'Lifting');
     var row = document.createElement('div');
@@ -4102,40 +4233,11 @@
 
     var repsInput, minInput, maxInput, weightInput, computedKgEl, summaryEl;
 
-    var toggle = document.createElement('div');
-    toggle.className = 'rep-type-toggle';
-    var fixedBtn = document.createElement('button');
-    fixedBtn.type = 'button';
-    fixedBtn.className = 'rep-type-btn' + (set.repType !== 'range' ? ' active' : '');
-    fixedBtn.textContent = 'Reps';
-    var rangeBtn = document.createElement('button');
-    rangeBtn.type = 'button';
-    rangeBtn.className = 'rep-type-btn' + (set.repType === 'range' ? ' active' : '');
-    rangeBtn.textContent = 'Plage';
-
-    fixedBtn.addEventListener('click', function () {
-      if (set.repType !== 'range') return;
-      set.repType = 'fixed';
-      set.reps = set.repsMin != null ? set.repsMin : null;
-      OvrykDB.updateRoutine(routine);
-      renderRoutineEditor();
-    });
-    rangeBtn.addEventListener('click', function () {
-      if (set.repType === 'range') return;
-      var base = set.reps;
-      set.repType = 'range';
-      set.repsMin = base != null ? base : null;
-      set.repsMax = base != null ? base + 2 : null;
-      OvrykDB.updateRoutine(routine);
-      renderRoutineEditor();
-    });
-
-    toggle.appendChild(fixedBtn);
-    toggle.appendChild(rangeBtn);
-    row.appendChild(toggle);
-
     var repsFields = document.createElement('div');
     repsFields.className = 'set-reps-fields';
+
+    var repsValues = document.createElement('div');
+    repsValues.className = 'set-reps-values';
 
     if (set.repType === 'range') {
       minInput = document.createElement('input');
@@ -4146,7 +4248,7 @@
 
       var sep = document.createElement('span');
       sep.className = 'reps-sep';
-      sep.textContent = '–';
+      sep.textContent = 'à';
 
       maxInput = document.createElement('input');
       maxInput.type = 'number';
@@ -4167,9 +4269,9 @@
         OvrykDB.updateRoutine(routine);
       });
 
-      repsFields.appendChild(minInput);
-      repsFields.appendChild(sep);
-      repsFields.appendChild(maxInput);
+      repsValues.appendChild(minInput);
+      repsValues.appendChild(sep);
+      repsValues.appendChild(maxInput);
     } else {
       repsInput = document.createElement('input');
       repsInput.type = 'number';
@@ -4182,14 +4284,10 @@
         set.reps = isNaN(v) ? null : v;
         OvrykDB.updateRoutine(routine);
       });
-      repsFields.appendChild(repsInput);
+      repsValues.appendChild(repsInput);
     }
 
-    var repsSuffix = document.createElement('span');
-    repsSuffix.className = 'field-suffix';
-    repsSuffix.textContent = 'reps';
-    repsFields.appendChild(repsSuffix);
-    row.appendChild(repsFields);
+    repsFields.appendChild(repsValues);
 
     var weightField = document.createElement('div');
     weightField.className = 'set-weight-field';
@@ -4225,6 +4323,7 @@
       weightField.appendChild(weightSuffix);
     }
     row.appendChild(weightField);
+    row.appendChild(repsFields);
 
     /* appended here (before the summary line) rather than at the end of the
        function, so it stays on the same flex line as the index/toggle/reps/
@@ -4725,6 +4824,7 @@
     document.getElementById('seance-sticky-topbar').hidden = true;
     document.body.classList.remove('session-active');
     renderSeanceRoutineList();
+    scrollMainToTop();
   }
 
   function showSeanceActive() {
@@ -4736,6 +4836,7 @@
     document.body.classList.add('session-active');
     closeSeancePicker();
     renderSeanceActiveView();
+    scrollMainToTop();
     startSessionTimer();
   }
 
@@ -5834,6 +5935,7 @@
     document.getElementById('progression-group-detail-view').hidden = false;
     document.getElementById('progression-exercise-detail-view').hidden = true;
     renderGroupDetail();
+    scrollMainToTop();
   }
 
   function renderGroupDetail() {
@@ -5860,6 +5962,7 @@
     document.getElementById('progression-group-detail-view').hidden = true;
     document.getElementById('progression-groups-view').hidden = false;
     renderProgressionGroups();
+    scrollMainToTop();
   });
 
   /* ---- exercise detail view ---- */
@@ -5896,6 +5999,26 @@
     });
 
     return records;
+  }
+
+  /* Plateau signal for non-Lifting exercises (Lifting progresses via %1RM
+     per cycle week, not session-over-session, so it's out of scope here).
+     Looks at the last 3 logged sessions: if maxWeight and total reps both
+     failed to beat the previous session every single time, the lifter is
+     stuck. Fewer than 3 sessions is too little signal to call it. */
+  function detectStagnation(exerciseId) {
+    var records = getExerciseSessionRecords(exerciseId);
+    if (records.length < 3) return { isStagnant: false, sinceDate: null };
+
+    var last3 = records.slice(-3);
+    function totalReps(r) { return r.sets.reduce(function (sum, s) { return sum + s.reps; }, 0); }
+
+    var progressed = last3.slice(1).some(function (cur, i) {
+      var prev = last3[i];
+      return cur.maxWeight > prev.maxWeight || totalReps(cur) > totalReps(prev);
+    });
+
+    return { isStagnant: !progressed, sinceDate: last3[0].date };
   }
 
   function svgEl(tag, attrs) {
@@ -6020,9 +6143,14 @@
     document.getElementById('progression-groups-view').hidden = true;
     document.getElementById('progression-group-detail-view').hidden = true;
     document.getElementById('progression-exercise-detail-view').hidden = false;
+    scrollMainToTop();
 
     document.getElementById('exercise-detail-name').textContent = exercise.name;
-    document.getElementById('exercise-detail-meta').textContent = exercise.category;
+    var metaEl = document.getElementById('exercise-detail-meta');
+    metaEl.innerHTML = escapeHTML(exercise.category);
+    if (exercise.category !== 'Lifting' && detectStagnation(exerciseId).isStagnant) {
+      metaEl.innerHTML += ' <span class="stagnation-tag">Stagnation</span>';
+    }
 
     var records = getExerciseSessionRecords(exerciseId);
     var maxWeights = records.map(function (r) { return r.maxWeight; });
@@ -6162,6 +6290,7 @@
       document.getElementById('progression-groups-view').hidden = false;
       renderProgressionGroups();
     }
+    scrollMainToTop();
   });
 
   /* ---- wiring ---- */

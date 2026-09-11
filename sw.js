@@ -1,14 +1,16 @@
 /* Ovryk — service worker: cache-first for the app shell so it loads with no
    network after the first visit. Bump CACHE_VERSION whenever a static asset
    listed in PRECACHE_URLS changes shape; the old cache is dropped on activate. */
-var CACHE_VERSION = 'v29';
+var CACHE_VERSION = 'v44';
 var CACHE_NAME = 'ovryk-static-' + CACHE_VERSION;
 
 var PRECACHE_URLS = [
   './',
   './index.html',
   './manifest.json',
-  './icon.svg',
+  './icon-192.png',
+  './icon-512.png',
+  './favicon.png',
   './apple-touch-icon.png'
 ];
 
