@@ -2179,6 +2179,11 @@
         <div class="dash-cycle-list" id="dash-force-cycles-body"></div>
       </div>
 
+      <div class="dash-section" id="dash-stagnation" hidden>
+        <span class="dash-section-eyebrow">STAGNATION</span>
+        <div class="dash-cycle-list" id="dash-stagnation-body"></div>
+      </div>
+
       <div class="dash-section" id="dash-week-summary" hidden>
         <span class="dash-section-eyebrow">CETTE SEMAINE</span>
         <div class="dash-stat-row">
@@ -3085,6 +3090,7 @@
     if (target === 'dashboard') {
       renderCycleAlertBanner();
       renderDashboardForceCycles();
+      renderDashboardStagnation();
       renderDashboardHome();
     }
     if (target === 'profil') {
@@ -6612,6 +6618,42 @@
       row.innerHTML = '<span class="dash-cycle-name">' + escapeHTML(exercise ? exercise.name : exerciseId) + '</span>' +
         '<span class="dash-cycle-status">' + escapeHTML(statusText) + '</span>';
       row.addEventListener('click', function () { openCycleDetailPage(exerciseId); });
+      body.appendChild(row);
+    });
+
+    block.hidden = false;
+  }
+
+  /* ============================================================
+     DASHBOARD — stagnation (non-Lifting exercises stuck 3 sessions in a
+     row — Lifting is excluded, same as everywhere else this badge shows,
+     since its progression is %1RM-per-cycle-week, not session over session)
+  ============================================================ */
+  function renderDashboardStagnation() {
+    var block = document.getElementById('dash-stagnation');
+    var body = document.getElementById('dash-stagnation-body');
+
+    var stagnantExercises = OvrykDB.getExercises().filter(function (ex) {
+      return ex.category !== 'Lifting' && detectStagnation(ex.id).isStagnant;
+    });
+
+    if (stagnantExercises.length === 0) {
+      block.hidden = true;
+      return;
+    }
+
+    body.innerHTML = '';
+    stagnantExercises.forEach(function (ex) {
+      var row = document.createElement('button');
+      row.type = 'button';
+      row.className = 'dash-cycle-row';
+      row.innerHTML = '<span class="dash-cycle-name">' + escapeHTML(ex.name) + '</span>' +
+        '<span class="stagnation-tag">Stagnation</span>';
+      row.addEventListener('click', function () {
+        setActiveView('progression');
+        exerciseDetailOrigin = 'main';
+        openExerciseDetail(ex.id);
+      });
       body.appendChild(row);
     });
 
