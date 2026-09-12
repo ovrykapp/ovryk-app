@@ -3264,7 +3264,12 @@
       }
     });
     viewLabelEl.textContent = VIEW_LABELS[target] || '';
-    window.location.hash = target;
+    /* replaceState, not location.hash = target — assigning location.hash
+       pushes a new history entry, which is exactly what iOS turns into a
+       swipe-left/right gesture in standalone PWA mode, flipping tabs by
+       accident. replaceState keeps the hash in sync (so a reload still
+       lands on the right tab) without ever growing the history stack. */
+    history.replaceState(null, '', '#' + target);
     /* the running-session bar lives outside <main> (see markup), so leaving
        the Séance tab has to hide it explicitly instead of it disappearing
        for free with the rest of that view */
