@@ -1997,6 +1997,44 @@
     padding: var(--space-4);
   }
   .modal-overlay[hidden] { display: none; }
+
+  /* covers the whole viewport from first paint until the cloud pull has
+     resolved (success, empty, or failed) — nothing underneath renders
+     against real data until then, so a fresh/empty localStorage never
+     gets a chance to be seen or written out before we know what the
+     cloud actually has */
+  .boot-loading-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    background: var(--graphite);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+  }
+  .boot-loading-overlay[hidden] { display: none; }
+  .boot-loading-spinner {
+    width: 32px;
+    height: 32px;
+    border: 3px solid var(--border-outline);
+    border-top-color: var(--rust);
+    border-radius: 50%;
+    animation: boot-loading-spin 0.8s linear infinite;
+  }
+  @keyframes boot-loading-spin { to { transform: rotate(360deg); } }
+  .boot-loading-text {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--steel);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .boot-loading-spinner { animation: none; }
+  }
+
   .modal-box {
     width: 100%;
     max-width: 360px;
@@ -2157,6 +2195,11 @@
 </style>
 </head>
 <body>
+
+  <div id="boot-loading-overlay" class="boot-loading-overlay">
+    <div class="boot-loading-spinner" aria-hidden="true"></div>
+    <p class="boot-loading-text">Synchronisation…</p>
+  </div>
 
   <header class="app-header">
     <button type="button" class="brand" id="brand-home-btn" aria-label="Retour au dashboard">
@@ -2415,6 +2458,7 @@
         <div class="data-io-actions">
           <button type="button" id="dashboard-export-btn" class="btn-back">Exporter (.json)</button>
           <button type="button" id="dashboard-import-btn" class="btn-back">Importer (.json)</button>
+          <button type="button" id="cloud-restore-btn" class="btn-back">Restaurer depuis le cloud</button>
         </div>
         <input type="file" id="dashboard-import-input" accept="application/json,.json" hidden>
         <div class="data-io-status mono" id="dashboard-io-status"></div>
@@ -2599,16 +2643,55 @@
     lastExportAt: null
   };
 
+  /* moved up here (ahead of the deferred boot wrapper below) so the cloud
+     sync functions right after — which run on their own timers/callbacks,
+     outside that wrapper's scope — can still see them */
+  function readJSON(key, fallback) {
+    try {
+      var raw = localStorage.getItem(key);
+      if (!raw) return fallback;
+      return JSON.parse(raw);
+    } catch (err) {
+      console.error('OvrykDB: failed to read', key, err);
+      return fallback;
+    }
+  }
+
+  function writeJSON(key, value) {
+    try {
+      localStorage.setItem(key, JSON.stringify(value));
+      pushToCloudDebounced();
+      return true;
+    } catch (err) {
+      console.error('OvrykDB: failed to write', key, err);
+      return false;
+    }
+  }
+
   /* ---- minimal cloud sync (jsonbin.io) ----
-     One shared bin holds the whole DB. Pulled once per tab on load (then a
-     reload applies it before anything renders), pushed on every write with
-     a short debounce so a burst of localStorage writes only fires one PUT.
+     One shared bin holds the whole DB. Pulled once per tab on load — the
+     rest of the app's boot (OvrykDB.init, migrations, first renders, all
+     wrapped in the pullFromCloudOnce() call at the very bottom of this
+     file) only runs once that pull has resolved, one way or another.
+     That's the fix for the data-loss bug this used to have: OvrykDB.init()
+     seeds empty arrays into localStorage the first time it runs, and each
+     of those seed writes went through writeJSON, which schedules a
+     debounced push — on a slow connection that push could fire before the
+     pull's GET had even come back, PUTting an empty state over whatever
+     real routines/sessions the cloud already had. Gating the whole boot
+     on the pull means init() never runs, so it never seeds, so nothing
+     ever gets pushed, until we've actually seen the cloud's answer.
+     lastKnownCloudSnapshot is a second, independent guard for the rest of
+     the session: pushToCloudDebounced refuses to PUT an empty
+     routines/sessions list if the last confirmed cloud copy had real data
+     in it, in case local ever ends up wiped some other way later on.
      JSONBIN_API_KEY is a bin-scoped Access Key (Read/Update only), not the
      Master Key — still visible in this static file's source, but scoped so
      that's an acceptable tradeoff for a single-user personal app. */
   var JSONBIN_BIN_ID = '6aa514ecffd5d16053fd70c4';
   var JSONBIN_API_KEY = '$2a$10$7Nsvj0eXGmBrbm2VOQCO2Of9pdTkRgQh69Omb0JmbgHJIVP5NXJou';
   var JSONBIN_URL = 'https://api.jsonbin.io/v3/b/' + JSONBIN_BIN_ID;
+  var lastKnownCloudSnapshot = null;
 
   function collectCloudPayload() {
     return {
@@ -2624,21 +2707,52 @@
   function pushToCloudDebounced() {
     clearTimeout(cloudPushTimer);
     cloudPushTimer = setTimeout(function () {
+      var payload = collectCloudPayload();
+
+      if (lastKnownCloudSnapshot) {
+        var wipesRoutines = payload.routines.length === 0 && (lastKnownCloudSnapshot.routines || []).length > 0;
+        var wipesSessions = payload.sessions.length === 0 && (lastKnownCloudSnapshot.sessions || []).length > 0;
+        if (wipesRoutines || wipesSessions) {
+          console.warn('Ovryk cloud sync: push blocked — local routines/sessions is empty but the last known cloud copy had data. Skipping instead of overwriting it.');
+          return;
+        }
+      }
+
       fetch(JSONBIN_URL, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
           'X-Access-Key': JSONBIN_API_KEY
         },
-        body: JSON.stringify(collectCloudPayload())
+        body: JSON.stringify(payload)
+      }).then(function (res) {
+        if (res.ok) lastKnownCloudSnapshot = payload;
       }).catch(function (err) {
         console.error('Ovryk cloud sync: push failed', err);
       });
     }, 1500);
   }
 
-  function pullFromCloudOnce() {
-    if (sessionStorage.getItem('ovryk-cloud-synced')) return;
+  /* raw localStorage.setItem, not writeJSON — writing through writeJSON
+     would immediately re-trigger pushToCloudDebounced and PUT this same
+     data straight back up. Returns whether it actually wrote anything, so
+     callers can skip a pointless reload when the record was empty. */
+  function applyCloudRecordToLocalStorage(record) {
+    var applied = false;
+    if (record.exercises !== undefined) { localStorage.setItem(DB_KEYS.EXERCISES, JSON.stringify(record.exercises)); applied = true; }
+    if (record.routines !== undefined) { localStorage.setItem(DB_KEYS.ROUTINES, JSON.stringify(record.routines)); applied = true; }
+    if (record.sessions !== undefined) { localStorage.setItem(DB_KEYS.SESSIONS, JSON.stringify(record.sessions)); applied = true; }
+    if (record.settings !== undefined) { localStorage.setItem(DB_KEYS.SETTINGS, JSON.stringify(record.settings)); applied = true; }
+    if (record.forceCycles !== undefined) { localStorage.setItem(DB_KEYS.FORCE_CYCLES, JSON.stringify(record.forceCycles)); applied = true; }
+    return applied;
+  }
+
+  /* runs at most once per tab. Always calls onDone() exactly once — unless
+     the pull found real data to apply, in which case it reloads instead
+     (onDone runs on the reloaded page's own pass, by which point the
+     already-synced flag short-circuits straight to onDone()). */
+  function pullFromCloudOnce(onDone) {
+    if (sessionStorage.getItem('ovryk-cloud-synced')) { onDone(); return; }
     fetch(JSONBIN_URL + '/latest', {
       headers: { 'X-Access-Key': JSONBIN_API_KEY }
     }).then(function (res) {
@@ -2646,23 +2760,26 @@
       return res.json();
     }).then(function (data) {
       var record = data && data.record;
-      if (!record) return;
-      /* raw localStorage.setItem, not writeJSON — writing through writeJSON
-         would immediately re-trigger pushToCloudDebounced and PUT this same
-         data straight back up */
-      if (record.exercises !== undefined) localStorage.setItem(DB_KEYS.EXERCISES, JSON.stringify(record.exercises));
-      if (record.routines !== undefined) localStorage.setItem(DB_KEYS.ROUTINES, JSON.stringify(record.routines));
-      if (record.sessions !== undefined) localStorage.setItem(DB_KEYS.SESSIONS, JSON.stringify(record.sessions));
-      if (record.settings !== undefined) localStorage.setItem(DB_KEYS.SETTINGS, JSON.stringify(record.settings));
-      if (record.forceCycles !== undefined) localStorage.setItem(DB_KEYS.FORCE_CYCLES, JSON.stringify(record.forceCycles));
       sessionStorage.setItem('ovryk-cloud-synced', '1');
-      location.reload();
+      if (!record) { onDone(); return; }
+      lastKnownCloudSnapshot = record;
+      if (applyCloudRecordToLocalStorage(record)) {
+        location.reload();
+      } else {
+        onDone();
+      }
     }).catch(function (err) {
       console.error('Ovryk cloud sync: pull failed', err);
+      onDone();
     });
   }
 
-  pullFromCloudOnce();
+  /* Everything below — OvrykDB.init() included — only runs once the cloud
+     pull above has resolved; see the big comment on the cloud sync block
+     for why. Left at its original indentation rather than re-indented a
+     level deeper, to keep this diff reviewable against the rest of the
+     file. */
+  pullFromCloudOnce(function () {
 
   /*
     Exercise   { id, name, category, equipment, unit, isCustom, oneRepMax?, createdAt }
@@ -3090,28 +3207,6 @@
     return 'id-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 10);
   }
 
-  function readJSON(key, fallback) {
-    try {
-      var raw = localStorage.getItem(key);
-      if (!raw) return fallback;
-      return JSON.parse(raw);
-    } catch (err) {
-      console.error('OvrykDB: failed to read', key, err);
-      return fallback;
-    }
-  }
-
-  function writeJSON(key, value) {
-    try {
-      localStorage.setItem(key, JSON.stringify(value));
-      pushToCloudDebounced();
-      return true;
-    } catch (err) {
-      console.error('OvrykDB: failed to write', key, err);
-      return false;
-    }
-  }
-
   var OvrykDB = {
     getExercises: function () { return readJSON(DB_KEYS.EXERCISES, []); },
     saveExercises: function (list) { return writeJSON(DB_KEYS.EXERCISES, list); },
@@ -3372,7 +3467,14 @@
 
   var initialTarget = (window.location.hash || '').replace('#', '');
   if (!VIEW_LABELS[initialTarget]) initialTarget = 'dashboard';
-  setActiveView(initialTarget);
+  /* the actual setActiveView(initialTarget) call is deferred to the very
+     end of this file (see the boot-loading-overlay comment there) — this
+     used to run right here, immediately, which already broke landing
+     directly on #profil (PROGRESSION_GROUPS/DEFAULT_TARGETS, used by the
+     Profil goals card, aren't declared until much further down; that's a
+     pre-existing gap, not something this cloud-sync fix introduced — but
+     it now matters more since a reload can legitimately leave the hash on
+     #profil, e.g. after using the new "Restaurer depuis le cloud" button) */
 
   /* ============================================================
      ROUTINE — sub-tabs (Routines / Exercices)
@@ -7156,6 +7258,38 @@
     reader.readAsText(file);
   });
 
+  document.getElementById('cloud-restore-btn').addEventListener('click', function () {
+    showConfirmModal(
+      'Restaurer depuis le cloud remplacera toutes tes données locales (exercices, routines, séances, réglages, cycles de force) par la dernière version enregistrée dans le cloud. Continuer ?',
+      function () {
+        showDataIOStatus('Récupération depuis le cloud…', false);
+        fetch(JSONBIN_URL + '/latest', {
+          headers: { 'X-Access-Key': JSONBIN_API_KEY }
+        }).then(function (res) {
+          if (!res.ok) throw new Error('jsonbin GET failed: ' + res.status);
+          return res.json();
+        }).then(function (data) {
+          var record = data && data.record;
+          if (!record) {
+            showDataIOStatus('Rien à restaurer : le cloud est vide.', true);
+            return;
+          }
+          lastKnownCloudSnapshot = record;
+          OvrykDB.saveExercises(Array.isArray(record.exercises) ? record.exercises : []);
+          OvrykDB.saveRoutines(Array.isArray(record.routines) ? record.routines : []);
+          OvrykDB.saveSessions(Array.isArray(record.sessions) ? record.sessions : []);
+          OvrykDB.saveSettings(record.settings && typeof record.settings === 'object' ? record.settings : DEFAULT_SETTINGS);
+          OvrykDB.saveForceCycles(record.forceCycles && typeof record.forceCycles === 'object' ? record.forceCycles : {});
+          showDataIOStatus('Restauration réussie. Rechargement…', false);
+          setTimeout(function () { window.location.reload(); }, 600);
+        }).catch(function (err) {
+          console.error('Ovryk cloud sync: manual restore failed', err);
+          showDataIOStatus('Échec de la restauration : ' + err.message, true);
+        });
+      }
+    );
+  });
+
   document.getElementById('reset-app-btn').addEventListener('click', function () {
     showConfirmModal(
       "Réinitialiser l'app ? Toutes tes données (exercices, routines, séances, réglages, cycles de force) seront supprimées définitivement. Cette action est irréversible.",
@@ -7165,6 +7299,17 @@
       }
     );
   });
+
+  /* baseline for the anti-overwrite guard in pushToCloudDebounced — without
+     this, lastKnownCloudSnapshot only gets set after the first successful
+     push of the session, leaving a gap right after boot where a wipe
+     followed immediately by a write wouldn't be caught yet */
+  setActiveView(initialTarget);
+
+  lastKnownCloudSnapshot = collectCloudPayload();
+  document.getElementById('boot-loading-overlay').hidden = true;
+
+  }); // end of pullFromCloudOnce(function () { ... — see the opening comment above
 
 })();
 </script>

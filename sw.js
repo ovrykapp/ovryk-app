@@ -1,7 +1,7 @@
 /* Ovryk — service worker: cache-first for the app shell so it loads with no
    network after the first visit. Bump CACHE_VERSION whenever a static asset
    listed in PRECACHE_URLS changes shape; the old cache is dropped on activate. */
-var CACHE_VERSION = 'v56';
+var CACHE_VERSION = 'v57';
 var CACHE_NAME = 'ovryk-static-' + CACHE_VERSION;
 
 var PRECACHE_URLS = [
@@ -39,6 +39,12 @@ self.addEventListener('activate', function (event) {
 self.addEventListener('fetch', function (event) {
   var request = event.request;
   if (request.method !== 'GET') return;
+
+  /* jsonbin.io (cloud sync) must always hit the network fresh — caching its
+     GET response here would make every later pull/manual restore silently
+     replay whatever the very first answer was, forever, instead of the
+     current cloud state */
+  if (new URL(request.url).hostname === 'api.jsonbin.io') return;
 
   event.respondWith(
     caches.match(request).then(function (cached) {
