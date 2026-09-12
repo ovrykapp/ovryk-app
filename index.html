@@ -5736,6 +5736,11 @@
     activeSession.status = 'completed';
     OvrykDB.updateSession(activeSession);
 
+    /* silent auto-backup: same download + lastExportAt bookkeeping as the
+       manual "Exporter" button in Profil, just triggered right as a session
+       finishes instead of on a click — no confirmation, nothing blocking */
+    downloadOvrykExport();
+
     var advancedIds = {};
     activeSession.exercises.forEach(function (sex) {
       if (advancedIds[sex.exerciseId] || cycleTestSubmittedIds[sex.exerciseId]) return;
@@ -7030,7 +7035,10 @@
     }
   }
 
-  document.getElementById('dashboard-export-btn').addEventListener('click', function () {
+  /* shared by the manual export button and the auto-export-on-session-finish
+     trigger below — one download mechanism, one lastExportAt bookkeeping
+     path, so both stay in sync instead of drifting apart over time */
+  function downloadOvrykExport() {
     var payload = collectAllOvrykData();
     var json = JSON.stringify(payload, null, 2);
     var blob = new Blob([json], { type: 'application/json' });
@@ -7049,7 +7057,9 @@
     renderBackupReminder();
 
     showDataIOStatus('Export téléchargé.', false);
-  });
+  }
+
+  document.getElementById('dashboard-export-btn').addEventListener('click', downloadOvrykExport);
 
   document.getElementById('dashboard-import-btn').addEventListener('click', function () {
     document.getElementById('dashboard-import-input').click();
