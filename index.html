@@ -986,7 +986,11 @@
     fill: none;
     stroke-width: 2;
   }
-  .cycle-alert-text { display: flex; flex-direction: column; gap: 2px; }
+  /* two independent groups (week-5 heads-up, week-6 reached) can show at
+     once — a looser gap between groups than within one keeps them from
+     reading as a single run-on sentence */
+  .cycle-alert-text { display: flex; flex-direction: column; gap: 8px; }
+  .cycle-alert-group { display: flex; flex-direction: column; gap: 2px; }
   .cycle-alert-title {
     font-family: var(--font-display);
     font-weight: 700;
@@ -2160,10 +2164,7 @@
           <line x1="12" y1="7.5" x2="12" y2="13"/>
           <circle cx="12" cy="16.5" r="0.9" fill="currentColor" stroke="none"/>
         </svg>
-        <span class="cycle-alert-text">
-          <span class="cycle-alert-title">Semaine 6 atteinte</span>
-          <span class="cycle-alert-detail" id="cycle-alert-detail"></span>
-        </span>
+        <span class="cycle-alert-text" id="cycle-alert-text"></span>
       </button>
 
       <div class="dash-hero" id="dash-hero">
@@ -6661,26 +6662,49 @@
   }
 
   /* ============================================================
-     DASHBOARD — force cycle week-6 reminder
+     DASHBOARD — force cycle test-week reminder (week 6, already there —
+     and a week-5 heads-up: each Lifting movement has a fixed day, so one
+     cycle week = one session of that movement, meaning week 5 means its
+     very next session IS the test week)
   ============================================================ */
   function renderCycleAlertBanner() {
     var banner = document.getElementById('cycle-alert-banner');
-    var detailEl = document.getElementById('cycle-alert-detail');
+    var textEl = document.getElementById('cycle-alert-text');
     var cycles = OvrykDB.getForceCycles();
 
-    var namesAtWeek8 = Object.keys(cycles)
-      .filter(function (exerciseId) { return cycles[exerciseId].semaine_actuelle === 6; })
-      .map(function (exerciseId) {
-        var exercise = OvrykDB.getExerciseById(exerciseId);
-        return exercise ? exercise.name : exerciseId;
-      });
+    function namesAtWeek(week) {
+      return Object.keys(cycles)
+        .filter(function (exerciseId) { return cycles[exerciseId].semaine_actuelle === week; })
+        .map(function (exerciseId) {
+          var exercise = OvrykDB.getExerciseById(exerciseId);
+          return exercise ? exercise.name : exerciseId;
+        });
+    }
 
-    if (namesAtWeek8.length === 0) {
+    var namesAtWeek6 = namesAtWeek(6);
+    var namesAtWeek5 = namesAtWeek(5);
+
+    if (namesAtWeek6.length === 0 && namesAtWeek5.length === 0) {
       banner.hidden = true;
       return;
     }
 
-    detailEl.textContent = namesAtWeek8.join(', ') + ". Teste ton nouveau 1RM et valide-le dans l'onglet Séance.";
+    var html = '';
+    if (namesAtWeek6.length > 0) {
+      html += '<span class="cycle-alert-group">' +
+        '<span class="cycle-alert-title">Semaine 6 atteinte</span>' +
+        '<span class="cycle-alert-detail">' + escapeHTML(namesAtWeek6.join(', ')) +
+        ". Teste ton nouveau 1RM et valide-le dans l'onglet Séance.</span>" +
+        '</span>';
+    }
+    if (namesAtWeek5.length > 0) {
+      html += '<span class="cycle-alert-group">' +
+        '<span class="cycle-alert-title">Semaine de test bientôt</span>' +
+        '<span class="cycle-alert-detail">' + escapeHTML(namesAtWeek5.join(', ')) +
+        ' : la prochaine séance sera la semaine de test 1RM.</span>' +
+        '</span>';
+    }
+    textEl.innerHTML = html;
     banner.hidden = false;
   }
 
