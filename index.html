@@ -638,7 +638,7 @@
     flex: 1 1 auto;
     min-width: 0;
   }
-  .exercise-row-info.has-cycle { cursor: pointer; }
+  .exercise-row-info.has-cycle, .exercise-row-info.has-grip { cursor: pointer; }
   .exercise-row-name {
     font-family: var(--font-display);
     font-weight: 600;
@@ -2009,8 +2009,11 @@
 
   /* GRIP MODAL — same overlay/box as the confirm modal, but a vertical
      stack of choices instead of two side-by-side actions */
-  .grip-modal-options { display: flex; flex-direction: column; gap: 8px; }
-  .grip-modal-options .btn-back { width: 100%; justify-content: center; }
+  .grip-modal-options { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
+  .grip-modal-options .btn-back, #grip-modal-cancel { width: 100%; justify-content: center; }
+  /* the remembered last-used grip, pre-highlighted as the default —
+     still just one tap away from being overridden by any other option */
+  .grip-modal-options .btn-back.is-current { border-color: var(--rust); color: var(--rust); }
 
   /* ============================================================
      REST TIME PICKER — bottom-sheet scroll wheel for choosing a rest
@@ -2501,6 +2504,7 @@
     <div class="modal-box" role="alertdialog" aria-modal="true" aria-labelledby="grip-modal-message">
       <p class="modal-message" id="grip-modal-message"></p>
       <div class="grip-modal-options" id="grip-modal-options"></div>
+      <button type="button" class="btn-back" id="grip-modal-cancel">Annuler</button>
     </div>
   </div>
 
@@ -2667,8 +2671,8 @@
     { name: 'Tractions supination', category: 'Dos', equipment: 'Poids du corps' },
     { name: 'Rowing barre', category: 'Dos', equipment: 'Barre' },
     { name: 'Rowing haltère unilatéral', category: 'Dos', equipment: 'Haltères' },
-    { name: 'Tirage horizontal à la poulie', category: 'Dos', equipment: 'Poulie' },
-    { name: 'Tirage vertical', category: 'Dos', equipment: 'Poulie' },
+    { name: 'Tirage horizontal à la poulie', category: 'Dos', equipment: 'Poulie', hasGripVariant: true },
+    { name: 'Tirage vertical', category: 'Dos', equipment: 'Poulie', hasGripVariant: true },
     { name: 'Rowing T-bar', category: 'Dos', equipment: 'Machine' },
     { name: 'Extension lombaire', category: 'Dos', equipment: 'Poids du corps' },
     { name: 'Pullover haltère', category: 'Dos', equipment: 'Haltères' },
@@ -2733,6 +2737,7 @@
       createdAt: new Date().toISOString()
     };
     if (def.category === 'Lifting') exercise.oneRepMax = null;
+    if (def.hasGripVariant) exercise.hasGripVariant = true;
     return exercise;
   });
 
@@ -2747,6 +2752,11 @@
     { oldName: 'Tirage vertical (lat pulldown)', newName: 'Tirage vertical' }
   ];
 
+  /* the two poulie pulling movements gained a grip choice after some
+     installs had already seeded their catalog — backfill the flag onto
+     whatever's already stored, matched by name like the renames above */
+  var GRIP_VARIANT_EXERCISE_NAMES = ['Tirage horizontal à la poulie', 'Tirage vertical'];
+
   function migrateExerciseCatalog() {
     var stored = OvrykDB.getExercises();
     var changed = false;
@@ -2755,6 +2765,13 @@
       stored.forEach(function (ex) {
         if (ex.name === r.oldName) { ex.name = r.newName; changed = true; }
       });
+    });
+
+    stored.forEach(function (ex) {
+      if (GRIP_VARIANT_EXERCISE_NAMES.indexOf(ex.name) !== -1 && !ex.hasGripVariant) {
+        ex.hasGripVariant = true;
+        changed = true;
+      }
     });
 
     var existingIds = {}, existingNames = {};
@@ -2888,6 +2905,14 @@
       var found = list.filter(function (e) { return e.id === id; })[0];
       if (found) {
         found.oneRepMax = value;
+        this.saveExercises(list);
+      }
+    },
+    updateExerciseLastGrip: function (id, grip) {
+      var list = this.getExercises();
+      var found = list.filter(function (e) { return e.id === id; })[0];
+      if (found) {
+        found.lastGrip = grip;
         this.saveExercises(list);
       }
     },
@@ -3203,22 +3228,33 @@
 
   /* ============================================================
      GRIP MODAL — the two poulie pulling exercises need a grip choice
-     up front, since it changes which muscles actually get worked
+     up front, since it changes which muscles actually get worked.
+     Each has its own option set (the mechanics differ enough between a
+     vertical pulldown and a horizontal row that a shared list wouldn't
+     make sense for both).
   ============================================================ */
-  var GRIP_PROMPT_EXERCISE_NAMES = ['Tirage vertical', 'Tirage horizontal à la poulie'];
-  var GRIP_OPTIONS = ['Prise pronation (large)', 'Prise supination (serrée)', 'Prise neutre'];
-  var gripModalState = { onSelect: null };
+  var GRIP_OPTIONS_BY_NAME = {
+    'Tirage vertical': ['Prise large pronation', 'Prise serrée supination', 'Prise neutre', 'Prise large neutre'],
+    'Tirage horizontal à la poulie': ['Prise pronation', 'Prise supination', 'Prise neutre', 'Prise large pronation']
+  };
+  var gripModalState = { onSelect: null, exerciseId: null };
 
-  function showGripModal(exerciseName, onSelect) {
+  /* exercise, not just its name — needed to look up its own option list
+     and pre-highlight exercise.lastGrip as the default. onSelect always
+     fires, with grip === null on cancel (backdrop/Escape/Annuler), so
+     callers can tell "picked nothing" apart from "picked this" */
+  function showGripModal(exercise, onSelect) {
     gripModalState.onSelect = onSelect;
+    gripModalState.exerciseId = exercise.id;
     document.getElementById('grip-modal-message').textContent =
-      'Avec quelle prise veux-tu faire « ' + exerciseName + ' » ?';
+      'Avec quelle prise veux-tu faire « ' + exercise.name + ' » ?';
     var optionsEl = document.getElementById('grip-modal-options');
     optionsEl.innerHTML = '';
-    GRIP_OPTIONS.forEach(function (grip) {
+    var options = GRIP_OPTIONS_BY_NAME[exercise.name] || [];
+    options.forEach(function (grip) {
       var btn = document.createElement('button');
       btn.type = 'button';
-      btn.className = 'btn-back';
+      btn.className = 'btn-back' + (grip === exercise.lastGrip ? ' is-current' : '');
       btn.textContent = grip;
       btn.addEventListener('click', function () { closeGripModal(grip); });
       optionsEl.appendChild(btn);
@@ -3231,10 +3267,14 @@
     if (overlay.hidden) return;
     overlay.hidden = true;
     var onSelect = gripModalState.onSelect;
+    var exerciseId = gripModalState.exerciseId;
     gripModalState.onSelect = null;
-    if (grip && onSelect) onSelect(grip);
+    gripModalState.exerciseId = null;
+    if (grip && exerciseId) OvrykDB.updateExerciseLastGrip(exerciseId, grip);
+    if (onSelect) onSelect(grip);
   }
 
+  document.getElementById('grip-modal-cancel').addEventListener('click', function () { closeGripModal(null); });
   document.getElementById('grip-modal-overlay').addEventListener('click', function (e) {
     if (e.target === this) closeGripModal(null);
   });
@@ -3246,18 +3286,20 @@
 
   /* asks the grip for each newly-added rex/sex entry that needs it, one
      popup at a time, then calls done() — used right after an exercise
-     picker batch-adds entries so the popup never blocks the picker itself */
+     picker batch-adds entries so the popup never blocks the picker itself.
+     Cancelling one just leaves that entry without a grip and moves on to
+     the next pending one, instead of stalling the whole batch. */
   function promptGripForEntries(entries, getExercise, applyGrip, done) {
     var pending = entries.filter(function (entry) {
       var exercise = getExercise(entry);
-      return exercise && GRIP_PROMPT_EXERCISE_NAMES.indexOf(exercise.name) !== -1;
+      return exercise && exercise.hasGripVariant;
     });
     function next() {
       if (pending.length === 0) { done(); return; }
       var entry = pending.shift();
       var exercise = getExercise(entry);
-      showGripModal(exercise.name, function (grip) {
-        applyGrip(entry, grip);
+      showGripModal(exercise, function (grip) {
+        if (grip) applyGrip(entry, grip);
         next();
       });
     }
@@ -3394,7 +3436,7 @@
 
     var metaEl = document.createElement('span');
     metaEl.className = 'exercise-row-meta mono';
-    metaEl.textContent = ex.equipment + (ex.isCustom ? ' · perso' : '');
+    metaEl.textContent = ex.equipment + (ex.lastGrip ? ' · ' + ex.lastGrip : '') + (ex.isCustom ? ' · perso' : '');
     info.appendChild(metaEl);
 
     var cycle = ex.category === 'Lifting' ? OvrykDB.getForceCycle(ex.id) : null;
@@ -3402,6 +3444,18 @@
     if (cycle) {
       info.classList.add('has-cycle');
       info.addEventListener('click', function () { openCycleDetailPage(ex.id); });
+    }
+    /* browsing the library and picking a grip here just sets the
+       remembered default (updateExerciseLastGrip, inside closeGripModal) —
+       it's not attached to any routine/session entry, unlike the prompt
+       that fires when the exercise is actually added somewhere */
+    if (ex.hasGripVariant) {
+      info.classList.add('has-grip');
+      info.addEventListener('click', function () {
+        showGripModal(ex, function (grip) {
+          if (grip) renderExerciseList();
+        });
+      });
     }
     row.appendChild(info);
 
