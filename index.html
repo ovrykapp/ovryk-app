@@ -2554,6 +2554,71 @@
     lastExportAt: null
   };
 
+  /* ---- minimal cloud sync (jsonbin.io) ----
+     One shared bin holds the whole DB. Pulled once per tab on load (then a
+     reload applies it before anything renders), pushed on every write with
+     a short debounce so a burst of localStorage writes only fires one PUT.
+     JSONBIN_API_KEY is a bin-scoped Access Key (Read/Update only), not the
+     Master Key — still visible in this static file's source, but scoped so
+     that's an acceptable tradeoff for a single-user personal app. */
+  var JSONBIN_BIN_ID = '6aa514ecffd5d16053fd70c4';
+  var JSONBIN_API_KEY = '$2a$10$7Nsvj0eXGmBrbm2VOQCO2Of9pdTkRgQh69Omb0JmbgHJIVP5NXJou';
+  var JSONBIN_URL = 'https://api.jsonbin.io/v3/b/' + JSONBIN_BIN_ID;
+
+  function collectCloudPayload() {
+    return {
+      exercises: readJSON(DB_KEYS.EXERCISES, []),
+      routines: readJSON(DB_KEYS.ROUTINES, []),
+      sessions: readJSON(DB_KEYS.SESSIONS, []),
+      settings: readJSON(DB_KEYS.SETTINGS, DEFAULT_SETTINGS),
+      forceCycles: readJSON(DB_KEYS.FORCE_CYCLES, {})
+    };
+  }
+
+  var cloudPushTimer = null;
+  function pushToCloudDebounced() {
+    clearTimeout(cloudPushTimer);
+    cloudPushTimer = setTimeout(function () {
+      fetch(JSONBIN_URL, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Access-Key': JSONBIN_API_KEY
+        },
+        body: JSON.stringify(collectCloudPayload())
+      }).catch(function (err) {
+        console.error('Ovryk cloud sync: push failed', err);
+      });
+    }, 1500);
+  }
+
+  function pullFromCloudOnce() {
+    if (sessionStorage.getItem('ovryk-cloud-synced')) return;
+    fetch(JSONBIN_URL + '/latest', {
+      headers: { 'X-Access-Key': JSONBIN_API_KEY }
+    }).then(function (res) {
+      if (!res.ok) throw new Error('jsonbin GET failed: ' + res.status);
+      return res.json();
+    }).then(function (data) {
+      var record = data && data.record;
+      if (!record) return;
+      /* raw localStorage.setItem, not writeJSON — writing through writeJSON
+         would immediately re-trigger pushToCloudDebounced and PUT this same
+         data straight back up */
+      if (record.exercises !== undefined) localStorage.setItem(DB_KEYS.EXERCISES, JSON.stringify(record.exercises));
+      if (record.routines !== undefined) localStorage.setItem(DB_KEYS.ROUTINES, JSON.stringify(record.routines));
+      if (record.sessions !== undefined) localStorage.setItem(DB_KEYS.SESSIONS, JSON.stringify(record.sessions));
+      if (record.settings !== undefined) localStorage.setItem(DB_KEYS.SETTINGS, JSON.stringify(record.settings));
+      if (record.forceCycles !== undefined) localStorage.setItem(DB_KEYS.FORCE_CYCLES, JSON.stringify(record.forceCycles));
+      sessionStorage.setItem('ovryk-cloud-synced', '1');
+      location.reload();
+    }).catch(function (err) {
+      console.error('Ovryk cloud sync: pull failed', err);
+    });
+  }
+
+  pullFromCloudOnce();
+
   /*
     Exercise   { id, name, category, equipment, unit, isCustom, oneRepMax?, createdAt }
                  oneRepMax only applies to category 'Lifting' — kg, editable, independent per movement.
@@ -2795,6 +2860,7 @@
   function writeJSON(key, value) {
     try {
       localStorage.setItem(key, JSON.stringify(value));
+      pushToCloudDebounced();
       return true;
     } catch (err) {
       console.error('OvrykDB: failed to write', key, err);
