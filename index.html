@@ -462,6 +462,7 @@
     gap: 10px;
     margin-bottom: var(--space-4);
   }
+  .search-input-wrap { position: relative; flex: 1; min-width: 0; display: flex; }
   .search-input {
     flex: 1;
     min-width: 0;
@@ -469,7 +470,7 @@
     background: var(--field);
     border: 1px solid var(--border-segment);
     border-radius: var(--radius);
-    padding: 12px 14px;
+    padding: 12px 40px 12px 14px;
     font-family: var(--font-display);
     font-weight: 600;
     font-size: 16px;
@@ -477,6 +478,24 @@
   }
   .search-input:focus { outline: none; border-color: var(--rust); box-shadow: 0 0 0 4px color-mix(in srgb, var(--rust) 18%, transparent); }
   .search-input::placeholder { color: var(--steel); }
+  .search-clear-btn {
+    position: absolute;
+    right: 4px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    border-radius: var(--radius-sm);
+    color: var(--steel);
+    cursor: pointer;
+  }
+  .search-clear-btn[hidden] { display: none; }
+  .search-clear-btn svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2; }
 
   .btn-add, .btn-primary {
     background: var(--rust);
@@ -2120,6 +2139,7 @@
     .fullscreen-page-action.cancel:hover,
     .dash-cycle-row:hover .dash-cycle-name,
     .set-header-mode-btn:hover,
+    .search-clear-btn:hover,
     .set-remove-btn:hover:not(:disabled) { color: var(--rust); }
 
     .routine-action-btn.danger:hover,
@@ -2230,7 +2250,12 @@
 
       <div class="subview" data-subview="exercices">
         <div class="exercise-toolbar">
-          <input type="text" id="exercise-search" class="search-input" placeholder="Rechercher un exercice…">
+          <div class="search-input-wrap">
+            <input type="text" id="exercise-search" class="search-input" placeholder="Rechercher un exercice…">
+            <button type="button" id="exercise-search-clear" class="search-clear-btn" hidden aria-label="Effacer la recherche">
+              <svg viewBox="0 0 24 24"><line x1="5" y1="5" x2="19" y2="19"/><line x1="19" y1="5" x2="5" y2="19"/></svg>
+            </button>
+          </div>
           <button type="button" id="toggle-add-exercise" class="btn-add">+ Exercice</button>
         </div>
 
@@ -2433,7 +2458,12 @@
     </div>
     <div class="fullscreen-page-body">
       <div class="picker-toolbar">
-        <input type="text" id="picker-search" class="search-input" placeholder="Rechercher un exercice…">
+        <div class="search-input-wrap">
+          <input type="text" id="picker-search" class="search-input" placeholder="Rechercher un exercice…">
+          <button type="button" id="picker-search-clear" class="search-clear-btn" hidden aria-label="Effacer la recherche">
+            <svg viewBox="0 0 24 24"><line x1="5" y1="5" x2="19" y2="19"/><line x1="19" y1="5" x2="5" y2="19"/></svg>
+          </button>
+        </div>
       </div>
       <div class="filter-chip-row" id="picker-category-row"></div>
       <div class="exercise-list" id="picker-exercise-list"></div>
@@ -2451,7 +2481,12 @@
     </div>
     <div class="fullscreen-page-body">
       <div class="picker-toolbar">
-        <input type="text" id="seance-picker-search" class="search-input" placeholder="Rechercher un exercice…">
+        <div class="search-input-wrap">
+          <input type="text" id="seance-picker-search" class="search-input" placeholder="Rechercher un exercice…">
+          <button type="button" id="seance-picker-search-clear" class="search-clear-btn" hidden aria-label="Effacer la recherche">
+            <svg viewBox="0 0 24 24"><line x1="5" y1="5" x2="19" y2="19"/><line x1="19" y1="5" x2="5" y2="19"/></svg>
+          </button>
+        </div>
       </div>
       <div class="filter-chip-row" id="seance-picker-category-row"></div>
       <div class="exercise-list" id="seance-picker-exercise-list"></div>
@@ -2689,6 +2724,7 @@
     // Bras
     { name: 'Curl biceps barre', category: 'Bras', equipment: 'Barre' },
     { name: 'Curl biceps haltères', category: 'Bras', equipment: 'Haltères' },
+    { name: 'Curl incliné haltères', category: 'Bras', equipment: 'Haltères' },
     { name: 'Curl marteau', category: 'Bras', equipment: 'Haltères' },
     { name: 'Curl pupitre (Scott)', category: 'Bras', equipment: 'Machine' },
     { name: 'Curl à la poulie', category: 'Bras', equipment: 'Poulie' },
@@ -2699,11 +2735,14 @@
     { name: 'Presse à cuisses', category: 'Jambes', equipment: 'Machine' },
     { name: 'Fentes haltères', category: 'Jambes', equipment: 'Haltères' },
     { name: 'Fentes marchées', category: 'Jambes', equipment: 'Haltères' },
+    { name: 'Leg extension', category: 'Jambes', equipment: 'Machine' },
     { name: 'Leg curl', category: 'Jambes', equipment: 'Machine' },
     { name: 'Leg curl allongé', category: 'Jambes', equipment: 'Machine' },
     { name: 'Leg curl assis', category: 'Jambes', equipment: 'Machine' },
     { name: 'Soulevé de terre roumain haltères', category: 'Jambes', equipment: 'Haltères' },
     { name: 'Hip thrust barre', category: 'Jambes', equipment: 'Barre' },
+    { name: 'Reverse hyper', category: 'Jambes', equipment: 'Machine' },
+    { name: 'Peach Builder', category: 'Jambes', equipment: 'Machine' },
     { name: 'Mollets debout', category: 'Jambes', equipment: 'Machine' },
     { name: 'Extension mollet assis', category: 'Jambes', equipment: 'Machine' },
     { name: 'Squat gobelet', category: 'Jambes', equipment: 'Haltères' },
@@ -3714,6 +3753,7 @@
       exerciseFilterState.category = val;
       exerciseFilterState.search = '';
       document.getElementById('exercise-search').value = '';
+      document.getElementById('exercise-search-clear').hidden = true;
       renderExerciseFilters();
       renderExerciseList();
     });
@@ -3734,10 +3774,28 @@
     });
   }
 
+  /* small × button that shows up once a search field has text, to clear it
+     in one tap instead of holding backspace — reused across the three
+     exercise search inputs (library + the two add-exercise pickers) */
+  function wireSearchClear(inputId, clearBtnId) {
+    var input = document.getElementById(inputId);
+    var clearBtn = document.getElementById(clearBtnId);
+    clearBtn.hidden = input.value.length === 0;
+    input.addEventListener('input', function () {
+      clearBtn.hidden = input.value.length === 0;
+    });
+    clearBtn.addEventListener('click', function () {
+      input.value = '';
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+      input.focus();
+    });
+  }
+
   document.getElementById('exercise-search').addEventListener('input', function (e) {
     exerciseFilterState.search = e.target.value;
     renderExerciseList();
   });
+  wireSearchClear('exercise-search', 'exercise-search-clear');
 
   var addExercisePanel = document.getElementById('add-exercise-form');
   document.getElementById('toggle-add-exercise').addEventListener('click', function () {
@@ -3799,7 +3857,7 @@
     return { id: 'set-' + OvrykDB.generateId(), repType: 'range', repsMin: null, repsMax: null, weightKg: null };
   }
 
-  var DEFAULT_SET_COUNT = 3;
+  var DEFAULT_SET_COUNT = 1;
   function createDefaultSets(exercise) {
     var sets = [];
     if (exercise && exercise.category === 'Lifting') {
@@ -4525,6 +4583,7 @@
     pickerState.category = 'all';
     pickerState.selected = [];
     document.getElementById('picker-search').value = '';
+    document.getElementById('picker-search-clear').hidden = true;
     renderPickerFilters();
     renderPickerList();
     updatePickerConfirmFooter();
@@ -4539,6 +4598,7 @@
       pickerState.category = val;
       pickerState.search = '';
       document.getElementById('picker-search').value = '';
+      document.getElementById('picker-search-clear').hidden = true;
       renderPickerFilters();
       renderPickerList();
     });
@@ -4672,6 +4732,7 @@
     pickerState.search = e.target.value;
     renderPickerList();
   });
+  wireSearchClear('picker-search', 'picker-search-clear');
   document.getElementById('picker-confirm-btn').addEventListener('click', function () {
     if (pickerState.selected.length === 0) return;
     addExercisesToRoutine(pickerState.selected);
@@ -5447,6 +5508,7 @@
     seancePickerState.search = '';
     seancePickerState.category = 'all';
     document.getElementById('seance-picker-search').value = '';
+    document.getElementById('seance-picker-search-clear').hidden = true;
     renderSeancePickerFilters();
     renderSeancePickerList();
   }
@@ -5460,6 +5522,7 @@
       seancePickerState.category = val;
       seancePickerState.search = '';
       document.getElementById('seance-picker-search').value = '';
+      document.getElementById('seance-picker-search-clear').hidden = true;
       renderSeancePickerFilters();
       renderSeancePickerList();
     });
@@ -5570,6 +5633,7 @@
     seancePickerState.search = e.target.value;
     renderSeancePickerList();
   });
+  wireSearchClear('seance-picker-search', 'seance-picker-search-clear');
 
   /* ============================================================
      REST TIMER — one active at a time, auto-started on set-done
