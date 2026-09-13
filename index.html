@@ -4094,6 +4094,14 @@
     document.getElementById('routine-editor-view').hidden = false;
     closePicker();
     renderRoutineEditor();
+    var editorBody = document.querySelector('#routine-editor-view .fullscreen-page-body');
+    if (editorBody) {
+      var prevOverflow = editorBody.style.overflow;
+      editorBody.style.overflow = 'hidden';
+      editorBody.scrollTop = 0;
+      void editorBody.offsetHeight;
+      editorBody.style.overflow = prevOverflow;
+    }
   }
 
   function closeRoutineEditor() {
