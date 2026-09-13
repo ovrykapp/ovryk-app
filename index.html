@@ -726,6 +726,51 @@
   }
   .exercise-row-orm-input:focus { outline: none; }
 
+  /* décalage de démarrage optionnel (forceCycleStartDate) — même
+     tap-to-reveal que le 1RM juste au-dessus, en plus discret puisque la
+     plupart des mouvements n'en ont pas besoin */
+  .exercise-row-startdate {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 2px;
+    background: none;
+    border: none;
+    padding: 0;
+    margin-left: 12px;
+    flex-shrink: 0;
+    cursor: pointer;
+  }
+  .exercise-row-startdate-label {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--steel);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .exercise-row-startdate-value {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--ink);
+  }
+  .exercise-row-startdate-input {
+    width: 132px;
+    margin-left: 12px;
+    flex-shrink: 0;
+    background: none;
+    border: none;
+    border-bottom: 2px solid var(--rust);
+    padding: 0 0 2px;
+    text-align: right;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--ink);
+  }
+  .exercise-row-startdate-input:focus { outline: none; }
+
   /* ============================================================
      CYCLE DE FORCE
   ============================================================ */
@@ -745,6 +790,25 @@
     flex-shrink: 0;
   }
   .cycle-active-badge .mono { font-family: var(--font-mono); }
+  /* mode base (avant démarrage officiel) — même gabarit que le badge de
+     cycle actif ci-dessus mais en ton neutre, et non cliquable puisqu'il
+     n'y a pas encore de cycle à détailler */
+  .cycle-base-badge {
+    display: inline-flex;
+    align-items: center;
+    background: color-mix(in srgb, var(--steel) 18%, transparent);
+    border: 1px solid color-mix(in srgb, var(--steel) 40%, transparent);
+    border-radius: var(--radius-pill);
+    color: var(--steel);
+    padding: 0 10px;
+    min-height: 32px;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    flex-shrink: 0;
+  }
   .cycle-inline-tag { color: var(--accent-info); font-weight: 700; margin-left: 6px; }
 
   .cycle-prescription { padding: 12px; }
@@ -871,6 +935,8 @@
     cursor: pointer;
   }
   .dash-cycle-row.is-test-week .dash-cycle-status { color: var(--rust); font-weight: 700; }
+  .dash-cycle-row.is-base-mode { cursor: default; }
+  .dash-cycle-row.is-base-mode .dash-cycle-status { color: var(--steel); }
   .dash-cycle-name { font-family: var(--font-display); font-weight: 700; font-size: 15px; text-transform: uppercase; letter-spacing: 0.01em; color: var(--ink); }
   .dash-cycle-status { font-family: var(--font-mono); font-size: 12px; color: var(--accent-info); white-space: nowrap; flex-shrink: 0; }
   .dash-stat-name {
@@ -2935,6 +3001,21 @@
      whatever's already stored, matched by name like the renames above */
   var GRIP_VARIANT_EXERCISE_NAMES = ['Tirage horizontal à la poulie', 'Tirage vertical'];
 
+  /* Splits Lifting movements into two base-mode families (see
+     getBaseModePrescription): squat/deadlift-style barbell lifts get a
+     fixed-load 3x5, the Olympic lift family gets light technique work with
+     no load progression. Backfilled onto existing installs below, same
+     pattern as GRIP_VARIANT_EXERCISE_NAMES above. */
+  var OLY_LIFT_NAMES = [
+    'Squat Clean', 'Power Clean', 'Hang Power Clean', 'Clean Pull', 'Clean & Jerk',
+    'Power Clean & Jerk', 'Power Snatch', 'Snatch', 'Squat Snatch', 'Push Jerk',
+    'Split Jerk', 'Overhead Squat'
+  ];
+
+  function getLiftBaseMode(exercise) {
+    return exercise && exercise.liftBaseMode === 'oly' ? 'oly' : 'force';
+  }
+
   function migrateExerciseCatalog() {
     var stored = OvrykDB.getExercises();
     var changed = false;
@@ -2948,6 +3029,13 @@
     stored.forEach(function (ex) {
       if (GRIP_VARIANT_EXERCISE_NAMES.indexOf(ex.name) !== -1 && !ex.hasGripVariant) {
         ex.hasGripVariant = true;
+        changed = true;
+      }
+    });
+
+    stored.forEach(function (ex) {
+      if (ex.category === 'Lifting' && !ex.liftBaseMode) {
+        ex.liftBaseMode = OLY_LIFT_NAMES.indexOf(ex.name) !== -1 ? 'oly' : 'force';
         changed = true;
       }
     });
@@ -3042,6 +3130,20 @@
     return candidates[Math.floor(Math.random() * candidates.length)];
   }
 
+  /* Prescription jouée avant le démarrage officiel du cycle A-E d'un
+     mouvement (voir forceCycleStartDate sur l'exercice) : pas de wave
+     loading, pas de calcul en %1RM progressif — une charge fixe pour les
+     mouvements type squat/deadlift, du travail technique léger sans
+     progression de charge pour les mouvements Oly. */
+  var BASE_MODE_PRESCRIPTIONS = {
+    force: { phase: '3×5 (base)', restSeconds: 120, sets: [{ reps: 5, percent: 70 }, { reps: 5, percent: 70 }, { reps: 5, percent: 70 }] },
+    oly: { phase: 'Technique (base)', restSeconds: 90, sets: [{ reps: 3, percent: 65 }, { reps: 3, percent: 65 }, { reps: 3, percent: 65 }] }
+  };
+
+  function getBaseModePrescription(exercise) {
+    return BASE_MODE_PRESCRIPTIONS[getLiftBaseMode(exercise)];
+  }
+
   function generateId() {
     if (window.crypto && window.crypto.randomUUID) return window.crypto.randomUUID();
     return 'id-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 10);
@@ -3061,6 +3163,14 @@
       var found = list.filter(function (e) { return e.id === id; })[0];
       if (found) {
         found.oneRepMax = value;
+        this.saveExercises(list);
+      }
+    },
+    updateExerciseCycleStartDate: function (id, dateStr) {
+      var list = this.getExercises();
+      var found = list.filter(function (e) { return e.id === id; })[0];
+      if (found) {
+        found.forceCycleStartDate = dateStr || null;
         this.saveExercises(list);
       }
     },
@@ -3215,9 +3325,7 @@
      soit reproduit depuis). maybeAutoActivateForceCycle est déclarée plus
      bas mais reste accessible ici — déclaration de fonction, donc hissée
      dans toute la portée de cette IIFE. */
-  OvrykDB.getExercises().forEach(function (ex) {
-    if (ex.category === 'Lifting') maybeAutoActivateForceCycle(ex.id);
-  });
+  refreshScheduledForceCycleActivations();
 
   /* ============================================================
      NAVIGATION
@@ -3332,7 +3440,7 @@
       /* refreshes the "+ Cycle" enabled state, which now depends on routine
          membership — that can change on the Routines subtab, so re-render
          whenever coming back to Exercices instead of showing stale state */
-      if (target === 'exercices') renderExerciseList();
+      if (target === 'exercices') { refreshScheduledForceCycleActivations(); renderExerciseList(); }
     });
   });
 
@@ -3642,10 +3750,33 @@
         openOneRepMaxEditor(ex, ormBtn);
       });
       row.appendChild(ormBtn);
+
+      /* décalage de démarrage optionnel — laisse ce mouvement en mode base
+         (voir isBeforeForceCycleStart) jusqu'à cette date, pour que sa
+         semaine de test 1RM ne tombe jamais en même temps qu'un autre
+         mouvement démarré à une autre date */
+      var startDateBtn = document.createElement('button');
+      startDateBtn.type = 'button';
+      startDateBtn.className = 'exercise-row-startdate';
+      startDateBtn.innerHTML = '<span class="exercise-row-startdate-label">Départ</span>' +
+        '<span class="exercise-row-startdate-value">' + (ex.forceCycleStartDate ? formatShortDate(ex.forceCycleStartDate) : '-') + '</span>';
+      startDateBtn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        openForceCycleStartDateEditor(ex, startDateBtn);
+      });
+      row.appendChild(startDateBtn);
     }
 
     var cycleBadge = buildCycleBadge(ex);
-    if (cycleBadge) row.appendChild(cycleBadge);
+    if (cycleBadge) {
+      row.appendChild(cycleBadge);
+    } else if (ex.category === 'Lifting' && isBeforeForceCycleStart(ex)) {
+      var baseBadge = document.createElement('span');
+      baseBadge.className = 'cycle-base-badge';
+      var weeksUntil = getWeeksUntilForceCycleStart(ex);
+      baseBadge.textContent = 'Base · démarrage dans ' + weeksUntil + (weeksUntil > 1 ? ' semaines' : ' semaine');
+      row.appendChild(baseBadge);
+    }
 
     if (ex.category !== 'Lifting' && detectStagnation(ex.id).isStagnant) {
       var stagnationBadge = document.createElement('span');
@@ -3686,23 +3817,76 @@
     });
   }
 
+  /* same tap-to-reveal pattern as openOneRepMaxEditor, for the optional
+     forceCycleStartDate — a native date input keeps this to one control
+     instead of separate day/week fields */
+  function openForceCycleStartDateEditor(ex, btn) {
+    var input = document.createElement('input');
+    input.type = 'date';
+    input.className = 'exercise-row-startdate-input mono';
+    input.value = ex.forceCycleStartDate || '';
+    btn.replaceWith(input);
+    input.focus();
+    input.addEventListener('click', function (e) { e.stopPropagation(); });
+
+    function commit() {
+      OvrykDB.updateExerciseCycleStartDate(ex.id, input.value || null);
+      maybeAutoActivateForceCycle(ex.id);
+      renderExerciseList();
+    }
+    input.addEventListener('blur', commit);
+    input.addEventListener('change', commit);
+  }
+
   function isExerciseUsedInRoutine(exerciseId) {
     return OvrykDB.getRoutines().some(function (routine) {
       return routine.exercises.some(function (rex) { return rex.exerciseId === exerciseId; });
     });
   }
 
+  /* Décalage de démarrage : un mouvement avec une forceCycleStartDate future
+     reste en mode base (voir BASE_MODE_PRESCRIPTIONS) au lieu de rejoindre
+     tout de suite la rotation A-E. Une fois la date passée, l'activation
+     automatique reprend son cours normal ci-dessous — la rotation A-E et
+     tirerProchainCycle() ne sont jamais concernés par ce délai, seul le
+     calendrier de démarrage l'est. */
+  function isBeforeForceCycleStart(exercise) {
+    if (!exercise || !exercise.forceCycleStartDate) return false;
+    var startDate = new Date(exercise.forceCycleStartDate + 'T00:00:00');
+    return new Date() < startDate;
+  }
+
+  function getWeeksUntilForceCycleStart(exercise) {
+    if (!exercise || !exercise.forceCycleStartDate) return 0;
+    var startDate = new Date(exercise.forceCycleStartDate + 'T00:00:00');
+    var diffMs = startDate.getTime() - Date.now();
+    return Math.max(1, Math.ceil(diffMs / (7 * 24 * 3600 * 1000)));
+  }
+
   /* Single entry point for auto-starting a force cycle: a Lifting exercise
-     with a 1RM set, used in a routine, and not already cycling. Called from
-     both directions that can make this true (editing the 1RM, adding the
-     exercise to a routine) plus a one-time startup backfill for data that
-     predates this being automatic. */
+     with a 1RM set, used in a routine, not already cycling, and past its
+     own scheduled start date if one was set (forceCycleStartDate — see
+     isBeforeForceCycleStart). Called from both directions that can make
+     this true (editing the 1RM, adding the exercise to a routine) plus a
+     one-time startup backfill for data that predates this being automatic. */
   function maybeAutoActivateForceCycle(exerciseId) {
     var exercise = OvrykDB.getExerciseById(exerciseId);
     if (!exercise || exercise.category !== 'Lifting' || exercise.oneRepMax == null) return;
     if (OvrykDB.getForceCycle(exerciseId)) return;
     if (!isExerciseUsedInRoutine(exerciseId)) return;
+    if (isBeforeForceCycleStart(exercise)) return;
     OvrykDB.activateForceCycle(exerciseId, exercise.oneRepMax);
+  }
+
+  /* Re-checks every Lifting movement against maybeAutoActivateForceCycle —
+     used at startup and whenever a view that surfaces cycle status
+     (Dashboard, Routine/Exercices) is opened, so a movement whose
+     forceCycleStartDate has since passed flips out of base mode without
+     needing its 1RM or routine membership touched again. */
+  function refreshScheduledForceCycleActivations() {
+    OvrykDB.getExercises().forEach(function (ex) {
+      if (ex.category === 'Lifting') maybeAutoActivateForceCycle(ex.id);
+    });
   }
 
   /* Mirror of the above: an exercise's cycle only makes sense while it's
@@ -4297,6 +4481,7 @@
     title.className = 'rex-title';
     var tagText = escapeHTML(exercise ? exercise.category : '');
     if (cycle) tagText += ' · Cycle actif';
+    else if (isBeforeForceCycleStart(exercise)) tagText += ' · Base';
     if (rex.grip) tagText += ' · ' + escapeHTML(rex.grip);
     title.innerHTML = '<span class="rex-name">' + escapeHTML(exercise ? exercise.name : 'Exercice supprimé') + '</span>' +
       '<span class="rex-tag">' + tagText + '</span>';
@@ -4363,6 +4548,12 @@
          grouped (superset/circuit) member never even got the "chained,
          no rest" note. Render it exactly like a regular exercise's rest
          row so both are fixable in one place. */
+      block.appendChild(buildRestRowOrChainNote(routine, rex, exercise, suppressRest));
+      return block;
+    }
+
+    if (isBeforeForceCycleStart(exercise)) {
+      block.appendChild(buildBaseModePrescriptionBody(exercise));
       block.appendChild(buildRestRowOrChainNote(routine, rex, exercise, suppressRest));
       return block;
     }
@@ -4472,6 +4663,45 @@
       var setLabel = isLast ? 'Max' : ('S' + (idx + 1));
       var text = (isLast ? 'Tentative' : (s.reps + ' reps')) + ' @ ' + s.percent + '%';
       setsWrap.appendChild(buildStackBarRow(setLabel, text, kg, hideKg, maxPercent, s.percent, isLast));
+    });
+    wrap.appendChild(setsWrap);
+
+    return wrap;
+  }
+
+  /* mirror of buildForceCyclePrescriptionBody for the pre-start base window
+     (see isBeforeForceCycleStart / BASE_MODE_PRESCRIPTIONS) — fixed charge,
+     no wave loading, kept as its own function rather than merged with the
+     cycle one since it reads off the exercise's own 1RM instead of a
+     ForceCycle's, and never has a test week */
+  function buildBaseModePrescriptionBody(exercise) {
+    var wrap = document.createElement('div');
+    wrap.className = 'cycle-prescription';
+
+    var prescription = getBaseModePrescription(exercise);
+    var hideKg = exercise.oneRepMax == null;
+    var weeksUntil = getWeeksUntilForceCycleStart(exercise);
+
+    var weekLine = document.createElement('div');
+    weekLine.className = 'cycle-week-line';
+    weekLine.innerHTML = '<span class="cycle-week-num mono">Base · démarrage dans ' + weeksUntil + (weeksUntil > 1 ? ' semaines' : ' semaine') + '</span>' +
+      '<span class="cycle-phase">' + escapeHTML(prescription.phase) + '</span>';
+    wrap.appendChild(weekLine);
+
+    var restLine = document.createElement('div');
+    restLine.className = 'cycle-rest-line mono';
+    restLine.textContent = 'Repos ' + formatRestPickerLabel(prescription.restSeconds);
+    wrap.appendChild(restLine);
+
+    var setsWrap = document.createElement('div');
+    setsWrap.className = 'cycle-sets';
+    var percents = prescription.sets.map(function (s) { return s.percent; });
+    var maxPercent = Math.max.apply(null, percents);
+
+    prescription.sets.forEach(function (s, idx) {
+      var kg = computeWeightFromPercent(exercise.oneRepMax, s.percent);
+      var text = s.reps + ' reps @ ' + s.percent + '%';
+      setsWrap.appendChild(buildStackBarRow('S' + (idx + 1), text, kg, hideKg, maxPercent, s.percent, false));
     });
     wrap.appendChild(setsWrap);
 
@@ -4919,9 +5149,8 @@
     return repsVal * weight;
   }
 
-  function buildCycleSessionSets(cycle) {
-    var weekPrescription = getCycleWeek(cycle);
-    return weekPrescription.sets.map(function (s) {
+  function buildSessionSetsFromPrescription(prescriptionSets) {
+    return prescriptionSets.map(function (s) {
       return {
         id: 'sset-' + OvrykDB.generateId(),
         repType: 'fixed',
@@ -4931,6 +5160,10 @@
         rpe: null
       };
     });
+  }
+
+  function buildCycleSessionSets(cycle) {
+    return buildSessionSetsFromPrescription(getCycleWeek(cycle).sets);
   }
 
   function getLastCompletedSessionForRoutine(routineId) {
@@ -5044,12 +5277,17 @@
       exercises: routine.exercises.map(function (rex) {
         var exercise = OvrykDB.getExerciseById(rex.exerciseId);
         var cycle = OvrykDB.getForceCycle(rex.exerciseId);
-        var pastSex = cycle ? null : findExerciseInSession(lastSession, rex.exerciseId);
+        var inBaseMode = !cycle && isBeforeForceCycleStart(exercise);
+        var pastSex = (cycle || inBaseMode) ? null : findExerciseInSession(lastSession, rex.exerciseId);
 
         var sets, restSeconds;
         if (cycle) {
           sets = buildCycleSessionSets(cycle);
           restSeconds = getCycleWeek(cycle).restSeconds || 90;
+        } else if (inBaseMode) {
+          var basePrescription = getBaseModePrescription(exercise);
+          sets = buildSessionSetsFromPrescription(basePrescription.sets);
+          restSeconds = basePrescription.restSeconds || 90;
         } else if (pastSex) {
           sets = cloneSetsFromPastSex(pastSex);
           restSeconds = pastSex.restSeconds != null ? pastSex.restSeconds : rex.restSeconds;
@@ -6850,12 +7088,24 @@
      DASHBOARD — force cycle summary (one line per tracked movement)
   ============================================================ */
   function renderDashboardForceCycles() {
+    /* catches up any movement whose forceCycleStartDate has passed since the
+       last time this ran, so a base-mode row below doesn't linger stale
+       once its start date is actually reached */
+    refreshScheduledForceCycleActivations();
+
     var block = document.getElementById('dash-force-cycles');
     var body = document.getElementById('dash-force-cycles-body');
     var cycles = OvrykDB.getForceCycles();
     var exerciseIds = Object.keys(cycles);
 
-    if (exerciseIds.length === 0) {
+    /* scheduled but not started yet — same "used in a routine" scoping as
+       active cycles, so a movement dropped from every routine doesn't show
+       up here either (maybeAutoDeactivateForceCycle's counterpart) */
+    var baseModeExercises = OvrykDB.getExercises().filter(function (ex) {
+      return ex.category === 'Lifting' && !cycles[ex.id] && isBeforeForceCycleStart(ex) && isExerciseUsedInRoutine(ex.id);
+    });
+
+    if (exerciseIds.length === 0 && baseModeExercises.length === 0) {
       block.hidden = true;
       return;
     }
@@ -6868,7 +7118,7 @@
       var weekPhase = getCycleWeek(cycle).phase;
       var statusText = isTestWeek
         ? '6/6 · teste ton 1RM'
-        : (cycle.semaine_actuelle + '/6 · ' + weekPhase);
+        : ('Cycle actif · ' + cycle.semaine_actuelle + '/6 · ' + weekPhase);
 
       var row = document.createElement('button');
       row.type = 'button';
@@ -6876,6 +7126,15 @@
       row.innerHTML = '<span class="dash-cycle-name">' + escapeHTML(exercise ? exercise.name : exerciseId) + '</span>' +
         '<span class="dash-cycle-status">' + escapeHTML(statusText) + '</span>';
       row.addEventListener('click', function () { openCycleDetailPage(exerciseId); });
+      body.appendChild(row);
+    });
+
+    baseModeExercises.forEach(function (ex) {
+      var weeksUntil = getWeeksUntilForceCycleStart(ex);
+      var row = document.createElement('div');
+      row.className = 'dash-cycle-row is-base-mode';
+      row.innerHTML = '<span class="dash-cycle-name">' + escapeHTML(ex.name) + '</span>' +
+        '<span class="dash-cycle-status">Base · démarrage dans ' + weeksUntil + (weeksUntil > 1 ? ' semaines' : ' semaine') + '</span>';
       body.appendChild(row);
     });
 
