@@ -1697,10 +1697,11 @@
     color: var(--steel);
     text-transform: uppercase;
   }
-  .live-set-col-n { width: 16%; }
-  .live-set-col-kg { width: 30%; }
-  .live-set-col-reps { width: 30%; }
-  .live-set-col-check { width: 24%; text-align: right; }
+  .live-set-col-n { width: 14%; }
+  .live-set-col-kg { width: 27%; }
+  .live-set-col-reps { width: 27%; }
+  .live-set-col-check { width: 18%; text-align: right; }
+  .live-set-col-del { width: 14%; text-align: right; }
   .live-set-input {
     width: 100%;
     min-height: 40px;
@@ -2472,6 +2473,7 @@
         <div class="data-io-title">Notifications</div>
         <p class="data-io-desc">Rappels pour ne pas manquer une séance.</p>
         <div id="profile-notifications-list"></div>
+        <p class="data-io-desc" id="profile-notifications-note" hidden></p>
       </div>
 
       <div class="data-io-block">
@@ -5485,7 +5487,8 @@
     header.innerHTML = '<div class="live-set-col-n">Série</div>' +
       '<div class="live-set-col-kg">Kg</div>' +
       '<div class="live-set-col-reps">Reps</div>' +
-      '<div class="live-set-col-check">✓</div>';
+      '<div class="live-set-col-check">✓</div>' +
+      '<div class="live-set-col-del"></div>';
     table.appendChild(header);
 
     sex.sets.forEach(function (set, setIndex) {
@@ -5584,6 +5587,24 @@
     });
     checkEl.appendChild(checkBtn);
     row.appendChild(checkEl);
+
+    var delEl = document.createElement('div');
+    delEl.className = 'live-set-col-del';
+    var delBtn = document.createElement('button');
+    delBtn.type = 'button';
+    delBtn.className = 'set-remove-btn';
+    delBtn.setAttribute('aria-label', 'Supprimer la série');
+    delBtn.innerHTML = '<svg viewBox="0 0 24 24"><line x1="5" y1="5" x2="19" y2="19"/><line x1="19" y1="5" x2="5" y2="19"/></svg>';
+    delBtn.disabled = sex.sets.length <= 1;
+    delBtn.addEventListener('click', function () {
+      if (sex.sets.length <= 1) return;
+      var idx = sex.sets.indexOf(set);
+      if (idx !== -1) sex.sets.splice(idx, 1);
+      persistActiveSession();
+      renderSeanceActiveView();
+    });
+    delEl.appendChild(delBtn);
+    row.appendChild(delEl);
 
     return row;
   }
@@ -6019,6 +6040,7 @@
   var restTimerEndAt = null;
   var restTimerTotalSeconds = 0;
   var restTimerAudioCtx = null;
+  var restTimerExerciseName = '';
 
   var restTimerBarEl = document.getElementById('rest-timer-bar');
   var restTimerNameEl = document.getElementById('rest-timer-name');
@@ -6082,9 +6104,30 @@
     restTimerFillEl.style.width = (ratio * 100) + '%';
   }
 
+  function sendRestTimerNotification(exerciseName) {
+    /* the OS notification is only useful when the in-app bar isn't visible
+       (app backgrounded / screen locked) — when foreground, the bar hitting
+       0:00 plus the sound/vibration already cover it */
+    if (document.visibilityState === 'visible') return;
+    var prefs = ensureNotificationPrefs();
+    if (!prefs.repos) return;
+    if (!('Notification' in window) || Notification.permission !== 'granted') return;
+    if (!('serviceWorker' in navigator)) return;
+    navigator.serviceWorker.ready.then(function (reg) {
+      reg.showNotification('Repos terminé', {
+        body: exerciseName ? 'C’est reparti · ' + exerciseName : 'C’est reparti pour la série suivante.',
+        tag: 'ovryk-rest-timer',
+        icon: 'icon-192.png',
+        badge: 'icon-192.png',
+        vibrate: [200, 100, 200]
+      });
+    }).catch(function () { /* notifications are a bonus, never block the timer UI */ });
+  }
+
   function finishRestTimer() {
     if (restTimerIntervalId) { clearInterval(restTimerIntervalId); restTimerIntervalId = null; }
     playRestTimerAlert();
+    sendRestTimerNotification(restTimerExerciseName);
     setTimeout(hideRestTimer, 1500);
   }
 
@@ -6101,6 +6144,13 @@
     stopRestTimer();
     if (!seconds || seconds <= 0) return;
     ensureRestTimerAudio();
+    var prefs = ensureNotificationPrefs();
+    if (prefs.repos && 'Notification' in window && Notification.permission === 'default') {
+      /* called from the checkmark tap, so this is still inside a user
+         gesture — iOS requires that for the permission prompt to appear */
+      try { Notification.requestPermission(); } catch (err) { /* ignore */ }
+    }
+    restTimerExerciseName = exerciseName;
     restTimerNameEl.textContent = 'Repos · ' + exerciseName;
     restTimerTotalSeconds = seconds;
     restTimerEndAt = Date.now() + seconds * 1000;
@@ -6109,6 +6159,10 @@
     tickRestTimer();
     restTimerIntervalId = setInterval(tickRestTimer, 250);
   }
+
+  document.addEventListener('visibilitychange', function () {
+    if (document.visibilityState === 'visible' && restTimerEndAt != null) tickRestTimer();
+  });
 
   document.getElementById('rest-timer-skip').addEventListener('click', stopRestTimer);
   document.getElementById('rest-timer-plus15').addEventListener('click', function () {
@@ -6339,11 +6393,27 @@
       list.appendChild(buildToggleRow(type.label, !!prefs[type.key], function () {
         var settings = OvrykDB.getSettings();
         settings.notificationPrefs = settings.notificationPrefs || {};
-        settings.notificationPrefs[type.key] = !settings.notificationPrefs[type.key];
+        var turningOn = !settings.notificationPrefs[type.key];
+        settings.notificationPrefs[type.key] = turningOn;
         OvrykDB.saveSettings(settings);
-        renderProfileNotificationsCard();
+        if (type.key === 'repos' && turningOn && 'Notification' in window && Notification.permission === 'default') {
+          Notification.requestPermission().then(renderProfileNotificationsCard);
+        } else {
+          renderProfileNotificationsCard();
+        }
       }));
     });
+
+    var note = document.getElementById('profile-notifications-note');
+    if (prefs.repos && 'Notification' in window && Notification.permission === 'denied') {
+      note.textContent = 'Notifications bloquées pour Ovryk dans les réglages iOS — active-les dans Réglages > Ovryk > Notifications pour être prévenu quand le repos est terminé.';
+      note.hidden = false;
+    } else if (prefs.repos && !('Notification' in window)) {
+      note.textContent = 'Les notifications ne sont disponibles que depuis l’app installée sur l’écran d’accueil.';
+      note.hidden = false;
+    } else {
+      note.hidden = true;
+    }
   }
 
   function computeWeeklySeriesCounts() {

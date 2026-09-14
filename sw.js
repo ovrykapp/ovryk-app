@@ -36,6 +36,18 @@ self.addEventListener('activate', function (event) {
   );
 });
 
+self.addEventListener('notificationclick', function (event) {
+  event.notification.close();
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function (clientsArr) {
+      for (var i = 0; i < clientsArr.length; i++) {
+        if ('focus' in clientsArr[i]) return clientsArr[i].focus();
+      }
+      if (self.clients.openWindow) return self.clients.openWindow('./');
+    })
+  );
+});
+
 self.addEventListener('fetch', function (event) {
   var request = event.request;
   if (request.method !== 'GET') return;
