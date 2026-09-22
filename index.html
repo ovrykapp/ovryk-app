@@ -5280,7 +5280,13 @@
         var exercise = OvrykDB.getExerciseById(rex.exerciseId);
         var cycle = OvrykDB.getForceCycle(rex.exerciseId);
         var inBaseMode = !cycle && isBeforeForceCycleStart(exercise);
-        var pastSex = (cycle || inBaseMode) ? null : findExerciseInSession(lastSession, rex.exerciseId);
+        /* the routine was edited (sets/reps/weight/rest added, removed or
+           changed) after the last session for it was logged — carrying that
+           past session's sets forward would silently undo the edit, so drop
+           the continuity and use the routine's current prescription instead */
+        var routineEditedSinceLastSession = lastSession && routine.updatedAt &&
+          new Date(routine.updatedAt) > new Date(lastSession.completedAt || lastSession.date);
+        var pastSex = (cycle || inBaseMode || routineEditedSinceLastSession) ? null : findExerciseInSession(lastSession, rex.exerciseId);
 
         var sets, restSeconds;
         if (cycle) {
