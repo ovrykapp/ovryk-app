@@ -1668,14 +1668,21 @@
     text-transform: uppercase;
     margin-bottom: 4px;
   }
+  .live-session-header-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
   .live-session-name {
     font-family: var(--font-display);
     font-weight: 800;
     font-size: 22px;
     color: var(--ink);
     text-transform: uppercase;
-    margin-bottom: 14px;
   }
+  .live-session-remove-btn { margin-top: 2px; }
   .live-set-table { margin-bottom: var(--space-4); }
   .live-set-row {
     display: flex;
@@ -5461,10 +5468,30 @@
     kicker.textContent = 'Exercice ' + (index + 1) + '/' + activeSession.exercises.length;
     wrap.appendChild(kicker);
 
+    var headerRow = document.createElement('div');
+    headerRow.className = 'live-session-header-row';
+
     var nameEl = document.createElement('div');
     nameEl.className = 'live-session-name';
     nameEl.textContent = sex.exerciseName + (sex.grip ? ' · ' + sex.grip : '');
-    wrap.appendChild(nameEl);
+    headerRow.appendChild(nameEl);
+
+    var removeExBtn = document.createElement('button');
+    removeExBtn.type = 'button';
+    removeExBtn.className = 'rex-remove-btn live-session-remove-btn';
+    removeExBtn.setAttribute('aria-label', "Retirer l'exercice de la séance");
+    removeExBtn.textContent = '×';
+    removeExBtn.addEventListener('click', function () {
+      showConfirmModal('Retirer « ' + sex.exerciseName + ' » de cette séance ? Les séries saisies pour cet exercice seront perdues.', function () {
+        var idx = activeSession.exercises.indexOf(sex);
+        if (idx !== -1) activeSession.exercises.splice(idx, 1);
+        persistActiveSession();
+        renderSeanceActiveView();
+      });
+    });
+    headerRow.appendChild(removeExBtn);
+
+    wrap.appendChild(headerRow);
 
     var lastSex = getLastLoggedSex(sex.exerciseId);
     var lastHintText = lastSex ? formatLastSessionHint(lastSex) : null;
