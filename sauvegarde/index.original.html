@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#111110">
+<meta name="theme-color" content="#121110">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Ovryk">
@@ -14,7 +14,7 @@
 <link rel="icon" href="favicon.png" type="image/png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
   /* ============================================================
      DESIGN TOKENS
@@ -32,32 +32,32 @@
        is a color-mix() off --ink, so that single flip is what turns them
        from dark-on-light hairlines into light-on-dark ones.
     ============================================================ */
-    --neutral-100: #1B1B19;
-    --neutral-200: #252522;
-    --neutral-300: #2E2E2A;
-    --neutral-400: #3A3A35;
-    --neutral-500: #7A776F;
-    --neutral-600: #A8A59B;
-    --neutral-700: #CFCBC0;
-    --neutral-800: #252522;
-    --neutral-900: #4A4840;
+    --neutral-100: #1B1815;
+    --neutral-200: #211E19;
+    --neutral-300: #363330;
+    --neutral-400: #403B33;
+    --neutral-500: #86807D;
+    --neutral-600: #A39D91;
+    --neutral-700: #C4BEB2;
+    --neutral-800: #2A2620;
+    --neutral-900: #57503F;
 
-    --accent-100: #FFD9C7;
-    --accent-200: #3A2216;
-    --accent-300: #5C3320;
-    --accent-400: #A04419;
-    --accent-500: #FF6A2B;
-    --accent-600: #FF6A2B;
-    --accent-700: #C2501F;
-    --accent-800: #FF8A55;
-    --accent-900: #7A3A1F;
+    --accent-100: #EFE2C4;
+    --accent-200: #4A3D24;
+    --accent-300: #6B572E;
+    --accent-400: #8C7238;
+    --accent-500: #CDA655;
+    --accent-600: #CDA655;
+    --accent-700: #6B5527;
+    --accent-800: #8F7038;
+    --accent-900: #5C4A24;
 
     /* raw palette — brand-fixed, never swapped by theme */
-    --graphite: #111110;
-    --quartz: #111110;
-    --rust: #FF6A2B;
+    --graphite: #121110;
+    --quartz: #121110;
+    --rust: #CDA655;
     /* light text sitting on the (now permanently dark) page/chrome */
-    --chalk: #F2EFE8;
+    --chalk: #F5F2EC;
     --valid-green: #6FA372;
 
     /* --steel is TEXT / borders / icons sitting directly on the page or a
@@ -93,11 +93,11 @@
     --border-segment: color-mix(in srgb, var(--ink) 15%, transparent);
     --border-outline: color-mix(in srgb, var(--ink) 18%, transparent);
 
-    --font-display: 'Barlow', system-ui, sans-serif;
-    --font-mono: 'Barlow', system-ui, sans-serif;
+    --font-display: 'Inter Tight', sans-serif;
+    --font-mono: 'Inter Tight', sans-serif;
 
-    --nav-height: 76px;
-    --nav-margin: 8px;
+    --nav-height: 72px;
+    --nav-margin: 16px;
     --header-height: 100px;
 
     /* spacing scale — reused for panel padding, section gaps and row padding so
@@ -109,14 +109,14 @@
     /* shape scale — fully-rounded floating cards, no square corners: cards
        round the most, buttons/inputs less, pills (nav, chips, steppers)
        fully round, and checkboxes get their own small fixed radius. */
-    --radius: 12px;
-    --radius-card: 16px;
+    --radius: 16px;
+    --radius-card: 28px;
     --radius-sm: 8px;
     --radius-pill: 999px;
 
     /* soft, diffused dark-theme shadows — cards and buttons share the
        "sm" shadow, only the floating nav gets the heavier "lg" one */
-    --shadow-sm: 0 10px 24px -18px rgba(0, 0, 0, 0.6);
+    --shadow-sm: 0 16px 32px -20px rgba(0, 0, 0, 0.5);
     --shadow-lg: 0 24px 48px -20px rgba(0, 0, 0, 0.6);
   }
 
@@ -2229,106 +2229,16 @@
 
     .brand:hover .brand-mark { opacity: 0.8; }
   }
-
-  /* ============================================================
-     SKIN MAQUETTE
-     Fond encre #111110, orange #FF6A2B (action principale, muscu),
-     bleu #8EBBFF (cycles et haltérophilie), police Barlow, titres
-     en Barlow Condensed. Les tokens ci-dessus font l'essentiel,
-     cette section règle la typographie, la barre de navigation et
-     les éléments de cycles.
-  ============================================================ */
-  :root {
-    --blue: #8EBBFF;
-    --blue-fill: #1E2A3D;
-    --orange-fill: #3A2216;
-    --orange-soft: #FF8A55;
-    --font-title: 'Barlow Condensed', 'Barlow', system-ui, sans-serif;
-  }
-  h1, h2, h3, h4 {
-    font-family: var(--font-title);
-    font-weight: 700;
-    letter-spacing: 0.5px;
-  }
-  .view-header h1 { font-size: 36px; line-height: 1; }
-  .app-header .brand-mark {
-    font-family: var(--font-title);
-    font-weight: 700;
-    letter-spacing: 0.14em;
-  }
-  .app-header .view-label { color: var(--steel); }
-  .dash-stat-value, .exercise-detail-hero-value { font-family: var(--font-title); font-weight: 700; }
-
-  /* barre de navigation à plat, bouton Séance au centre en orange */
-  .bottom-nav {
-    left: 0;
-    right: 0;
-    bottom: 0;
-    max-width: none;
-    margin: 0;
-    height: auto;
-    min-height: var(--nav-height);
-    border: 0;
-    border-top: 1px solid var(--neutral-300);
-    border-radius: 0;
-    background: #161614;
-    box-shadow: none;
-    padding: 8px 8px max(10px, env(safe-area-inset-bottom, 0px));
-    overflow: visible;
-    align-items: center;
-  }
-  .nav-btn { min-height: 52px; border-radius: 12px; }
-  .nav-btn span { font-size: 11px; letter-spacing: 0; text-transform: none; font-weight: 600; }
-  .nav-btn[data-target="seance"] {
-    flex: none;
-    width: 52px;
-    height: 52px;
-    min-height: 52px;
-    margin: 0 6px;
-    padding: 0;
-    border-radius: 16px;
-    background: var(--rust);
-    color: var(--graphite);
-  }
-  .nav-btn[data-target="seance"] span { display: none; }
-  .nav-btn[data-target="seance"].active { color: var(--graphite); background: var(--rust); }
-  .nav-btn[data-target="seance"]:active { background: var(--accent-800); }
-  .nav-btn[data-target="seance"] svg { width: 26px; height: 26px; }
-
-  /* cycles et haltérophilie en bleu */
-  .cycle-active-badge {
-    background: var(--blue-fill);
-    border-color: var(--blue-fill);
-    color: var(--blue);
-  }
-  .cycle-inline-tag,
-  .cycle-week-num,
-  .cycle-detail-phase,
-  .dash-cycle-status,
-  .cycle-full-name { color: var(--blue); }
-  .cycle-full-week.is-current { border-color: var(--blue); }
-  .cycle-full-current-tag { background: var(--blue-fill); color: var(--blue); }
-  .dash-cycle-row.is-test-week .dash-cycle-status { color: var(--orange-soft); }
-  .cycle-alert-banner { background: var(--orange-fill); border-color: transparent; color: var(--ink); box-shadow: none; }
-  .cycle-alert-icon { stroke: var(--orange-soft); }
-  .cycle-alert-title { color: var(--orange-soft); }
-  .cycle-alert-detail { color: var(--ink); opacity: 0.9; }
-
-  /* textes en orange vif (le ton foncé --accent-info-fill reste réservé aux fonds) */
-  .live-session-kicker,
-  .seance-topbar-action.is-primary,
-  .exercise-detail-hero-value,
-  .history-row.is-pr .history-volume { color: var(--rust); }
 </style>
 </head>
 <body>
 
   <header class="app-header">
-    <button type="button" class="brand" id="brand-home-btn" aria-label="Retour à l'accueil">
+    <button type="button" class="brand" id="brand-home-btn" aria-label="Retour au dashboard">
       <span class="brand-mark">OVRYK<span>.</span></span>
     </button>
     <div class="header-right">
-      <span class="view-label" id="current-view-label">Accueil</span>
+      <span class="view-label" id="current-view-label">Dashboard</span>
     </div>
   </header>
   <div class="knurl-strip" aria-hidden="true"></div>
@@ -2395,7 +2305,7 @@
 
     <section class="view" data-view="routine" id="view-routine">
       <div class="view-header">
-        <h1>Programme</h1>
+        <h1>Routine</h1>
         <p>Construis tes programmes et gère ta bibliothèque d'exercices.</p>
       </div>
 
@@ -2503,7 +2413,7 @@
 
     <section class="view" data-view="progression" id="view-progression">
       <div class="view-header">
-        <h1>Progrès</h1>
+        <h1>Progression</h1>
         <p>Volume hebdomadaire par groupe musculaire, historique et 1RM estimé par exercice.</p>
       </div>
 
@@ -2557,7 +2467,7 @@
 
     <section class="view" data-view="profil" id="view-profil">
       <div class="view-header">
-        <h1>Réglages</h1>
+        <h1>Profil</h1>
         <p>Réglages et sauvegarde de tes données.</p>
       </div>
 
@@ -2671,23 +2581,23 @@
   <nav class="bottom-nav" id="bottom-nav">
     <button class="nav-btn active" data-target="dashboard" aria-current="page">
       <svg viewBox="0 0 24 24" stroke-width="1.8"><rect x="3" y="3" width="7.5" height="7.5"/><rect x="13.5" y="3" width="7.5" height="7.5"/><rect x="3" y="13.5" width="7.5" height="7.5"/><rect x="13.5" y="13.5" width="7.5" height="7.5"/></svg>
-      <span>Accueil</span>
+      <span>Dashboard</span>
     </button>
     <button class="nav-btn" data-target="routine">
       <svg viewBox="0 0 24 24" stroke-width="1.8" stroke-linecap="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/></svg>
-      <span>Programme</span>
+      <span>Routine</span>
     </button>
-    <button class="nav-btn" data-target="seance" aria-label="Séance">
+    <button class="nav-btn" data-target="seance">
       <svg viewBox="0 0 24 24" stroke-width="1.8" stroke-linecap="round"><circle cx="4" cy="12" r="1.8"/><circle cx="20" cy="12" r="1.8"/><line x1="6" y1="12" x2="18" y2="12"/><line x1="8.5" y1="8" x2="8.5" y2="16"/><line x1="15.5" y1="8" x2="15.5" y2="16"/></svg>
       <span>Séance</span>
     </button>
     <button class="nav-btn" data-target="progression">
       <svg viewBox="0 0 24 24" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3,17 9,11 13,15 21,7"/><polyline points="15,7 21,7 21,13"/></svg>
-      <span>Progrès</span>
+      <span>Progression</span>
     </button>
     <button class="nav-btn" data-target="profil">
       <svg viewBox="0 0 24 24" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="8" r="3.6"/><path d="M4.5 20.5c0-4.1 3.4-7 7.5-7s7.5 2.9 7.5 7"/></svg>
-      <span>Réglages</span>
+      <span>Profil</span>
     </button>
   </nav>
 
@@ -3156,10 +3066,9 @@
 
   /*
     ForceCycle { exercise_id, cycle_actif ('A'-'E'), one_rm_actuel,
-                 semaine_actuelle (1 à cycleLength), historique_1rm: [{date, valeur}] }
+                 semaine_actuelle (1-6), historique_1rm: [{date, valeur}] }
     Assignable à un exercice de catégorie Lifting. Un seul cycle actif par mouvement (clé = exercise_id).
-    12 cycles génériques ('1' à '12', 6 ou 8 semaines) tirés au sort à chaque renouvellement — voir
-    tirerProchainCycle(). Les anciens cycles 'A' à 'E' restent lisibles pour les cycles déjà en cours.
+    5 cycles de 6 semaines (A-E) tirés au sort à chaque renouvellement — voir tirerProchainCycle().
   */
   function repeatSet(reps, percent, count) {
     var arr = [];
@@ -3219,204 +3128,14 @@
     ]
   };
 
-  /* ============================================================
-     12 CYCLES GÉNÉRIQUES (applicables à n'importe quel mouvement)
-     Chaque cycle est un gabarit de % du 1RM, indépendant du mouvement.
-     8 semaines : la dernière est le test 1RM.
-     6 semaines : 6 semaines de travail + une semaine 7 de test 1RM séparé.
-     Le cycle 12 (6 semaines) se termine lui-même par un test.
-     Les anciens cycles A à E restent définis plus haut : un cycle déjà en
-     cours continue normalement, seul le prochain tirage utilise les 12.
-  ============================================================ */
-  function pairs(repsList, percentList) {
-    return repsList.map(function (r, i) { return { reps: r, percent: percentList[i] }; });
-  }
-  /* une vague = une liste de [reps, %] */
-  function wave(list) {
-    return list.map(function (p) { return { reps: p[0], percent: p[1] }; });
-  }
-  function maxPercent(sets) {
-    return sets.reduce(function (m, s) { return Math.max(m, s.percent); }, 0);
-  }
-  function restFor(sets) {
-    var m = maxPercent(sets);
-    if (m >= 90) return 180;
-    if (m >= 80) return 150;
-    if (m >= 70) return 120;
-    return 90;
-  }
-  function mkWeek(n, phase, sets, o) {
-    o = o || {};
-    return {
-      week: n,
-      phase: phase,
-      sets: sets,
-      restSeconds: o.rest || restFor(sets),
-      timed: !!o.timed,
-      isTestWeek: !!o.test
-    };
-  }
-  function mkTest(n) {
-    return mkWeek(n, 'Test 1RM', [
-      { reps: 5, percent: 40 }, { reps: 3, percent: 60 }, { reps: 1, percent: 75 },
-      { reps: 1, percent: 85 }, { reps: 1, percent: 92 }, { reps: 1, percent: 97 },
-      { reps: 1, percent: 100 }
-    ], { rest: 180, test: true });
-  }
-  function mkTestSeparate(n) {
-    var w = mkTest(n);
-    w.phase = 'Test 1RM séparé';
-    return w;
-  }
-
-  var GENERIC_CYCLE_IDS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'];
-
-  Object.assign(CYCLE_NAMES, {
-    '1': 'Volume long, pic à 90 %',
-    '2': 'Single lourd puis séries',
-    '3': 'Paliers, EMOM allégée, singles',
-    '4': 'Pyramide, vagues et pic',
-    '5': 'Volume léger puis pic',
-    '6': 'Complexes, vagues et test',
-    '7': 'Volume vers vagues et test',
-    '8': 'Volume, force puis pic',
-    '9': 'Séries courtes, EMOM et pic',
-    '10': 'Force progressive, pic court',
-    '11': 'Montée régulière, singles',
-    '12': 'Vagues et test de pic'
-  });
-
-  Object.assign(FORCE_CYCLES, {
-    /* 8 semaines */
-    '1': [
-      mkWeek(1, '5×10', repeatSet(10, 60, 5)),
-      mkWeek(2, '10-8-8-6-6', pairs([10, 8, 8, 6, 6], [60, 65, 65, 70, 70])),
-      mkWeek(3, '5×5', repeatSet(5, 70, 5)),
-      mkWeek(4, '5×4', repeatSet(4, 75, 5)),
-      mkWeek(5, '5×3', repeatSet(3, 80, 5)),
-      mkWeek(6, '5×2', repeatSet(2, 85, 5)),
-      mkWeek(7, '6×1', repeatSet(1, 90, 6)),
-      mkTest(8)
-    ],
-    '2': [
-      mkWeek(1, '4×8', repeatSet(8, 65, 4)),
-      mkWeek(2, '5×6', repeatSet(6, 70, 5)),
-      mkWeek(3, '5×5', repeatSet(5, 75, 5)),
-      mkWeek(4, '1 puis 3×5', [{ reps: 1, percent: 85 }].concat(repeatSet(5, 75, 3))),
-      mkWeek(5, '1 puis 4×4', [{ reps: 1, percent: 90 }].concat(repeatSet(4, 80, 4))),
-      mkWeek(6, '1 puis 6×3', [{ reps: 1, percent: 95 }].concat(repeatSet(3, 85, 6))),
-      mkWeek(7, 'Allégée 10-8-6-4-2', pairs([10, 8, 6, 4, 2], [60, 65, 72, 78, 85]), { rest: 90 }),
-      mkTest(8)
-    ],
-    '6': [
-      mkWeek(1, '6×5', repeatSet(5, 60, 6)),
-      mkWeek(2, '8×3', repeatSet(3, 65, 8)),
-      mkWeek(3, '5 complexes (3+1)', repeatSet(4, 70, 5)),
-      mkWeek(4, 'Allégée 3×3', repeatSet(3, 65, 3), { rest: 90 }),
-      mkWeek(5, '2 vagues 3-2-1', wave([[3, 72], [2, 77], [1, 82]]).concat(wave([[3, 77], [2, 82], [1, 84]]))),
-      mkWeek(6, '3 vagues 3-2-1', wave([[3, 70], [2, 75], [1, 80]]).concat(wave([[3, 75], [2, 80], [1, 80]]), wave([[3, 80], [2, 85], [1, 90]]))),
-      mkWeek(7, '3×1', pairs([1, 1, 1], [87, 90, 92])),
-      mkTest(8)
-    ],
-    '7': [
-      mkWeek(1, '6×2', repeatSet(2, 65, 6)),
-      mkWeek(2, '7×2', repeatSet(2, 68, 7)),
-      mkWeek(3, '5×2', repeatSet(2, 72, 5)),
-      mkWeek(4, 'Allégée 4×2', repeatSet(2, 65, 4), { rest: 90 }),
-      mkWeek(5, '2 vagues 3-2-1', wave([[3, 72], [2, 77], [1, 82]]).concat(wave([[3, 77], [2, 82], [1, 84]]))),
-      mkWeek(6, '3 vagues et pic', wave([[3, 72], [2, 77], [1, 82]]).concat(wave([[3, 77], [2, 82], [1, 84]]), wave([[2, 82], [1, 87], [1, 92]]))),
-      mkWeek(7, '4×1', pairs([1, 1, 1, 1], [85, 88, 90, 92])),
-      mkTest(8)
-    ],
-    /* 6 semaines + test 1RM séparé en semaine 7 */
-    '3': [
-      mkWeek(1, '3×5 paliers', pairs([5, 5, 5], [50, 55, 60])),
-      mkWeek(2, '5×4 paliers', pairs([4, 4, 4, 4, 4], [60, 65, 65, 70, 70])),
-      mkWeek(3, '5×3', repeatSet(3, 70, 5)),
-      mkWeek(4, "Allégée EMOM 6'", repeatSet(2, 60, 6), { timed: true, rest: 60 }),
-      mkWeek(5, '4×2', repeatSet(2, 78, 4)),
-      mkWeek(6, '5×1', pairs([1, 1, 1, 1, 1], [80, 85, 88, 90, 92])),
-      mkTestSeparate(7)
-    ],
-    '4': [
-      mkWeek(1, '10-8-6-4', pairs([10, 8, 6, 4], [55, 60, 65, 70])),
-      mkWeek(2, '6×5', repeatSet(5, 60, 6)),
-      mkWeek(3, '5×5', repeatSet(5, 65, 5)),
-      mkWeek(4, 'Allégée 10×3 (30")', repeatSet(3, 50, 5).concat(repeatSet(3, 60, 5)), { timed: true, rest: 30 }),
-      mkWeek(5, '5×3', repeatSet(3, 75, 5)),
-      mkWeek(6, '3 vagues', wave([[2, 75], [2, 80], [1, 85]]).concat(wave([[2, 80], [2, 85], [1, 90]]), wave([[1, 85], [1, 90], [1, 95], [1, 100]]))),
-      mkTestSeparate(7)
-    ],
-    '5': [
-      mkWeek(1, '10×2', repeatSet(2, 55, 10)),
-      mkWeek(2, '6×3', repeatSet(3, 60, 6)),
-      mkWeek(3, '5×2', repeatSet(2, 65, 5)),
-      mkWeek(4, 'Allégée 10×3', repeatSet(3, 50, 10), { rest: 60 }),
-      mkWeek(5, '4×3, 4×2, 4×1', repeatSet(3, 65, 4).concat(repeatSet(2, 70, 4), repeatSet(1, 75, 4))),
-      mkWeek(6, '2×3, 3×2, 4×1', repeatSet(3, 70, 2).concat(repeatSet(2, 75, 3), repeatSet(1, 80, 4))),
-      mkTestSeparate(7)
-    ],
-    '8': [
-      mkWeek(1, '10×5', repeatSet(5, 55, 10)),
-      mkWeek(2, '10×3', repeatSet(3, 60, 10)),
-      mkWeek(3, '5×4', repeatSet(4, 70, 5)),
-      mkWeek(4, 'Allégée 6×3', repeatSet(3, 62, 6), { rest: 90 }),
-      mkWeek(5, '7×3', repeatSet(3, 75, 7)),
-      mkWeek(6, '3×3, 3×2, 4×1', repeatSet(3, 80, 3).concat(repeatSet(2, 85, 3), repeatSet(1, 90, 4))),
-      mkTestSeparate(7)
-    ],
-    '9': [
-      mkWeek(1, '6×4', repeatSet(4, 60, 6)),
-      mkWeek(2, '15×3', repeatSet(3, 55, 15)),
-      mkWeek(3, '6×2', repeatSet(2, 75, 6)),
-      mkWeek(4, 'Allégée 20×3', repeatSet(3, 50, 20), { rest: 45 }),
-      mkWeek(5, "EMOM 12'", repeatSet(2, 80, 12), { timed: true, rest: 60 }),
-      mkWeek(6, '5×1', pairs([1, 1, 1, 1, 1], [85, 88, 90, 92, 95])),
-      mkTestSeparate(7)
-    ],
-    '10': [
-      mkWeek(1, '5×5', repeatSet(5, 65, 5)),
-      mkWeek(2, '5×3', repeatSet(3, 72, 5)),
-      mkWeek(3, '7×2', repeatSet(2, 75, 7)),
-      mkWeek(4, 'Allégée 3×3', repeatSet(3, 65, 3), { rest: 90 }),
-      mkWeek(5, '5×2', repeatSet(2, 82, 5)),
-      mkWeek(6, '3 puis 3×1', [{ reps: 3, percent: 85 }].concat(repeatSet(1, 90, 3))),
-      mkTestSeparate(7)
-    ],
-    '11': [
-      mkWeek(1, '8×2', repeatSet(2, 60, 8)),
-      mkWeek(2, '6×2', repeatSet(2, 65, 6)),
-      mkWeek(3, '5×2', repeatSet(2, 70, 5)),
-      mkWeek(4, 'Allégée 4×2', repeatSet(2, 60, 4), { rest: 90 }),
-      mkWeek(5, '4×2', repeatSet(2, 75, 4)),
-      mkWeek(6, '5×1', pairs([1, 1, 1, 1, 1], [80, 85, 88, 90, 90])),
-      mkTestSeparate(7)
-    ],
-    /* 6 semaines, test inclus en semaine 6 */
-    '12': [
-      mkWeek(1, '3 vagues 3-2-1', wave([[3, 50], [2, 55], [1, 60]]).concat(wave([[3, 55], [2, 60], [1, 60]]), wave([[3, 60], [2, 65], [1, 70]]))),
-      mkWeek(2, '6×1', repeatSet(1, 70, 6)),
-      mkWeek(3, '4×2', repeatSet(2, 75, 4)),
-      mkWeek(4, 'Allégée 5×2', repeatSet(2, 60, 5), { rest: 90 }),
-      mkWeek(5, '2 vagues', wave([[2, 75], [2, 80], [1, 85]]).concat(wave([[2, 80], [2, 85], [1, 90]]))),
-      mkWeek(6, 'Test 1RM', pairs([1, 1, 1, 1], [85, 90, 95, 100]), { rest: 180, test: true })
-    ]
-  });
-
-  function cycleLength(cycleKey) {
-    var weeks = FORCE_CYCLES[cycleKey];
-    return weeks ? weeks.length : 6;
-  }
-
   function getCycleWeek(cycle) {
     return FORCE_CYCLES[cycle.cycle_actif][cycle.semaine_actuelle - 1];
   }
 
-  /* Tire un nouveau cycle parmi les 12 génériques (applicables à n'importe
-     quel mouvement), en excluant celui qui vient de se terminer pour ne
-     jamais enchaîner deux fois le même cycle. */
+  /* Tire un nouveau cycle parmi les 5, en excluant celui qui vient de se
+     terminer pour ne jamais enchaîner deux fois le même cycle. */
   function tirerProchainCycle(cycleActuel) {
-    var candidates = GENERIC_CYCLE_IDS.filter(function (id) { return id !== cycleActuel; });
+    var candidates = CYCLE_LETTERS.filter(function (letter) { return letter !== cycleActuel; });
     return candidates[Math.floor(Math.random() * candidates.length)];
   }
 
@@ -3578,7 +3297,7 @@
       var map = this.getForceCycles();
       var cycle = map[exerciseId];
       if (!cycle) return;
-      if (cycle.semaine_actuelle < cycleLength(cycle.cycle_actif)) {
+      if (cycle.semaine_actuelle < 6) {
         cycle.semaine_actuelle += 1;
         this.saveForceCycles(map);
       }
@@ -3621,11 +3340,11 @@
      NAVIGATION
   ============================================================ */
   var VIEW_LABELS = {
-    dashboard: 'Accueil',
-    routine: 'Programme',
+    dashboard: 'Dashboard',
+    routine: 'Routine',
     seance: 'Séance',
-    progression: 'Progrès',
-    profil: 'Réglages'
+    progression: 'Progression',
+    profil: 'Profil'
   };
 
   var navButtons = document.querySelectorAll('.nav-btn');
@@ -4201,7 +3920,7 @@
     var badge = document.createElement('button');
     badge.type = 'button';
     badge.className = 'cycle-active-badge';
-    badge.innerHTML = '<span class="mono">Cycle ' + cycle.cycle_actif + ' · S' + cycle.semaine_actuelle + '/' + cycleLength(cycle.cycle_actif) + '</span> · ' + escapeHTML(week.phase);
+    badge.innerHTML = '<span class="mono">Cycle ' + cycle.cycle_actif + ' · S' + cycle.semaine_actuelle + '/6</span> · ' + escapeHTML(week.phase);
     badge.addEventListener('click', function () { openCycleDetailPage(exercise.id); });
     return badge;
   }
@@ -4232,7 +3951,7 @@
 
       var weekLine = document.createElement('div');
       weekLine.className = 'cycle-week-line';
-      weekLine.innerHTML = '<span class="cycle-week-num mono">Semaine ' + weekNum + ' / ' + weeks.length + '</span>' +
+      weekLine.innerHTML = '<span class="cycle-week-num mono">Semaine ' + weekNum + ' / 6</span>' +
         '<span class="cycle-phase">' + escapeHTML(week.phase) + '</span>' +
         (isCurrent ? '<span class="cycle-full-current-tag">Actuelle</span>' : '');
       block.appendChild(weekLine);
@@ -4933,7 +4652,7 @@
 
     var weekLine = document.createElement('div');
     weekLine.className = 'cycle-week-line';
-    weekLine.innerHTML = '<span class="cycle-week-num mono">Cycle ' + cycle.cycle_actif + ' · Semaine ' + cycle.semaine_actuelle + ' / ' + cycleLength(cycle.cycle_actif) + '</span>' +
+    weekLine.innerHTML = '<span class="cycle-week-num mono">Cycle ' + cycle.cycle_actif + ' · Semaine ' + cycle.semaine_actuelle + ' / 6</span>' +
       '<span class="cycle-phase">' + escapeHTML(weekPrescription.phase) + '</span>';
     wrap.appendChild(weekLine);
 
@@ -5637,7 +5356,7 @@
     if (routines.length === 0) {
       listEl.innerHTML = '<div class="empty-state"><span class="empty-tag">Vide</span>' +
         '<h2>Aucune routine disponible</h2>' +
-        '<p>Crée une routine dans l\'onglet Programme, ou démarre une séance vide ci-dessous.</p></div>';
+        '<p>Crée une routine dans l\'onglet Routine, ou démarre une séance vide ci-dessous.</p></div>';
       return;
     }
 
@@ -5811,7 +5530,7 @@
     wrap.appendChild(table);
 
     var cycle = OvrykDB.getForceCycle(sex.exerciseId);
-    if (cycle && getCycleWeek(cycle).isTestWeek) {
+    if (cycle && cycle.semaine_actuelle === 6) {
       wrap.appendChild(buildCycleTestForm(sex.exerciseId, cycle));
     }
 
@@ -6869,7 +6588,7 @@
     row.className = 'picker-row';
     var count = countSessionsForExercise(exercise.id);
     var cycle = OvrykDB.getForceCycle(exercise.id);
-    var cycleTag = cycle ? ' <span class="cycle-inline-tag mono">' + cycle.cycle_actif + ' S' + cycle.semaine_actuelle + '/' + cycleLength(cycle.cycle_actif) + '</span>' : '';
+    var cycleTag = cycle ? ' <span class="cycle-inline-tag mono">' + cycle.cycle_actif + ' S' + cycle.semaine_actuelle + '/6</span>' : '';
     row.innerHTML = '<span class="picker-row-name">' + escapeHTML(exercise.name) + '</span>' +
       '<span class="picker-row-meta mono">' + count + ' séance' + (count > 1 ? 's' : '') + '</span>' + cycleTag;
     row.addEventListener('click', function () {
@@ -7170,7 +6889,7 @@
       var statusLine = document.createElement('div');
       statusLine.className = 'cycle-detail-status';
       statusLine.innerHTML = 'Cycle actif ' + cycle.cycle_actif + ' · <span class="cycle-detail-phase">Semaine ' + cycle.semaine_actuelle +
-        '/' + cycleLength(cycle.cycle_actif) + ' · ' + escapeHTML(getCycleWeek(cycle).phase) + '</span>';
+        '/6 · ' + escapeHTML(getCycleWeek(cycle).phase) + '</span>';
       cycleBlock.appendChild(statusLine);
 
       var cycleTitle = document.createElement('div');
@@ -7498,11 +7217,11 @@
     exerciseIds.forEach(function (exerciseId) {
       var cycle = cycles[exerciseId];
       var exercise = OvrykDB.getExerciseById(exerciseId);
-      var isTestWeek = getCycleWeek(cycle).isTestWeek;
+      var isTestWeek = cycle.semaine_actuelle >= 6;
       var weekPhase = getCycleWeek(cycle).phase;
       var statusText = isTestWeek
-        ? (cycle.semaine_actuelle + '/' + cycleLength(cycle.cycle_actif) + ' · teste ton 1RM')
-        : ('Cycle actif · ' + cycle.semaine_actuelle + '/' + cycleLength(cycle.cycle_actif) + ' · ' + weekPhase);
+        ? '6/6 · teste ton 1RM'
+        : ('Cycle actif · ' + cycle.semaine_actuelle + '/6 · ' + weekPhase);
 
       var row = document.createElement('button');
       row.type = 'button';
@@ -7574,15 +7293,15 @@
 
     function namesAtWeek(week) {
       return Object.keys(cycles)
-        .filter(function (exerciseId) { var c = cycles[exerciseId]; return c.semaine_actuelle === cycleLength(c.cycle_actif) + week; })
+        .filter(function (exerciseId) { return cycles[exerciseId].semaine_actuelle === week; })
         .map(function (exerciseId) {
           var exercise = OvrykDB.getExerciseById(exerciseId);
           return exercise ? exercise.name : exerciseId;
         });
     }
 
-    var namesAtWeek6 = namesAtWeek(0);   /* dernière semaine du cycle = test */
-    var namesAtWeek5 = namesAtWeek(-1);  /* avant-dernière semaine */
+    var namesAtWeek6 = namesAtWeek(6);
+    var namesAtWeek5 = namesAtWeek(5);
 
     if (namesAtWeek6.length === 0 && namesAtWeek5.length === 0) {
       banner.hidden = true;
@@ -7592,7 +7311,7 @@
     var html = '';
     if (namesAtWeek6.length > 0) {
       html += '<span class="cycle-alert-group">' +
-        '<span class="cycle-alert-title">Semaine de test atteinte</span>' +
+        '<span class="cycle-alert-title">Semaine 6 atteinte</span>' +
         '<span class="cycle-alert-detail">' + escapeHTML(namesAtWeek6.join(', ')) +
         ". Teste ton nouveau 1RM et valide-le dans l'onglet Séance.</span>" +
         '</span>';

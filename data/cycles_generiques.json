@@ -1,0 +1,3109 @@
+{
+  "_info": "Généré par outils/exporter-cycles-json.js depuis index.html. Ne pas modifier à la main.",
+  "nombre_de_cycles": 12,
+  "cycles": [
+    {
+      "id": "1",
+      "nom": "Volume long, pic à 90 %",
+      "duree_semaines": 8,
+      "test_1rm": "dernière semaine",
+      "semaines": [
+        {
+          "week": 1,
+          "phase": "5×10",
+          "sets": [
+            {
+              "reps": 10,
+              "percent": 60
+            },
+            {
+              "reps": 10,
+              "percent": 60
+            },
+            {
+              "reps": 10,
+              "percent": 60
+            },
+            {
+              "reps": 10,
+              "percent": 60
+            },
+            {
+              "reps": 10,
+              "percent": 60
+            }
+          ],
+          "restSeconds": 90,
+          "timed": false,
+          "isTestWeek": false
+        },
+        {
+          "week": 2,
+          "phase": "10-8-8-6-6",
+          "sets": [
+            {
+              "reps": 10,
+              "percent": 60
+            },
+            {
+              "reps": 8,
+              "percent": 65
+            },
+            {
+              "reps": 8,
+              "percent": 65
+            },
+            {
+              "reps": 6,
+              "percent": 70
+            },
+            {
+              "reps": 6,
+              "percent": 70
+            }
+          ],
+          "restSeconds": 120,
+          "timed": false,
+          "isTestWeek": false
+        },
+        {
+          "week": 3,
+          "phase": "5×5",
+          "sets": [
+            {
+              "reps": 5,
+              "percent": 70
+            },
+            {
+              "reps": 5,
+              "percent": 70
+            },
+            {
+              "reps": 5,
+              "percent": 70
+            },
+            {
+              "reps": 5,
+              "percent": 70
+            },
+            {
+              "reps": 5,
+              "percent": 70
+            }
+          ],
+          "restSeconds": 120,
+          "timed": false,
+          "isTestWeek": false
+        },
+        {
+          "week": 4,
+          "phase": "5×4",
+          "sets": [
+            {
+              "reps": 4,
+              "percent": 75
+            },
+            {
+              "reps": 4,
+              "percent": 75
+            },
+            {
+              "reps": 4,
+              "percent": 75
+            },
+            {
+              "reps": 4,
+              "percent": 75
+            },
+            {
+              "reps": 4,
+              "percent": 75
+            }
+          ],
+          "restSeconds": 120,
+          "timed": false,
+          "isTestWeek": false
+        },
+        {
+          "week": 5,
+          "phase": "5×3",
+          "sets": [
+            {
+              "reps": 3,
+              "percent": 80
+            },
+            {
+              "reps": 3,
+              "percent": 80
+            },
+            {
+              "reps": 3,
+              "percent": 80
+            },
+            {
+              "reps": 3,
+              "percent": 80
+            },
+            {
+              "reps": 3,
+              "percent": 80
+            }
+          ],
+          "restSeconds": 150,
+          "timed": false,
+          "isTestWeek": false
+        },
+        {
+          "week": 6,
+          "phase": "5×2",
+          "sets": [
+            {
+              "reps": 2,
+              "percent": 85
+            },
+            {
+              "reps": 2,
+              "percent": 85
+            },
+            {
+              "reps": 2,
+              "percent": 85
+            },
+            {
+              "reps": 2,
+              "percent": 85
+            },
+            {
+              "reps": 2,
+              "percent": 85
+            }
+          ],
+          "restSeconds": 150,
+          "timed": false,
+          "isTestWeek": false
+        },
+        {
+          "week": 7,
+          "phase": "6×1",
+          "sets": [
+            {
+              "reps": 1,
+              "percent": 90
+            },
+            {
+              "reps": 1,
+              "percent": 90
+            },
+            {
+              "reps": 1,
+              "percent": 90
+            },
+            {
+              "reps": 1,
+              "percent": 90
+            },
+            {
+              "reps": 1,
+              "percent": 90
+            },
+            {
+              "reps": 1,
+              "percent": 90
+            }
+          ],
+          "restSeconds": 180,
+          "timed": false,
+          "isTestWeek": false
+        },
+        {
+          "week": 8,
+          "phase": "Test 1RM",
+          "sets": [
+            {
+              "reps": 5,
+              "percent": 40
+            },
+            {
+              "reps": 3,
+              "percent": 60
+            },
+            {
+              "reps": 1,
+              "percent": 75
+            },
+            {
+              "reps": 1,
+              "percent": 85
+            },
+            {
+              "reps": 1,
+              "percent": 92
+            },
+            {
+              "reps": 1,
+              "percent": 97
+            },
+            {
+              "reps": 1,
+              "percent": 100
+            }
+          ],
+          "restSeconds": 180,
+          "timed": false,
+          "isTestWeek": true
+        }
+      ]
+    },
+    {
+      "id": "2",
+      "nom": "Single lourd puis séries",
+      "duree_semaines": 8,
+      "test_1rm": "dernière semaine",
+      "semaines": [
+        {
+          "week": 1,
+          "phase": "4×8",
+          "sets": [
+            {
+              "reps": 8,
+              "percent": 65
+            },
+            {
+              "reps": 8,
+              "percent": 65
+            },
+            {
+              "reps": 8,
+              "percent": 65
+            },
+            {
+              "reps": 8,
+              "percent": 65
+            }
+          ],
+          "restSeconds": 90,
+          "timed": false,
+          "isTestWeek": false
+        },
+        {
+          "week": 2,
+          "phase": "5×6",
+          "sets": [
+            {
+              "reps": 6,
+              "percent": 70
+            },
+            {
+              "reps": 6,
+              "percent": 70
+            },
+            {
+              "reps": 6,
+              "percent": 70
+            },
+            {
+              "reps": 6,
+              "percent": 70
+            },
+            {
+              "reps": 6,
+              "percent": 70
+            }
+          ],
+          "restSeconds": 120,
+          "timed": false,
+          "isTestWeek": false
+        },
+        {
+          "week": 3,
+          "phase": "5×5",
+          "sets": [
+            {
+              "reps": 5,
+              "percent": 75
+            },
+            {
+              "reps": 5,
+              "percent": 75
+            },
+            {
+              "reps": 5,
+              "percent": 75
+            },
+            {
+              "reps": 5,
+              "percent": 75
+            },
+            {
+              "reps": 5,
+              "percent": 75
+            }
+          ],
+          "restSeconds": 120,
+          "timed": false,
+          "isTestWeek": false
+        },
+        {
+          "week": 4,
+          "phase": "1 puis 3×5",
+          "sets": [
+            {
+              "reps": 1,
+              "percent": 85
+            },
+            {
+              "reps": 5,
+              "percent": 75
+            },
+            {
+              "reps": 5,
+              "percent": 75
+            },
+            {
+              "reps": 5,
+              "percent": 75
+            }
+          ],
+          "restSeconds": 150,
+          "timed": false,
+          "isTestWeek": false
+        },
+        {
+          "week": 5,
+          "phase": "1 puis 4×4",
+          "sets": [
+            {
+              "reps": 1,
+              "percent": 90
+            },
+            {
+              "reps": 4,
+              "percent": 80
+            },
+            {
+              "reps": 4,
+              "percent": 80
+            },
+            {
+              "reps": 4,
+              "percent": 80
+            },
+            {
+              "reps": 4,
+              "percent": 80
+            }
+          ],
+          "restSeconds": 180,
+          "timed": false,
+          "isTestWeek": false
+        },
+        {
+          "week": 6,
+          "phase": "1 puis 6×3",
+          "sets": [
+            {
+              "reps": 1,
+              "percent": 95
+            },
+            {
+              "reps": 3,
+              "percent": 85
+            },
+            {
+              "reps": 3,
+              "percent": 85
+            },
+            {
+              "reps": 3,
+              "percent": 85
+            },
+            {
+              "reps": 3,
+              "percent": 85
+            },
+            {
+              "reps": 3,
+              "percent": 85
+            },
+            {
+              "reps": 3,
+              "percent": 85
+            }
+          ],
+          "restSeconds": 180,
+          "timed": false,
+          "isTestWeek": false
+        },
+        {
+          "week": 7,
+          "phase": "Allégée 10-8-6-4-2",
+          "sets": [
+            {
+              "reps": 10,
+              "percent": 60
+            },
+            {
+              "reps": 8,
+              "percent": 65
+            },
+            {
+              "reps": 6,
+              "percent": 72
+            },
+            {
+              "reps": 4,
+              "percent": 78
+            },
+            {
+              "reps": 2,
+              "percent": 85
+            }
+          ],
+          "restSeconds": 90,
+          "timed": false,
+          "isTestWeek": false
+        },
+        {
+          "week": 8,
+          "phase": "Test 1RM",
+          "sets": [
+            {
+              "reps": 5,
+              "percent": 40
+            },
+            {
+              "reps": 3,
+              "percent": 60
+            },
+            {
+              "reps": 1,
+              "percent": 75
+            },
+            {
+              "reps": 1,
+              "percent": 85
+            },
+            {
+              "reps": 1,
+              "percent": 92
+            },
+            {
+              "reps": 1,
+              "percent": 97
+            },
+            {
+              "reps": 1,
+              "percent": 100
+            }
+          ],
+          "restSeconds": 180,
+          "timed": false,
+          "isTestWeek": true
+        }
+      ]
+    },
+    {
+      "id": "3",
+      "nom": "Paliers, EMOM allégée, singles",
+      "duree_semaines": 7,
+      "test_1rm": "séparé en dernière semaine",
+      "semaines": [
+        {
+          "week": 1,
+          "phase": "3×5 paliers",
+          "sets": [
+            {
+              "reps": 5,
+              "percent": 50
+            },
+            {
+              "reps": 5,
+              "percent": 55
+            },
+            {
+              "reps": 5,
+              "percent": 60
+            }
+          ],
+          "restSeconds": 90,
+          "timed": false,
+          "isTestWeek": false
+        },
+        {
+          "week": 2,
+          "phase": "5×4 paliers",
+          "sets": [
+            {
+              "reps": 4,
+              "percent": 60
+            },
+            {
+              "reps": 4,
+              "percent": 65
+            },
+            {
+              "reps": 4,
+              "percent": 65
+            },
+            {
+              "reps": 4,
+              "percent": 70
+            },
+            {
+              "reps": 4,
+              "percent": 70
+            }
+          ],
+          "restSeconds": 120,
+          "timed": false,
+          "isTestWeek": false
+        },
+        {
+          "week": 3,
+          "phase": "5×3",
+          "sets": [
+            {
+              "reps": 3,
+              "percent": 70
+            },
+            {
+              "reps": 3,
+              "percent": 70
+            },
+            {
+              "reps": 3,
+              "percent": 70
+            },
+            {
+              "reps": 3,
+              "percent": 70
+            },
+            {
+              "reps": 3,
+              "percent": 70
+            }
+          ],
+          "restSeconds": 120,
+          "timed": false,
+          "isTestWeek": false
+        },
+        {
+          "week": 4,
+          "phase": "Allégée EMOM 6'",
+          "sets": [
+            {
+              "reps": 2,
+              "percent": 60
+            },
+            {
+              "reps": 2,
+              "percent": 60
+            },
+            {
+              "reps": 2,
+              "percent": 60
+            },
+            {
+              "reps": 2,
+              "percent": 60
+            },
+            {
+              "reps": 2,
+              "percent": 60
+            },
+            {
+              "reps": 2,
+              "percent": 60
+            }
+          ],
+          "restSeconds": 60,
+          "timed": true,
+          "isTestWeek": false
+        },
+        {
+          "week": 5,
+          "phase": "4×2",
+          "sets": [
+            {
+              "reps": 2,
+              "percent": 78
+            },
+            {
+              "reps": 2,
+              "percent": 78
+            },
+            {
+              "reps": 2,
+              "percent": 78
+            },
+            {
+              "reps": 2,
+              "percent": 78
+            }
+          ],
+          "restSeconds": 120,
+          "timed": false,
+          "isTestWeek": false
+        },
+        {
+          "week": 6,
+          "phase": "5×1",
+          "sets": [
+            {
+              "reps": 1,
+              "percent": 80
+            },
+            {
+              "reps": 1,
+              "percent": 85
+            },
+            {
+              "reps": 1,
+              "percent": 88
+            },
+            {
+              "reps": 1,
+              "percent": 90
+            },
+            {
+              "reps": 1,
+              "percent": 92
+            }
+          ],
+          "restSeconds": 180,
+          "timed": false,
+          "isTestWeek": false
+        },
+        {
+          "week": 7,
+          "phase": "Test 1RM séparé",
+          "sets": [
+            {
+              "reps": 5,
+              "percent": 40
+            },
+            {
+              "reps": 3,
+              "percent": 60
+            },
+            {
+              "reps": 1,
+              "percent": 75
+            },
+            {
+              "reps": 1,
+              "percent": 85
+            },
+            {
+              "reps": 1,
+              "percent": 92
+            },
+            {
+              "reps": 1,
+              "percent": 97
+            },
+            {
+              "reps": 1,
+              "percent": 100
+            }
+          ],
+          "restSeconds": 180,
+          "timed": false,
+          "isTestWeek": true
+        }
+      ]
+    },
+    {
+      "id": "4",
+      "nom": "Pyramide, vagues et pic",
+      "duree_semaines": 7,
+      "test_1rm": "séparé en dernière semaine",
+      "semaines": [
+        {
+          "week": 1,
+          "phase": "10-8-6-4",
+          "sets": [
+            {
+              "reps": 10,
+              "percent": 55
+            },
+            {
+              "reps": 8,
+              "percent": 60
+            },
+            {
+              "reps": 6,
+              "percent": 65
+            },
+            {
+              "reps": 4,
+              "percent": 70
+            }
+          ],
+          "restSeconds": 120,
+          "timed": false,
+          "isTestWeek": false
+        },
+        {
+          "week": 2,
+          "phase": "6×5",
+          "sets": [
+            {
+              "reps": 5,
+              "percent": 60
+            },
+            {
+              "reps": 5,
+              "percent": 60
+            },
+            {
+              "reps": 5,
+              "percent": 60
+            },
+            {
+              "reps": 5,
+              "percent": 60
+            },
+            {
+              "reps": 5,
+              "percent": 60
+            },
+            {
+              "reps": 5,
+              "percent": 60
+            }
+          ],
+          "restSeconds": 90,
+          "timed": false,
+          "isTestWeek": false
+        },
+        {
+          "week": 3,
+          "phase": "5×5",
+          "sets": [
+            {
+              "reps": 5,
+              "percent": 65
+            },
+            {
+              "reps": 5,
+              "percent": 65
+            },
+            {
+              "reps": 5,
+              "percent": 65
+            },
+            {
+              "reps": 5,
+              "percent": 65
+            },
+            {
+              "reps": 5,
+              "percent": 65
+            }
+          ],
+          "restSeconds": 90,
+          "timed": false,
+          "isTestWeek": false
+        },
+        {
+          "week": 4,
+          "phase": "Allégée 10×3 (30\")",
+          "sets": [
+            {
+              "reps": 3,
+              "percent": 50
+            },
+            {
+              "reps": 3,
+              "percent": 50
+            },
+            {
+              "reps": 3,
+              "percent": 50
+            },
+            {
+              "reps": 3,
+              "percent": 50
+            },
+            {
+              "reps": 3,
+              "percent": 50
+            },
+            {
+              "reps": 3,
+              "percent": 60
+            },
+            {
+              "reps": 3,
+              "percent": 60
+            },
+            {
+              "reps": 3,
+              "percent": 60
+            },
+            {
+              "reps": 3,
+              "percent": 60
+            },
+            {
+              "reps": 3,
+              "percent": 60
+            }
+          ],
+          "restSeconds": 30,
+          "timed": true,
+          "isTestWeek": false
+        },
+        {
+          "week": 5,
+          "phase": "5×3",
+          "sets": [
+            {
+              "reps": 3,
+              "percent": 75
+            },
+            {
+              "reps": 3,
+              "percent": 75
+            },
+            {
+              "reps": 3,
+              "percent": 75
+            },
+            {
+              "reps": 3,
+              "percent": 75
+            },
+            {
+              "reps": 3,
+              "percent": 75
+            }
+          ],
+          "restSeconds": 120,
+          "timed": false,
+          "isTestWeek": false
+        },
+        {
+          "week": 6,
+          "phase": "3 vagues",
+          "sets": [
+            {
+              "reps": 2,
+              "percent": 75
+            },
+            {
+              "reps": 2,
+              "percent": 80
+            },
+            {
+              "reps": 1,
+              "percent": 85
+            },
+            {
+              "reps": 2,
+              "percent": 80
+            },
+            {
+              "reps": 2,
+              "percent": 85
+            },
+            {
+              "reps": 1,
+              "percent": 90
+            },
+            {
+              "reps": 1,
+              "percent": 85
+            },
+            {
+              "reps": 1,
+              "percent": 90
+            },
+            {
+              "reps": 1,
+              "percent": 95
+            },
+            {
+              "reps": 1,
+              "percent": 100
+            }
+          ],
+          "restSeconds": 180,
+          "timed": false,
+          "isTestWeek": false
+        },
+        {
+          "week": 7,
+          "phase": "Test 1RM séparé",
+          "sets": [
+            {
+              "reps": 5,
+              "percent": 40
+            },
+            {
+              "reps": 3,
+              "percent": 60
+            },
+            {
+              "reps": 1,
+              "percent": 75
+            },
+            {
+              "reps": 1,
+              "percent": 85
+            },
+            {
+              "reps": 1,
+              "percent": 92
+            },
+            {
+              "reps": 1,
+              "percent": 97
+            },
+            {
+              "reps": 1,
+              "percent": 100
+            }
+          ],
+          "restSeconds": 180,
+          "timed": false,
+          "isTestWeek": true
+        }
+      ]
+    },
+    {
+      "id": "5",
+      "nom": "Volume léger puis pic",
+      "duree_semaines": 7,
+      "test_1rm": "séparé en dernière semaine",
+      "semaines": [
+        {
+          "week": 1,
+          "phase": "10×2",
+          "sets": [
+            {
+              "reps": 2,
+              "percent": 55
+            },
+            {
+              "reps": 2,
+              "percent": 55
+            },
+            {
+              "reps": 2,
+              "percent": 55
+            },
+            {
+              "reps": 2,
+              "percent": 55
+            },
+            {
+              "reps": 2,
+              "percent": 55
+            },
+            {
+              "reps": 2,
+              "percent": 55
+            },
+            {
+              "reps": 2,
+              "percent": 55
+            },
+            {
+              "reps": 2,
+              "percent": 55
+            },
+            {
+              "reps": 2,
+              "percent": 55
+            },
+            {
+              "reps": 2,
+              "percent": 55
+            }
+          ],
+          "restSeconds": 90,
+          "timed": false,
+          "isTestWeek": false
+        },
+        {
+          "week": 2,
+          "phase": "6×3",
+          "sets": [
+            {
+              "reps": 3,
+              "percent": 60
+            },
+            {
+              "reps": 3,
+              "percent": 60
+            },
+            {
+              "reps": 3,
+              "percent": 60
+            },
+            {
+              "reps": 3,
+              "percent": 60
+            },
+            {
+              "reps": 3,
+              "percent": 60
+            },
+            {
+              "reps": 3,
+              "percent": 60
+            }
+          ],
+          "restSeconds": 90,
+          "timed": false,
+          "isTestWeek": false
+        },
+        {
+          "week": 3,
+          "phase": "5×2",
+          "sets": [
+            {
+              "reps": 2,
+              "percent": 65
+            },
+            {
+              "reps": 2,
+              "percent": 65
+            },
+            {
+              "reps": 2,
+              "percent": 65
+            },
+            {
+              "reps": 2,
+              "percent": 65
+            },
+            {
+              "reps": 2,
+              "percent": 65
+            }
+          ],
+          "restSeconds": 90,
+          "timed": false,
+          "isTestWeek": false
+        },
+        {
+          "week": 4,
+          "phase": "Allégée 10×3",
+          "sets": [
+            {
+              "reps": 3,
+              "percent": 50
+            },
+            {
+              "reps": 3,
+              "percent": 50
+            },
+            {
+              "reps": 3,
+              "percent": 50
+            },
+            {
+              "reps": 3,
+              "percent": 50
+            },
+            {
+              "reps": 3,
+              "percent": 50
+            },
+            {
+              "reps": 3,
+              "percent": 50
+            },
+            {
+              "reps": 3,
+              "percent": 50
+            },
+            {
+              "reps": 3,
+              "percent": 50
+            },
+            {
+              "reps": 3,
+              "percent": 50
+            },
+            {
+              "reps": 3,
+              "percent": 50
+            }
+          ],
+          "restSeconds": 60,
+          "timed": false,
+          "isTestWeek": false
+        },
+        {
+          "week": 5,
+          "phase": "4×3, 4×2, 4×1",
+          "sets": [
+            {
+              "reps": 3,
+              "percent": 65
+            },
+            {
+              "reps": 3,
+              "percent": 65
+            },
+            {
+              "reps": 3,
+              "percent": 65
+            },
+            {
+              "reps": 3,
+              "percent": 65
+            },
+            {
+              "reps": 2,
+              "percent": 70
+            },
+            {
+              "reps": 2,
+              "percent": 70
+            },
+            {
+              "reps": 2,
+              "percent": 70
+            },
+            {
+              "reps": 2,
+              "percent": 70
+            },
+            {
+              "reps": 1,
+              "percent": 75
+            },
+            {
+              "reps": 1,
+              "percent": 75
+            },
+            {
+              "reps": 1,
+              "percent": 75
+            },
+            {
+              "reps": 1,
+              "percent": 75
+            }
+          ],
+          "restSeconds": 120,
+          "timed": false,
+          "isTestWeek": false
+        },
+        {
+          "week": 6,
+          "phase": "2×3, 3×2, 4×1",
+          "sets": [
+            {
+              "reps": 3,
+              "percent": 70
+            },
+            {
+              "reps": 3,
+              "percent": 70
+            },
+            {
+              "reps": 2,
+              "percent": 75
+            },
+            {
+              "reps": 2,
+              "percent": 75
+            },
+            {
+              "reps": 2,
+              "percent": 75
+            },
+            {
+              "reps": 1,
+              "percent": 80
+            },
+            {
+              "reps": 1,
+              "percent": 80
+            },
+            {
+              "reps": 1,
+              "percent": 80
+            },
+            {
+              "reps": 1,
+              "percent": 80
+            }
+          ],
+          "restSeconds": 150,
+          "timed": false,
+          "isTestWeek": false
+        },
+        {
+          "week": 7,
+          "phase": "Test 1RM séparé",
+          "sets": [
+            {
+              "reps": 5,
+              "percent": 40
+            },
+            {
+              "reps": 3,
+              "percent": 60
+            },
+            {
+              "reps": 1,
+              "percent": 75
+            },
+            {
+              "reps": 1,
+              "percent": 85
+            },
+            {
+              "reps": 1,
+              "percent": 92
+            },
+            {
+              "reps": 1,
+              "percent": 97
+            },
+            {
+              "reps": 1,
+              "percent": 100
+            }
+          ],
+          "restSeconds": 180,
+          "timed": false,
+          "isTestWeek": true
+        }
+      ]
+    },
+    {
+      "id": "6",
+      "nom": "Complexes, vagues et test",
+      "duree_semaines": 8,
+      "test_1rm": "dernière semaine",
+      "semaines": [
+        {
+          "week": 1,
+          "phase": "6×5",
+          "sets": [
+            {
+              "reps": 5,
+              "percent": 60
+            },
+            {
+              "reps": 5,
+              "percent": 60
+            },
+            {
+              "reps": 5,
+              "percent": 60
+            },
+            {
+              "reps": 5,
+              "percent": 60
+            },
+            {
+              "reps": 5,
+              "percent": 60
+            },
+            {
+              "reps": 5,
+              "percent": 60
+            }
+          ],
+          "restSeconds": 90,
+          "timed": false,
+          "isTestWeek": false
+        },
+        {
+          "week": 2,
+          "phase": "8×3",
+          "sets": [
+            {
+              "reps": 3,
+              "percent": 65
+            },
+            {
+              "reps": 3,
+              "percent": 65
+            },
+            {
+              "reps": 3,
+              "percent": 65
+            },
+            {
+              "reps": 3,
+              "percent": 65
+            },
+            {
+              "reps": 3,
+              "percent": 65
+            },
+            {
+              "reps": 3,
+              "percent": 65
+            },
+            {
+              "reps": 3,
+              "percent": 65
+            },
+            {
+              "reps": 3,
+              "percent": 65
+            }
+          ],
+          "restSeconds": 90,
+          "timed": false,
+          "isTestWeek": false
+        },
+        {
+          "week": 3,
+          "phase": "5 complexes (3+1)",
+          "sets": [
+            {
+              "reps": 4,
+              "percent": 70
+            },
+            {
+              "reps": 4,
+              "percent": 70
+            },
+            {
+              "reps": 4,
+              "percent": 70
+            },
+            {
+              "reps": 4,
+              "percent": 70
+            },
+            {
+              "reps": 4,
+              "percent": 70
+            }
+          ],
+          "restSeconds": 120,
+          "timed": false,
+          "isTestWeek": false
+        },
+        {
+          "week": 4,
+          "phase": "Allégée 3×3",
+          "sets": [
+            {
+              "reps": 3,
+              "percent": 65
+            },
+            {
+              "reps": 3,
+              "percent": 65
+            },
+            {
+              "reps": 3,
+              "percent": 65
+            }
+          ],
+          "restSeconds": 90,
+          "timed": false,
+          "isTestWeek": false
+        },
+        {
+          "week": 5,
+          "phase": "2 vagues 3-2-1",
+          "sets": [
+            {
+              "reps": 3,
+              "percent": 72
+            },
+            {
+              "reps": 2,
+              "percent": 77
+            },
+            {
+              "reps": 1,
+              "percent": 82
+            },
+            {
+              "reps": 3,
+              "percent": 77
+            },
+            {
+              "reps": 2,
+              "percent": 82
+            },
+            {
+              "reps": 1,
+              "percent": 84
+            }
+          ],
+          "restSeconds": 150,
+          "timed": false,
+          "isTestWeek": false
+        },
+        {
+          "week": 6,
+          "phase": "3 vagues 3-2-1",
+          "sets": [
+            {
+              "reps": 3,
+              "percent": 70
+            },
+            {
+              "reps": 2,
+              "percent": 75
+            },
+            {
+              "reps": 1,
+              "percent": 80
+            },
+            {
+              "reps": 3,
+              "percent": 75
+            },
+            {
+              "reps": 2,
+              "percent": 80
+            },
+            {
+              "reps": 1,
+              "percent": 80
+            },
+            {
+              "reps": 3,
+              "percent": 80
+            },
+            {
+              "reps": 2,
+              "percent": 85
+            },
+            {
+              "reps": 1,
+              "percent": 90
+            }
+          ],
+          "restSeconds": 180,
+          "timed": false,
+          "isTestWeek": false
+        },
+        {
+          "week": 7,
+          "phase": "3×1",
+          "sets": [
+            {
+              "reps": 1,
+              "percent": 87
+            },
+            {
+              "reps": 1,
+              "percent": 90
+            },
+            {
+              "reps": 1,
+              "percent": 92
+            }
+          ],
+          "restSeconds": 180,
+          "timed": false,
+          "isTestWeek": false
+        },
+        {
+          "week": 8,
+          "phase": "Test 1RM",
+          "sets": [
+            {
+              "reps": 5,
+              "percent": 40
+            },
+            {
+              "reps": 3,
+              "percent": 60
+            },
+            {
+              "reps": 1,
+              "percent": 75
+            },
+            {
+              "reps": 1,
+              "percent": 85
+            },
+            {
+              "reps": 1,
+              "percent": 92
+            },
+            {
+              "reps": 1,
+              "percent": 97
+            },
+            {
+              "reps": 1,
+              "percent": 100
+            }
+          ],
+          "restSeconds": 180,
+          "timed": false,
+          "isTestWeek": true
+        }
+      ]
+    },
+    {
+      "id": "7",
+      "nom": "Volume vers vagues et test",
+      "duree_semaines": 8,
+      "test_1rm": "dernière semaine",
+      "semaines": [
+        {
+          "week": 1,
+          "phase": "6×2",
+          "sets": [
+            {
+              "reps": 2,
+              "percent": 65
+            },
+            {
+              "reps": 2,
+              "percent": 65
+            },
+            {
+              "reps": 2,
+              "percent": 65
+            },
+            {
+              "reps": 2,
+              "percent": 65
+            },
+            {
+              "reps": 2,
+              "percent": 65
+            },
+            {
+              "reps": 2,
+              "percent": 65
+            }
+          ],
+          "restSeconds": 90,
+          "timed": false,
+          "isTestWeek": false
+        },
+        {
+          "week": 2,
+          "phase": "7×2",
+          "sets": [
+            {
+              "reps": 2,
+              "percent": 68
+            },
+            {
+              "reps": 2,
+              "percent": 68
+            },
+            {
+              "reps": 2,
+              "percent": 68
+            },
+            {
+              "reps": 2,
+              "percent": 68
+            },
+            {
+              "reps": 2,
+              "percent": 68
+            },
+            {
+              "reps": 2,
+              "percent": 68
+            },
+            {
+              "reps": 2,
+              "percent": 68
+            }
+          ],
+          "restSeconds": 90,
+          "timed": false,
+          "isTestWeek": false
+        },
+        {
+          "week": 3,
+          "phase": "5×2",
+          "sets": [
+            {
+              "reps": 2,
+              "percent": 72
+            },
+            {
+              "reps": 2,
+              "percent": 72
+            },
+            {
+              "reps": 2,
+              "percent": 72
+            },
+            {
+              "reps": 2,
+              "percent": 72
+            },
+            {
+              "reps": 2,
+              "percent": 72
+            }
+          ],
+          "restSeconds": 120,
+          "timed": false,
+          "isTestWeek": false
+        },
+        {
+          "week": 4,
+          "phase": "Allégée 4×2",
+          "sets": [
+            {
+              "reps": 2,
+              "percent": 65
+            },
+            {
+              "reps": 2,
+              "percent": 65
+            },
+            {
+              "reps": 2,
+              "percent": 65
+            },
+            {
+              "reps": 2,
+              "percent": 65
+            }
+          ],
+          "restSeconds": 90,
+          "timed": false,
+          "isTestWeek": false
+        },
+        {
+          "week": 5,
+          "phase": "2 vagues 3-2-1",
+          "sets": [
+            {
+              "reps": 3,
+              "percent": 72
+            },
+            {
+              "reps": 2,
+              "percent": 77
+            },
+            {
+              "reps": 1,
+              "percent": 82
+            },
+            {
+              "reps": 3,
+              "percent": 77
+            },
+            {
+              "reps": 2,
+              "percent": 82
+            },
+            {
+              "reps": 1,
+              "percent": 84
+            }
+          ],
+          "restSeconds": 150,
+          "timed": false,
+          "isTestWeek": false
+        },
+        {
+          "week": 6,
+          "phase": "3 vagues et pic",
+          "sets": [
+            {
+              "reps": 3,
+              "percent": 72
+            },
+            {
+              "reps": 2,
+              "percent": 77
+            },
+            {
+              "reps": 1,
+              "percent": 82
+            },
+            {
+              "reps": 3,
+              "percent": 77
+            },
+            {
+              "reps": 2,
+              "percent": 82
+            },
+            {
+              "reps": 1,
+              "percent": 84
+            },
+            {
+              "reps": 2,
+              "percent": 82
+            },
+            {
+              "reps": 1,
+              "percent": 87
+            },
+            {
+              "reps": 1,
+              "percent": 92
+            }
+          ],
+          "restSeconds": 180,
+          "timed": false,
+          "isTestWeek": false
+        },
+        {
+          "week": 7,
+          "phase": "4×1",
+          "sets": [
+            {
+              "reps": 1,
+              "percent": 85
+            },
+            {
+              "reps": 1,
+              "percent": 88
+            },
+            {
+              "reps": 1,
+              "percent": 90
+            },
+            {
+              "reps": 1,
+              "percent": 92
+            }
+          ],
+          "restSeconds": 180,
+          "timed": false,
+          "isTestWeek": false
+        },
+        {
+          "week": 8,
+          "phase": "Test 1RM",
+          "sets": [
+            {
+              "reps": 5,
+              "percent": 40
+            },
+            {
+              "reps": 3,
+              "percent": 60
+            },
+            {
+              "reps": 1,
+              "percent": 75
+            },
+            {
+              "reps": 1,
+              "percent": 85
+            },
+            {
+              "reps": 1,
+              "percent": 92
+            },
+            {
+              "reps": 1,
+              "percent": 97
+            },
+            {
+              "reps": 1,
+              "percent": 100
+            }
+          ],
+          "restSeconds": 180,
+          "timed": false,
+          "isTestWeek": true
+        }
+      ]
+    },
+    {
+      "id": "8",
+      "nom": "Volume, force puis pic",
+      "duree_semaines": 7,
+      "test_1rm": "séparé en dernière semaine",
+      "semaines": [
+        {
+          "week": 1,
+          "phase": "10×5",
+          "sets": [
+            {
+              "reps": 5,
+              "percent": 55
+            },
+            {
+              "reps": 5,
+              "percent": 55
+            },
+            {
+              "reps": 5,
+              "percent": 55
+            },
+            {
+              "reps": 5,
+              "percent": 55
+            },
+            {
+              "reps": 5,
+              "percent": 55
+            },
+            {
+              "reps": 5,
+              "percent": 55
+            },
+            {
+              "reps": 5,
+              "percent": 55
+            },
+            {
+              "reps": 5,
+              "percent": 55
+            },
+            {
+              "reps": 5,
+              "percent": 55
+            },
+            {
+              "reps": 5,
+              "percent": 55
+            }
+          ],
+          "restSeconds": 90,
+          "timed": false,
+          "isTestWeek": false
+        },
+        {
+          "week": 2,
+          "phase": "10×3",
+          "sets": [
+            {
+              "reps": 3,
+              "percent": 60
+            },
+            {
+              "reps": 3,
+              "percent": 60
+            },
+            {
+              "reps": 3,
+              "percent": 60
+            },
+            {
+              "reps": 3,
+              "percent": 60
+            },
+            {
+              "reps": 3,
+              "percent": 60
+            },
+            {
+              "reps": 3,
+              "percent": 60
+            },
+            {
+              "reps": 3,
+              "percent": 60
+            },
+            {
+              "reps": 3,
+              "percent": 60
+            },
+            {
+              "reps": 3,
+              "percent": 60
+            },
+            {
+              "reps": 3,
+              "percent": 60
+            }
+          ],
+          "restSeconds": 90,
+          "timed": false,
+          "isTestWeek": false
+        },
+        {
+          "week": 3,
+          "phase": "5×4",
+          "sets": [
+            {
+              "reps": 4,
+              "percent": 70
+            },
+            {
+              "reps": 4,
+              "percent": 70
+            },
+            {
+              "reps": 4,
+              "percent": 70
+            },
+            {
+              "reps": 4,
+              "percent": 70
+            },
+            {
+              "reps": 4,
+              "percent": 70
+            }
+          ],
+          "restSeconds": 120,
+          "timed": false,
+          "isTestWeek": false
+        },
+        {
+          "week": 4,
+          "phase": "Allégée 6×3",
+          "sets": [
+            {
+              "reps": 3,
+              "percent": 62
+            },
+            {
+              "reps": 3,
+              "percent": 62
+            },
+            {
+              "reps": 3,
+              "percent": 62
+            },
+            {
+              "reps": 3,
+              "percent": 62
+            },
+            {
+              "reps": 3,
+              "percent": 62
+            },
+            {
+              "reps": 3,
+              "percent": 62
+            }
+          ],
+          "restSeconds": 90,
+          "timed": false,
+          "isTestWeek": false
+        },
+        {
+          "week": 5,
+          "phase": "7×3",
+          "sets": [
+            {
+              "reps": 3,
+              "percent": 75
+            },
+            {
+              "reps": 3,
+              "percent": 75
+            },
+            {
+              "reps": 3,
+              "percent": 75
+            },
+            {
+              "reps": 3,
+              "percent": 75
+            },
+            {
+              "reps": 3,
+              "percent": 75
+            },
+            {
+              "reps": 3,
+              "percent": 75
+            },
+            {
+              "reps": 3,
+              "percent": 75
+            }
+          ],
+          "restSeconds": 120,
+          "timed": false,
+          "isTestWeek": false
+        },
+        {
+          "week": 6,
+          "phase": "3×3, 3×2, 4×1",
+          "sets": [
+            {
+              "reps": 3,
+              "percent": 80
+            },
+            {
+              "reps": 3,
+              "percent": 80
+            },
+            {
+              "reps": 3,
+              "percent": 80
+            },
+            {
+              "reps": 2,
+              "percent": 85
+            },
+            {
+              "reps": 2,
+              "percent": 85
+            },
+            {
+              "reps": 2,
+              "percent": 85
+            },
+            {
+              "reps": 1,
+              "percent": 90
+            },
+            {
+              "reps": 1,
+              "percent": 90
+            },
+            {
+              "reps": 1,
+              "percent": 90
+            },
+            {
+              "reps": 1,
+              "percent": 90
+            }
+          ],
+          "restSeconds": 180,
+          "timed": false,
+          "isTestWeek": false
+        },
+        {
+          "week": 7,
+          "phase": "Test 1RM séparé",
+          "sets": [
+            {
+              "reps": 5,
+              "percent": 40
+            },
+            {
+              "reps": 3,
+              "percent": 60
+            },
+            {
+              "reps": 1,
+              "percent": 75
+            },
+            {
+              "reps": 1,
+              "percent": 85
+            },
+            {
+              "reps": 1,
+              "percent": 92
+            },
+            {
+              "reps": 1,
+              "percent": 97
+            },
+            {
+              "reps": 1,
+              "percent": 100
+            }
+          ],
+          "restSeconds": 180,
+          "timed": false,
+          "isTestWeek": true
+        }
+      ]
+    },
+    {
+      "id": "9",
+      "nom": "Séries courtes, EMOM et pic",
+      "duree_semaines": 7,
+      "test_1rm": "séparé en dernière semaine",
+      "semaines": [
+        {
+          "week": 1,
+          "phase": "6×4",
+          "sets": [
+            {
+              "reps": 4,
+              "percent": 60
+            },
+            {
+              "reps": 4,
+              "percent": 60
+            },
+            {
+              "reps": 4,
+              "percent": 60
+            },
+            {
+              "reps": 4,
+              "percent": 60
+            },
+            {
+              "reps": 4,
+              "percent": 60
+            },
+            {
+              "reps": 4,
+              "percent": 60
+            }
+          ],
+          "restSeconds": 90,
+          "timed": false,
+          "isTestWeek": false
+        },
+        {
+          "week": 2,
+          "phase": "15×3",
+          "sets": [
+            {
+              "reps": 3,
+              "percent": 55
+            },
+            {
+              "reps": 3,
+              "percent": 55
+            },
+            {
+              "reps": 3,
+              "percent": 55
+            },
+            {
+              "reps": 3,
+              "percent": 55
+            },
+            {
+              "reps": 3,
+              "percent": 55
+            },
+            {
+              "reps": 3,
+              "percent": 55
+            },
+            {
+              "reps": 3,
+              "percent": 55
+            },
+            {
+              "reps": 3,
+              "percent": 55
+            },
+            {
+              "reps": 3,
+              "percent": 55
+            },
+            {
+              "reps": 3,
+              "percent": 55
+            },
+            {
+              "reps": 3,
+              "percent": 55
+            },
+            {
+              "reps": 3,
+              "percent": 55
+            },
+            {
+              "reps": 3,
+              "percent": 55
+            },
+            {
+              "reps": 3,
+              "percent": 55
+            },
+            {
+              "reps": 3,
+              "percent": 55
+            }
+          ],
+          "restSeconds": 90,
+          "timed": false,
+          "isTestWeek": false
+        },
+        {
+          "week": 3,
+          "phase": "6×2",
+          "sets": [
+            {
+              "reps": 2,
+              "percent": 75
+            },
+            {
+              "reps": 2,
+              "percent": 75
+            },
+            {
+              "reps": 2,
+              "percent": 75
+            },
+            {
+              "reps": 2,
+              "percent": 75
+            },
+            {
+              "reps": 2,
+              "percent": 75
+            },
+            {
+              "reps": 2,
+              "percent": 75
+            }
+          ],
+          "restSeconds": 120,
+          "timed": false,
+          "isTestWeek": false
+        },
+        {
+          "week": 4,
+          "phase": "Allégée 20×3",
+          "sets": [
+            {
+              "reps": 3,
+              "percent": 50
+            },
+            {
+              "reps": 3,
+              "percent": 50
+            },
+            {
+              "reps": 3,
+              "percent": 50
+            },
+            {
+              "reps": 3,
+              "percent": 50
+            },
+            {
+              "reps": 3,
+              "percent": 50
+            },
+            {
+              "reps": 3,
+              "percent": 50
+            },
+            {
+              "reps": 3,
+              "percent": 50
+            },
+            {
+              "reps": 3,
+              "percent": 50
+            },
+            {
+              "reps": 3,
+              "percent": 50
+            },
+            {
+              "reps": 3,
+              "percent": 50
+            },
+            {
+              "reps": 3,
+              "percent": 50
+            },
+            {
+              "reps": 3,
+              "percent": 50
+            },
+            {
+              "reps": 3,
+              "percent": 50
+            },
+            {
+              "reps": 3,
+              "percent": 50
+            },
+            {
+              "reps": 3,
+              "percent": 50
+            },
+            {
+              "reps": 3,
+              "percent": 50
+            },
+            {
+              "reps": 3,
+              "percent": 50
+            },
+            {
+              "reps": 3,
+              "percent": 50
+            },
+            {
+              "reps": 3,
+              "percent": 50
+            },
+            {
+              "reps": 3,
+              "percent": 50
+            }
+          ],
+          "restSeconds": 45,
+          "timed": false,
+          "isTestWeek": false
+        },
+        {
+          "week": 5,
+          "phase": "EMOM 12'",
+          "sets": [
+            {
+              "reps": 2,
+              "percent": 80
+            },
+            {
+              "reps": 2,
+              "percent": 80
+            },
+            {
+              "reps": 2,
+              "percent": 80
+            },
+            {
+              "reps": 2,
+              "percent": 80
+            },
+            {
+              "reps": 2,
+              "percent": 80
+            },
+            {
+              "reps": 2,
+              "percent": 80
+            },
+            {
+              "reps": 2,
+              "percent": 80
+            },
+            {
+              "reps": 2,
+              "percent": 80
+            },
+            {
+              "reps": 2,
+              "percent": 80
+            },
+            {
+              "reps": 2,
+              "percent": 80
+            },
+            {
+              "reps": 2,
+              "percent": 80
+            },
+            {
+              "reps": 2,
+              "percent": 80
+            }
+          ],
+          "restSeconds": 60,
+          "timed": true,
+          "isTestWeek": false
+        },
+        {
+          "week": 6,
+          "phase": "5×1",
+          "sets": [
+            {
+              "reps": 1,
+              "percent": 85
+            },
+            {
+              "reps": 1,
+              "percent": 88
+            },
+            {
+              "reps": 1,
+              "percent": 90
+            },
+            {
+              "reps": 1,
+              "percent": 92
+            },
+            {
+              "reps": 1,
+              "percent": 95
+            }
+          ],
+          "restSeconds": 180,
+          "timed": false,
+          "isTestWeek": false
+        },
+        {
+          "week": 7,
+          "phase": "Test 1RM séparé",
+          "sets": [
+            {
+              "reps": 5,
+              "percent": 40
+            },
+            {
+              "reps": 3,
+              "percent": 60
+            },
+            {
+              "reps": 1,
+              "percent": 75
+            },
+            {
+              "reps": 1,
+              "percent": 85
+            },
+            {
+              "reps": 1,
+              "percent": 92
+            },
+            {
+              "reps": 1,
+              "percent": 97
+            },
+            {
+              "reps": 1,
+              "percent": 100
+            }
+          ],
+          "restSeconds": 180,
+          "timed": false,
+          "isTestWeek": true
+        }
+      ]
+    },
+    {
+      "id": "10",
+      "nom": "Force progressive, pic court",
+      "duree_semaines": 7,
+      "test_1rm": "séparé en dernière semaine",
+      "semaines": [
+        {
+          "week": 1,
+          "phase": "5×5",
+          "sets": [
+            {
+              "reps": 5,
+              "percent": 65
+            },
+            {
+              "reps": 5,
+              "percent": 65
+            },
+            {
+              "reps": 5,
+              "percent": 65
+            },
+            {
+              "reps": 5,
+              "percent": 65
+            },
+            {
+              "reps": 5,
+              "percent": 65
+            }
+          ],
+          "restSeconds": 90,
+          "timed": false,
+          "isTestWeek": false
+        },
+        {
+          "week": 2,
+          "phase": "5×3",
+          "sets": [
+            {
+              "reps": 3,
+              "percent": 72
+            },
+            {
+              "reps": 3,
+              "percent": 72
+            },
+            {
+              "reps": 3,
+              "percent": 72
+            },
+            {
+              "reps": 3,
+              "percent": 72
+            },
+            {
+              "reps": 3,
+              "percent": 72
+            }
+          ],
+          "restSeconds": 120,
+          "timed": false,
+          "isTestWeek": false
+        },
+        {
+          "week": 3,
+          "phase": "7×2",
+          "sets": [
+            {
+              "reps": 2,
+              "percent": 75
+            },
+            {
+              "reps": 2,
+              "percent": 75
+            },
+            {
+              "reps": 2,
+              "percent": 75
+            },
+            {
+              "reps": 2,
+              "percent": 75
+            },
+            {
+              "reps": 2,
+              "percent": 75
+            },
+            {
+              "reps": 2,
+              "percent": 75
+            },
+            {
+              "reps": 2,
+              "percent": 75
+            }
+          ],
+          "restSeconds": 120,
+          "timed": false,
+          "isTestWeek": false
+        },
+        {
+          "week": 4,
+          "phase": "Allégée 3×3",
+          "sets": [
+            {
+              "reps": 3,
+              "percent": 65
+            },
+            {
+              "reps": 3,
+              "percent": 65
+            },
+            {
+              "reps": 3,
+              "percent": 65
+            }
+          ],
+          "restSeconds": 90,
+          "timed": false,
+          "isTestWeek": false
+        },
+        {
+          "week": 5,
+          "phase": "5×2",
+          "sets": [
+            {
+              "reps": 2,
+              "percent": 82
+            },
+            {
+              "reps": 2,
+              "percent": 82
+            },
+            {
+              "reps": 2,
+              "percent": 82
+            },
+            {
+              "reps": 2,
+              "percent": 82
+            },
+            {
+              "reps": 2,
+              "percent": 82
+            }
+          ],
+          "restSeconds": 150,
+          "timed": false,
+          "isTestWeek": false
+        },
+        {
+          "week": 6,
+          "phase": "3 puis 3×1",
+          "sets": [
+            {
+              "reps": 3,
+              "percent": 85
+            },
+            {
+              "reps": 1,
+              "percent": 90
+            },
+            {
+              "reps": 1,
+              "percent": 90
+            },
+            {
+              "reps": 1,
+              "percent": 90
+            }
+          ],
+          "restSeconds": 180,
+          "timed": false,
+          "isTestWeek": false
+        },
+        {
+          "week": 7,
+          "phase": "Test 1RM séparé",
+          "sets": [
+            {
+              "reps": 5,
+              "percent": 40
+            },
+            {
+              "reps": 3,
+              "percent": 60
+            },
+            {
+              "reps": 1,
+              "percent": 75
+            },
+            {
+              "reps": 1,
+              "percent": 85
+            },
+            {
+              "reps": 1,
+              "percent": 92
+            },
+            {
+              "reps": 1,
+              "percent": 97
+            },
+            {
+              "reps": 1,
+              "percent": 100
+            }
+          ],
+          "restSeconds": 180,
+          "timed": false,
+          "isTestWeek": true
+        }
+      ]
+    },
+    {
+      "id": "11",
+      "nom": "Montée régulière, singles",
+      "duree_semaines": 7,
+      "test_1rm": "séparé en dernière semaine",
+      "semaines": [
+        {
+          "week": 1,
+          "phase": "8×2",
+          "sets": [
+            {
+              "reps": 2,
+              "percent": 60
+            },
+            {
+              "reps": 2,
+              "percent": 60
+            },
+            {
+              "reps": 2,
+              "percent": 60
+            },
+            {
+              "reps": 2,
+              "percent": 60
+            },
+            {
+              "reps": 2,
+              "percent": 60
+            },
+            {
+              "reps": 2,
+              "percent": 60
+            },
+            {
+              "reps": 2,
+              "percent": 60
+            },
+            {
+              "reps": 2,
+              "percent": 60
+            }
+          ],
+          "restSeconds": 90,
+          "timed": false,
+          "isTestWeek": false
+        },
+        {
+          "week": 2,
+          "phase": "6×2",
+          "sets": [
+            {
+              "reps": 2,
+              "percent": 65
+            },
+            {
+              "reps": 2,
+              "percent": 65
+            },
+            {
+              "reps": 2,
+              "percent": 65
+            },
+            {
+              "reps": 2,
+              "percent": 65
+            },
+            {
+              "reps": 2,
+              "percent": 65
+            },
+            {
+              "reps": 2,
+              "percent": 65
+            }
+          ],
+          "restSeconds": 90,
+          "timed": false,
+          "isTestWeek": false
+        },
+        {
+          "week": 3,
+          "phase": "5×2",
+          "sets": [
+            {
+              "reps": 2,
+              "percent": 70
+            },
+            {
+              "reps": 2,
+              "percent": 70
+            },
+            {
+              "reps": 2,
+              "percent": 70
+            },
+            {
+              "reps": 2,
+              "percent": 70
+            },
+            {
+              "reps": 2,
+              "percent": 70
+            }
+          ],
+          "restSeconds": 120,
+          "timed": false,
+          "isTestWeek": false
+        },
+        {
+          "week": 4,
+          "phase": "Allégée 4×2",
+          "sets": [
+            {
+              "reps": 2,
+              "percent": 60
+            },
+            {
+              "reps": 2,
+              "percent": 60
+            },
+            {
+              "reps": 2,
+              "percent": 60
+            },
+            {
+              "reps": 2,
+              "percent": 60
+            }
+          ],
+          "restSeconds": 90,
+          "timed": false,
+          "isTestWeek": false
+        },
+        {
+          "week": 5,
+          "phase": "4×2",
+          "sets": [
+            {
+              "reps": 2,
+              "percent": 75
+            },
+            {
+              "reps": 2,
+              "percent": 75
+            },
+            {
+              "reps": 2,
+              "percent": 75
+            },
+            {
+              "reps": 2,
+              "percent": 75
+            }
+          ],
+          "restSeconds": 120,
+          "timed": false,
+          "isTestWeek": false
+        },
+        {
+          "week": 6,
+          "phase": "5×1",
+          "sets": [
+            {
+              "reps": 1,
+              "percent": 80
+            },
+            {
+              "reps": 1,
+              "percent": 85
+            },
+            {
+              "reps": 1,
+              "percent": 88
+            },
+            {
+              "reps": 1,
+              "percent": 90
+            },
+            {
+              "reps": 1,
+              "percent": 90
+            }
+          ],
+          "restSeconds": 180,
+          "timed": false,
+          "isTestWeek": false
+        },
+        {
+          "week": 7,
+          "phase": "Test 1RM séparé",
+          "sets": [
+            {
+              "reps": 5,
+              "percent": 40
+            },
+            {
+              "reps": 3,
+              "percent": 60
+            },
+            {
+              "reps": 1,
+              "percent": 75
+            },
+            {
+              "reps": 1,
+              "percent": 85
+            },
+            {
+              "reps": 1,
+              "percent": 92
+            },
+            {
+              "reps": 1,
+              "percent": 97
+            },
+            {
+              "reps": 1,
+              "percent": 100
+            }
+          ],
+          "restSeconds": 180,
+          "timed": false,
+          "isTestWeek": true
+        }
+      ]
+    },
+    {
+      "id": "12",
+      "nom": "Vagues et test de pic",
+      "duree_semaines": 6,
+      "test_1rm": "inclus dans la semaine 6",
+      "semaines": [
+        {
+          "week": 1,
+          "phase": "3 vagues 3-2-1",
+          "sets": [
+            {
+              "reps": 3,
+              "percent": 50
+            },
+            {
+              "reps": 2,
+              "percent": 55
+            },
+            {
+              "reps": 1,
+              "percent": 60
+            },
+            {
+              "reps": 3,
+              "percent": 55
+            },
+            {
+              "reps": 2,
+              "percent": 60
+            },
+            {
+              "reps": 1,
+              "percent": 60
+            },
+            {
+              "reps": 3,
+              "percent": 60
+            },
+            {
+              "reps": 2,
+              "percent": 65
+            },
+            {
+              "reps": 1,
+              "percent": 70
+            }
+          ],
+          "restSeconds": 120,
+          "timed": false,
+          "isTestWeek": false
+        },
+        {
+          "week": 2,
+          "phase": "6×1",
+          "sets": [
+            {
+              "reps": 1,
+              "percent": 70
+            },
+            {
+              "reps": 1,
+              "percent": 70
+            },
+            {
+              "reps": 1,
+              "percent": 70
+            },
+            {
+              "reps": 1,
+              "percent": 70
+            },
+            {
+              "reps": 1,
+              "percent": 70
+            },
+            {
+              "reps": 1,
+              "percent": 70
+            }
+          ],
+          "restSeconds": 120,
+          "timed": false,
+          "isTestWeek": false
+        },
+        {
+          "week": 3,
+          "phase": "4×2",
+          "sets": [
+            {
+              "reps": 2,
+              "percent": 75
+            },
+            {
+              "reps": 2,
+              "percent": 75
+            },
+            {
+              "reps": 2,
+              "percent": 75
+            },
+            {
+              "reps": 2,
+              "percent": 75
+            }
+          ],
+          "restSeconds": 120,
+          "timed": false,
+          "isTestWeek": false
+        },
+        {
+          "week": 4,
+          "phase": "Allégée 5×2",
+          "sets": [
+            {
+              "reps": 2,
+              "percent": 60
+            },
+            {
+              "reps": 2,
+              "percent": 60
+            },
+            {
+              "reps": 2,
+              "percent": 60
+            },
+            {
+              "reps": 2,
+              "percent": 60
+            },
+            {
+              "reps": 2,
+              "percent": 60
+            }
+          ],
+          "restSeconds": 90,
+          "timed": false,
+          "isTestWeek": false
+        },
+        {
+          "week": 5,
+          "phase": "2 vagues",
+          "sets": [
+            {
+              "reps": 2,
+              "percent": 75
+            },
+            {
+              "reps": 2,
+              "percent": 80
+            },
+            {
+              "reps": 1,
+              "percent": 85
+            },
+            {
+              "reps": 2,
+              "percent": 80
+            },
+            {
+              "reps": 2,
+              "percent": 85
+            },
+            {
+              "reps": 1,
+              "percent": 90
+            }
+          ],
+          "restSeconds": 180,
+          "timed": false,
+          "isTestWeek": false
+        },
+        {
+          "week": 6,
+          "phase": "Test 1RM",
+          "sets": [
+            {
+              "reps": 1,
+              "percent": 85
+            },
+            {
+              "reps": 1,
+              "percent": 90
+            },
+            {
+              "reps": 1,
+              "percent": 95
+            },
+            {
+              "reps": 1,
+              "percent": 100
+            }
+          ],
+          "restSeconds": 180,
+          "timed": false,
+          "isTestWeek": true
+        }
+      ]
+    }
+  ]
+}

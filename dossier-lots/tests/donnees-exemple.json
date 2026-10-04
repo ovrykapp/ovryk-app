@@ -1,0 +1,9 @@
+{
+  "forceCycles": {
+    "ex-snatch": { "exercise_id": "ex-snatch", "cycle_actif": "7", "one_rm_actuel": 90, "semaine_actuelle": 3, "historique_1rm": [{ "date": "2026-09-01T00:00:00Z", "valeur": 90 }] },
+    "ex-back-squat": { "exercise_id": "ex-back-squat", "cycle_actif": "2", "one_rm_actuel": 160, "semaine_actuelle": 6, "historique_1rm": [{ "date": "2026-09-01T00:00:00Z", "valeur": 160 }] },
+    "ex-deadlift": { "exercise_id": "ex-deadlift", "cycle_actif": "3", "one_rm_actuel": 180, "semaine_actuelle": 7, "historique_1rm": [{ "date": "2026-09-01T00:00:00Z", "valeur": 180 }] },
+    "ex-power-clean": { "exercise_id": "ex-power-clean", "cycle_actif": "A", "one_rm_actuel": 95, "semaine_actuelle": 4, "historique_1rm": [{ "date": "2026-09-01T00:00:00Z", "valeur": 95 }] },
+    "ex-front-squat": { "exercise_id": "ex-front-squat", "cycle_actif": "10", "one_rm_actuel": 120, "semaine_actuelle": 6, "historique_1rm": [{ "date": "2026-09-01T00:00:00Z", "valeur": 120 }] }
+  }
+}
