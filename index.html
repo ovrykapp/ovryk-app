@@ -144,6 +144,11 @@
     display: flex;
     flex-direction: column;
     min-height: 100vh;
+    /* remplace l'espace de sécurité que l'ancien app-header réservait
+       en haut (lot 01) : main garde son padding-top habituel, body
+       pousse tout son contenu sous l'encoche, que le premier élément
+       affiché soit une vue normale ou la barre de séance active */
+    padding-top: env(safe-area-inset-top, 0px);
   }
   h1, h2, h3, h4 {
     font-family: var(--font-display);
@@ -178,44 +183,42 @@
   }
 
   /* ============================================================
-     HEADER
+     EN-TÊTES D'ÉCRAN
+     Plus d'en-tête OVRYK fixe (lot 01) : chaque vue affiche son propre
+     titre dans .view-header. .view-header-back est le bouton rond
+     réutilisé pour l'icône engrenage de l'accueil et le chevron retour
+     de Réglages.
   ============================================================ */
-  .app-header {
-    position: sticky;
-    top: 0;
-    z-index: 20;
-    min-height: var(--header-height);
-    background: var(--graphite);
-    color: var(--chalk);
+  .dash-top-row {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: var(--space-3);
+  }
+  .view-header-row {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    padding: env(safe-area-inset-top, 0) max(20px, env(safe-area-inset-right, 0px)) 0 max(20px, env(safe-area-inset-left, 0px));
+    gap: 12px;
   }
-  .app-header .brand {
+  .view-header-back {
     display: flex;
-    align-items: baseline;
-    gap: 8px;
-    background: transparent;
-    border: none;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    background: var(--surface);
+    border: 1px solid var(--border-outline);
+    color: var(--ink);
     padding: 0;
-    color: inherit;
     cursor: pointer;
   }
-  .app-header .brand-mark {
-    font-size: 24px;
-    font-weight: 800;
-    letter-spacing: 0.08em;
+  .view-header-back svg {
+    width: 22px;
+    height: 22px;
+    stroke: currentColor;
+    fill: none;
   }
-  .app-header .brand-mark span { color: var(--rust); }
-  .app-header .view-label {
-    font-family: var(--font-mono);
-    font-size: 11px;
-    text-transform: uppercase;
-    letter-spacing: 0.12em;
-    color: var(--steel-on-dark);
-  }
-  .header-right { display: flex; align-items: center; gap: 12px; }
 
   /* simple accent-tinted rule under the header — V1 drops the knurled
      industrial texture entirely in favor of this thin line */
@@ -250,7 +253,7 @@
     to { opacity: 1; transform: translateY(0); }
   }
   @media (prefers-reduced-motion: reduce) {
-    .view.view-active, .subview.subview-active { animation: none; }
+    .view.view-active { animation: none; }
   }
 
   .view-header {
@@ -424,37 +427,6 @@
     background: var(--rust);
     color: var(--graphite);
   }
-
-  /* ============================================================
-     ROUTINE — sub-navigation (Routines / Exercices)
-  ============================================================ */
-  .routine-subnav {
-    display: flex;
-    border: 1px solid var(--border-segment);
-    border-radius: var(--radius);
-    overflow: hidden;
-    margin-bottom: var(--space-5);
-  }
-  .subnav-btn {
-    flex: 1;
-    min-height: 48px;
-    background: transparent;
-    border: none;
-    font-family: var(--font-display);
-    font-weight: 800;
-    font-size: 13px;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    color: var(--steel);
-    cursor: pointer;
-  }
-  .subnav-btn.active {
-    background: var(--rust);
-    color: var(--graphite);
-  }
-
-  .subview { display: none; }
-  .subview.subview-active { display: block; animation: panel-fade-in 0.2s ease; }
 
   /* ---- Exercices toolbar / search / add form ---- */
   .exercise-toolbar {
@@ -2208,7 +2180,6 @@
     .rest-timer-btn:hover,
     .routine-action-btn:hover { border-color: var(--rust); color: var(--rust); }
 
-    .subnav-btn:hover:not(.active),
     .rep-type-btn:hover:not(.active),
     .nav-btn:hover:not(.active),
     .fullscreen-page-action.cancel:hover,
@@ -2226,8 +2197,6 @@
     .routine-row-main:hover,
     .exercise-category-header:hover,
     .mgroup-row:hover { background: var(--field); }
-
-    .brand:hover .brand-mark { opacity: 0.8; }
   }
 
   /* ============================================================
@@ -2251,12 +2220,6 @@
     letter-spacing: 0.5px;
   }
   .view-header h1 { font-size: 36px; line-height: 1; }
-  .app-header .brand-mark {
-    font-family: var(--font-title);
-    font-weight: 700;
-    letter-spacing: 0.14em;
-  }
-  .app-header .view-label { color: var(--steel); }
   .dash-stat-value, .exercise-detail-hero-value { font-family: var(--font-title); font-weight: 700; }
 
   /* barre de navigation à plat, bouton Séance au centre en orange */
@@ -2323,14 +2286,6 @@
 </head>
 <body>
 
-  <header class="app-header">
-    <button type="button" class="brand" id="brand-home-btn" aria-label="Retour à l'accueil">
-      <span class="brand-mark">OVRYK<span>.</span></span>
-    </button>
-    <div class="header-right">
-      <span class="view-label" id="current-view-label">Accueil</span>
-    </div>
-  </header>
   <div class="knurl-strip" aria-hidden="true"></div>
 
   <div class="seance-topbar" id="seance-sticky-topbar" hidden>
@@ -2345,6 +2300,12 @@
   <main>
 
     <section class="view" data-view="dashboard" id="view-dashboard">
+
+      <div class="dash-top-row">
+        <button type="button" id="dash-settings-btn" class="view-header-back" aria-label="Réglages">
+          <svg viewBox="0 0 24 24" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg>
+        </button>
+      </div>
 
       <button type="button" class="cycle-alert-banner" id="cycle-alert-banner" hidden>
         <svg class="cycle-alert-icon" viewBox="0 0 24 24">
@@ -2396,66 +2357,12 @@
     <section class="view" data-view="routine" id="view-routine">
       <div class="view-header">
         <h1>Programme</h1>
-        <p>Construis tes programmes et gère ta bibliothèque d'exercices.</p>
+        <p>Construis et gère tes programmes d'entraînement.</p>
       </div>
 
-      <div class="routine-subnav">
-        <button type="button" class="subnav-btn active" data-subtarget="routines">Routines</button>
-        <button type="button" class="subnav-btn" data-subtarget="exercices">Exercices</button>
-      </div>
-
-      <div class="subview subview-active" data-subview="routines">
-
-        <div id="routine-list-view">
-          <button type="button" id="routine-create-btn" class="btn-add" style="width:100%;margin-bottom:16px;">+ Nouvelle routine</button>
-          <div id="routine-list"></div>
-        </div>
-
-      </div>
-
-      <div class="subview" data-subview="exercices">
-        <div class="exercise-toolbar">
-          <div class="search-input-wrap">
-            <input type="text" id="exercise-search" class="search-input" placeholder="Rechercher un exercice…">
-            <button type="button" id="exercise-search-clear" class="search-clear-btn" hidden aria-label="Effacer la recherche">
-              <svg viewBox="0 0 24 24"><line x1="5" y1="5" x2="19" y2="19"/><line x1="19" y1="5" x2="5" y2="19"/></svg>
-            </button>
-          </div>
-          <button type="button" id="toggle-add-exercise" class="btn-add">+ Exercice</button>
-        </div>
-
-        <form id="add-exercise-form" class="add-exercise-panel" novalidate>
-          <div class="form-row">
-            <label class="form-label" for="new-exercise-name">Nom</label>
-            <input type="text" id="new-exercise-name" class="form-input" placeholder="Ex: Développé couché prise serrée" required>
-          </div>
-          <div class="form-row form-row-split">
-            <div>
-              <label class="form-label" for="new-exercise-category">Groupe</label>
-              <select id="new-exercise-category" class="form-input"></select>
-            </div>
-            <div>
-              <label class="form-label" for="new-exercise-equipment">Équipement</label>
-              <select id="new-exercise-equipment" class="form-input"></select>
-            </div>
-          </div>
-          <button type="submit" class="btn-primary">Ajouter l'exercice</button>
-        </form>
-
-        <div class="filter-group">
-          <div class="filter-label mono">Groupe musculaire</div>
-          <div class="filter-chip-row" id="category-filter-row"></div>
-        </div>
-        <div class="filter-group">
-          <div class="filter-label mono">Équipement</div>
-          <div class="filter-chip-row" id="equipment-filter-row"></div>
-        </div>
-
-        <div class="exercise-list" id="exercise-list"></div>
-
-        <p class="exercise-attribution mono">
-          Exercise data by <a href="https://repdb.co" target="_blank" rel="noopener">RepDB (repdb.co)</a>
-        </p>
+      <div id="routine-list-view">
+        <button type="button" id="routine-create-btn" class="btn-add" style="width:100%;margin-bottom:16px;">+ Nouvelle routine</button>
+        <div id="routine-list"></div>
       </div>
     </section>
 
@@ -2555,9 +2462,64 @@
 
     </section>
 
+    <section class="view" data-view="exercices" id="view-exercices">
+      <div class="view-header">
+        <h1>Exercices</h1>
+        <p>Recherche, filtre et ajoute tes mouvements.</p>
+      </div>
+
+      <div class="exercise-toolbar">
+        <div class="search-input-wrap">
+          <input type="text" id="exercise-search" class="search-input" placeholder="Rechercher un exercice…">
+          <button type="button" id="exercise-search-clear" class="search-clear-btn" hidden aria-label="Effacer la recherche">
+            <svg viewBox="0 0 24 24"><line x1="5" y1="5" x2="19" y2="19"/><line x1="19" y1="5" x2="5" y2="19"/></svg>
+          </button>
+        </div>
+        <button type="button" id="toggle-add-exercise" class="btn-add">+ Exercice</button>
+      </div>
+
+      <form id="add-exercise-form" class="add-exercise-panel" novalidate>
+        <div class="form-row">
+          <label class="form-label" for="new-exercise-name">Nom</label>
+          <input type="text" id="new-exercise-name" class="form-input" placeholder="Ex: Développé couché prise serrée" required>
+        </div>
+        <div class="form-row form-row-split">
+          <div>
+            <label class="form-label" for="new-exercise-category">Groupe</label>
+            <select id="new-exercise-category" class="form-input"></select>
+          </div>
+          <div>
+            <label class="form-label" for="new-exercise-equipment">Équipement</label>
+            <select id="new-exercise-equipment" class="form-input"></select>
+          </div>
+        </div>
+        <button type="submit" class="btn-primary">Ajouter l'exercice</button>
+      </form>
+
+      <div class="filter-group">
+        <div class="filter-label mono">Groupe musculaire</div>
+        <div class="filter-chip-row" id="category-filter-row"></div>
+      </div>
+      <div class="filter-group">
+        <div class="filter-label mono">Équipement</div>
+        <div class="filter-chip-row" id="equipment-filter-row"></div>
+      </div>
+
+      <div class="exercise-list" id="exercise-list"></div>
+
+      <p class="exercise-attribution mono">
+        Exercise data by <a href="https://repdb.co" target="_blank" rel="noopener">RepDB (repdb.co)</a>
+      </p>
+    </section>
+
     <section class="view" data-view="profil" id="view-profil">
       <div class="view-header">
-        <h1>Réglages</h1>
+        <div class="view-header-row">
+          <button type="button" id="profil-back-btn" class="view-header-back" aria-label="Retour à l'accueil">
+            <svg viewBox="0 0 24 24" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="15,6 9,12 15,18"/></svg>
+          </button>
+          <h1>Réglages</h1>
+        </div>
         <p>Réglages et sauvegarde de tes données.</p>
       </div>
 
@@ -2685,9 +2647,9 @@
       <svg viewBox="0 0 24 24" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3,17 9,11 13,15 21,7"/><polyline points="15,7 21,7 21,13"/></svg>
       <span>Progrès</span>
     </button>
-    <button class="nav-btn" data-target="profil">
-      <svg viewBox="0 0 24 24" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="8" r="3.6"/><path d="M4.5 20.5c0-4.1 3.4-7 7.5-7s7.5 2.9 7.5 7"/></svg>
-      <span>Réglages</span>
+    <button class="nav-btn" data-target="exercices">
+      <svg viewBox="0 0 24 24" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5C4 4.4 4.9 3.5 6 3.5h5.5v17H6c-1.1 0-2-.9-2-2z"/><path d="M20 5.5c0-1.1-.9-2-2-2h-5.5v17H18c1.1 0 2-.9 2-2z"/></svg>
+      <span>Exercices</span>
     </button>
   </nav>
 
@@ -3620,17 +3582,19 @@
   /* ============================================================
      NAVIGATION
   ============================================================ */
+  /* sert aussi de liste blanche pour initialTarget plus bas (plus
+     d'en-tête affichant ce libellé depuis le lot 01) */
   var VIEW_LABELS = {
     dashboard: 'Accueil',
     routine: 'Programme',
     seance: 'Séance',
     progression: 'Progrès',
+    exercices: 'Exercices',
     profil: 'Réglages'
   };
 
   var navButtons = document.querySelectorAll('.nav-btn');
   var views = document.querySelectorAll('.view');
-  var viewLabelEl = document.getElementById('current-view-label');
   var mainScrollEl = document.querySelector('main');
 
   /* plain `scrollTop = 0` loses to iOS Safari's own momentum scroll when the
@@ -3661,7 +3625,6 @@
         btn.removeAttribute('aria-current');
       }
     });
-    viewLabelEl.textContent = VIEW_LABELS[target] || '';
     /* replaceState, not location.hash = target — assigning location.hash
        pushes a new history entry, which is exactly what iOS turns into a
        swipe-left/right gesture in standalone PWA mode, flipping tabs by
@@ -3696,6 +3659,13 @@
       document.getElementById('progression-groups-view').hidden = false;
       renderProgressionGroups();
     }
+    if (target === 'exercices') {
+      /* refreshes the "+ Cycle" enabled state, which now depends on routine
+         membership — that can change on the Programme tab, so re-render
+         whenever coming back to Exercices instead of showing stale state */
+      refreshScheduledForceCycleActivations();
+      renderExerciseList();
+    }
   }
 
   navButtons.forEach(function (btn) {
@@ -3704,7 +3674,10 @@
     });
   });
 
-  document.getElementById('brand-home-btn').addEventListener('click', function () {
+  document.getElementById('dash-settings-btn').addEventListener('click', function () {
+    setActiveView('profil');
+  });
+  document.getElementById('profil-back-btn').addEventListener('click', function () {
     setActiveView('dashboard');
   });
 
@@ -3715,24 +3688,6 @@
      (used by the Profil goals card) aren't declared until much further
      down, so landing directly on #profil would otherwise crash before
      they exist yet */
-
-  /* ============================================================
-     ROUTINE — sub-tabs (Routines / Exercices)
-  ============================================================ */
-  var subnavButtons = document.querySelectorAll('#view-routine .subnav-btn');
-  var subviews = document.querySelectorAll('#view-routine .subview');
-
-  subnavButtons.forEach(function (btn) {
-    btn.addEventListener('click', function () {
-      var target = btn.dataset.subtarget;
-      subnavButtons.forEach(function (b) { b.classList.toggle('active', b === btn); });
-      subviews.forEach(function (sv) { sv.classList.toggle('subview-active', sv.dataset.subview === target); });
-      /* refreshes the "+ Cycle" enabled state, which now depends on routine
-         membership — that can change on the Routines subtab, so re-render
-         whenever coming back to Exercices instead of showing stale state */
-      if (target === 'exercices') { refreshScheduledForceCycleActivations(); renderExerciseList(); }
-    });
-  });
 
   /* ============================================================
      EXERCICES — filter state, list rendering, add form, 1RM

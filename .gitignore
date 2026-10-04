@@ -39,3 +39,6 @@ next-env.d.ts
 
 # backups locales
 /backups/
+
+# captures générées par le smoke test
+/dossier-lots/tests/captures/
