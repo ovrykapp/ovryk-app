@@ -2002,6 +2002,163 @@
   .live-set-row.is-done .live-set-check { background: var(--rust); }
   .live-set-row.is-done .live-set-check svg { opacity: 1; }
 
+  /* ============================================================
+     SÉANCE — un exercice à la fois (lot 04)
+  ============================================================ */
+  .live-session-top-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: var(--space-4);
+  }
+  .live-session-back-btn:disabled { opacity: 0.3; cursor: default; }
+  .live-session-title-wrap { flex: 1; min-width: 0; }
+  .live-session-title-wrap .live-session-name { margin-bottom: 2px; }
+  .live-session-title-wrap .live-session-kicker { margin-bottom: 0; }
+  .live-session-top-header .live-session-remove-btn { margin-top: 10px; }
+
+  .live-session-next-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 10px;
+    width: 100%;
+    background: transparent;
+    border: none;
+    padding: var(--space-3) 2px;
+    border-top: 1px solid var(--divider);
+    text-align: left;
+    cursor: pointer;
+    margin-top: var(--space-3);
+  }
+  .live-session-next-label {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--steel);
+    flex-shrink: 0;
+  }
+  .live-session-next-value { font-size: 13px; color: var(--ink); text-align: right; }
+
+  .live-advance-banner {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    margin-top: var(--space-3);
+    padding: 10px 14px;
+    border-radius: var(--radius-card);
+    background: var(--orange-fill);
+    color: var(--orange-soft);
+    font-family: var(--font-mono);
+    font-size: 12px;
+  }
+  .live-advance-cancel {
+    background: transparent;
+    border: 1px solid var(--orange-soft);
+    border-radius: var(--radius);
+    color: var(--orange-soft);
+    padding: 4px 10px;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 11px;
+    text-transform: uppercase;
+    cursor: pointer;
+  }
+
+  .live-objective-card {
+    border-radius: var(--radius-card);
+    background: var(--orange-fill);
+    padding: var(--space-4);
+    margin-bottom: var(--space-4);
+  }
+  .live-objective-main {
+    font-family: var(--font-title);
+    font-weight: 700;
+    font-size: 24px;
+    color: var(--ink);
+  }
+  .live-objective-range { font-size: 12px; color: var(--orange-soft); margin-top: 4px; }
+  .live-objective-tag {
+    display: inline-block;
+    margin-top: 10px;
+    border-radius: var(--radius-pill);
+    padding: 3px 10px;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    background: var(--rust);
+    color: var(--graphite);
+  }
+  .live-objective-suggestion {
+    margin-top: 10px;
+    font-size: 12px;
+    line-height: 1.4;
+    color: var(--orange-soft);
+  }
+
+  .muscu-set-table .live-set-col-n { width: 10%; }
+  .muscu-set-table .live-set-col-prev { width: 28%; color: var(--steel); font-size: 12px; }
+  .muscu-set-table .live-set-col-kg { width: 24%; }
+  .muscu-set-table .live-set-col-reps { width: 24%; }
+  .muscu-set-table .live-set-col-check { width: 14%; }
+  .muscu-set-row.is-current { background: color-mix(in srgb, var(--rust) 8%, transparent); border: 1px solid var(--rust); border-radius: var(--radius-card); padding-left: 8px; padding-right: 8px; }
+  .muscu-set-row.is-upcoming { opacity: 0.45; }
+  .muscu-set-row.is-upcoming .live-set-col-kg, .muscu-set-row.is-upcoming .live-set-col-reps { font-weight: 500; }
+
+  .live-plate-card { margin-bottom: var(--space-4); }
+  .live-plate-label {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--steel);
+    margin-bottom: 4px;
+  }
+  .live-plate-summary { font-size: 14px; color: var(--ink); }
+  /* transform: scale() ne change pas la taille de boîte de l'enfant pour la
+     mise en page, seulement son rendu — sans overflow:hidden la pile de
+     disques à taille réelle déborde sous la hauteur réduite du conteneur */
+  .live-plate-visual { margin-top: 8px; height: 64px; overflow: hidden; }
+  .live-plate-visual .plate-stack { transform: scale(0.6); transform-origin: top left; }
+
+  .live-rpe-block { margin-bottom: var(--space-4); }
+  .live-rpe-label {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--steel);
+    margin-bottom: 8px;
+  }
+  .live-rpe-row { display: flex; gap: 6px; }
+  .live-rpe-btn {
+    flex: 1;
+    min-height: 44px;
+    background: transparent;
+    border: 1px solid var(--border-outline);
+    border-radius: var(--radius);
+    color: var(--ink);
+    font-family: var(--font-mono);
+    font-weight: 700;
+    font-size: 14px;
+    cursor: pointer;
+  }
+  .live-rpe-btn.active { background: var(--chalk); border-color: var(--chalk); color: var(--graphite); }
+  .live-rpe-warning {
+    margin-top: 8px;
+    font-size: 12px;
+    color: var(--orange-soft);
+    line-height: 1.4;
+  }
+
+  .live-validate-row { display: flex; align-items: center; gap: 10px; }
+  .live-validate-btn { flex: 1; margin: 0; }
+  .live-validate-delete { flex-shrink: 0; }
+
   /* lives outside <main>, directly under the header/knurl-strip in normal
      flow — not a sticky trick inside the scrolling area, so it's always
      glued to the banner and can never drift from it regardless of scroll
@@ -2716,8 +2873,8 @@
             <div class="rest-timer-fill" id="rest-timer-fill"></div>
           </div>
           <div class="rest-timer-adjust">
+            <button type="button" id="rest-timer-minus15" class="rest-timer-btn">−15s</button>
             <button type="button" id="rest-timer-plus15" class="rest-timer-btn">+15s</button>
-            <button type="button" id="rest-timer-plus30" class="rest-timer-btn">+30s</button>
           </div>
         </div>
       </div>
@@ -3894,21 +4051,27 @@
   };
 
   /* Ajoute les champs manquants aux données déjà stockées (MODELE-DE-DONNEES.md) —
-     idempotente, ne supprime jamais rien, complète seulement. Avant de toucher
-     aux routines pour la toute première fois, une copie de sécurité est écrite
-     une seule fois sous ovryk.backup.<date du jour>, jamais réécrasée : un
-     filet en cas de bug de migration, indépendant de DB_KEYS (donc jamais
-     effacé par Réinitialiser l'app). */
+     idempotente, ne supprime jamais rien, complète seulement. Avant toute
+     migration, une copie de sécurité (routines, exercices, réglages) est
+     écrite une seule fois sous ovryk.backup.<date du jour>, jamais
+     réécrasée : un filet en cas de bug de migration, indépendant de
+     DB_KEYS (donc jamais effacé par Réinitialiser l'app). Gardée par la
+     seule existence de la clé du jour, pas par schemaVersion, pour couvrir
+     aussi bien une première installation qu'une mise à jour qui a déjà
+     tourné une fois (lot 04 ajoute exercices/réglages à une sauvegarde qui
+     ne couvrait que les routines jusqu'ici). */
   function migrateSchema() {
     var meta = OvrykDB.getMeta();
     var isFirstRun = meta.schemaVersion !== 2;
 
-    if (isFirstRun) {
-      var today = new Date();
-      var backupKey = 'ovryk.backup.' + today.getFullYear() + '-' + pad2(today.getMonth() + 1) + '-' + pad2(today.getDate());
-      if (localStorage.getItem(backupKey) === null) {
-        localStorage.setItem(backupKey, JSON.stringify(OvrykDB.getRoutines()));
-      }
+    var today = new Date();
+    var backupKey = 'ovryk.backup.' + today.getFullYear() + '-' + pad2(today.getMonth() + 1) + '-' + pad2(today.getDate());
+    if (localStorage.getItem(backupKey) === null) {
+      localStorage.setItem(backupKey, JSON.stringify({
+        routines: OvrykDB.getRoutines(),
+        exercises: OvrykDB.getExercises(),
+        settings: OvrykDB.getSettings()
+      }));
     }
 
     var routines = OvrykDB.getRoutines();
@@ -3917,6 +4080,26 @@
       if (!Array.isArray(r.weekdays)) { r.weekdays = []; changed = true; }
     });
     if (changed) OvrykDB.saveRoutines(routines);
+
+    /* lot 04 (R5) : réglages par défaut, puis progressionStep/autoProgression
+       par exercice (dépend de defaultProgressionStep, donc réglages d'abord).
+       Ne touche jamais aux séances déjà stockées (passées ou en cours) :
+       set.targetReps n'est calculé que pour les nouvelles séances
+       construites à partir de maintenant (buildSessionFromRoutine), jamais
+       ajouté rétroactivement. */
+    var settings = OvrykDB.getSettings();
+    var settingsChanged = false;
+    if (settings.defaultProgressionStep == null) { settings.defaultProgressionStep = 2.5; settingsChanged = true; }
+    if (!settings.defaultRepRange) { settings.defaultRepRange = { min: 8, max: 10 }; settingsChanged = true; }
+    if (settingsChanged) OvrykDB.saveSettings(settings);
+
+    var exercises = OvrykDB.getExercises();
+    var exChanged = false;
+    exercises.forEach(function (ex) {
+      if (ex.progressionStep == null) { ex.progressionStep = settings.defaultProgressionStep; exChanged = true; }
+      if (ex.autoProgression == null) { ex.autoProgression = true; exChanged = true; }
+    });
+    if (exChanged) OvrykDB.saveExercises(exercises);
 
     if (isFirstRun) OvrykDB.saveMeta({ schemaVersion: 2 });
   }
@@ -4766,7 +4949,10 @@
     if (exercise && exercise.category === 'Lifting') {
       return { id: 'set-' + OvrykDB.generateId(), repType: 'fixed', reps: 5, percent1rm: 60 };
     }
-    return { id: 'set-' + OvrykDB.generateId(), repType: 'range', repsMin: null, repsMax: null, weightKg: null };
+    /* R5 : plage par défaut des réglages au lieu de null, pour qu'un
+       exercice tout juste ajouté ait déjà un objectif affichable */
+    var range = OvrykDB.getSettings().defaultRepRange || { min: 8, max: 10 };
+    return { id: 'set-' + OvrykDB.generateId(), repType: 'range', repsMin: range.min, repsMax: range.max, weightKg: null };
   }
 
   var DEFAULT_SET_COUNT = 1;
@@ -5964,6 +6150,37 @@
   var seancePickerState = { search: '', category: 'all' };
   var cycleTestSubmittedIds = {};
 
+  /* Un exercice à la fois (lot 04). Position en mémoire seulement, jamais
+     écrite dans la séance stockée : remise à null (= recalcul du meilleur
+     point de départ) à chaque démarrage ou reprise de séance
+     (showSeanceActive), donc perdue si l'app est complètement fermée puis
+     rouverte pendant une séance — mais aucune série saisie n'est jamais
+     perdue pour autant, tout passe par persistActiveSession comme avant. */
+  var liveSessionIndex = null;
+  var liveAdvanceTimeoutId = null;
+
+  function cancelLiveAdvance() {
+    if (liveAdvanceTimeoutId) { clearTimeout(liveAdvanceTimeoutId); liveAdvanceTimeoutId = null; }
+  }
+
+  /* Premier exercice avec au moins une série non validée, sinon le dernier
+     exercice de la séance. */
+  function computeInitialLiveExerciseIndex() {
+    if (!activeSession || activeSession.exercises.length === 0) return 0;
+    for (var i = 0; i < activeSession.exercises.length; i++) {
+      if (activeSession.exercises[i].sets.some(function (s) { return !s.done; })) return i;
+    }
+    return activeSession.exercises.length - 1;
+  }
+
+  function goToLiveExercise(index) {
+    if (!activeSession) return;
+    cancelLiveAdvance();
+    var max = activeSession.exercises.length - 1;
+    liveSessionIndex = Math.max(0, Math.min(index, max));
+    renderSeanceActiveView();
+  }
+
   function formatDuration(totalSeconds) {
     totalSeconds = Math.max(0, Math.floor(totalSeconds));
     var h = Math.floor(totalSeconds / 3600);
@@ -5978,7 +6195,10 @@
     base.id = 'sset-' + OvrykDB.generateId();
     base.done = false;
     base.rpe = null;
-    if (base.repType === 'range') base.repsActual = null;
+    if (base.repType === 'range') {
+      base.repsActual = null;
+      base.targetReps = base.repsMin != null ? base.repsMin : null;
+    }
     return base;
   }
 
@@ -6075,27 +6295,83 @@
     return { weight: bestSet.weight, reps: bestSet.reps };
   }
 
-  /* Double progression for range-rep sets (non-Lifting only — Lifting weight is
-     %1RM-driven, governed by the force cycle engine instead): a set that was
-     logged done at or above its prescribed repsMax gets its weightKg bumped by
-     +2.5kg for next time; repsActual always resets so the field starts empty. */
-  function applyRangeProgression(clone, sourceSet, isLifting) {
-    if (clone.repType !== 'range') return;
-    if (!isLifting && sourceSet.done && sourceSet.repsActual != null && sourceSet.repsActual >= sourceSet.repsMax) {
-      clone.weightKg = round05((sourceSet.weightKg || 0) + 2.5);
+  /* R5 — double progression (muscu uniquement, jamais les mouvements de
+     cycle) : la décision se prend une fois pour tout l'exercice, à partir
+     de l'ensemble des séries déjà faites la dernière fois, pas série par
+     série. Ne lit que des séances déjà stockées, n'en modifie aucune.
+       - exercise.autoProgression === false, ou aucune série exploitable
+         la dernière fois : pas de changement, objectif neutre (repsMin).
+       - Toutes les séries faites ont atteint repsMax : charge +
+         progressionStep, objectif = repsMin (repart en bas de plage).
+       - Sinon : charge inchangée, objectif = pire repsActual + 1, plafonné
+         à repsMax.
+     Jamais de baisse automatique de charge, dans aucun cas. */
+  function computeRangeProgressionDecision(pastSex, exercise) {
+    var settings = OvrykDB.getSettings();
+    var step = (exercise && exercise.progressionStep != null) ? exercise.progressionStep :
+      (settings.defaultProgressionStep != null ? settings.defaultProgressionStep : 2.5);
+    var autoProgression = !exercise || exercise.autoProgression !== false;
+
+    var doneSets = pastSex.sets.filter(function (s) {
+      return s.repType === 'range' && s.done && s.repsActual != null && s.repsMin != null && s.repsMax != null;
+    });
+
+    if (!autoProgression || doneSets.length === 0) {
+      return { weightDelta: 0, targetReps: null };
     }
-    clone.repsActual = null;
+
+    var allHitTop = doneSets.every(function (s) { return s.repsActual >= s.repsMax; });
+    if (allHitTop) {
+      return { weightDelta: step, targetReps: doneSets[0].repsMin };
+    }
+
+    var weakest = doneSets.reduce(function (min, s) { return s.repsActual < min.repsActual ? s : min; }, doneSets[0]);
+    return { weightDelta: 0, targetReps: Math.min(weakest.repsActual + 1, weakest.repsMax) };
   }
 
-  function cloneSetsFromPastSex(pastSex) {
+  /* R5, baisse suggérée (jamais imposée) : les deux dernières séances
+     terminées de ce mouvement ont chacune au moins une série sous repsMin.
+     Ne regarde que l'historique, n'écrit jamais rien. */
+  function hasBelowRangeSet(sex) {
+    return sex.sets.some(function (s) {
+      return s.repType === 'range' && s.done && s.repsActual != null && s.repsMin != null && s.repsActual < s.repsMin;
+    });
+  }
+
+  function checkDeloadSuggestion(exerciseId) {
+    var candidates = [];
+    OvrykDB.getSessions().forEach(function (s) {
+      if (activeSession && s.id === activeSession.id) return;
+      if (s.status !== 'completed') return;
+      var sex = findExerciseInSession(s, exerciseId);
+      if (sex && sex.sets.some(function (set) { return set.done; })) {
+        candidates.push({ date: s.date, sex: sex });
+      }
+    });
+    candidates.sort(function (a, b) { return new Date(b.date) - new Date(a.date); });
+    if (candidates.length < 2) return false;
+    return hasBelowRangeSet(candidates[0].sex) && hasBelowRangeSet(candidates[1].sex);
+  }
+
+  function applyRangeProgression(clone, decision) {
+    if (clone.repType !== 'range') return;
+    clone.repsActual = null;
+    clone.targetReps = clone.repsMin != null ? clone.repsMin : null;
+    if (!decision) return;
+    if (decision.weightDelta) clone.weightKg = round05((clone.weightKg || 0) + decision.weightDelta);
+    if (decision.targetReps != null) clone.targetReps = decision.targetReps;
+  }
+
+  function cloneSetsFromPastSex(pastSex, exercise) {
     var isLifting = pastSex.category === 'Lifting';
+    var decision = isLifting ? null : computeRangeProgressionDecision(pastSex, exercise);
     return pastSex.sets.map(function (s) {
       var clone = {};
       for (var k in s) { if (s.hasOwnProperty(k)) clone[k] = s[k]; }
       clone.id = 'sset-' + OvrykDB.generateId();
       clone.done = false;
       clone.rpe = null;
-      applyRangeProgression(clone, s, isLifting);
+      applyRangeProgression(clone, decision);
       return clone;
     });
   }
@@ -6107,7 +6383,10 @@
       clone.id = 'sset-' + OvrykDB.generateId();
       clone.done = false;
       clone.rpe = null;
-      if (clone.repType === 'range') clone.repsActual = null;
+      if (clone.repType === 'range') {
+        clone.repsActual = null;
+        clone.targetReps = clone.repsMin != null ? clone.repsMin : null;
+      }
       return clone;
     });
   }
@@ -6147,7 +6426,7 @@
           sets = buildSessionSetsFromPrescription(basePrescription.sets);
           restSeconds = basePrescription.restSeconds || 90;
         } else if (pastSex) {
-          sets = cloneSetsFromPastSex(pastSex);
+          sets = cloneSetsFromPastSex(pastSex, exercise);
           restSeconds = pastSex.restSeconds != null ? pastSex.restSeconds : rex.restSeconds;
         } else {
           sets = cloneSetsFromRoutineRex(rex);
@@ -6237,6 +6516,7 @@
   function showSeanceStart() {
     stopSessionTimer();
     stopRestTimer();
+    cancelLiveAdvance();
     document.getElementById('seance-active-view').hidden = true;
     document.getElementById('seance-start-view').hidden = false;
     document.getElementById('seance-sticky-topbar').hidden = true;
@@ -6253,6 +6533,8 @@
        nav competing for attention while a set is being logged */
     document.body.classList.add('session-active');
     closeSeancePicker();
+    cancelLiveAdvance();
+    liveSessionIndex = null;
     renderSeanceActiveView();
     scrollMainToTop();
     startSessionTimer();
@@ -6297,27 +6579,36 @@
       return;
     }
 
-    activeSession.exercises.forEach(function (sex, index) {
-      listEl.appendChild(buildLiveSessionExercise(sex, index));
-    });
+    if (liveSessionIndex == null || liveSessionIndex < 0 || liveSessionIndex >= activeSession.exercises.length) {
+      liveSessionIndex = computeInitialLiveExerciseIndex();
+    }
+
+    var sex = activeSession.exercises[liveSessionIndex];
+    listEl.appendChild(buildLiveSessionExercise(sex, liveSessionIndex));
   }
 
-  function buildLiveSessionExercise(sex, index) {
-    var wrap = document.createElement('div');
-    wrap.className = 'live-session-exercise';
+  /* chevron retour (exercice précédent), nom, "Exercice X sur N" — partagé
+     par l'haltérophilie et la muscu. Le chronomètre n'est pas dupliqué ici :
+     celui de .seance-sticky-topbar (#seance-timer-label) reste visible en
+     permanence pendant la séance. */
+  function buildLiveSessionHeader(sex, index) {
+    var header = document.createElement('div');
+    header.className = 'live-session-top-header';
 
-    var kicker = document.createElement('div');
-    kicker.className = 'live-session-kicker';
-    kicker.textContent = 'Exercice ' + (index + 1) + '/' + activeSession.exercises.length;
-    wrap.appendChild(kicker);
+    var backBtn = document.createElement('button');
+    backBtn.type = 'button';
+    backBtn.className = 'view-header-back live-session-back-btn';
+    backBtn.setAttribute('aria-label', 'Exercice précédent');
+    backBtn.innerHTML = '<svg viewBox="0 0 24 24" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="15,6 9,12 15,18"/></svg>';
+    backBtn.disabled = index === 0;
+    backBtn.addEventListener('click', function () { goToLiveExercise(index - 1); });
+    header.appendChild(backBtn);
 
-    var headerRow = document.createElement('div');
-    headerRow.className = 'live-session-header-row';
-
-    var nameEl = document.createElement('div');
-    nameEl.className = 'live-session-name';
-    nameEl.textContent = sex.exerciseName + (sex.grip ? ' · ' + sex.grip : '');
-    headerRow.appendChild(nameEl);
+    var titleWrap = document.createElement('div');
+    titleWrap.className = 'live-session-title-wrap';
+    titleWrap.innerHTML = '<div class="live-session-name">' + escapeHTML(sex.exerciseName) + (sex.grip ? ' · ' + escapeHTML(sex.grip) : '') + '</div>' +
+      '<div class="live-session-kicker">Exercice ' + (index + 1) + ' sur ' + activeSession.exercises.length + '</div>';
+    header.appendChild(titleWrap);
 
     var removeExBtn = document.createElement('button');
     removeExBtn.type = 'button';
@@ -6329,66 +6620,112 @@
         var idx = activeSession.exercises.indexOf(sex);
         if (idx !== -1) activeSession.exercises.splice(idx, 1);
         persistActiveSession();
+        cancelLiveAdvance();
+        liveSessionIndex = null;
         renderSeanceActiveView();
       });
     });
-    headerRow.appendChild(removeExBtn);
+    header.appendChild(removeExBtn);
 
-    wrap.appendChild(headerRow);
+    return header;
+  }
 
-    var lastSex = getLastLoggedSex(sex.exerciseId);
-    var lastHintText = lastSex ? formatLastSessionHint(lastSex) : null;
-    var bestRecord = getBestRecordForExercise(sex.exerciseId);
-    if (lastHintText || bestRecord) {
-      var hints = document.createElement('div');
-      hints.className = 'session-hints';
-      if (lastHintText) {
-        hints.innerHTML += '<div class="session-hint-row">' +
-          '<span class="session-hint-label">Dernière fois</span>' +
-          '<span class="session-hint-value">' + escapeHTML(lastHintText) + '</span></div>';
+  /* cliquable : passe à l'exercice suivant même si l'actuel n'est pas fini
+     (ex. machine occupée) — on peut toujours y revenir via le chevron */
+  function buildLiveSessionNextHint(index) {
+    if (index >= activeSession.exercises.length - 1) return null;
+    var nextSex = activeSession.exercises[index + 1];
+    var row = document.createElement('button');
+    row.type = 'button';
+    row.className = 'live-session-next-row';
+    row.innerHTML = '<span class="live-session-next-label">Ensuite</span>' +
+      '<span class="live-session-next-value">' + escapeHTML(nextSex.exerciseName) + '</span>';
+    row.addEventListener('click', function () { goToLiveExercise(index + 1); });
+    return row;
+  }
+
+  function buildLiveAdvanceBanner() {
+    var banner = document.createElement('div');
+    banner.className = 'live-advance-banner';
+    var label = document.createElement('span');
+    label.textContent = 'Exercice suivant…';
+    banner.appendChild(label);
+    var cancelBtn = document.createElement('button');
+    cancelBtn.type = 'button';
+    cancelBtn.className = 'live-advance-cancel';
+    cancelBtn.textContent = 'Annuler';
+    cancelBtn.addEventListener('click', function () { cancelLiveAdvance(); renderSeanceActiveView(); });
+    banner.appendChild(cancelBtn);
+    return banner;
+  }
+
+  function buildLiveSessionExercise(sex, index) {
+    var wrap = document.createElement('div');
+    wrap.className = 'live-session-exercise';
+    wrap.appendChild(buildLiveSessionHeader(sex, index));
+
+    if (sex.category === 'Lifting') {
+      var lastSex = getLastLoggedSex(sex.exerciseId);
+      var lastHintText = lastSex ? formatLastSessionHint(lastSex) : null;
+      var bestRecord = getBestRecordForExercise(sex.exerciseId);
+      if (lastHintText || bestRecord) {
+        var hints = document.createElement('div');
+        hints.className = 'session-hints';
+        if (lastHintText) {
+          hints.innerHTML += '<div class="session-hint-row">' +
+            '<span class="session-hint-label">Dernière fois</span>' +
+            '<span class="session-hint-value">' + escapeHTML(lastHintText) + '</span></div>';
+        }
+        if (bestRecord) {
+          hints.innerHTML += '<div class="session-hint-row is-best">' +
+            '<span class="session-hint-label">Meilleur</span>' +
+            '<span class="session-hint-value">' + bestRecord.reps + '×' + bestRecord.weight + 'kg</span></div>';
+        }
+        wrap.appendChild(hints);
       }
-      if (bestRecord) {
-        hints.innerHTML += '<div class="session-hint-row is-best">' +
-          '<span class="session-hint-label">Meilleur</span>' +
-          '<span class="session-hint-value">' + bestRecord.reps + '×' + bestRecord.weight + 'kg</span></div>';
+
+      var table = document.createElement('div');
+      table.className = 'live-set-table';
+
+      var header = document.createElement('div');
+      header.className = 'live-set-row live-set-header';
+      header.innerHTML = '<div class="live-set-col-n">Série</div>' +
+        '<div class="live-set-col-kg">Kg</div>' +
+        '<div class="live-set-col-reps">Reps</div>' +
+        '<div class="live-set-col-check">✓</div>' +
+        '<div class="live-set-col-del"></div>';
+      table.appendChild(header);
+
+      sex.sets.forEach(function (set, setIndex) {
+        table.appendChild(buildLiveSessionSetRow(sex, set, setIndex));
+      });
+      wrap.appendChild(table);
+
+      var cycle = OvrykDB.getForceCycle(sex.exerciseId);
+      if (cycle && getCycleWeek(cycle).isTestWeek) {
+        wrap.appendChild(buildCycleTestForm(sex.exerciseId, cycle));
       }
-      wrap.appendChild(hints);
+
+      var addSetBtn = document.createElement('button');
+      addSetBtn.type = 'button';
+      addSetBtn.className = 'btn-back';
+      addSetBtn.style.width = '100%';
+      addSetBtn.textContent = '+ Ajouter une série';
+      addSetBtn.addEventListener('click', function () {
+        var base = sex.sets[sex.sets.length - 1];
+        sex.sets.push(base ? cloneSessionSet(base) : createSessionSet(OvrykDB.getExerciseById(sex.exerciseId)));
+        persistActiveSession();
+        renderSeanceActiveView();
+      });
+      wrap.appendChild(addSetBtn);
+
+      var nextHintLifting = buildLiveSessionNextHint(index);
+      if (nextHintLifting) wrap.appendChild(nextHintLifting);
+    } else {
+      wrap.appendChild(buildMuscuLiveBody(sex, index));
     }
 
-    var table = document.createElement('div');
-    table.className = 'live-set-table';
-
-    var header = document.createElement('div');
-    header.className = 'live-set-row live-set-header';
-    header.innerHTML = '<div class="live-set-col-n">Série</div>' +
-      '<div class="live-set-col-kg">Kg</div>' +
-      '<div class="live-set-col-reps">Reps</div>' +
-      '<div class="live-set-col-check">✓</div>' +
-      '<div class="live-set-col-del"></div>';
-    table.appendChild(header);
-
-    sex.sets.forEach(function (set, setIndex) {
-      table.appendChild(buildLiveSessionSetRow(sex, set, setIndex));
-    });
-    wrap.appendChild(table);
-
-    var cycle = OvrykDB.getForceCycle(sex.exerciseId);
-    if (cycle && getCycleWeek(cycle).isTestWeek) {
-      wrap.appendChild(buildCycleTestForm(sex.exerciseId, cycle));
-    }
-
-    var addSetBtn = document.createElement('button');
-    addSetBtn.type = 'button';
-    addSetBtn.className = 'btn-back';
-    addSetBtn.style.width = '100%';
-    addSetBtn.textContent = '+ Ajouter une série';
-    addSetBtn.addEventListener('click', function () {
-      var base = sex.sets[sex.sets.length - 1];
-      sex.sets.push(base ? cloneSessionSet(base) : createSessionSet(OvrykDB.getExerciseById(sex.exerciseId)));
-      persistActiveSession();
-      renderSeanceActiveView();
-    });
-    wrap.appendChild(addSetBtn);
+    if (liveAdvanceTimeoutId) wrap.appendChild(buildLiveAdvanceBanner());
 
     return wrap;
   }
@@ -6483,6 +6820,341 @@
     row.appendChild(delEl);
 
     return row;
+  }
+
+  /* ============================================================
+     SÉANCE — carte muscu (lot 04) : objectif du jour, tableau de séries
+     série par série, chargement de barre, effort ressenti. set.targetReps
+     n'existe pas encore (point 7/8 du lot, pas encore fait) : en attendant,
+     repsMin sert de repère neutre pour l'objectif affiché — tout est lu
+     avec des valeurs par défaut (!= null) pour qu'une séance déjà en cours
+     sans ces nouveaux champs continue de s'afficher et de se reprendre
+     sans erreur, sans jamais être réécrite tant qu'on ne touche à rien.
+  ============================================================ */
+  function getCurrentMuscuSetIndex(sex) {
+    for (var i = 0; i < sex.sets.length; i++) {
+      if (!sex.sets[i].done) return i;
+    }
+    return -1;
+  }
+
+  function buildLiveObjectiveCard(set, isHigherWeight, deloadSuggested) {
+    var card = document.createElement('div');
+    card.className = 'live-objective-card';
+
+    var targetReps = set.targetReps != null ? set.targetReps : set.repsMin;
+    var weight = set.weightKg != null ? set.weightKg : null;
+
+    var main = document.createElement('div');
+    main.className = 'live-objective-main';
+    main.textContent = (targetReps != null ? targetReps : '-') + ' reps à ' + (weight != null ? weight : '-') + ' kg';
+    card.appendChild(main);
+
+    var range = document.createElement('div');
+    range.className = 'live-objective-range mono';
+    range.textContent = 'Plage ' + (set.repsMin != null ? set.repsMin : '-') + ' à ' + (set.repsMax != null ? set.repsMax : '-') + ' reps';
+    card.appendChild(range);
+
+    if (isHigherWeight) {
+      var tag = document.createElement('span');
+      tag.className = 'live-objective-tag';
+      tag.textContent = 'Charge en hausse';
+      card.appendChild(tag);
+    }
+
+    if (deloadSuggested) {
+      var suggestion = document.createElement('div');
+      suggestion.className = 'live-objective-suggestion';
+      suggestion.textContent = 'Deux dernières séances sous la plage : une baisse de 5 à 10 % est possible, à toi de voir.';
+      card.appendChild(suggestion);
+    }
+
+    return card;
+  }
+
+  function formatPrevMuscuSetText(lastSex, setIndex) {
+    if (!lastSex || !lastSex.sets[setIndex]) return '-';
+    var s = lastSex.sets[setIndex];
+    if (!s.done) return '-';
+    var reps = s.repType === 'range' ? s.repsActual : s.reps;
+    if (reps == null || s.weightKg == null) return '-';
+    return s.weightKg + ' x ' + reps;
+  }
+
+  /* une série déjà validée reste modifiable : taper sa coche la dé-valide
+     (set.done = false) et la rouvre en édition — la "série en cours"
+     n'est jamais qu'une position (la première non validée), donc elle
+     redevient naturellement la cible du bouton Valider */
+  function buildMuscuSetRow(sex, set, setIndex, currentIndex, lastSex) {
+    var row = document.createElement('div');
+    var isDone = !!set.done;
+    var isCurrent = setIndex === currentIndex;
+    row.className = 'live-set-row muscu-set-row' +
+      (isDone ? ' is-done' : '') + (isCurrent ? ' is-current' : '') + (!isDone && !isCurrent ? ' is-upcoming' : '');
+
+    var numEl = document.createElement('div');
+    numEl.className = 'live-set-col-n';
+    numEl.textContent = String(setIndex + 1);
+    row.appendChild(numEl);
+
+    var prevEl = document.createElement('div');
+    prevEl.className = 'live-set-col-prev mono';
+    prevEl.textContent = formatPrevMuscuSetText(lastSex, setIndex);
+    row.appendChild(prevEl);
+
+    if (isDone) {
+      var kgDone = document.createElement('div');
+      kgDone.className = 'live-set-col-kg';
+      kgDone.textContent = set.weightKg != null ? set.weightKg : '-';
+      row.appendChild(kgDone);
+
+      var repsDone = document.createElement('div');
+      repsDone.className = 'live-set-col-reps';
+      repsDone.textContent = set.repType === 'range' ? (set.repsActual != null ? set.repsActual : '-') : (set.reps != null ? set.reps : '-');
+      row.appendChild(repsDone);
+
+      var checkEl = document.createElement('div');
+      checkEl.className = 'live-set-col-check';
+      var checkBtn = document.createElement('button');
+      checkBtn.type = 'button';
+      checkBtn.className = 'live-set-check';
+      checkBtn.setAttribute('aria-label', 'Modifier la série ' + (setIndex + 1));
+      checkBtn.innerHTML = '<svg viewBox="0 0 24 24"><polyline points="4,13 9,18 20,6"/></svg>';
+      checkBtn.addEventListener('click', function () {
+        cancelLiveAdvance();
+        set.done = false;
+        persistActiveSession();
+        renderSeanceActiveView();
+      });
+      checkEl.appendChild(checkBtn);
+      row.appendChild(checkEl);
+    } else if (isCurrent) {
+      var kgEl = document.createElement('div');
+      kgEl.className = 'live-set-col-kg';
+      var kgInput = document.createElement('input');
+      kgInput.type = 'number';
+      kgInput.className = 'live-set-input';
+      kgInput.min = '0';
+      kgInput.step = '0.5';
+      kgInput.value = set.weightKg != null ? set.weightKg : '';
+      kgInput.addEventListener('change', function () {
+        var v = parseFloat(kgInput.value);
+        set.weightKg = isNaN(v) ? null : (v < 0 ? 0 : v);
+        persistActiveSession();
+        renderSeanceActiveView();
+      });
+      kgEl.appendChild(kgInput);
+      row.appendChild(kgEl);
+
+      var repsEl = document.createElement('div');
+      repsEl.className = 'live-set-col-reps';
+      var repsInput = document.createElement('input');
+      repsInput.type = 'number';
+      repsInput.className = 'live-set-input';
+      var defaultReps = set.targetReps != null ? set.targetReps : set.repsMin;
+      repsInput.placeholder = defaultReps != null ? String(defaultReps) : '';
+      if (set.repsActual != null) repsInput.value = set.repsActual;
+      repsInput.addEventListener('change', function () {
+        var v = parseInt(repsInput.value, 10);
+        set.repsActual = isNaN(v) ? null : v;
+        persistActiveSession();
+      });
+      repsEl.appendChild(repsInput);
+      row.appendChild(repsEl);
+    } else {
+      var kgPreview = document.createElement('div');
+      kgPreview.className = 'live-set-col-kg';
+      kgPreview.textContent = set.weightKg != null ? set.weightKg : '-';
+      row.appendChild(kgPreview);
+
+      var repsPreview = document.createElement('div');
+      repsPreview.className = 'live-set-col-reps';
+      var previewReps = set.targetReps != null ? set.targetReps : set.repsMin;
+      repsPreview.textContent = previewReps != null ? previewReps : '-';
+      row.appendChild(repsPreview);
+    }
+
+    return row;
+  }
+
+  function buildMuscuSetsTable(sex, currentIndex) {
+    var table = document.createElement('div');
+    table.className = 'live-set-table muscu-set-table';
+
+    var header = document.createElement('div');
+    header.className = 'live-set-row live-set-header';
+    header.innerHTML = '<div class="live-set-col-n">Série</div>' +
+      '<div class="live-set-col-prev">Précédent</div>' +
+      '<div class="live-set-col-kg">Kg</div>' +
+      '<div class="live-set-col-reps">Reps</div>';
+    table.appendChild(header);
+
+    var lastSex = getLastLoggedSex(sex.exerciseId);
+    sex.sets.forEach(function (set, setIndex) {
+      table.appendChild(buildMuscuSetRow(sex, set, setIndex, currentIndex, lastSex));
+    });
+
+    return table;
+  }
+
+  /* carte de chargement compacte, à partir de computePlateLoad/ensurePlateSet
+     — pas buildPlateCalcPanel (panneau complet avec éditeur de jeu de
+     plaques, non utilisé ailleurs dans l'app, laissé tel quel) */
+  function buildPlateLoadCard(targetWeight) {
+    var card = document.createElement('div');
+    card.className = 'live-plate-card';
+
+    var label = document.createElement('div');
+    label.className = 'live-plate-label';
+    label.textContent = 'Chargement par côté';
+    card.appendChild(label);
+
+    var summary = document.createElement('div');
+    summary.className = 'live-plate-summary mono';
+
+    if (targetWeight == null || isNaN(targetWeight) || targetWeight <= 0) {
+      summary.textContent = 'Barre de ' + BAR_WEIGHT_KG + ' kg';
+      card.appendChild(summary);
+      return card;
+    }
+
+    var result = computePlateLoad(targetWeight, ensurePlateSet());
+    if (result.tooLight || result.plates.length === 0) {
+      summary.textContent = 'Barre de ' + BAR_WEIGHT_KG + ' kg seule';
+      card.appendChild(summary);
+      return card;
+    }
+
+    summary.textContent = result.plates.map(function (p) { return p.weight; }).join(' + ') + ', barre de ' + BAR_WEIGHT_KG + ' kg';
+    card.appendChild(summary);
+
+    var visual = document.createElement('div');
+    visual.className = 'live-plate-visual';
+    visual.appendChild(buildPlateStackVisual(result.plates, false));
+    card.appendChild(visual);
+
+    return card;
+  }
+
+  /* RPE 10 à la plage haute : avertissement discret, non bloquant — la
+     montée (calculée au point 7, pas encore fait) n'est jamais empêchée. */
+  function buildRpeRow(set) {
+    var wrap = document.createElement('div');
+    wrap.className = 'live-rpe-block';
+
+    var label = document.createElement('div');
+    label.className = 'live-rpe-label';
+    label.textContent = 'Effort ressenti (RPE)';
+    wrap.appendChild(label);
+
+    var row = document.createElement('div');
+    row.className = 'live-rpe-row';
+    [6, 7, 8, 9, 10].forEach(function (val) {
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'live-rpe-btn' + (set.rpe === val ? ' active' : '');
+      btn.textContent = String(val);
+      btn.addEventListener('click', function () {
+        set.rpe = val;
+        persistActiveSession();
+        renderSeanceActiveView();
+      });
+      row.appendChild(btn);
+    });
+    wrap.appendChild(row);
+
+    if (set.repType === 'range' && set.repsActual != null && set.repsMax != null &&
+      set.repsActual >= set.repsMax && set.rpe === 10) {
+      var warn = document.createElement('div');
+      warn.className = 'live-rpe-warning';
+      warn.textContent = 'RPE 10 à la plage haute : la montée est quand même proposée la prochaine fois, à toi de juger si c\'est le bon moment.';
+      wrap.appendChild(warn);
+    }
+
+    return wrap;
+  }
+
+  function buildMuscuLiveBody(sex, index) {
+    var frag = document.createDocumentFragment();
+    var currentIndex = getCurrentMuscuSetIndex(sex);
+    var currentSet = currentIndex !== -1 ? sex.sets[currentIndex] : null;
+    var refSet = currentSet || sex.sets[sex.sets.length - 1];
+
+    if (currentSet) {
+      var lastSexForCompare = getLastLoggedSex(sex.exerciseId);
+      var lastSetForCompare = lastSexForCompare ? lastSexForCompare.sets[currentIndex] : null;
+      var isHigherWeight = !!(lastSetForCompare && lastSetForCompare.weightKg != null &&
+        currentSet.weightKg != null && currentSet.weightKg > lastSetForCompare.weightKg);
+      var deloadSuggested = checkDeloadSuggestion(sex.exerciseId);
+      frag.appendChild(buildLiveObjectiveCard(currentSet, isHigherWeight, deloadSuggested));
+    }
+    frag.appendChild(buildMuscuSetsTable(sex, currentIndex));
+
+    if (refSet) {
+      frag.appendChild(buildPlateLoadCard(refSet.weightKg));
+      frag.appendChild(buildRpeRow(refSet));
+    }
+
+    var addSetBtn = document.createElement('button');
+    addSetBtn.type = 'button';
+    addSetBtn.className = 'btn-back';
+    addSetBtn.style.width = '100%';
+    addSetBtn.textContent = '+ Ajouter une série';
+    addSetBtn.addEventListener('click', function () {
+      var base = sex.sets[sex.sets.length - 1];
+      sex.sets.push(base ? cloneSessionSet(base) : createSessionSet(OvrykDB.getExerciseById(sex.exerciseId)));
+      persistActiveSession();
+      renderSeanceActiveView();
+    });
+    frag.appendChild(addSetBtn);
+
+    var nextHint = buildLiveSessionNextHint(index);
+    if (nextHint) frag.appendChild(nextHint);
+
+    if (currentSet) {
+      var validateRow = document.createElement('div');
+      validateRow.className = 'live-validate-row';
+
+      var validateBtn = document.createElement('button');
+      validateBtn.type = 'button';
+      validateBtn.className = 'btn-primary live-validate-btn';
+      validateBtn.textContent = 'Valider la série ' + (currentIndex + 1);
+      validateBtn.addEventListener('click', function () {
+        currentSet.done = true;
+        persistActiveSession();
+        startRestTimer(sex.exerciseName, sex.restSeconds != null ? sex.restSeconds : 90);
+
+        var stillUndone = sex.sets.some(function (s) { return !s.done; });
+        if (!stillUndone && index < activeSession.exercises.length - 1) {
+          var targetIndex = index + 1;
+          liveAdvanceTimeoutId = setTimeout(function () {
+            liveAdvanceTimeoutId = null;
+            goToLiveExercise(targetIndex);
+          }, 2500);
+        }
+        renderSeanceActiveView();
+      });
+      validateRow.appendChild(validateBtn);
+
+      var delCurrentBtn = document.createElement('button');
+      delCurrentBtn.type = 'button';
+      delCurrentBtn.className = 'set-remove-btn live-validate-delete';
+      delCurrentBtn.setAttribute('aria-label', 'Supprimer la série ' + (currentIndex + 1));
+      delCurrentBtn.innerHTML = '<svg viewBox="0 0 24 24"><line x1="5" y1="5" x2="19" y2="19"/><line x1="19" y1="5" x2="5" y2="19"/></svg>';
+      delCurrentBtn.disabled = sex.sets.length <= 1;
+      delCurrentBtn.addEventListener('click', function () {
+        if (sex.sets.length <= 1) return;
+        var idx = sex.sets.indexOf(currentSet);
+        if (idx !== -1) sex.sets.splice(idx, 1);
+        persistActiveSession();
+        renderSeanceActiveView();
+      });
+      validateRow.appendChild(delCurrentBtn);
+
+      frag.appendChild(validateRow);
+    }
+
+    return frag;
   }
 
   function buildCycleTestForm(exerciseId, cycle) {
@@ -7041,14 +7713,14 @@
   });
 
   document.getElementById('rest-timer-skip').addEventListener('click', stopRestTimer);
+  document.getElementById('rest-timer-minus15').addEventListener('click', function () {
+    if (restTimerEndAt == null) return;
+    restTimerEndAt -= 15000;
+    tickRestTimer();
+  });
   document.getElementById('rest-timer-plus15').addEventListener('click', function () {
     if (restTimerEndAt == null) return;
     restTimerEndAt += 15000;
-    tickRestTimer();
-  });
-  document.getElementById('rest-timer-plus30').addEventListener('click', function () {
-    if (restTimerEndAt == null) return;
-    restTimerEndAt += 30000;
     tickRestTimer();
   });
 
