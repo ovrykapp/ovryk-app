@@ -33,7 +33,7 @@ L'avancement se suit dans dossier-lots/PLAN.md. Le lot 00 est fait. Ne jamais tr
 
 ## Les 17 cycles
 
-* 17 cycles au total : les 12 génériques ('1' à '12') et les anciens A à E, affichés Cycle 13 à Cycle 17 (6 semaines, test inclus en semaine 6). Tous entrent dans le tirage, sans répéter le cycle qui vient de finir. À faire au lot 2 (définitions, affichage, verifier-cycles.js étendu à 17) et au lot 3 (tirage).
+* 17 cycles au total : les 12 génériques ('1' à '12') et les anciens A à E, affichés Cycle 13 à Cycle 17 (6 semaines, test inclus en semaine 6). Tous entrent dans le tirage, sans répéter le cycle qui vient de finir. L'affichage 13 à 17, l'extension de verifier-cycles.js à 17 cycles et le tirage parmi les 17 sont à faire au lot 07 (Activation et tirage des cycles), pas avant : les lots 02 et 03 n'y touchent pas.
 
 * Applicables à n'importe quel mouvement, clés '1' à '12' dans FORCE_CYCLES. Le tirage choisit le cycle, jamais le mouvement.
 * 8 semaines, test 1RM en semaine 8 : cycles 1, 2, 6, 7. 7 semaines, test 1RM séparé en semaine 7 : cycles 3, 4, 5, 8, 9, 10, 11. 6 semaines, test inclus : cycle 12.
