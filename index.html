@@ -191,9 +191,19 @@
   ============================================================ */
   .dash-top-row {
     display: flex;
-    justify-content: flex-end;
-    margin-bottom: var(--space-3);
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: var(--space-4);
   }
+  .dash-header-sub {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--steel);
+    margin-bottom: 4px;
+  }
+  .dash-header-title { margin: 0; font-size: 30px; line-height: 1.05; }
   .view-header-row {
     display: flex;
     align-items: center;
@@ -904,13 +914,141 @@
     max-width: 40ch;
     margin: 0 0 14px;
   }
-  .dash-hero-sub[hidden] { display: none; }
-  .dash-hero-meta {
-    font-size: 12px;
-    color: var(--steel);
+
+  /* bande de 7 pastilles jour (lot 03) — version compacte du badge de
+     jour du Programme (.programme-day-badge), sans carte en dessous */
+  .dash-week-strip {
+    display: flex;
+    gap: 6px;
     margin-bottom: var(--space-4);
   }
-  .dash-hero-meta .dot { margin: 0 6px; opacity: 0.5; }
+  .dash-week-day {
+    flex: 1;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    padding: 8px 0;
+    border-radius: var(--radius-card);
+    background: var(--surface);
+  }
+  .dash-week-day-label {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--steel);
+  }
+  .dash-week-day-num {
+    font-family: var(--font-title);
+    font-weight: 700;
+    font-size: 16px;
+    color: var(--ink);
+  }
+  .dash-week-day.is-rest .dash-week-day-label,
+  .dash-week-day.is-rest .dash-week-day-num { opacity: 0.4; }
+  .dash-week-day.is-today { background: var(--rust); }
+  .dash-week-day.is-today .dash-week-day-label,
+  .dash-week-day.is-today .dash-week-day-num { color: var(--graphite); opacity: 1; }
+  .dash-week-day-dot {
+    position: absolute;
+    bottom: 4px;
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: var(--blue);
+  }
+  .dash-week-day.is-today .dash-week-day-dot { background: var(--graphite); }
+
+  /* carte "séance du jour" (lot 03) — remplace l'ancien bloc meta/cta
+     générique par le détail complet : pastilles, titre, résumé,
+     prescription par exercice */
+  .dash-session-card {
+    border: 1px solid var(--border-card);
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-sm);
+    padding: var(--space-4);
+    margin-bottom: var(--space-5);
+  }
+  .dash-session-badges { display: flex; gap: 6px; margin-bottom: 10px; }
+  .dash-session-resume-tag {
+    border-radius: var(--radius-pill);
+    padding: 3px 10px;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    background: var(--orange-fill);
+    color: var(--orange-soft);
+  }
+  .dash-session-title { font-size: 22px; line-height: 1.1; margin: 0 0 6px; }
+  .dash-session-meta {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--steel);
+    margin: 0 0 var(--space-4);
+  }
+  .dash-session-exercises { display: flex; flex-direction: column; margin-bottom: var(--space-4); }
+  .dash-session-ex-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 10px;
+    padding: 9px 0;
+    border-bottom: 1px solid var(--divider);
+  }
+  .dash-session-ex-row:last-child { border-bottom: none; }
+  .dash-session-ex-name { font-size: 14px; color: var(--ink); }
+  .dash-session-ex-value { font-family: var(--font-mono); font-size: 13px; color: var(--steel); white-space: nowrap; }
+  .dash-session-ex-value.is-cycle { color: var(--blue); font-weight: 700; }
+  .dash-session-card .btn-primary { width: 100%; }
+
+  /* deux tuiles côte à côte (lot 03), à la place de l'ancien bloc
+     "Séances / X / Y" empilé avec sa sous-ligne de volume */
+  .dash-week-tiles {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: var(--space-4);
+  }
+  .dash-tile {
+    border: 1px solid var(--border-card);
+    border-radius: var(--radius-card);
+    padding: var(--space-3) var(--space-4);
+  }
+  .dash-tile-label {
+    display: block;
+    font-size: 11px;
+    color: var(--steel);
+    margin-bottom: 6px;
+  }
+  .dash-tile-value { font-family: var(--font-title); font-weight: 700; font-size: 22px; color: var(--ink); }
+
+  /* bandeau du prochain test 1RM (lot 03) — même famille visuelle que
+     .cycle-active-badge (bleu = cycles et haltérophilie, règle 4) */
+  .dash-next-test {
+    background: var(--blue-fill);
+    border-radius: var(--radius-card);
+    padding: var(--space-3) var(--space-4);
+    margin-top: var(--space-4);
+  }
+  .dash-next-test-eyebrow {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--blue);
+    margin-bottom: 6px;
+  }
+  .dash-next-test-row { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+  .dash-next-test-name { font-size: 14px; font-weight: 700; color: var(--ink); }
+  .dash-next-test-eta { font-family: var(--font-mono); font-size: 12px; color: var(--steel); white-space: nowrap; }
 
   .dash-section {
     padding-top: var(--space-4);
@@ -931,7 +1069,6 @@
     color: var(--steel);
     margin-bottom: 10px;
   }
-  .dash-stat-row { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
   .dash-cycle-list { display: flex; flex-direction: column; gap: 10px; }
   .dash-cycle-row {
     display: flex;
@@ -946,21 +1083,7 @@
     text-align: left;
     cursor: pointer;
   }
-  .dash-cycle-row.is-test-week .dash-cycle-status { color: var(--rust); font-weight: 700; }
-  .dash-cycle-row.is-base-mode { cursor: default; }
-  .dash-cycle-row.is-base-mode .dash-cycle-status { color: var(--steel); }
   .dash-cycle-name { font-family: var(--font-display); font-weight: 700; font-size: 15px; text-transform: uppercase; letter-spacing: 0.01em; color: var(--ink); }
-  .dash-cycle-status { font-family: var(--font-mono); font-size: 12px; color: var(--accent-info); white-space: nowrap; flex-shrink: 0; }
-  .dash-stat-name {
-    font-family: var(--font-display);
-    font-weight: 700;
-    font-size: 16px;
-    text-transform: uppercase;
-    letter-spacing: 0.01em;
-    color: var(--ink);
-  }
-  .dash-stat-value { font-family: var(--font-mono); font-size: 16px; font-weight: 700; color: var(--accent-info); white-space: nowrap; flex-shrink: 0; }
-  .dash-stat-sub { font-family: var(--font-mono); font-size: 11px; color: var(--steel); margin-top: 6px; }
 
   /* ============================================================
      DASHBOARD — data export / import
@@ -2390,7 +2513,7 @@
     letter-spacing: 0.5px;
   }
   .view-header h1 { font-size: 36px; line-height: 1; }
-  .dash-stat-value, .exercise-detail-hero-value { font-family: var(--font-title); font-weight: 700; }
+  .exercise-detail-hero-value { font-family: var(--font-title); font-weight: 700; }
 
   /* barre de navigation à plat, bouton Séance au centre en orange */
   .bottom-nav {
@@ -2437,11 +2560,9 @@
   .cycle-inline-tag,
   .cycle-week-num,
   .cycle-detail-phase,
-  .dash-cycle-status,
   .cycle-full-name { color: var(--blue); }
   .cycle-full-week.is-current { border-color: var(--blue); }
   .cycle-full-current-tag { background: var(--blue-fill); color: var(--blue); }
-  .dash-cycle-row.is-test-week .dash-cycle-status { color: var(--orange-soft); }
   .cycle-alert-banner { background: var(--orange-fill); border-color: transparent; color: var(--ink); box-shadow: none; }
   .cycle-alert-icon { stroke: var(--orange-soft); }
   .cycle-alert-title { color: var(--orange-soft); }
@@ -2472,10 +2593,16 @@
     <section class="view" data-view="dashboard" id="view-dashboard">
 
       <div class="dash-top-row">
+        <div>
+          <span class="dash-header-sub" id="dash-header-date"></span>
+          <h1 class="dash-header-title">Séance du jour</h1>
+        </div>
         <button type="button" id="dash-settings-btn" class="view-header-back" aria-label="Réglages">
           <svg viewBox="0 0 24 24" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg>
         </button>
       </div>
+
+      <div class="dash-week-strip" id="dash-week-strip"></div>
 
       <button type="button" class="cycle-alert-banner" id="cycle-alert-banner" hidden>
         <svg class="cycle-alert-icon" viewBox="0 0 24 24">
@@ -2486,17 +2613,30 @@
         <span class="cycle-alert-text" id="cycle-alert-text"></span>
       </button>
 
-      <div class="dash-hero" id="dash-hero">
-        <span class="dash-hero-eyebrow" id="dash-hero-eyebrow"></span>
-        <h1 class="dash-hero-title" id="dash-hero-title"></h1>
-        <p class="dash-hero-sub" id="dash-hero-sub" hidden></p>
-        <p class="dash-hero-meta mono" id="dash-hero-meta"></p>
-        <button type="button" class="btn-primary" id="dash-hero-cta"></button>
+      <div class="dash-hero" id="dash-hero" hidden>
+        <span class="dash-hero-eyebrow">Commence ici</span>
+        <h1 class="dash-hero-title">Crée ta première routine</h1>
+        <p class="dash-hero-sub">Construis un programme d'exercices pour démarrer tes séances en un tap.</p>
+        <button type="button" class="btn-primary" id="dash-hero-cta">Créer une routine</button>
       </div>
 
-      <div class="dash-section" id="dash-force-cycles" hidden>
-        <span class="dash-section-eyebrow">CYCLE EN COURS</span>
-        <div class="dash-cycle-list" id="dash-force-cycles-body"></div>
+      <div class="dash-session-card" id="dash-session-card" hidden>
+        <div class="dash-session-badges" id="dash-session-badges"></div>
+        <h1 class="dash-session-title" id="dash-session-title"></h1>
+        <p class="dash-session-meta" id="dash-session-meta"></p>
+        <div class="dash-session-exercises" id="dash-session-exercises"></div>
+        <button type="button" class="btn-primary" id="dash-session-cta"></button>
+      </div>
+
+      <div class="dash-week-tiles" id="dash-week-tiles" hidden>
+        <div class="dash-tile">
+          <span class="dash-tile-label">Séances cette semaine</span>
+          <span class="dash-tile-value" id="dash-week-count"></span>
+        </div>
+        <div class="dash-tile">
+          <span class="dash-tile-label">Volume cette semaine</span>
+          <span class="dash-tile-value" id="dash-week-volume"></span>
+        </div>
       </div>
 
       <div class="dash-section" id="dash-stagnation" hidden>
@@ -2504,23 +2644,12 @@
         <div class="dash-cycle-list" id="dash-stagnation-body"></div>
       </div>
 
-      <div class="dash-section" id="dash-week-summary" hidden>
-        <span class="dash-section-eyebrow">CETTE SEMAINE</span>
-        <div class="dash-stat-row">
-          <span class="dash-stat-name">Séances</span>
-          <span class="dash-stat-value" id="dash-week-count"></span>
+      <div class="dash-next-test" id="dash-next-test" hidden>
+        <span class="dash-next-test-eyebrow">Prochain test 1RM</span>
+        <div class="dash-next-test-row">
+          <span class="dash-next-test-name" id="dash-next-test-name"></span>
+          <span class="dash-next-test-eta" id="dash-next-test-eta"></span>
         </div>
-        <div class="dash-stat-sub" id="dash-week-volume" hidden></div>
-      </div>
-
-      <div class="dash-section" id="dash-last-session" hidden>
-        <span class="dash-section-eyebrow">DERNIÈRE SÉANCE</span>
-        <div class="dash-last-session-body" id="dash-last-session-body"></div>
-      </div>
-
-      <div class="dash-section" id="dash-progress" hidden>
-        <span class="dash-section-eyebrow">PROGRESSION RÉCENTE</span>
-        <div class="dash-progress-body" id="dash-progress-body"></div>
       </div>
     </section>
 
@@ -3863,7 +3992,6 @@
     document.getElementById('seance-sticky-topbar').hidden = !(target === 'seance' && activeSession);
     if (target === 'dashboard') {
       renderCycleAlertBanner();
-      renderDashboardForceCycles();
       renderDashboardStagnation();
       renderDashboardHome();
     }
@@ -4759,6 +4887,9 @@
      partagé par les pastilles de l'éditeur (renderRoutineWeekdayRow) et le
      libellé de chaque jour de la semaine (buildProgrammeDayRow) */
   var WEEKDAY_LABELS = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
+  /* noms complets, pour la date d'en-tête de l'accueil (lot 03) — ex.
+     "Samedi 3 octobre" */
+  var WEEKDAY_NAMES_FR = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
 
   function formatDayMonthFr(date) {
     return date.getDate() + ' ' + MONTH_NAMES_FR[date.getMonth()];
@@ -4766,6 +4897,13 @@
 
   function isSameLocalDay(a, b) {
     return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+  }
+
+  /* 1 = lundi .. 7 = dimanche, comme routine.weekdays — Date.getDay() est en
+     0 = dimanche .. 6 = samedi, décalé d'un cran */
+  function currentWeekdayNum() {
+    var d = new Date().getDay();
+    return d === 0 ? 7 : d;
   }
 
   /* R1 : un mouvement Lifting avec un cycle actif (OvrykDB.getForceCycle)
@@ -7704,14 +7842,28 @@
     return formatFullDate(dateStr);
   }
 
-  function estimateRoutineDuration(routine) {
+  function estimateRoutineDurationMinutes(routine) {
     var totalSeconds = 0;
     routine.exercises.forEach(function (rex) {
       var restSeconds = rex.restSeconds || 90;
       totalSeconds += rex.sets.length * (restSeconds + 40);
     });
-    var minutes = Math.max(10, Math.round(totalSeconds / 60 / 5) * 5);
-    return '~' + minutes + ' min';
+    return Math.max(10, Math.round(totalSeconds / 60 / 5) * 5);
+  }
+
+  function estimateRoutineDuration(routine) {
+    return '~' + estimateRoutineDurationMinutes(routine) + ' min';
+  }
+
+  /* "environ 1 h 15" / "environ 45 min" pour la carte de séance de l'accueil
+     (lot 03) — distinct du format "~45 min" utilisé ailleurs
+     (buildRoutineRow, renderSeanceRoutineList) pour ne pas changer leur
+     affichage existant */
+  function formatDurationHM(minutes) {
+    if (minutes < 60) return 'environ ' + minutes + ' min';
+    var h = Math.floor(minutes / 60);
+    var m = minutes % 60;
+    return 'environ ' + h + ' h' + (m > 0 ? ' ' + pad2(m) : '');
   }
 
   function sessionVolume(session) {
@@ -7737,216 +7889,217 @@
     return scored[0].routine;
   }
 
-  function renderDashboardHero() {
-    var eyebrowEl = document.getElementById('dash-hero-eyebrow');
-    var titleEl = document.getElementById('dash-hero-title');
-    var subEl = document.getElementById('dash-hero-sub');
-    var metaEl = document.getElementById('dash-hero-meta');
-    var ctaBtn = document.getElementById('dash-hero-cta');
-    var hasAnySession = OvrykDB.getSessions().some(function (s) { return s.status === 'completed'; });
-    var routine = computeNextRoutine();
-
-    if (!routine) {
-      eyebrowEl.textContent = 'Commence ici';
-      titleEl.textContent = 'Crée ta première routine';
-      subEl.hidden = false;
-      subEl.textContent = 'Construis un programme d\'exercices pour démarrer tes séances en un tap.';
-      metaEl.textContent = '';
-      ctaBtn.textContent = 'Créer une routine';
-      ctaBtn.onclick = function () {
-        setActiveView('routine');
-        document.getElementById('routine-create-btn').click();
-      };
-      return;
+  /* Séance déjà en cours (OvrykDB.getActiveSession) : la carte doit
+     permettre de la reprendre, jamais d'en démarrer ou d'en supprimer une
+     autre — aucun appel à startSession ici, juste un retour sur l'onglet
+     Séance qui affiche déjà cette séance (showSeanceActive tourne une fois
+     au chargement de la page, voir plus bas dans le fichier). */
+  function renderDashboardSessionCardResume(session) {
+    var badgesEl = document.getElementById('dash-session-badges');
+    var sourceRoutine = session.routineId ? OvrykDB.getRoutineById(session.routineId) : null;
+    badgesEl.innerHTML = '<span class="dash-session-resume-tag">Séance en cours</span>';
+    if (sourceRoutine) {
+      var badges = getRoutineCycleBadges(sourceRoutine);
+      if (badges.halterophile) badgesEl.innerHTML += '<span class="day-badge-tag is-halterophilie">Haltéro</span>';
+      if (badges.muscu) badgesEl.innerHTML += '<span class="day-badge-tag is-muscu">Muscu</span>';
     }
 
-    var last = getLastCompletedSessionForRoutine(routine.id);
-    eyebrowEl.textContent = hasAnySession ? 'Prochaine séance' : 'Commence ici';
-    titleEl.textContent = routine.name || 'Routine sans titre';
+    document.getElementById('dash-session-title').textContent = session.routineName || 'Séance libre';
+    var exCount = session.exercises.length;
+    document.getElementById('dash-session-meta').textContent = exCount + ' exercice' + (exCount > 1 ? 's' : '');
+    document.getElementById('dash-session-exercises').innerHTML = '';
 
-    if (!hasAnySession) {
-      subEl.hidden = false;
-      subEl.textContent = 'Commence ta première séance pour voir apparaître ici ton volume, tes records et ta progression.';
-    } else {
-      subEl.hidden = true;
-    }
+    var ctaBtn = document.getElementById('dash-session-cta');
+    ctaBtn.textContent = 'Reprendre la séance';
+    ctaBtn.onclick = function () { setActiveView('seance'); };
+  }
+
+  /* Routine du jour ou prochaine routine en rotation : la carte complète de
+     la maquette, avec la prescription de chaque exercice. */
+  function renderDashboardSessionCardPlan(routine) {
+    var badgesEl = document.getElementById('dash-session-badges');
+    var badges = getRoutineCycleBadges(routine);
+    badgesEl.innerHTML = '';
+    if (badges.halterophile) badgesEl.innerHTML += '<span class="day-badge-tag is-halterophilie">Haltéro</span>';
+    if (badges.muscu) badgesEl.innerHTML += '<span class="day-badge-tag is-muscu">Muscu</span>';
+
+    document.getElementById('dash-session-title').textContent = routine.name || 'Routine sans titre';
 
     var exCount = routine.exercises.length;
-    var metaParts = [exCount + ' exercice' + (exCount > 1 ? 's' : ''), estimateRoutineDuration(routine)];
-    metaParts.push(last ? ('Dernière fois ' + formatRelativeDate(last.date)) : 'Jamais faite');
-    metaEl.textContent = metaParts.join(' · ');
+    var metaParts = [exCount + ' exercice' + (exCount > 1 ? 's' : ''), formatDurationHM(estimateRoutineDurationMinutes(routine))];
+    var principalCycle = null;
+    for (var i = 0; i < routine.exercises.length && !principalCycle; i++) {
+      var rex0 = routine.exercises[i];
+      var exercise0 = OvrykDB.getExerciseById(rex0.exerciseId);
+      if (exercise0 && exercise0.category === 'Lifting') {
+        var c = OvrykDB.getForceCycle(rex0.exerciseId);
+        if (c) principalCycle = c;
+      }
+    }
+    if (principalCycle) {
+      metaParts.push('Semaine ' + principalCycle.semaine_actuelle + ' sur ' + cycleLength(principalCycle.cycle_actif));
+    }
+    document.getElementById('dash-session-meta').textContent = metaParts.join(' · ');
 
-    ctaBtn.textContent = 'Démarrer';
+    var exercisesEl = document.getElementById('dash-session-exercises');
+    exercisesEl.innerHTML = '';
+    routine.exercises.forEach(function (rex) {
+      var exercise = OvrykDB.getExerciseById(rex.exerciseId);
+      var cycle = exercise && exercise.category === 'Lifting' ? OvrykDB.getForceCycle(rex.exerciseId) : null;
+
+      var valueHtml;
+      if (cycle) {
+        var week = getCycleWeek(cycle);
+        var lastSet = week.sets[week.sets.length - 1];
+        valueHtml = '<span class="dash-session-ex-value is-cycle">' + escapeHTML(week.phase) + ' à ' + lastSet.percent + ' %</span>';
+      } else {
+        var firstSet = rex.sets[0];
+        var repsText = '-';
+        if (firstSet) {
+          if (firstSet.repType === 'range') {
+            repsText = (firstSet.repsMin != null ? firstSet.repsMin : '-') + '-' + (firstSet.repsMax != null ? firstSet.repsMax : '-');
+          } else {
+            repsText = firstSet.reps != null ? firstSet.reps : '-';
+          }
+        }
+        valueHtml = '<span class="dash-session-ex-value">' + rex.sets.length + ' x ' + repsText + '</span>';
+      }
+
+      var row = document.createElement('div');
+      row.className = 'dash-session-ex-row';
+      row.innerHTML = '<span class="dash-session-ex-name">' + escapeHTML(exercise ? exercise.name : 'Exercice supprimé') + '</span>' + valueHtml;
+      exercisesEl.appendChild(row);
+    });
+
+    var ctaBtn = document.getElementById('dash-session-cta');
+    ctaBtn.textContent = 'Commencer la séance';
     ctaBtn.onclick = function () {
       startSession(buildSessionFromRoutine(routine));
       setActiveView('seance');
     };
   }
 
-  /* "Planned" sessions this week = one per routine in the split — the split
-     itself is the only real target the app knows about, no separate goal
-     setting to keep in sync. */
-  function renderDashboardWeekSummary() {
-    var block = document.getElementById('dash-week-summary');
+  function renderDashboardHero() {
+    var emptyEl = document.getElementById('dash-hero');
+    var cardEl = document.getElementById('dash-session-card');
     var routines = OvrykDB.getRoutines();
-    if (routines.length === 0) { block.hidden = true; return; }
+
+    if (routines.length === 0) {
+      emptyEl.hidden = false;
+      cardEl.hidden = true;
+      return;
+    }
+    emptyEl.hidden = true;
+    cardEl.hidden = false;
+
+    var active = OvrykDB.getActiveSession();
+    if (active) {
+      renderDashboardSessionCardResume(active);
+      return;
+    }
+
+    var todayNum = currentWeekdayNum();
+    var todaysRoutines = routines.filter(function (r) { return r.weekdays && r.weekdays.indexOf(todayNum) !== -1; });
+    var routine = todaysRoutines.length ? todaysRoutines[0] : computeNextRoutine();
+    renderDashboardSessionCardPlan(routine);
+  }
+
+  /* Les deux tuiles "Séances cette semaine" / "Volume cette semaine" (lot 03).
+     Prévues = nombre de jours distincts couverts par au moins une routine
+     (somme des weekdays). Sans aucun jour programmé nulle part, pas de
+     valeur par défaut : la tuile n'affiche que le nombre de séances
+     faites, sans "/N". */
+  function renderDashboardWeekSummary() {
+    var tilesEl = document.getElementById('dash-week-tiles');
+    var routines = OvrykDB.getRoutines();
+    if (routines.length === 0) { tilesEl.hidden = true; return; }
 
     var weekStart = startOfWeek(new Date());
     var weekSessions = OvrykDB.getSessions().filter(function (s) {
       return s.status === 'completed' && new Date(s.date) >= weekStart;
     });
-    var planned = routines.length;
 
-    document.getElementById('dash-week-count').textContent = weekSessions.length + ' / ' + planned;
+    var scheduledDays = {};
+    routines.forEach(function (r) { (r.weekdays || []).forEach(function (d) { scheduledDays[d] = true; }); });
+    var plannedCount = Object.keys(scheduledDays).length;
+
+    document.getElementById('dash-week-count').textContent = plannedCount > 0
+      ? (weekSessions.length + ' / ' + plannedCount)
+      : String(weekSessions.length);
 
     var weekVolume = 0;
     weekSessions.forEach(function (s) { weekVolume += sessionVolume(s); });
-    var volEl = document.getElementById('dash-week-volume');
-    if (weekVolume > 0) {
-      volEl.textContent = Math.round(weekVolume) + ' kg de volume cette semaine';
-      volEl.hidden = false;
-    } else {
-      volEl.hidden = true;
-    }
+    document.getElementById('dash-week-volume').textContent = Math.round(weekVolume) + ' kg';
 
-    block.hidden = false;
+    tilesEl.hidden = false;
   }
 
-  function renderDashboardLastSession() {
-    var block = document.getElementById('dash-last-session');
-    var body = document.getElementById('dash-last-session-body');
-    var completed = OvrykDB.getSessions().filter(function (s) { return s.status === 'completed'; })
-      .sort(function (a, b) { return new Date(b.date) - new Date(a.date); });
+  /* Bande de 7 pastilles L M M J V S D (lot 03). Réutilise startOfWeek,
+     addDays, isSameLocalDay, WEEKDAY_LABELS du lot 02 — même semaine civile
+     que l'écran Programme. */
+  function renderDashboardWeekStrip() {
+    var el = document.getElementById('dash-week-strip');
+    el.innerHTML = '';
+    var routines = OvrykDB.getRoutines();
+    var sessions = OvrykDB.getSessions();
+    var monday = startOfWeek(new Date());
+    var today = new Date();
 
-    if (completed.length === 0) { block.hidden = true; return; }
+    for (var i = 1; i <= 7; i++) {
+      var date = addDays(monday, i - 1);
+      var isToday = isSameLocalDay(date, today);
+      var hasRoutine = routines.some(function (r) { return r.weekdays && r.weekdays.indexOf(i) !== -1; });
+      var hasCompletedSession = sessions.some(function (s) {
+        return s.status === 'completed' && isSameLocalDay(new Date(s.date), date);
+      });
 
-    var session = completed[0];
-    var volume = sessionVolume(session);
-    var exCount = session.exercises.length;
-    var durationText = session.durationSeconds != null ? formatDuration(session.durationSeconds) : '-';
-
-    var subParts = [formatRelativeDate(session.date), durationText, exCount + ' exercice' + (exCount > 1 ? 's' : '')];
-    if (volume > 0) subParts.push(Math.round(volume) + ' kg vol.');
-
-    body.innerHTML = '<div class="dash-stat-name">' + escapeHTML(session.routineName || 'Séance libre') + '</div>' +
-      '<div class="dash-stat-sub">' + subParts.join(' · ') + '</div>';
-    block.hidden = false;
+      var cell = document.createElement('div');
+      cell.className = 'dash-week-day' + (isToday ? ' is-today' : '') + (hasRoutine ? '' : ' is-rest');
+      cell.innerHTML = '<span class="dash-week-day-label">' + WEEKDAY_LABELS[i - 1] + '</span>' +
+        '<span class="dash-week-day-num mono">' + date.getDate() + '</span>' +
+        (hasCompletedSession ? '<span class="dash-week-day-dot"></span>' : '');
+      el.appendChild(cell);
+    }
   }
 
-  /* Only ever shows a real signal — a fresh PR, or an actual two-week volume
-     comparison. No filler copy when there is nothing meaningful yet. */
-  function renderDashboardProgress() {
-    var block = document.getElementById('dash-progress');
-    var body = document.getElementById('dash-progress-body');
-    var completed = OvrykDB.getSessions().filter(function (s) { return s.status === 'completed'; })
-      .sort(function (a, b) { return new Date(b.date) - new Date(a.date); });
+  /* Mouvement dont le test 1RM est le plus proche (R7 : semaine de test =
+     dernière semaine du cycle). Masqué si aucun cycle actif, ou si
+     renderCycleAlertBanner affiche déjà son alerte pour un test dû cette
+     semaine ou la prochaine — doit donc tourner après elle. */
+  function renderDashboardNextTest() {
+    var block = document.getElementById('dash-next-test');
+    var alertShown = !document.getElementById('cycle-alert-banner').hidden;
+    if (alertShown) { block.hidden = true; return; }
 
-    if (completed.length === 0) { block.hidden = true; return; }
-
-    var last = completed[0];
-    var prFound = null;
-    for (var j = 0; j < last.exercises.length; j++) {
-      var sex = last.exercises[j];
-      var resolved = resolveDoneSets(sex);
-      if (resolved.length === 0) continue;
-      var maxWeight = Math.max.apply(null, resolved.map(function (s) { return s.weight; }));
-      if (maxWeight <= 0) continue;
-      var records = getExerciseSessionRecords(sex.exerciseId);
-      if (records.length < 2) continue;
-      var allTimeMax = Math.max.apply(null, records.map(function (r) { return r.maxWeight; }));
-      if (maxWeight === allTimeMax) { prFound = { name: sex.exerciseName, weight: maxWeight }; break; }
-    }
-
-    if (prFound) {
-      body.innerHTML = '<span class="empty-tag is-record">Nouveau record</span>' +
-        '<div class="dash-stat-name">' + escapeHTML(prFound.name) + '</div>' +
-        '<div class="dash-stat-sub">' + prFound.weight + ' kg</div>';
-      block.hidden = false;
-      return;
-    }
-
-    var weekStart = startOfWeek(new Date());
-    var prevWeekStart = new Date(weekStart);
-    prevWeekStart.setDate(prevWeekStart.getDate() - 7);
-    var thisWeekVol = 0, lastWeekVol = 0;
-    completed.forEach(function (s) {
-      var d = new Date(s.date);
-      var vol = sessionVolume(s);
-      if (d >= weekStart) thisWeekVol += vol;
-      else if (d >= prevWeekStart && d < weekStart) lastWeekVol += vol;
+    var cycles = OvrykDB.getForceCycles();
+    var closest = null;
+    Object.keys(cycles).forEach(function (exerciseId) {
+      var cycle = cycles[exerciseId];
+      var remaining = cycleLength(cycle.cycle_actif) - cycle.semaine_actuelle;
+      if (!closest || remaining < closest.remaining) {
+        closest = { exerciseId: exerciseId, cycle: cycle, remaining: remaining };
+      }
     });
 
-    if (thisWeekVol === 0 || lastWeekVol === 0) { block.hidden = true; return; }
+    if (!closest) { block.hidden = true; return; }
 
-    var delta = Math.round(((thisWeekVol - lastWeekVol) / lastWeekVol) * 100);
-    var trendText = (delta >= 0 ? '+' : '') + delta + '%';
-    body.innerHTML = '<div class="dash-stat-name">Volume cette semaine ' + trendText + '</div>' +
-      '<div class="dash-stat-sub">vs semaine précédente</div>';
+    var exercise = OvrykDB.getExerciseById(closest.exerciseId);
+    var total = cycleLength(closest.cycle.cycle_actif);
+    document.getElementById('dash-next-test-name').textContent =
+      (exercise ? exercise.name : closest.exerciseId) + ', semaine ' + total;
+    document.getElementById('dash-next-test-eta').textContent =
+      'Dans ' + closest.remaining + (closest.remaining > 1 ? ' semaines' : ' semaine');
     block.hidden = false;
   }
 
   function renderDashboardHome() {
+    var today = new Date();
+    document.getElementById('dash-header-date').textContent =
+      WEEKDAY_NAMES_FR[currentWeekdayNum() - 1] + ' ' + formatDayMonthFr(today);
+    renderDashboardWeekStrip();
     renderDashboardHero();
     renderDashboardWeekSummary();
-    renderDashboardLastSession();
-    renderDashboardProgress();
-  }
-
-  /* ============================================================
-     DASHBOARD — force cycle summary (one line per tracked movement)
-  ============================================================ */
-  function renderDashboardForceCycles() {
-    /* catches up any movement whose forceCycleStartDate has passed since the
-       last time this ran, so a base-mode row below doesn't linger stale
-       once its start date is actually reached */
-    refreshScheduledForceCycleActivations();
-
-    var block = document.getElementById('dash-force-cycles');
-    var body = document.getElementById('dash-force-cycles-body');
-    var cycles = OvrykDB.getForceCycles();
-    var exerciseIds = Object.keys(cycles);
-
-    /* scheduled but not started yet — same "used in a routine" scoping as
-       active cycles, so a movement dropped from every routine doesn't show
-       up here either (maybeAutoDeactivateForceCycle's counterpart) */
-    var baseModeExercises = OvrykDB.getExercises().filter(function (ex) {
-      return ex.category === 'Lifting' && !cycles[ex.id] && isBeforeForceCycleStart(ex) && isExerciseUsedInRoutine(ex.id);
-    });
-
-    if (exerciseIds.length === 0 && baseModeExercises.length === 0) {
-      block.hidden = true;
-      return;
-    }
-
-    body.innerHTML = '';
-    exerciseIds.forEach(function (exerciseId) {
-      var cycle = cycles[exerciseId];
-      var exercise = OvrykDB.getExerciseById(exerciseId);
-      var isTestWeek = getCycleWeek(cycle).isTestWeek;
-      var weekPhase = getCycleWeek(cycle).phase;
-      var statusText = isTestWeek
-        ? (cycle.semaine_actuelle + '/' + cycleLength(cycle.cycle_actif) + ' · teste ton 1RM')
-        : ('Cycle actif · ' + cycle.semaine_actuelle + '/' + cycleLength(cycle.cycle_actif) + ' · ' + weekPhase);
-
-      var row = document.createElement('button');
-      row.type = 'button';
-      row.className = 'dash-cycle-row' + (isTestWeek ? ' is-test-week' : '');
-      row.innerHTML = '<span class="dash-cycle-name">' + escapeHTML(exercise ? exercise.name : exerciseId) + '</span>' +
-        '<span class="dash-cycle-status">' + escapeHTML(statusText) + '</span>';
-      row.addEventListener('click', function () { openCycleDetailPage(exerciseId); });
-      body.appendChild(row);
-    });
-
-    baseModeExercises.forEach(function (ex) {
-      var weeksUntil = getWeeksUntilForceCycleStart(ex);
-      var row = document.createElement('div');
-      row.className = 'dash-cycle-row is-base-mode';
-      row.innerHTML = '<span class="dash-cycle-name">' + escapeHTML(ex.name) + '</span>' +
-        '<span class="dash-cycle-status">Base · démarrage dans ' + weeksUntil + (weeksUntil > 1 ? ' semaines' : ' semaine') + '</span>';
-      body.appendChild(row);
-    });
-
-    block.hidden = false;
+    renderDashboardNextTest();
   }
 
   /* ============================================================
@@ -8034,6 +8187,11 @@
 
   document.getElementById('cycle-alert-banner').addEventListener('click', function () {
     setActiveView('seance');
+  });
+
+  document.getElementById('dash-hero-cta').addEventListener('click', function () {
+    setActiveView('routine');
+    document.getElementById('routine-create-btn').click();
   });
 
   /* ============================================================
