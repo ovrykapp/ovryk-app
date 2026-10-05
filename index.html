@@ -2159,6 +2159,166 @@
   .live-validate-btn { flex: 1; margin: 0; }
   .live-validate-delete { flex-shrink: 0; }
 
+  /* ============================================================
+     SÉANCE — haltérophilie (lot 05) : bleu partout pour les actions
+     principales (règle 4 du CLAUDE.md : bleu = cycles et haltérophilie,
+     orange réservé à la muscu et à "Un raté")
+  ============================================================ */
+  .btn-primary.is-blue { background: var(--blue); color: var(--graphite); }
+
+  .haltero-charge-card {
+    border-radius: var(--radius-card);
+    background: var(--surface);
+    padding: var(--space-4);
+    margin-bottom: var(--space-4);
+  }
+  .haltero-charge-label {
+    text-align: center;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--blue);
+    margin-bottom: 10px;
+  }
+  .haltero-charge-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+  }
+  .haltero-charge-step {
+    flex-shrink: 0;
+    width: 52px;
+    height: 44px;
+    border-radius: var(--radius);
+    background: var(--field);
+    border: none;
+    color: var(--ink);
+    font-family: var(--font-mono);
+    font-weight: 700;
+    font-size: 13px;
+    cursor: pointer;
+  }
+  .haltero-charge-step:disabled { opacity: 0.35; cursor: default; }
+  .haltero-charge-kg {
+    font-family: var(--font-title);
+    font-weight: 700;
+    font-size: 48px;
+    line-height: 1;
+    color: var(--ink);
+    min-width: 110px;
+    text-align: center;
+  }
+  .haltero-charge-unit { font-size: 20px; margin-left: 4px; color: var(--steel); }
+  .haltero-charge-sub {
+    text-align: center;
+    font-size: 12px;
+    color: var(--steel);
+    margin-top: 10px;
+  }
+  .haltero-percent-row { display: flex; gap: 6px; margin-top: var(--space-3); }
+  .haltero-percent-pill {
+    flex: 1;
+    min-height: 38px;
+    background: transparent;
+    border: 1px solid var(--border-outline);
+    border-radius: var(--radius);
+    color: var(--ink);
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .haltero-percent-pill:disabled { opacity: 0.35; cursor: default; }
+  .haltero-percent-pill.active { background: var(--blue); border-color: var(--blue); color: var(--graphite); }
+
+  .haltero-sets-table { display: flex; flex-direction: column; gap: 8px; margin-bottom: var(--space-4); }
+  .haltero-set-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 14px;
+    border-radius: var(--radius-card);
+    border: 1px solid transparent;
+    background: var(--surface);
+  }
+  .haltero-set-row.is-current { border-color: var(--blue); }
+  .haltero-set-label { display: flex; flex-direction: column; gap: 2px; }
+  .haltero-set-name { font-family: var(--font-display); font-weight: 700; font-size: 14px; color: var(--ink); }
+  .haltero-set-kg { font-size: 12px; color: var(--steel); }
+  .haltero-rep-dots { display: flex; gap: 8px; flex-shrink: 0; }
+  .haltero-rep-dot {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .haltero-rep-dot svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2.5; }
+  .haltero-rep-dot.is-pending { border: 2px dashed var(--border-outline); color: transparent; }
+  .haltero-rep-dot.is-ok { background: var(--blue); color: var(--graphite); }
+  .haltero-rep-dot.is-fail { background: var(--orange-fill); border: 2px solid var(--rust); color: var(--rust); }
+
+  .haltero-upcoming-note {
+    padding: 10px 14px;
+    border: 1px dashed var(--border-outline);
+    border-radius: var(--radius-card);
+    font-size: 12px;
+    color: var(--steel);
+  }
+
+  .haltero-note-wrap { display: flex; align-items: flex-start; gap: 10px; margin-bottom: var(--space-3); }
+  .haltero-note-toggle {
+    flex-shrink: 0;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--surface);
+    border: 1px solid var(--border-outline);
+    color: var(--steel);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+  }
+  .haltero-note-toggle svg { width: 18px; height: 18px; stroke: currentColor; fill: none; }
+  .haltero-note-input {
+    flex: 1;
+    min-height: 44px;
+    background: var(--surface);
+    border: 1px solid var(--border-outline);
+    border-radius: var(--radius-card);
+    color: var(--ink);
+    padding: 10px 12px;
+    font-family: inherit;
+    font-size: 13px;
+    resize: vertical;
+  }
+  .haltero-note-input[hidden] { display: none; }
+
+  .haltero-actions-row { display: flex; gap: 10px; }
+  .haltero-fail-btn {
+    flex: 1;
+    min-height: 48px;
+    background: transparent;
+    border: 1px solid var(--rust);
+    border-radius: var(--radius);
+    color: var(--rust);
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+  }
+  .haltero-fail-btn:disabled { opacity: 0.35; cursor: default; }
+  .haltero-actions-row .haltero-success-btn { flex: 1.4; margin: 0; }
+
   /* lives outside <main>, directly under the header/knurl-strip in normal
      flow — not a sticky trick inside the scrolling area, so it's always
      glued to the banner and can never drift from it regardless of scroll
@@ -6210,8 +6370,29 @@
     return clone;
   }
 
+  /* R6, point 9 : le volume ne compte que les reps réussies sur un
+     mouvement de cycle. Une série sans result/repResults (ancienne séance,
+     ou une série pas encore passée par "Série réussie"/"Un raté"/le
+     compteur) est traitée comme entièrement réussie — comportement
+     identique à avant ce lot, pour ne rien changer au volume des séances
+     déjà enregistrées. */
+  function computeSuccessfulReps(set) {
+    if (set.repResults && set.repResults.length) {
+      return set.repResults.filter(function (r) { return r; }).length;
+    }
+    if (set.repsDone != null) return set.repsDone;
+    return set.reps || 0;
+  }
+
   function computeSetVolume(sex, set) {
-    var repsVal = set.repType === 'range' ? (((set.repsMin || 0) + (set.repsMax || 0)) / 2) : (set.reps || 0);
+    var repsVal;
+    if (set.repType === 'range') {
+      repsVal = ((set.repsMin || 0) + (set.repsMax || 0)) / 2;
+    } else if (sex.category === 'Lifting') {
+      repsVal = computeSuccessfulReps(set);
+    } else {
+      repsVal = set.reps || 0;
+    }
     var weight;
     if (sex.category === 'Lifting') {
       weight = computeWeightFromPercent(sex.oneRepMaxSnapshot, set.percent1rm) || 0;
@@ -6221,6 +6402,10 @@
     return repsVal * weight;
   }
 
+  /* lot 05 : result/repResults/repsDone/failRep/failCause/note ne sont
+     posés que sur les séries des nouvelles séances construites à partir de
+     maintenant (cycle ou mode de base) — jamais ajoutés rétroactivement à
+     une séance déjà stockée. */
   function buildSessionSetsFromPrescription(prescriptionSets) {
     return prescriptionSets.map(function (s) {
       return {
@@ -6229,7 +6414,13 @@
         reps: s.reps,
         percent1rm: s.percent,
         done: false,
-        rpe: null
+        rpe: null,
+        result: null,
+        repResults: null,
+        repsDone: null,
+        failRep: null,
+        failCause: null,
+        note: ''
       };
     });
   }
@@ -6256,7 +6447,14 @@
 
   function resolveDoneSets(sex) {
     return sex.sets.filter(function (s) { return s.done; }).map(function (s) {
-      var reps = s.repType === 'range' ? Math.round(((s.repsMin || 0) + (s.repsMax || 0)) / 2) : (s.reps || 0);
+      var reps;
+      if (s.repType === 'range') {
+        reps = Math.round(((s.repsMin || 0) + (s.repsMax || 0)) / 2);
+      } else if (sex.category === 'Lifting') {
+        reps = computeSuccessfulReps(s);
+      } else {
+        reps = s.reps || 0;
+      }
       var weight;
       if (sex.category === 'Lifting') {
         weight = computeWeightFromPercent(sex.oneRepMaxSnapshot, s.percent1rm) || 0;
@@ -6591,7 +6789,7 @@
      par l'haltérophilie et la muscu. Le chronomètre n'est pas dupliqué ici :
      celui de .seance-sticky-topbar (#seance-timer-label) reste visible en
      permanence pendant la séance. */
-  function buildLiveSessionHeader(sex, index) {
+  function buildLiveSessionHeader(sex, index, extraKicker) {
     var header = document.createElement('div');
     header.className = 'live-session-top-header';
 
@@ -6604,10 +6802,11 @@
     backBtn.addEventListener('click', function () { goToLiveExercise(index - 1); });
     header.appendChild(backBtn);
 
+    var kickerText = 'Exercice ' + (index + 1) + ' sur ' + activeSession.exercises.length + (extraKicker ? ' · ' + extraKicker : '');
     var titleWrap = document.createElement('div');
     titleWrap.className = 'live-session-title-wrap';
     titleWrap.innerHTML = '<div class="live-session-name">' + escapeHTML(sex.exerciseName) + (sex.grip ? ' · ' + escapeHTML(sex.grip) : '') + '</div>' +
-      '<div class="live-session-kicker">Exercice ' + (index + 1) + ' sur ' + activeSession.exercises.length + '</div>';
+      '<div class="live-session-kicker">' + escapeHTML(kickerText) + '</div>';
     header.appendChild(titleWrap);
 
     var removeExBtn = document.createElement('button');
@@ -6662,66 +6861,16 @@
   function buildLiveSessionExercise(sex, index) {
     var wrap = document.createElement('div');
     wrap.className = 'live-session-exercise';
-    wrap.appendChild(buildLiveSessionHeader(sex, index));
 
     if (sex.category === 'Lifting') {
-      var lastSex = getLastLoggedSex(sex.exerciseId);
-      var lastHintText = lastSex ? formatLastSessionHint(lastSex) : null;
-      var bestRecord = getBestRecordForExercise(sex.exerciseId);
-      if (lastHintText || bestRecord) {
-        var hints = document.createElement('div');
-        hints.className = 'session-hints';
-        if (lastHintText) {
-          hints.innerHTML += '<div class="session-hint-row">' +
-            '<span class="session-hint-label">Dernière fois</span>' +
-            '<span class="session-hint-value">' + escapeHTML(lastHintText) + '</span></div>';
-        }
-        if (bestRecord) {
-          hints.innerHTML += '<div class="session-hint-row is-best">' +
-            '<span class="session-hint-label">Meilleur</span>' +
-            '<span class="session-hint-value">' + bestRecord.reps + '×' + bestRecord.weight + 'kg</span></div>';
-        }
-        wrap.appendChild(hints);
-      }
-
-      var table = document.createElement('div');
-      table.className = 'live-set-table';
-
-      var header = document.createElement('div');
-      header.className = 'live-set-row live-set-header';
-      header.innerHTML = '<div class="live-set-col-n">Série</div>' +
-        '<div class="live-set-col-kg">Kg</div>' +
-        '<div class="live-set-col-reps">Reps</div>' +
-        '<div class="live-set-col-check">✓</div>' +
-        '<div class="live-set-col-del"></div>';
-      table.appendChild(header);
-
-      sex.sets.forEach(function (set, setIndex) {
-        table.appendChild(buildLiveSessionSetRow(sex, set, setIndex));
-      });
-      wrap.appendChild(table);
-
-      var cycle = OvrykDB.getForceCycle(sex.exerciseId);
-      if (cycle && getCycleWeek(cycle).isTestWeek) {
-        wrap.appendChild(buildCycleTestForm(sex.exerciseId, cycle));
-      }
-
-      var addSetBtn = document.createElement('button');
-      addSetBtn.type = 'button';
-      addSetBtn.className = 'btn-back';
-      addSetBtn.style.width = '100%';
-      addSetBtn.textContent = '+ Ajouter une série';
-      addSetBtn.addEventListener('click', function () {
-        var base = sex.sets[sex.sets.length - 1];
-        sex.sets.push(base ? cloneSessionSet(base) : createSessionSet(OvrykDB.getExerciseById(sex.exerciseId)));
-        persistActiveSession();
-        renderSeanceActiveView();
-      });
-      wrap.appendChild(addSetBtn);
-
-      var nextHintLifting = buildLiveSessionNextHint(index);
-      if (nextHintLifting) wrap.appendChild(nextHintLifting);
+      var currentIdx = getCurrentSetIndex(sex);
+      var setKicker = sex.sets.length
+        ? ('Série ' + ((currentIdx !== -1 ? currentIdx : sex.sets.length - 1) + 1) + ' sur ' + sex.sets.length)
+        : null;
+      wrap.appendChild(buildLiveSessionHeader(sex, index, setKicker));
+      wrap.appendChild(buildHalteroLiveBody(sex, index));
     } else {
+      wrap.appendChild(buildLiveSessionHeader(sex, index));
       wrap.appendChild(buildMuscuLiveBody(sex, index));
     }
 
@@ -6730,96 +6879,314 @@
     return wrap;
   }
 
-  function buildLiveSessionSetRow(sex, set, setIndex) {
-    var isLifting = sex.category === 'Lifting';
+  /* ============================================================
+     SÉANCE — carte haltérophilie (lot 05, livraison A). "Un raté" est
+     construit mais inerte ici : la feuille (livraison B) le cablera. Le
+     mode compteur des séries de 4 reps ou plus (livraison C) n'est pas
+     encore fait : en attendant, ces séries passent par le même tableau de
+     ronds que les autres (fonctionnel, juste pas la présentation finale).
+  ============================================================ */
+  function roundToMultipleOf5(n) {
+    return Math.round(n / 5) * 5;
+  }
+
+  /* 5 pastilles rondes (multiples de 5), centrées sur le pourcentage
+     prescrit arrondi au multiple de 5 le plus proche — aucune formule
+     n'est donnée par la maquette ni par le lot, qui sont tous deux cités
+     comme écrans d'exemple (ECRANS-A-ADAPTER.md). Un tap règle la charge
+     au kg arrondi à 2,5 le plus proche ; l'affichage au-dessus montre
+     toujours le pourcentage réel qui en résulte, pas le chiffre rond de
+     la pastille. */
+  function buildHalteroPercentPills(sex, set) {
+    var oneRM = sex.oneRepMaxSnapshot;
+    var center = roundToMultipleOf5(set.percent1rm != null ? set.percent1rm : 70);
+    var currentKg = oneRM != null ? computeWeightFromPercent(oneRM, set.percent1rm) : null;
+
     var row = document.createElement('div');
-    row.className = 'live-set-row' + (set.done ? ' is-done' : '');
-
-    var numEl = document.createElement('div');
-    numEl.className = 'live-set-col-n';
-    numEl.textContent = String(setIndex + 1);
-    row.appendChild(numEl);
-
-    var kgEl = document.createElement('div');
-    kgEl.className = 'live-set-col-kg';
-    if (isLifting) {
-      var kg = computeWeightFromPercent(sex.oneRepMaxSnapshot, set.percent1rm);
-      kgEl.textContent = kg != null ? kg : '-';
-    } else {
-      var kgInput = document.createElement('input');
-      kgInput.type = 'number';
-      kgInput.className = 'live-set-input';
-      kgInput.min = '0';
-      kgInput.step = '0.5';
-      kgInput.value = set.weightKg != null ? set.weightKg : '';
-      kgInput.addEventListener('change', function () {
-        var v = parseFloat(kgInput.value);
-        set.weightKg = isNaN(v) ? null : (v < 0 ? 0 : v);
-        persistActiveSession();
-      });
-      kgEl.appendChild(kgInput);
-    }
-    row.appendChild(kgEl);
-
-    var repsEl = document.createElement('div');
-    repsEl.className = 'live-set-col-reps';
-    var repsInput = document.createElement('input');
-    repsInput.type = 'number';
-    repsInput.className = 'live-set-input';
-    if (set.repType === 'range') {
-      repsInput.placeholder = (set.repsMin != null ? set.repsMin : '') + '–' + (set.repsMax != null ? set.repsMax : '');
-      if (set.repsActual != null) repsInput.value = set.repsActual;
-      repsInput.addEventListener('change', function () {
-        var v = parseInt(repsInput.value, 10);
-        set.repsActual = isNaN(v) ? null : v;
-        persistActiveSession();
-      });
-    } else {
-      repsInput.value = set.reps != null ? set.reps : '';
-      repsInput.addEventListener('change', function () {
-        var v = parseInt(repsInput.value, 10);
-        set.reps = isNaN(v) ? null : v;
-        persistActiveSession();
-      });
-    }
-    repsEl.appendChild(repsInput);
-    row.appendChild(repsEl);
-
-    var checkEl = document.createElement('div');
-    checkEl.className = 'live-set-col-check';
-    var checkBtn = document.createElement('button');
-    checkBtn.type = 'button';
-    checkBtn.className = 'live-set-check';
-    checkBtn.setAttribute('aria-label', 'Marquer la série comme faite');
-    checkBtn.innerHTML = '<svg viewBox="0 0 24 24"><polyline points="4,13 9,18 20,6"/></svg>';
-    checkBtn.addEventListener('click', function () {
-      set.done = !set.done;
-      row.classList.toggle('is-done', set.done);
-      persistActiveSession();
-      if (set.done) startRestTimer(sex.exerciseName, sex.restSeconds != null ? sex.restSeconds : 90);
+    row.className = 'haltero-percent-row';
+    [-10, -5, 0, 5, 10].forEach(function (delta) {
+      var pct = Math.max(5, center + delta);
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'haltero-percent-pill';
+      btn.textContent = pct + ' %';
+      if (oneRM != null) {
+        var targetKg = computeWeightFromPercent(oneRM, pct);
+        if (targetKg != null && targetKg === currentKg) btn.classList.add('active');
+        btn.addEventListener('click', function () {
+          if (targetKg == null) return;
+          set.percent1rm = Math.round((targetKg / oneRM) * 100);
+          persistActiveSession();
+          renderSeanceActiveView();
+        });
+      } else {
+        btn.disabled = true;
+      }
+      row.appendChild(btn);
     });
-    checkEl.appendChild(checkBtn);
-    row.appendChild(checkEl);
+    return row;
+  }
 
-    var delEl = document.createElement('div');
-    delEl.className = 'live-set-col-del';
-    var delBtn = document.createElement('button');
-    delBtn.type = 'button';
-    delBtn.className = 'set-remove-btn';
-    delBtn.setAttribute('aria-label', 'Supprimer la série');
-    delBtn.innerHTML = '<svg viewBox="0 0 24 24"><line x1="5" y1="5" x2="19" y2="19"/><line x1="19" y1="5" x2="5" y2="19"/></svg>';
-    delBtn.disabled = sex.sets.length <= 1;
-    delBtn.addEventListener('click', function () {
-      if (sex.sets.length <= 1) return;
-      var idx = sex.sets.indexOf(set);
-      if (idx !== -1) sex.sets.splice(idx, 1);
+  function adjustHalteroCharge(sex, set, delta) {
+    var oneRM = sex.oneRepMaxSnapshot;
+    if (oneRM == null) return;
+    var currentKg = computeWeightFromPercent(oneRM, set.percent1rm) || 0;
+    var newKg = Math.max(0, currentKg + delta);
+    set.percent1rm = Math.round((newKg / oneRM) * 100);
+    persistActiveSession();
+    renderSeanceActiveView();
+  }
+
+  function buildHalteroChargeCard(sex, set) {
+    var card = document.createElement('div');
+    card.className = 'haltero-charge-card';
+
+    var label = document.createElement('div');
+    label.className = 'haltero-charge-label';
+    label.textContent = 'Charge de la série';
+    card.appendChild(label);
+
+    var row = document.createElement('div');
+    row.className = 'haltero-charge-row';
+
+    var minusBtn = document.createElement('button');
+    minusBtn.type = 'button';
+    minusBtn.className = 'haltero-charge-step';
+    minusBtn.textContent = '−2,5';
+    minusBtn.disabled = sex.oneRepMaxSnapshot == null;
+    minusBtn.addEventListener('click', function () { adjustHalteroCharge(sex, set, -2.5); });
+    row.appendChild(minusBtn);
+
+    var kg = computeWeightFromPercent(sex.oneRepMaxSnapshot, set.percent1rm);
+    var kgWrap = document.createElement('div');
+    kgWrap.className = 'haltero-charge-kg';
+    kgWrap.innerHTML = (kg != null ? kg : '-') + '<span class="haltero-charge-unit">kg</span>';
+    row.appendChild(kgWrap);
+
+    var plusBtn = document.createElement('button');
+    plusBtn.type = 'button';
+    plusBtn.className = 'haltero-charge-step';
+    plusBtn.textContent = '+2,5';
+    plusBtn.disabled = sex.oneRepMaxSnapshot == null;
+    plusBtn.addEventListener('click', function () { adjustHalteroCharge(sex, set, 2.5); });
+    row.appendChild(plusBtn);
+
+    card.appendChild(row);
+
+    var sub = document.createElement('div');
+    sub.className = 'haltero-charge-sub';
+    sub.textContent = sex.oneRepMaxSnapshot != null
+      ? (set.percent1rm + ' % de ton 1RM de ' + sex.oneRepMaxSnapshot + ' kg')
+      : '1RM non défini';
+    card.appendChild(sub);
+
+    card.appendChild(buildHalteroPercentPills(sex, set));
+
+    return card;
+  }
+
+  /* une série déjà faite sans repResults (ancienne séance, ou une série
+     validée par un mécanisme qui n'en écrit pas) est traitée comme
+     entièrement réussie — jamais de rond vide sur une série faite. */
+  function resolveRepResultsForDisplay(set, repsCount) {
+    if (set.repResults && set.repResults.length) return set.repResults;
+    if (set.done) {
+      var all = [];
+      for (var i = 0; i < repsCount; i++) all.push(true);
+      return all;
+    }
+    return [];
+  }
+
+  function buildHalteroSetRow(sex, set, setIndex, isCurrent) {
+    var row = document.createElement('div');
+    row.className = 'haltero-set-row' + (isCurrent ? ' is-current' : '') + (set.done ? ' is-done' : '');
+
+    var label = document.createElement('div');
+    label.className = 'haltero-set-label';
+    var kg = computeWeightFromPercent(sex.oneRepMaxSnapshot, set.percent1rm);
+    label.innerHTML = '<span class="haltero-set-name">Série ' + (setIndex + 1) + '</span>' +
+      '<span class="haltero-set-kg mono">' + (kg != null ? kg + ' kg' : '-') + '</span>';
+    row.appendChild(label);
+
+    var repsCount = set.reps || 0;
+    var repResults = resolveRepResultsForDisplay(set, repsCount);
+
+    var dots = document.createElement('div');
+    dots.className = 'haltero-rep-dots';
+    for (var i = 0; i < repsCount; i++) {
+      var state = !set.done ? 'pending' : (repResults[i] ? 'ok' : 'fail');
+      var dot = document.createElement('span');
+      dot.className = 'haltero-rep-dot is-' + state;
+      if (state === 'ok') {
+        dot.innerHTML = '<svg viewBox="0 0 24 24"><polyline points="4,13 9,18 20,6"/></svg>';
+      } else if (state === 'fail') {
+        dot.innerHTML = '<svg viewBox="0 0 24 24"><line x1="5" y1="5" x2="19" y2="19"/><line x1="19" y1="5" x2="5" y2="19"/></svg>';
+      }
+      dots.appendChild(dot);
+    }
+    row.appendChild(dots);
+
+    return row;
+  }
+
+  /* lignes faites + la série en cours en détail ; le reste résumé en une
+     seule ligne "à venir" plutôt que détaillé série par série */
+  function buildHalteroSetsTable(sex, currentIndex) {
+    var wrap = document.createElement('div');
+    wrap.className = 'haltero-sets-table';
+
+    sex.sets.forEach(function (set, setIndex) {
+      if (currentIndex === -1 || setIndex <= currentIndex) {
+        wrap.appendChild(buildHalteroSetRow(sex, set, setIndex, setIndex === currentIndex));
+      }
+    });
+
+    if (currentIndex !== -1 && currentIndex < sex.sets.length - 1) {
+      var upcoming = sex.sets.slice(currentIndex + 1);
+      var kg = computeWeightFromPercent(sex.oneRepMaxSnapshot, upcoming[0].percent1rm);
+      var note = document.createElement('div');
+      note.className = 'haltero-upcoming-note';
+      var label = upcoming.length === 1
+        ? ('Série ' + sex.sets.length + ' à venir')
+        : ('Séries ' + (currentIndex + 2) + ' à ' + sex.sets.length + ' à venir');
+      note.textContent = label + (kg != null ? ', ' + kg + ' kg' : '');
+      wrap.appendChild(note);
+    }
+
+    return wrap;
+  }
+
+  /* icône crayon qui ouvre/ferme un petit champ texte lié à set.note
+     (point 34 des données du lot) — ouvert d'office s'il y a déjà une note */
+  function buildHalteroNoteField(set) {
+    var wrap = document.createElement('div');
+    wrap.className = 'haltero-note-wrap';
+
+    var textarea = document.createElement('textarea');
+    textarea.className = 'haltero-note-input';
+    textarea.rows = 2;
+    textarea.placeholder = 'Note sur cette série…';
+    textarea.value = set.note || '';
+    textarea.hidden = !set.note;
+    textarea.addEventListener('change', function () {
+      set.note = textarea.value;
+      persistActiveSession();
+    });
+
+    var toggleBtn = document.createElement('button');
+    toggleBtn.type = 'button';
+    toggleBtn.className = 'haltero-note-toggle';
+    toggleBtn.setAttribute('aria-label', 'Note sur cette série');
+    toggleBtn.innerHTML = '<svg viewBox="0 0 24 24" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>';
+    toggleBtn.addEventListener('click', function () {
+      textarea.hidden = !textarea.hidden;
+      if (!textarea.hidden) textarea.focus();
+    });
+
+    wrap.appendChild(toggleBtn);
+    wrap.appendChild(textarea);
+    return wrap;
+  }
+
+  function buildHalteroLiveBody(sex, index) {
+    var frag = document.createDocumentFragment();
+    var currentIndex = getCurrentSetIndex(sex);
+    var currentSet = currentIndex !== -1 ? sex.sets[currentIndex] : null;
+
+    var lastSex = getLastLoggedSex(sex.exerciseId);
+    var lastHintText = lastSex ? formatLastSessionHint(lastSex) : null;
+    var bestRecord = getBestRecordForExercise(sex.exerciseId);
+    if (lastHintText || bestRecord) {
+      var hints = document.createElement('div');
+      hints.className = 'session-hints';
+      if (lastHintText) {
+        hints.innerHTML += '<div class="session-hint-row">' +
+          '<span class="session-hint-label">Dernière fois</span>' +
+          '<span class="session-hint-value">' + escapeHTML(lastHintText) + '</span></div>';
+      }
+      if (bestRecord) {
+        hints.innerHTML += '<div class="session-hint-row is-best">' +
+          '<span class="session-hint-label">Meilleur</span>' +
+          '<span class="session-hint-value">' + bestRecord.reps + '×' + bestRecord.weight + 'kg</span></div>';
+      }
+      frag.appendChild(hints);
+    }
+
+    if (currentSet) frag.appendChild(buildHalteroChargeCard(sex, currentSet));
+    frag.appendChild(buildHalteroSetsTable(sex, currentIndex));
+
+    var refSet = currentSet || sex.sets[sex.sets.length - 1];
+    if (refSet) {
+      frag.appendChild(buildPlateLoadCard(computeWeightFromPercent(sex.oneRepMaxSnapshot, refSet.percent1rm)));
+    }
+
+    var cycle = OvrykDB.getForceCycle(sex.exerciseId);
+    if (cycle && getCycleWeek(cycle).isTestWeek) {
+      frag.appendChild(buildCycleTestForm(sex.exerciseId, cycle));
+    }
+
+    var addSetBtn = document.createElement('button');
+    addSetBtn.type = 'button';
+    addSetBtn.className = 'btn-back';
+    addSetBtn.style.width = '100%';
+    addSetBtn.textContent = '+ Ajouter une série';
+    addSetBtn.addEventListener('click', function () {
+      var base = sex.sets[sex.sets.length - 1];
+      sex.sets.push(base ? cloneSessionSet(base) : createSessionSet(OvrykDB.getExerciseById(sex.exerciseId)));
       persistActiveSession();
       renderSeanceActiveView();
     });
-    delEl.appendChild(delBtn);
-    row.appendChild(delEl);
+    frag.appendChild(addSetBtn);
 
-    return row;
+    var nextHint = buildLiveSessionNextHint(index);
+    if (nextHint) frag.appendChild(nextHint);
+
+    if (currentSet) {
+      frag.appendChild(buildHalteroNoteField(currentSet));
+
+      var actionsRow = document.createElement('div');
+      actionsRow.className = 'haltero-actions-row';
+
+      var failBtn = document.createElement('button');
+      failBtn.type = 'button';
+      failBtn.className = 'haltero-fail-btn';
+      failBtn.textContent = 'Un raté';
+      /* livraison B : la feuille de saisie du raté n'est pas encore
+         construite, le bouton reste inerte pour l'instant */
+      failBtn.disabled = true;
+      actionsRow.appendChild(failBtn);
+
+      var successBtn = document.createElement('button');
+      successBtn.type = 'button';
+      successBtn.className = 'btn-primary is-blue haltero-success-btn';
+      successBtn.textContent = 'Série réussie';
+      successBtn.addEventListener('click', function () {
+        var repsCount = currentSet.reps || 0;
+        var results = [];
+        for (var i = 0; i < repsCount; i++) results.push(true);
+        currentSet.repResults = results;
+        currentSet.result = 'ok';
+        currentSet.done = true;
+        persistActiveSession();
+        startRestTimer(sex.exerciseName, sex.restSeconds != null ? sex.restSeconds : 90);
+
+        var stillUndone = sex.sets.some(function (s) { return !s.done; });
+        if (!stillUndone && index < activeSession.exercises.length - 1) {
+          var targetIndex = index + 1;
+          liveAdvanceTimeoutId = setTimeout(function () {
+            liveAdvanceTimeoutId = null;
+            goToLiveExercise(targetIndex);
+          }, 2500);
+        }
+        renderSeanceActiveView();
+      });
+      actionsRow.appendChild(successBtn);
+
+      frag.appendChild(actionsRow);
+    }
+
+    return frag;
   }
 
   /* ============================================================
@@ -6831,7 +7198,8 @@
      sans ces nouveaux champs continue de s'afficher et de se reprendre
      sans erreur, sans jamais être réécrite tant qu'on ne touche à rien.
   ============================================================ */
-  function getCurrentMuscuSetIndex(sex) {
+  /* première série non validée, générique (muscu et haltéro — lot 05) */
+  function getCurrentSetIndex(sex) {
     for (var i = 0; i < sex.sets.length; i++) {
       if (!sex.sets[i].done) return i;
     }
@@ -7076,7 +7444,7 @@
 
   function buildMuscuLiveBody(sex, index) {
     var frag = document.createDocumentFragment();
-    var currentIndex = getCurrentMuscuSetIndex(sex);
+    var currentIndex = getCurrentSetIndex(sex);
     var currentSet = currentIndex !== -1 ? sex.sets[currentIndex] : null;
     var refSet = currentSet || sex.sets[sex.sets.length - 1];
 
@@ -8164,9 +8532,13 @@
         var resolvedSets = resolveDoneSets(sex);
         if (resolvedSets.length === 0) return;
 
-        var maxWeight = Math.max.apply(null, resolvedSets.map(function (s) { return s.weight; }));
+        /* une tentative sans aucune rep réussie (raté complet) ne doit pas
+           compter comme un record de poids ou de 1RM estimé — il faut avoir
+           réussi au moins une rep à ce poids pour qu'il compte */
+        var successfulSets = resolvedSets.filter(function (s) { return s.reps > 0; });
+        var maxWeight = successfulSets.length ? Math.max.apply(null, successfulSets.map(function (s) { return s.weight; })) : 0;
         var volume = resolvedSets.reduce(function (sum, s) { return sum + s.reps * s.weight; }, 0);
-        var best1RM = resolvedSets.reduce(function (best, s) {
+        var best1RM = successfulSets.reduce(function (best, s) {
           var est = epley1RM(s.weight, s.reps);
           return est > best ? est : best;
         }, 0);
