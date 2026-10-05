@@ -273,6 +273,46 @@
     text-transform: none;
     letter-spacing: 0;
   }
+  /* Programme (lot 02) : titre + sous-titre de semaine au-dessus, pas de
+     ligne de séparation puisque la carte "Cycles en cours" suit juste
+     après, collée, comme sur la maquette */
+  .view-header.no-divider {
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+  .programme-title-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .programme-header-sub {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--steel);
+    margin-bottom: 4px;
+  }
+  .programme-add-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    flex-shrink: 0;
+    border-radius: 14px;
+    background: var(--surface);
+    border: 1px solid var(--border-outline);
+    color: var(--ink);
+    padding: 0;
+    cursor: pointer;
+  }
+  .programme-add-btn svg {
+    width: 20px;
+    height: 20px;
+    stroke: currentColor;
+    fill: none;
+  }
 
   .empty-state {
     border: 1px solid var(--border-card);
@@ -949,6 +989,136 @@
     max-width: 46ch;
     margin: 0 0 var(--space-4);
   }
+
+  /* ============================================================
+     PROGRAMME — cycles en cours, liste de la semaine (lot 02)
+  ============================================================ */
+  .programme-cycle-row {
+    display: block;
+    width: 100%;
+    background: transparent;
+    border: none;
+    padding: 0;
+    text-align: left;
+    cursor: pointer;
+    margin-bottom: var(--space-4);
+  }
+  .programme-cycle-row:last-child { margin-bottom: 0; }
+  .programme-cycle-row-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 10px;
+    margin-bottom: 8px;
+  }
+  .programme-cycle-name {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 15px;
+    text-transform: uppercase;
+    letter-spacing: 0.01em;
+    color: var(--ink);
+  }
+  .programme-cycle-status {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--steel);
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .cycle-progress-bar { display: flex; gap: 4px; }
+  .cycle-progress-seg {
+    flex: 1;
+    height: 6px;
+    border-radius: 3px;
+    background: var(--divider);
+  }
+  .cycle-progress-seg.is-filled { background: var(--blue); }
+
+  .programme-week-list { display: flex; flex-direction: column; gap: var(--space-3); margin-top: var(--space-4); }
+  .programme-day-row { display: flex; gap: 12px; align-items: flex-start; }
+  .programme-day-badge {
+    flex-shrink: 0;
+    width: 52px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    padding: 8px 0;
+    border-radius: var(--radius-card);
+    background: var(--surface);
+  }
+  .programme-day-row.is-today .programme-day-badge {
+    background: var(--orange-fill);
+    border: 1px solid var(--rust);
+  }
+  .programme-day-label {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--steel);
+  }
+  .programme-day-row.is-today .programme-day-label { color: var(--orange-soft); }
+  .programme-day-num {
+    font-family: var(--font-title);
+    font-weight: 700;
+    font-size: 20px;
+    color: var(--ink);
+  }
+  .programme-day-row.is-today .programme-day-num { color: var(--orange-soft); }
+  .programme-day-content { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+  .programme-day-rest {
+    min-height: 52px;
+    display: flex;
+    align-items: center;
+    font-size: 13px;
+    color: var(--steel);
+  }
+  .programme-day-card {
+    border: 1px solid transparent;
+    border-radius: var(--radius-card);
+    background: var(--surface);
+    padding: var(--space-3) var(--space-4);
+  }
+  .programme-day-row.is-today .programme-day-card { border-color: var(--rust); }
+  .programme-day-card-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+  .programme-day-card-title {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 14px;
+    color: var(--ink);
+  }
+  .programme-day-card-count {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--steel);
+    margin-top: 2px;
+  }
+  .programme-day-card-today {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--orange-soft);
+    margin-top: 4px;
+  }
+  .programme-day-card-badges { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+  .day-badge-tag {
+    border-radius: var(--radius-pill);
+    padding: 3px 10px;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    white-space: nowrap;
+  }
+  .day-badge-tag.is-halterophilie { background: var(--blue-fill); color: var(--blue); }
+  .day-badge-tag.is-muscu { background: var(--orange-fill); color: var(--orange-soft); }
+  .programme-day-check { width: 18px; height: 18px; stroke: var(--blue); fill: none; stroke-width: 2.2; flex-shrink: 0; }
 
   /* Profil — weekly-goal steppers and notification toggles */
   .profile-stepper-row, .profile-toggle-row {
@@ -2355,15 +2525,31 @@
     </section>
 
     <section class="view" data-view="routine" id="view-routine">
-      <div class="view-header">
-        <h1>Programme</h1>
-        <p>Construis et gère tes programmes d'entraînement.</p>
+      <div class="view-header no-divider">
+        <div class="programme-title-row">
+          <div>
+            <span class="programme-header-sub" id="programme-week-sub"></span>
+            <h1>Programme</h1>
+          </div>
+          <button type="button" id="routine-create-btn" class="programme-add-btn" aria-label="Nouvelle routine">
+            <svg viewBox="0 0 24 24" stroke-width="1.8" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          </button>
+        </div>
       </div>
 
-      <div id="routine-list-view">
-        <button type="button" id="routine-create-btn" class="btn-add" style="width:100%;margin-bottom:16px;">+ Nouvelle routine</button>
+      <div class="data-io-block" id="programme-cycles-card" hidden>
+        <span class="dash-section-eyebrow">CYCLES EN COURS</span>
+        <div id="programme-cycles-body"></div>
+      </div>
+
+      <div id="programme-week-list"></div>
+
+      <div id="programme-no-day-section" hidden>
+        <span class="dash-section-eyebrow">SANS JOUR</span>
         <div id="routine-list"></div>
       </div>
+
+      <div id="programme-empty-state" hidden></div>
     </section>
 
     <section class="view" data-view="seance" id="view-seance">
@@ -2571,6 +2757,11 @@
         <input type="text" id="routine-name-input" class="form-input routine-name-input" placeholder="Ex: Push Day">
       </div>
 
+      <div class="form-row">
+        <div class="form-label">Jours</div>
+        <div class="filter-chip-row" id="routine-weekday-row"></div>
+      </div>
+
       <div id="routine-exercise-list"></div>
 
       <button type="button" id="routine-add-exercise-btn" class="btn-add" style="width:100%;margin-top:6px;">+ Ajouter un exercice</button>
@@ -2718,7 +2909,8 @@
     ROUTINES: 'ovryk.routines',
     SESSIONS: 'ovryk.sessions',
     SETTINGS: 'ovryk.settings',
-    FORCE_CYCLES: 'ovryk.forceCycles'
+    FORCE_CYCLES: 'ovryk.forceCycles',
+    META: 'ovryk.meta'
   };
 
   var DEFAULT_SETTINGS = {
@@ -3465,6 +3657,7 @@
         name: source.name + ' (copie)',
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
+        weekdays: [],
         exercises: source.exercises.map(function (rex) {
           return {
             id: 'rex-' + OvrykDB.generateId(),
@@ -3556,6 +3749,9 @@
       this.saveForceCycles(map);
     },
 
+    getMeta: function () { return readJSON(DB_KEYS.META, {}); },
+    saveMeta: function (meta) { return writeJSON(DB_KEYS.META, meta); },
+
     generateId: generateId,
 
     init: function () {
@@ -3564,12 +3760,42 @@
       if (localStorage.getItem(DB_KEYS.SESSIONS) === null) this.saveSessions([]);
       if (localStorage.getItem(DB_KEYS.SETTINGS) === null) this.saveSettings(DEFAULT_SETTINGS);
       if (localStorage.getItem(DB_KEYS.FORCE_CYCLES) === null) this.saveForceCycles({});
+      if (localStorage.getItem(DB_KEYS.META) === null) this.saveMeta({ schemaVersion: 1 });
     }
   };
+
+  /* Ajoute les champs manquants aux données déjà stockées (MODELE-DE-DONNEES.md) —
+     idempotente, ne supprime jamais rien, complète seulement. Avant de toucher
+     aux routines pour la toute première fois, une copie de sécurité est écrite
+     une seule fois sous ovryk.backup.<date du jour>, jamais réécrasée : un
+     filet en cas de bug de migration, indépendant de DB_KEYS (donc jamais
+     effacé par Réinitialiser l'app). */
+  function migrateSchema() {
+    var meta = OvrykDB.getMeta();
+    var isFirstRun = meta.schemaVersion !== 2;
+
+    if (isFirstRun) {
+      var today = new Date();
+      var backupKey = 'ovryk.backup.' + today.getFullYear() + '-' + pad2(today.getMonth() + 1) + '-' + pad2(today.getDate());
+      if (localStorage.getItem(backupKey) === null) {
+        localStorage.setItem(backupKey, JSON.stringify(OvrykDB.getRoutines()));
+      }
+    }
+
+    var routines = OvrykDB.getRoutines();
+    var changed = false;
+    routines.forEach(function (r) {
+      if (!Array.isArray(r.weekdays)) { r.weekdays = []; changed = true; }
+    });
+    if (changed) OvrykDB.saveRoutines(routines);
+
+    if (isFirstRun) OvrykDB.saveMeta({ schemaVersion: 2 });
+  }
 
   window.OvrykDB = OvrykDB;
   OvrykDB.init();
   migrateExerciseCatalog();
+  migrateSchema();
 
   /* Rattrapage au démarrage : couvre les données créées avant que le
      démarrage de cycle soit automatique (1RM déjà renseigné + exercice déjà
@@ -3640,6 +3866,9 @@
       renderDashboardForceCycles();
       renderDashboardStagnation();
       renderDashboardHome();
+    }
+    if (target === 'routine') {
+      renderProgrammeWeek();
     }
     if (target === 'profil') {
       renderProfileGoalsCard();
@@ -4438,21 +4667,26 @@
   }
 
   /* ---- routine list ---- */
+  /* Ne liste plus que les routines sans jour (routine.weekdays vide) — les
+     routines rattachées à un jour vivent dans la liste de la semaine
+     (renderProgrammeWeekList). C'est ici qu'une routine retombe dès que son
+     dernier jour est retiré dans l'éditeur, avec Démarrer/Dupliquer/
+     Supprimer intacts (voir buildRoutineRow, inchangée). */
   function renderRoutineList() {
-    var routines = OvrykDB.getRoutines();
+    var routines = OvrykDB.getRoutines().filter(function (r) { return !r.weekdays || r.weekdays.length === 0; });
+    var section = document.getElementById('programme-no-day-section');
     var listEl = document.getElementById('routine-list');
     listEl.innerHTML = '';
 
     if (routines.length === 0) {
-      listEl.innerHTML = '<div class="empty-state"><span class="empty-tag">Vide</span>' +
-        '<h2>Aucune routine créée</h2>' +
-        '<p>Crée un programme avec ses exercices et leurs séries programmées pour pouvoir démarrer une séance.</p></div>';
+      section.hidden = true;
       return;
     }
 
     routines.forEach(function (routine) {
       listEl.appendChild(buildRoutineRow(routine));
     });
+    section.hidden = false;
   }
 
   function buildRoutineRow(routine) {
@@ -4493,7 +4727,7 @@
     dupBtn.textContent = 'Dupliquer';
     dupBtn.addEventListener('click', function () {
       OvrykDB.duplicateRoutine(routine.id);
-      renderRoutineList();
+      renderProgrammeWeek();
     });
 
     var delBtn = document.createElement('button');
@@ -4505,7 +4739,7 @@
         var exerciseIds = routine.exercises.map(function (rex) { return rex.exerciseId; });
         OvrykDB.deleteRoutine(routine.id);
         exerciseIds.forEach(function (exerciseId) { maybeAutoDeactivateForceCycle(exerciseId); });
-        renderRoutineList();
+        renderProgrammeWeek();
       });
     });
 
@@ -4514,6 +4748,209 @@
     row.appendChild(actions);
 
     return row;
+  }
+
+  /* ============================================================
+     PROGRAMME — cycles en cours, liste de la semaine (lot 02)
+  ============================================================ */
+  var MONTH_NAMES_FR = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin',
+    'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
+  /* 1 = lundi .. 7 = dimanche, comme routine.weekdays (MODELE-DE-DONNEES.md) —
+     partagé par les pastilles de l'éditeur (renderRoutineWeekdayRow) et le
+     libellé de chaque jour de la semaine (buildProgrammeDayRow) */
+  var WEEKDAY_LABELS = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
+
+  function formatDayMonthFr(date) {
+    return date.getDate() + ' ' + MONTH_NAMES_FR[date.getMonth()];
+  }
+
+  function isSameLocalDay(a, b) {
+    return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+  }
+
+  /* R1 : un mouvement Lifting avec un cycle actif (OvrykDB.getForceCycle)
+     vaut la pastille HALTÉRO ; tout le reste de la routine (muscu, ou
+     Lifting pas encore en cycle) vaut la pastille MUSCU. Les deux peuvent
+     apparaître ensemble sur la même routine. */
+  function getRoutineCycleBadges(routine) {
+    var halterophile = false, muscu = false;
+    routine.exercises.forEach(function (rex) {
+      var exercise = OvrykDB.getExerciseById(rex.exerciseId);
+      var isCycleMovement = !!(exercise && exercise.category === 'Lifting' && OvrykDB.getForceCycle(rex.exerciseId));
+      if (isCycleMovement) halterophile = true; else muscu = true;
+    });
+    return { halterophile: halterophile, muscu: muscu };
+  }
+
+  /* "ce jour-là" = le jour civil donné, et uniquement une séance déjà
+     terminée — une séance in_progress ne doit jamais faire apparaître la
+     coche, ni être touchée par cette lecture (purement une recherche,
+     aucune écriture). */
+  function hasCompletedSessionForRoutineOnDate(routineId, date) {
+    return OvrykDB.getSessions().some(function (s) {
+      return s.routineId === routineId && s.status === 'completed' && isSameLocalDay(new Date(s.date), date);
+    });
+  }
+
+  function buildCycleProgressBar(current, total) {
+    var bar = document.createElement('div');
+    bar.className = 'cycle-progress-bar';
+    for (var i = 0; i < total; i++) {
+      var seg = document.createElement('div');
+      seg.className = 'cycle-progress-seg' + (i < current ? ' is-filled' : '');
+      bar.appendChild(seg);
+    }
+    return bar;
+  }
+
+  /* reprend les mêmes données que renderDashboardForceCycles (cycleLength,
+     getCycleWeek) sans y toucher — cette liste-là ne part de l'accueil qu'au
+     lot 03, pas ici. Seuls les cycles déjà actifs apparaissent, pas le mode
+     base : la maquette ne montre que des cycles en cours. */
+  function renderProgrammeCyclesCard() {
+    var card = document.getElementById('programme-cycles-card');
+    var body = document.getElementById('programme-cycles-body');
+    var cycles = OvrykDB.getForceCycles();
+    var exerciseIds = Object.keys(cycles);
+
+    if (exerciseIds.length === 0) {
+      card.hidden = true;
+      return;
+    }
+
+    body.innerHTML = '';
+    exerciseIds.forEach(function (exerciseId) {
+      var cycle = cycles[exerciseId];
+      var exercise = OvrykDB.getExerciseById(exerciseId);
+      var total = cycleLength(cycle.cycle_actif);
+      var week = getCycleWeek(cycle);
+      var statusText = 'Semaine ' + cycle.semaine_actuelle + ' sur ' + total +
+        (week.isTestWeek ? ' · Teste ton 1RM' : ' · ' + week.phase);
+
+      var row = document.createElement('button');
+      row.type = 'button';
+      row.className = 'programme-cycle-row';
+      var top = document.createElement('div');
+      top.className = 'programme-cycle-row-top';
+      top.innerHTML = '<span class="programme-cycle-name">' + escapeHTML(exercise ? exercise.name : exerciseId) + '</span>' +
+        '<span class="programme-cycle-status">' + escapeHTML(statusText) + '</span>';
+      row.appendChild(top);
+      row.appendChild(buildCycleProgressBar(cycle.semaine_actuelle, total));
+      row.addEventListener('click', function () { openCycleDetailPage(exerciseId); });
+      body.appendChild(row);
+    });
+
+    card.hidden = false;
+  }
+
+  function buildProgrammeRoutineCard(routine, date) {
+    var card = document.createElement('button');
+    card.type = 'button';
+    card.className = 'programme-day-card';
+
+    var top = document.createElement('div');
+    top.className = 'programme-day-card-top';
+
+    var left = document.createElement('div');
+    left.innerHTML = '<div class="programme-day-card-title">' + escapeHTML(routine.name || 'Sans titre') + '</div>' +
+      '<div class="programme-day-card-count">' + routine.exercises.length + ' exercice' + (routine.exercises.length > 1 ? 's' : '') + '</div>';
+    top.appendChild(left);
+
+    var right = document.createElement('div');
+    right.className = 'programme-day-card-badges';
+    var badges = getRoutineCycleBadges(routine);
+    if (badges.halterophile) right.innerHTML += '<span class="day-badge-tag is-halterophilie">Haltéro</span>';
+    if (badges.muscu) right.innerHTML += '<span class="day-badge-tag is-muscu">Muscu</span>';
+    if (hasCompletedSessionForRoutineOnDate(routine.id, date)) {
+      right.innerHTML += '<svg class="programme-day-check" viewBox="0 0 24 24"><polyline points="4,13 9,18 20,6"/></svg>';
+    }
+    top.appendChild(right);
+
+    card.appendChild(top);
+    card.addEventListener('click', function () { openRoutineEditor(routine.id, false); });
+    return card;
+  }
+
+  function buildProgrammeDayRow(dayNum, date, routinesForDay, isToday) {
+    var row = document.createElement('div');
+    row.className = 'programme-day-row' + (isToday ? ' is-today' : '');
+
+    var badge = document.createElement('div');
+    badge.className = 'programme-day-badge';
+    badge.innerHTML = '<span class="programme-day-label">' + WEEKDAY_LABELS[dayNum - 1] + '</span>' +
+      '<span class="programme-day-num mono">' + date.getDate() + '</span>';
+    row.appendChild(badge);
+
+    var content = document.createElement('div');
+    content.className = 'programme-day-content';
+    if (routinesForDay.length === 0) {
+      var rest = document.createElement('div');
+      rest.className = 'programme-day-rest';
+      rest.textContent = 'Repos';
+      content.appendChild(rest);
+    } else {
+      routinesForDay.forEach(function (routine) {
+        content.appendChild(buildProgrammeRoutineCard(routine, date));
+      });
+      if (isToday) {
+        var todayTag = document.createElement('div');
+        todayTag.className = 'programme-day-card-today';
+        todayTag.textContent = 'Aujourd\'hui';
+        content.appendChild(todayTag);
+      }
+    }
+    row.appendChild(content);
+
+    return row;
+  }
+
+  /* sept lignes lundi à dimanche de la semaine en cours (startOfWeek
+     commence toujours un lundi), plus la section "Sans jour"
+     (renderRoutineList, inchangée) pour les routines sans weekdays —
+     risque signalé par le lot : une routine sans jour ne doit jamais
+     disparaître. */
+  function renderProgrammeWeekList() {
+    var listEl = document.getElementById('programme-week-list');
+    listEl.innerHTML = '';
+
+    var routines = OvrykDB.getRoutines();
+    var monday = startOfWeek(new Date());
+    var today = new Date();
+
+    for (var i = 1; i <= 7; i++) {
+      var date = addDays(monday, i - 1);
+      var routinesForDay = routines.filter(function (r) { return r.weekdays && r.weekdays.indexOf(i) !== -1; });
+      listEl.appendChild(buildProgrammeDayRow(i, date, routinesForDay, isSameLocalDay(date, today)));
+    }
+
+    renderRoutineList();
+  }
+
+  /* point d'entrée unique de l'écran Programme — remplace les anciens
+     appels à renderRoutineList() seule (celle-ci ne couvre plus que la
+     section Sans jour) pour que la semaine et la carte des cycles
+     restent à jour aux mêmes moments (création, duplication,
+     suppression, retour sur l'onglet). */
+  function renderProgrammeWeek() {
+    var routines = OvrykDB.getRoutines();
+    var emptyState = document.getElementById('programme-empty-state');
+
+    if (routines.length === 0) {
+      document.getElementById('programme-cycles-card').hidden = true;
+      document.getElementById('programme-week-list').innerHTML = '';
+      document.getElementById('programme-no-day-section').hidden = true;
+      emptyState.hidden = false;
+      emptyState.innerHTML = '<div class="empty-state"><span class="empty-tag">Vide</span>' +
+        '<h2>Aucune routine créée</h2>' +
+        '<p>Crée un programme avec ses exercices et leurs séries programmées pour pouvoir démarrer une séance.</p></div>';
+      return;
+    }
+
+    emptyState.hidden = true;
+    var monday = startOfWeek(new Date());
+    document.getElementById('programme-week-sub').textContent = 'Semaine du ' + formatDayMonthFr(monday);
+    renderProgrammeCyclesCard();
+    renderProgrammeWeekList();
   }
 
   /* ---- editor ---- */
@@ -4536,7 +4973,7 @@
   function closeRoutineEditor() {
     currentRoutineId = null;
     document.getElementById('routine-editor-view').hidden = true;
-    renderRoutineList();
+    renderProgrammeWeek();
     scrollMainToTop();
   }
 
@@ -4629,6 +5066,36 @@
     return link;
   }
 
+  /* sélection multiple, sauvegarde à chaque clic (OvrykDB.updateRoutine met
+     déjà à jour updatedAt tout seul) — pas de bouton Enregistrer dédié, même
+     logique que le reste de l'éditeur (nom, exercices). Le handler relit la
+     routine via OvrykDB.getRoutineById au moment du clic plutôt que de
+     réutiliser l'objet routine capturé à l'ouverture : updateRoutine
+     remplace l'objet entier dans le stockage, donc une copie figée
+     écraserait silencieusement un nom ou des exercices modifiés entre
+     temps par un autre champ de l'éditeur. */
+  function renderRoutineWeekdayRow(routine) {
+    var row = document.getElementById('routine-weekday-row');
+    row.innerHTML = '';
+    WEEKDAY_LABELS.forEach(function (label, idx) {
+      var day = idx + 1;
+      var chip = document.createElement('button');
+      chip.type = 'button';
+      chip.className = 'filter-chip' + (routine.weekdays.indexOf(day) !== -1 ? ' active' : '');
+      chip.textContent = label;
+      chip.addEventListener('click', function () {
+        var current = OvrykDB.getRoutineById(currentRoutineId);
+        if (!current) return;
+        var pos = current.weekdays.indexOf(day);
+        if (pos === -1) current.weekdays.push(day); else current.weekdays.splice(pos, 1);
+        current.weekdays.sort(function (a, b) { return a - b; });
+        OvrykDB.updateRoutine(current);
+        renderRoutineWeekdayRow(current);
+      });
+      row.appendChild(chip);
+    });
+  }
+
   function renderRoutineEditor() {
     var routine = OvrykDB.getRoutineById(currentRoutineId);
     if (!routine) { closeRoutineEditor(); return; }
@@ -4636,6 +5103,7 @@
     var nameInput = document.getElementById('routine-name-input');
     if (document.activeElement !== nameInput) nameInput.value = routine.name;
     updateRoutineSaveState(nameInput.value, routine.exercises.length);
+    renderRoutineWeekdayRow(routine);
 
     var listEl = document.getElementById('routine-exercise-list');
     listEl.innerHTML = '';
@@ -5304,6 +5772,7 @@
       name: '',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
+      weekdays: [],
       exercises: []
     };
     OvrykDB.addRoutine(routine);
@@ -5347,7 +5816,7 @@
     addExercisesToRoutine(pickerState.selected);
   });
 
-  renderRoutineList();
+  renderProgrammeWeek();
 
   /* ============================================================
      SÉANCE — start from routine / blank, live logging, finish
