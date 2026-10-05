@@ -2776,6 +2776,70 @@
   .rest-picker-item.is-center { font-weight: 700; }
   .rest-picker-done { margin-top: var(--space-4); }
 
+  .fail-sheet-label {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--steel);
+    margin: var(--space-3) 0 8px;
+  }
+  .fail-sheet-rep-row, .fail-sheet-cause-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .fail-sheet-rep-btn, .fail-sheet-cause-btn {
+    flex: 1 1 auto;
+    min-height: 44px;
+    padding: 0 14px;
+    background: var(--surface);
+    border: 1px solid var(--border-outline);
+    border-radius: var(--radius);
+    color: var(--chalk);
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 13px;
+    cursor: pointer;
+  }
+  .fail-sheet-rep-btn.active {
+    background: var(--rust);
+    border-color: var(--rust);
+    color: var(--graphite);
+  }
+  .fail-sheet-cause-btn { flex-basis: calc(50% - 4px); }
+  .fail-sheet-cause-btn.active {
+    background: var(--chalk);
+    border-color: var(--chalk);
+    color: var(--graphite);
+  }
+  .fail-sheet-rate-note {
+    margin: var(--space-4) 0 0;
+    padding: 10px 12px;
+    border-radius: var(--radius-card);
+    background: var(--surface);
+    color: var(--steel);
+    font-size: 12px;
+    line-height: 1.5;
+  }
+  .fail-sheet-rate-note strong { color: var(--chalk); }
+  #fail-sheet-save { margin-top: var(--space-4); }
+  .fail-sheet-cancel {
+    display: block;
+    width: 100%;
+    margin-top: 10px;
+    background: transparent;
+    border: none;
+    color: var(--steel);
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 13px;
+    text-align: center;
+    padding: 10px;
+    cursor: pointer;
+  }
+
   /* ============================================================
      HOVER STATES — pointer-capable devices only, so touch never
      gets a lingering "sticky hover"; :active above already covers touch feedback
@@ -3318,6 +3382,25 @@
         <div class="rest-picker-wheel mono" id="rest-picker-wheel"></div>
       </div>
       <button type="button" class="btn-primary rest-picker-done" id="rest-picker-done">Terminé</button>
+    </div>
+  </div>
+
+  <div class="rest-picker-overlay" id="fail-sheet-overlay" hidden>
+    <div class="rest-picker-sheet" role="dialog" aria-modal="true" aria-labelledby="fail-sheet-title">
+      <div class="rest-picker-handle" aria-hidden="true"></div>
+      <h2 class="rest-picker-title" id="fail-sheet-title"></h2>
+      <p class="rest-picker-subtitle" id="fail-sheet-subtitle"></p>
+
+      <p class="fail-sheet-label">Quelle rep ?</p>
+      <div class="fail-sheet-rep-row" id="fail-sheet-rep-row"></div>
+
+      <p class="fail-sheet-label">Pourquoi ?</p>
+      <div class="fail-sheet-cause-grid" id="fail-sheet-cause-grid"></div>
+
+      <p class="fail-sheet-rate-note" id="fail-sheet-rate-note"></p>
+
+      <button type="button" class="btn-primary" id="fail-sheet-save" disabled>Enregistrer le raté</button>
+      <button type="button" class="fail-sheet-cancel" id="fail-sheet-cancel">Annuler</button>
     </div>
   </div>
 
@@ -4614,6 +4697,122 @@
 
   document.getElementById('rest-picker-overlay').addEventListener('click', function (e) {
     if (e.target === this) closeRestTimePicker();
+  });
+
+  /* ---- feuille "Un raté" (lot 05, livraison B) ---- */
+
+  function renderFailSheetRepRow() {
+    var row = document.getElementById('fail-sheet-rep-row');
+    row.innerHTML = '';
+    var repsCount = failSheetSet.reps || 0;
+    for (var i = 1; i <= repsCount; i++) {
+      (function (repNum) {
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'fail-sheet-rep-btn' + (failSheetRep === repNum ? ' active' : '');
+        btn.textContent = 'Rep ' + repNum;
+        btn.addEventListener('click', function () {
+          failSheetRep = repNum;
+          renderFailSheetBody();
+        });
+        row.appendChild(btn);
+      })(i);
+    }
+  }
+
+  function renderFailSheetCauseGrid() {
+    var grid = document.getElementById('fail-sheet-cause-grid');
+    grid.innerHTML = '';
+    FAIL_CAUSES.forEach(function (cause) {
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'fail-sheet-cause-btn' + (failSheetCause === cause.key ? ' active' : '');
+      btn.textContent = cause.label;
+      btn.addEventListener('click', function () {
+        failSheetCause = cause.key;
+        renderFailSheetBody();
+      });
+      grid.appendChild(btn);
+    });
+  }
+
+  function renderFailSheetRateNote() {
+    var note = document.getElementById('fail-sheet-rate-note');
+    var kg = computeWeightFromPercent(failSheetSex.oneRepMaxSnapshot, failSheetSet.percent1rm);
+    if (kg == null) { note.textContent = ''; return; }
+    var rate = computeSuccessRate(failSheetSex.exerciseId, kg);
+    if (!rate) {
+      note.textContent = 'Taux de réussite à ' + kg + ' kg : pas assez d\'historique.';
+    } else {
+      note.innerHTML = 'Taux de réussite à ' + kg + ' kg : <strong>' + rate.succeeded + ' sur ' + rate.attempted +
+        '</strong> avant ce raté. Le motif sera repris dans tes stats.';
+    }
+  }
+
+  function renderFailSheetBody() {
+    renderFailSheetRepRow();
+    renderFailSheetCauseGrid();
+    renderFailSheetRateNote();
+    document.getElementById('fail-sheet-save').disabled = !(failSheetRep && failSheetCause);
+  }
+
+  function openFailSheet(sex, set, index) {
+    failSheetSex = sex;
+    failSheetSet = set;
+    failSheetIndex = index;
+    failSheetRep = null;
+    failSheetCause = null;
+
+    var setIndex = sex.sets.indexOf(set);
+    document.getElementById('fail-sheet-title').textContent = 'Un raté sur la série ' + (setIndex + 1);
+    var kg = computeWeightFromPercent(sex.oneRepMaxSnapshot, set.percent1rm);
+    document.getElementById('fail-sheet-subtitle').textContent =
+      (kg != null ? kg + ' kg, ' : '') + (set.reps || 0) + ' reps prévues';
+
+    renderFailSheetBody();
+    document.getElementById('fail-sheet-overlay').hidden = false;
+  }
+
+  function closeFailSheet() {
+    document.getElementById('fail-sheet-overlay').hidden = true;
+    failSheetSex = null;
+    failSheetSet = null;
+    failSheetIndex = null;
+    failSheetRep = null;
+    failSheetCause = null;
+  }
+
+  document.getElementById('fail-sheet-save').addEventListener('click', function () {
+    if (!failSheetRep || !failSheetCause) return;
+    var sex = failSheetSex;
+    var set = failSheetSet;
+    var index = failSheetIndex;
+    var repsCount = set.reps || 0;
+    var results = [];
+    for (var i = 1; i <= repsCount; i++) results.push(i !== failSheetRep);
+    set.repResults = results;
+    set.result = 'fail';
+    set.failRep = failSheetRep;
+    set.failCause = failSheetCause;
+    set.done = true;
+    persistActiveSession();
+    closeFailSheet();
+
+    startRestTimer(sex.exerciseName, sex.restSeconds != null ? sex.restSeconds : 90);
+    var stillUndone = sex.sets.some(function (s) { return !s.done; });
+    if (!stillUndone && index != null && index < activeSession.exercises.length - 1) {
+      var targetIndex = index + 1;
+      liveAdvanceTimeoutId = setTimeout(function () {
+        liveAdvanceTimeoutId = null;
+        goToLiveExercise(targetIndex);
+      }, 2500);
+    }
+    renderSeanceActiveView();
+  });
+
+  document.getElementById('fail-sheet-cancel').addEventListener('click', closeFailSheet);
+  document.getElementById('fail-sheet-overlay').addEventListener('click', function (e) {
+    if (e.target === this) closeFailSheet();
   });
 
   function buildRestTimeRow(getValue, setValue, exerciseName) {
@@ -6319,6 +6518,14 @@
   var liveSessionIndex = null;
   var liveAdvanceTimeoutId = null;
 
+  /* état de la feuille "Un raté" (livraison B) : la série et l'exercice
+     concernés, la rep et la cause en cours de sélection avant validation. */
+  var failSheetSex = null;
+  var failSheetSet = null;
+  var failSheetIndex = null;
+  var failSheetRep = null;
+  var failSheetCause = null;
+
   function cancelLiveAdvance() {
     if (liveAdvanceTimeoutId) { clearTimeout(liveAdvanceTimeoutId); liveAdvanceTimeoutId = null; }
   }
@@ -6382,6 +6589,39 @@
     }
     if (set.repsDone != null) return set.repsDone;
     return set.reps || 0;
+  }
+
+  var FAIL_CAUSES = [
+    { key: 'devant', label: 'Devant' },
+    { key: 'derriere', label: 'Derrière' },
+    { key: 'reception', label: 'En réception' },
+    { key: 'pas_tire', label: 'Pas tiré' },
+    { key: 'autre', label: 'Autre' }
+  ];
+
+  /* R6 : reps réussies sur reps tentées à une charge précise (en kg),
+     toutes séances confondues (terminées et séance en cours, pour que les
+     séries déjà faites plus tôt dans la même séance comptent aussi). Sous
+     5 reps tentées le chiffre n'est pas fiable : on renvoie null plutôt
+     qu'un taux trompeur, l'appelant affiche alors "pas assez d'historique"
+     (condition posée pour le lot 05). */
+  function computeSuccessRate(exerciseId, weightKg) {
+    var attempted = 0;
+    var succeeded = 0;
+    OvrykDB.getSessions().forEach(function (session) {
+      session.exercises.forEach(function (sex) {
+        if (sex.exerciseId !== exerciseId || sex.category !== 'Lifting') return;
+        sex.sets.forEach(function (set) {
+          if (!set.done || !set.reps) return;
+          var kg = computeWeightFromPercent(sex.oneRepMaxSnapshot, set.percent1rm);
+          if (kg == null || Math.abs(kg - weightKg) > 0.01) return;
+          attempted += set.reps;
+          succeeded += computeSuccessfulReps(set);
+        });
+      });
+    });
+    if (attempted < 5) return null;
+    return { attempted: attempted, succeeded: succeeded };
   }
 
   function computeSetVolume(sex, set) {
@@ -7152,9 +7392,7 @@
       failBtn.type = 'button';
       failBtn.className = 'haltero-fail-btn';
       failBtn.textContent = 'Un raté';
-      /* livraison B : la feuille de saisie du raté n'est pas encore
-         construite, le bouton reste inerte pour l'instant */
-      failBtn.disabled = true;
+      failBtn.addEventListener('click', function () { openFailSheet(sex, currentSet, index); });
       actionsRow.appendChild(failBtn);
 
       var successBtn = document.createElement('button');
