@@ -2263,6 +2263,9 @@
   .haltero-rep-dot.is-pending { border: 2px dashed var(--border-outline); color: transparent; }
   .haltero-rep-dot.is-ok { background: var(--blue); color: var(--graphite); }
   .haltero-rep-dot.is-fail { background: var(--orange-fill); border: 2px solid var(--rust); color: var(--rust); }
+  /* rep après un raté : jamais tentée, distincte d'une rep "à venir" (pas
+     de pointillés, pour qu'une série terminée n'ait pas l'air inachevée) */
+  .haltero-rep-dot.is-skipped { border: 2px solid var(--border-outline); background: var(--surface); color: transparent; }
 
   .haltero-upcoming-note {
     padding: 10px 14px;
@@ -4787,9 +4790,11 @@
     var sex = failSheetSex;
     var set = failSheetSet;
     var index = failSheetIndex;
-    var repsCount = set.reps || 0;
+    /* R6 : un raté arrête la série, les reps après la rep ratée ne sont
+       jamais tentées. repResults s'arrête donc à la rep ratée (longueur =
+       numéro de la rep ratée), pas à repsCount. */
     var results = [];
-    for (var i = 1; i <= repsCount; i++) results.push(i !== failSheetRep);
+    for (var i = 1; i <= failSheetRep; i++) results.push(i !== failSheetRep);
     set.repResults = results;
     set.result = 'fail';
     set.failRep = failSheetRep;
@@ -6615,7 +6620,12 @@
           if (!set.done || !set.reps) return;
           var kg = computeWeightFromPercent(sex.oneRepMaxSnapshot, set.percent1rm);
           if (kg == null || Math.abs(kg - weightKg) > 0.01) return;
-          attempted += set.reps;
+          /* un raté arrête la série : les reps tentées s'arrêtent à la
+             rep ratée (repResults.length), pas au nombre prévu (set.reps).
+             Sans repResults (ancienne séance, ou série validée par
+             "Série réussie" qui remplit repResults en entier), set.reps
+             reste la bonne valeur. */
+          attempted += (set.repResults && set.repResults.length) ? set.repResults.length : set.reps;
           succeeded += computeSuccessfulReps(set);
         });
       });
@@ -7255,7 +7265,18 @@
     var dots = document.createElement('div');
     dots.className = 'haltero-rep-dots';
     for (var i = 0; i < repsCount; i++) {
-      var state = !set.done ? 'pending' : (repResults[i] ? 'ok' : 'fail');
+      /* R6 : au-delà de repResults, la série est soit pas encore faite
+         ("pending", pointillés), soit faite mais arrêtée par un raté
+         avant cette rep ("skipped", rond vide plein) — jamais confondue
+         avec une rep ratée. */
+      var state;
+      if (!set.done) {
+        state = 'pending';
+      } else if (i < repResults.length) {
+        state = repResults[i] ? 'ok' : 'fail';
+      } else {
+        state = 'skipped';
+      }
       var dot = document.createElement('span');
       dot.className = 'haltero-rep-dot is-' + state;
       if (state === 'ok') {

@@ -43,6 +43,7 @@ Chaque règle porte un numéro, que les lots citent. Les valeurs entre parenthè
 * Séries de 4 reps ou plus : compteur de reps réussies, sans détail par rep.
 * Taux de réussite d'une charge = reps réussies divisé par reps tentées, sur l'historique de cet exercice.
 * Causes proposées : devant, derrière, en réception, pas tiré, autre.
+* Après un raté, la série s'arrête : les reps suivantes ne sont pas tentées et ne comptent ni dans le volume ni dans le taux de réussite. Limite connue : on ne gère pas plusieurs ratés dans une même série.
 
 ## R7. Coordination des cycles
 
