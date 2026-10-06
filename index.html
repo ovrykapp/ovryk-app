@@ -990,6 +990,12 @@
     align-items: center;
     gap: 10px;
   }
+  .programme-day-panel-hint {
+    margin: 8px 0 0;
+    font-size: 11px;
+    color: var(--steel);
+    text-align: center;
+  }
 
   /* carte "séance du jour" (lot 03) — remplace l'ancien bloc meta/cta
      générique par le détail complet : pastilles, titre, résumé,
@@ -5540,6 +5546,13 @@
       });
     }
     card.appendChild(btn);
+
+    if (active && active.routineId !== routine.id) {
+      var hint = document.createElement('p');
+      hint.className = 'programme-day-panel-hint';
+      hint.textContent = 'Une autre séance est déjà en cours.';
+      card.appendChild(hint);
+    }
 
     return card;
   }
