@@ -8,7 +8,7 @@ Légende : Refaire = écran existant à reconstruire. Créer = n'existe pas. Ada
 | 1 | Accueil | maquette/01-accueil.png | 03 | view-dashboard | Refaire |
 | 2 | Séance muscu | maquette/02-seance-muscu.png | 04 | séance active : buildLiveSessionExercise, buildLiveSessionSetRow | Refaire |
 | 3 | Séance haltérophilie | maquette/03-seance-halterophilie.png | 05 | séance active, mode haltérophilie | Créer |
-| 4 | Programme | maquette/04-programme.png | 02 | view-routine (liste de la semaine retirée depuis, hors lot ; voir "Mes séances" dans renderRoutineList) | Refaire |
+| 4 | Programme | maquette/04-programme.png | 02 | view-routine (liste de la semaine retirée depuis, hors lot ; "Mes séances" dans renderRoutineList sans pastilles de jours ; bande de 7 jours réutilisée de l'Accueil via renderDashboardWeekStrip, avec panneau du jour renderProgrammeDayPanel) | Refaire |
 | 5 | Progrès | maquette/05-progres.png | 12 | view-progression (déjà riche) : style seulement, bouton Historique | Restyler |
 | 6 | Fiche exercice | maquette/06-fiche-exercice.png | 10 | openExerciseDetail | Refaire |
 | 7 | Nouveau programme | maquette/07-nouveau-programme.png | 09 | création de routine | Refaire |

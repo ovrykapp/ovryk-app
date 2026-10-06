@@ -950,6 +950,9 @@
   .dash-week-day.is-rest .dash-week-day-label,
   .dash-week-day.is-rest .dash-week-day-num { opacity: 0.4; }
   .dash-week-day.is-today { background: var(--rust); }
+  /* jour sélectionné dans Programme : contour neutre, jamais utilisé sur
+     l'Accueil (selectedDay n'y est jamais passé) */
+  .dash-week-day.is-selected { border: 1px solid var(--border-outline); }
   .dash-week-day.is-today .dash-week-day-label,
   .dash-week-day.is-today .dash-week-day-num { color: var(--graphite); opacity: 1; }
   .dash-week-day-dot {
@@ -961,6 +964,32 @@
     background: var(--blue);
   }
   .dash-week-day.is-today .dash-week-day-dot { background: var(--graphite); }
+  /* curseur cliquable uniquement sur l'instance de Programme — l'Accueil
+     reste visuellement identique et non cliquable */
+  #programme-week-strip .dash-week-day { cursor: pointer; }
+
+  /* panneau du jour sélectionné dans Programme : cartes compactes, un
+     seul bouton (Démarrer ou Reprendre la séance), jamais Dupliquer ni
+     Supprimer ici — ça reste dans "Mes séances". */
+  #programme-day-panel { margin-bottom: var(--space-4); }
+  .programme-day-panel-rest {
+    padding: 10px 0;
+    font-size: 13px;
+    color: var(--steel);
+  }
+  .programme-day-panel-card {
+    border: 1px solid var(--border-card);
+    border-radius: var(--radius-card);
+    padding: var(--space-3) var(--space-4);
+    margin-bottom: var(--space-3);
+  }
+  .programme-day-panel-card:last-child { margin-bottom: 0; }
+  .programme-day-panel-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+  }
 
   /* carte "séance du jour" (lot 03) — remplace l'ancien bloc meta/cta
      générique par le détail complet : pastilles, titre, résumé,
@@ -1373,22 +1402,6 @@
     color: var(--steel);
     margin-top: 4px;
   }
-  /* pastilles de jours en lecture seule : pas de bordure, pas de curseur
-     pointer, pas d'effet au survol — pour qu'elles ne ressemblent pas aux
-     pastilles cliquables de l'éditeur de routine (.filter-chip) */
-  .routine-row-days { display: flex; gap: 4px; margin-top: 8px; }
-  .routine-row-day-pill {
-    flex: 1;
-    text-align: center;
-    padding: 3px 0;
-    border-radius: var(--radius-sm);
-    font-family: var(--font-mono);
-    font-size: 10px;
-    font-weight: 600;
-    color: var(--steel);
-    background: transparent;
-  }
-  .routine-row-day-pill.is-active { background: var(--field); color: var(--ink); font-weight: 700; }
   .routine-row-start {
     width: 100%;
     margin-top: 10px;
@@ -3001,6 +3014,10 @@
           </button>
         </div>
       </div>
+
+      <div class="dash-week-strip" id="programme-week-strip"></div>
+
+      <div id="programme-day-panel" hidden></div>
 
       <div class="data-io-block" id="programme-cycles-card" hidden>
         <span class="dash-section-eyebrow">CYCLES EN COURS</span>
@@ -5315,24 +5332,6 @@
     section.hidden = false;
   }
 
-  /* 7 pastilles Lun à Dim en lecture seule (le jour se modifie seulement
-     dans la fiche routine, via renderRoutineWeekdayRow) : des <span>, pas
-     des <button>, sans bordure ni effet au survol, pour ne pas ressembler
-     à un contrôle cliquable. */
-  function buildRoutineRowDays(routine) {
-    var wrap = document.createElement('div');
-    wrap.className = 'routine-row-days';
-    var weekdays = routine.weekdays || [];
-    WEEKDAY_LABELS.forEach(function (label, idx) {
-      var day = idx + 1;
-      var pill = document.createElement('span');
-      pill.className = 'routine-row-day-pill' + (weekdays.indexOf(day) !== -1 ? ' is-active' : '');
-      pill.textContent = label;
-      wrap.appendChild(pill);
-    });
-    return wrap;
-  }
-
   function buildRoutineRow(routine) {
     var row = document.createElement('div');
     row.className = 'routine-row';
@@ -5344,8 +5343,6 @@
       '<span class="routine-row-count mono">' + routine.exercises.length + ' ex.</span>';
     main.addEventListener('click', function () { openRoutineEditor(routine.id, false); });
     row.appendChild(main);
-
-    row.appendChild(buildRoutineRowDays(routine));
 
     var last = getLastCompletedSessionForRoutine(routine.id);
     var meta = document.createElement('div');
@@ -5489,14 +5486,104 @@
     card.hidden = false;
   }
 
-  /* point d'entrée unique de l'écran Programme : carte des cycles puis
-     liste "Mes séances" (renderRoutineList). La liste de la semaine
+  /* jour sélectionné dans la bande de Programme (1 à 7, ou null) — état
+     propre à cet écran, jamais partagé avec l'Accueil qui n'a pas de
+     notion de sélection. Remis à null en quittant l'onglet n'est pas fait
+     exprès : rester sélectionné au retour est le comportement le plus
+     simple et le moins surprenant. */
+  var programmeSelectedDay = null;
+
+  /* bande de 7 jours de Programme : réutilise renderDashboardWeekStrip
+     (même fonction que l'Accueil, pas une copie), puis ajoute le clic
+     uniquement ici — l'Accueil ne pose jamais cet écouteur. */
+  function renderProgrammeWeekStrip() {
+    renderDashboardWeekStrip('programme-week-strip', programmeSelectedDay);
+    var cells = document.querySelectorAll('#programme-week-strip .dash-week-day');
+    cells.forEach(function (cell) {
+      cell.addEventListener('click', function () {
+        var day = Number(cell.dataset.weekday);
+        programmeSelectedDay = (programmeSelectedDay === day) ? null : day;
+        renderProgrammeWeekStrip();
+        renderProgrammeDayPanel();
+      });
+    });
+  }
+
+  /* carte compacte du panneau du jour : nom, nombre d'exercices, un seul
+     bouton. "Reprendre la séance" si cette routine précise a la séance en
+     cours ; "Démarrer" sinon, désactivé si une AUTRE routine a une séance
+     en cours — startSession() n'a aucune protection contre une deuxième
+     séance en parallèle, donc le garde-fou est ici. */
+  function buildProgrammeDayPanelCard(routine) {
+    var card = document.createElement('div');
+    card.className = 'programme-day-panel-card';
+
+    var top = document.createElement('div');
+    top.className = 'programme-day-panel-top';
+    top.innerHTML = '<span class="routine-row-name">' + escapeHTML(routine.name || 'Sans titre') + '</span>' +
+      '<span class="routine-row-count mono">' + routine.exercises.length + ' ex.</span>';
+    card.appendChild(top);
+
+    var active = OvrykDB.getActiveSession();
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'btn-add routine-row-start';
+    if (active && active.routineId === routine.id) {
+      btn.textContent = 'Reprendre la séance';
+      btn.addEventListener('click', function () { setActiveView('seance'); });
+    } else {
+      btn.textContent = 'Démarrer';
+      btn.disabled = !!active;
+      btn.addEventListener('click', function () {
+        startSession(buildSessionFromRoutine(routine));
+        setActiveView('seance');
+      });
+    }
+    card.appendChild(btn);
+
+    return card;
+  }
+
+  /* "Mes séances" en dessous n'est jamais filtrée par ce panneau (demande
+     explicite) : ce panneau est purement additif, au-dessus. */
+  function renderProgrammeDayPanel() {
+    var panel = document.getElementById('programme-day-panel');
+    if (programmeSelectedDay == null) {
+      panel.hidden = true;
+      panel.innerHTML = '';
+      return;
+    }
+
+    var routines = OvrykDB.getRoutines().filter(function (r) {
+      return r.weekdays && r.weekdays.indexOf(programmeSelectedDay) !== -1;
+    });
+    panel.innerHTML = '';
+
+    if (routines.length === 0) {
+      var rest = document.createElement('div');
+      rest.className = 'programme-day-panel-rest';
+      rest.textContent = 'Repos';
+      panel.appendChild(rest);
+    } else {
+      routines.forEach(function (routine) {
+        panel.appendChild(buildProgrammeDayPanelCard(routine));
+      });
+    }
+
+    panel.hidden = false;
+  }
+
+  /* point d'entrée unique de l'écran Programme : bande de la semaine,
+     panneau du jour, carte des cycles puis liste "Mes séances"
+     (renderRoutineList). L'ancienne liste verticale de la semaine
      (7 lignes Lun à Dim) a été retirée hors lot, voir LOT-02.md. */
   function renderProgrammeWeek() {
     var routines = OvrykDB.getRoutines();
     var emptyState = document.getElementById('programme-empty-state');
 
     if (routines.length === 0) {
+      document.getElementById('programme-week-strip').innerHTML = '';
+      document.getElementById('programme-day-panel').hidden = true;
       document.getElementById('programme-cycles-card').hidden = true;
       document.getElementById('programme-no-day-section').hidden = true;
       emptyState.hidden = false;
@@ -5507,6 +5594,8 @@
     }
 
     emptyState.hidden = true;
+    renderProgrammeWeekStrip();
+    renderProgrammeDayPanel();
     renderProgrammeCyclesCard();
     renderRoutineList();
   }
@@ -9341,9 +9430,12 @@
 
   /* Bande de 7 pastilles L M M J V S D (lot 03). Réutilise startOfWeek,
      addDays, isSameLocalDay, WEEKDAY_LABELS du lot 02 — même semaine civile
-     que l'écran Programme. */
-  function renderDashboardWeekStrip() {
-    var el = document.getElementById('dash-week-strip');
+     que l'écran Programme, qui réutilise cette même fonction (pas une
+     copie) dans #programme-week-strip. selectedDay (1 à 7, optionnel) est
+     purement cosmétique ici : l'Accueil ne l'utilise jamais et ne pose
+     aucun écouteur de clic, son comportement ne change pas. */
+  function renderDashboardWeekStrip(containerId, selectedDay) {
+    var el = document.getElementById(containerId);
     el.innerHTML = '';
     var routines = OvrykDB.getRoutines();
     var sessions = OvrykDB.getSessions();
@@ -9359,7 +9451,9 @@
       });
 
       var cell = document.createElement('div');
-      cell.className = 'dash-week-day' + (isToday ? ' is-today' : '') + (hasRoutine ? '' : ' is-rest');
+      cell.className = 'dash-week-day' + (isToday ? ' is-today' : '') + (hasRoutine ? '' : ' is-rest') +
+        (selectedDay === i ? ' is-selected' : '');
+      cell.dataset.weekday = i;
       cell.innerHTML = '<span class="dash-week-day-label">' + WEEKDAY_LABELS[i - 1] + '</span>' +
         '<span class="dash-week-day-num mono">' + date.getDate() + '</span>' +
         (hasCompletedSession ? '<span class="dash-week-day-dot"></span>' : '');
@@ -9401,7 +9495,7 @@
     var today = new Date();
     document.getElementById('dash-header-date').textContent =
       WEEKDAY_NAMES_FR[currentWeekdayNum() - 1] + ' ' + formatDayMonthFr(today);
-    renderDashboardWeekStrip();
+    renderDashboardWeekStrip('dash-week-strip');
     renderDashboardHero();
     renderDashboardWeekSummary();
     renderDashboardNextTest();

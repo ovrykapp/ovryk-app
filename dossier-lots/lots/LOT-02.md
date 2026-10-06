@@ -54,7 +54,9 @@ L'alerte "À surveiller" (lot 13), la liste de l'accueil (lot 03).
 
 ## Note (2026-10-06)
 
-La liste de la semaine (point 5 ci-dessus : sept lignes Lun à Dim) a été retirée de l'écran Programme, hors lot, à la demande de l'utilisateur. Programme n'affiche plus que la carte "Cycles en cours" et une liste unique "Mes séances" (renderRoutineList) regroupant toutes les routines, avec ou sans jour, chacune affichant ses pastilles de jours en lecture seule. La bande de la semaine de l'Accueil (renderDashboardWeekStrip, lot 03) n'est pas concernée et n'a pas changé.
+La liste de la semaine (point 5 ci-dessus : sept lignes Lun à Dim) a été retirée de l'écran Programme, hors lot, à la demande de l'utilisateur. Programme affiche désormais, de haut en bas : la bande de 7 jours (réutilisée telle quelle depuis l'Accueil, voir ci-dessous), un panneau du jour sélectionné, la carte "Cycles en cours", puis une liste unique "Mes séances" (renderRoutineList) regroupant toutes les routines, avec ou sans jour — sans pastilles de jours sur les cartes, les jours ne se modifient que dans la fiche routine.
+
+La bande de 7 jours de Programme n'est pas une copie : `renderDashboardWeekStrip(containerId, selectedDay)` (lot 03) a été généralisée avec un paramètre de conteneur pour être appelée à la fois depuis l'Accueil (`#dash-week-strip`, sans sélection) et depuis Programme (`#programme-week-strip`, avec sélection). Le clic sur un jour n'est câblé que côté Programme (`renderProgrammeWeekStrip`) ; l'Accueil reste strictement non interactif, aucun changement de comportement ni de rendu pour lui. Taper un jour dans Programme affiche, dans `#programme-day-panel`, les routines programmées ce jour-là (cartes compactes : nom, nombre d'exercices, un bouton Démarrer ou Reprendre la séance) ou "Repos" si aucune ; "Mes séances" en dessous n'est jamais filtrée par cette sélection.
 
 ## Prompt pour Claude Code
 
