@@ -964,9 +964,12 @@
     background: var(--blue);
   }
   .dash-week-day.is-today .dash-week-day-dot { background: var(--graphite); }
-  /* curseur cliquable uniquement sur l'instance de Programme — l'Accueil
-     reste visuellement identique et non cliquable */
-  #programme-week-strip .dash-week-day { cursor: pointer; }
+  /* curseur cliquable sur les deux instances : Programme (déjà cliquable)
+     et désormais l'Accueil */
+  #programme-week-strip .dash-week-day, #dash-week-strip .dash-week-day { cursor: pointer; }
+  /* jour sélectionné = aujourd'hui (état par défaut) : pas de contour
+     supplémentaire, l'Accueil reste visuellement identique à avant */
+  .dash-week-day.is-today.is-selected { border: none; }
 
   /* panneau du jour sélectionné dans Programme : cartes compactes, un
      seul bouton (Démarrer ou Reprendre la séance), jamais Dupliquer ni
@@ -1040,6 +1043,8 @@
   .dash-session-ex-value { font-family: var(--font-mono); font-size: 13px; color: var(--steel); white-space: nowrap; }
   .dash-session-ex-value.is-cycle { color: var(--blue); font-weight: 700; }
   .dash-session-card .btn-primary { width: 100%; }
+  .dash-session-secondary { display: block; width: 100%; margin-top: 10px; text-align: center; }
+  .dash-session-secondary[hidden] { display: none; }
 
   /* deux tuiles côte à côte (lot 03), à la place de l'ancien bloc
      "Séances / X / Y" empilé avec sa sous-ligne de volume */
@@ -2981,7 +2986,10 @@
         <p class="dash-session-meta" id="dash-session-meta"></p>
         <div class="dash-session-exercises" id="dash-session-exercises"></div>
         <button type="button" class="btn-primary" id="dash-session-cta"></button>
+        <button type="button" class="routine-action-btn dash-session-secondary" id="dash-session-secondary-cta" hidden>Autre séance</button>
       </div>
+
+      <div id="dash-day-panel" hidden></div>
 
       <div class="dash-week-tiles" id="dash-week-tiles" hidden>
         <div class="dash-tile">
@@ -4393,6 +4401,7 @@
        for free with the rest of that view */
     document.getElementById('seance-sticky-topbar').hidden = !(target === 'seance' && activeSession);
     if (target === 'dashboard') {
+      dashboardSelectedDay = currentWeekdayNum();
       renderCycleAlertBanner();
       renderDashboardStagnation();
       renderDashboardHome();
@@ -5519,8 +5528,14 @@
      bouton. "Reprendre la séance" si cette routine précise a la séance en
      cours ; "Démarrer" sinon, désactivé si une AUTRE routine a une séance
      en cours — startSession() n'a aucune protection contre une deuxième
-     séance en parallèle, donc le garde-fou est ici. */
-  function buildProgrammeDayPanelCard(routine) {
+     séance en parallèle, donc le garde-fou est ici.
+
+     startable (optionnel, true par défaut) : à false, aucun bouton — la
+     carte affiche seulement readOnlyLabel à la place (utilisé par
+     l'Accueil pour un jour ≠ aujourd'hui, une séance étant toujours datée
+     du jour réel). Programme (seul appelant d'origine) ne passe rien et
+     garde exactement son comportement actuel. */
+  function buildProgrammeDayPanelCard(routine, startable, readOnlyLabel) {
     var card = document.createElement('div');
     card.className = 'programme-day-panel-card';
 
@@ -5529,6 +5544,14 @@
     top.innerHTML = '<span class="routine-row-name">' + escapeHTML(routine.name || 'Sans titre') + '</span>' +
       '<span class="routine-row-count mono">' + routine.exercises.length + ' ex.</span>';
     card.appendChild(top);
+
+    if (startable === false) {
+      var readOnly = document.createElement('p');
+      readOnly.className = 'programme-day-panel-hint';
+      readOnly.textContent = readOnlyLabel || '';
+      card.appendChild(readOnly);
+      return card;
+    }
 
     var active = OvrykDB.getActiveSession();
     var btn = document.createElement('button');
@@ -9319,6 +9342,11 @@
     var ctaBtn = document.getElementById('dash-session-cta');
     ctaBtn.textContent = 'Reprendre la séance';
     ctaBtn.onclick = function () { setActiveView('seance'); };
+
+    /* point 8 : jamais de "Autre séance" pendant une séance en cours —
+       la carte partagée doit le masquer explicitement, sinon un affichage
+       précédent de renderDashboardSessionCardPlan pourrait rester visible */
+    document.getElementById('dash-session-secondary-cta').hidden = true;
   }
 
   /* Routine du jour ou prochaine routine en rotation : la carte complète de
@@ -9384,31 +9412,97 @@
       startSession(buildSessionFromRoutine(routine));
       setActiveView('seance');
     };
+
+    /* point 8 : pour lancer une autre routine que celle prévue aujourd'hui
+       (ex. Upper A au lieu de Lower A) sans passer par le panneau du jour,
+       qui est en lecture seule. N'importe quelle routine reste démarrable
+       depuis "Mes séances", quel que soit le jour programmé. */
+    var secondaryBtn = document.getElementById('dash-session-secondary-cta');
+    secondaryBtn.hidden = false;
+    secondaryBtn.onclick = function () {
+      setActiveView('routine');
+      var target = document.getElementById('programme-no-day-section');
+      if (target) target.scrollIntoView({ block: 'start' });
+    };
   }
+
+  /* jour sélectionné dans la bande de l'Accueil (1 à 7) — remis à
+     currentWeekdayNum() uniquement à l'entrée sur l'onglet (setActiveView),
+     jamais ici : rester sur le jour tapé tant qu'on reste sur l'Accueil. */
+  var dashboardSelectedDay = null;
 
   function renderDashboardHero() {
     var emptyEl = document.getElementById('dash-hero');
     var cardEl = document.getElementById('dash-session-card');
+    var panelEl = document.getElementById('dash-day-panel');
     var routines = OvrykDB.getRoutines();
 
     if (routines.length === 0) {
       emptyEl.hidden = false;
       cardEl.hidden = true;
+      panelEl.hidden = true;
       return;
     }
     emptyEl.hidden = true;
-    cardEl.hidden = false;
+
+    var todayNum = currentWeekdayNum();
+    var selectedDay = dashboardSelectedDay != null ? dashboardSelectedDay : todayNum;
 
     var active = OvrykDB.getActiveSession();
     if (active) {
+      cardEl.hidden = false;
       renderDashboardSessionCardResume(active);
+      /* point 7 : aujourd'hui + séance en cours = comportement actuel
+         inchangé (panneau masqué) ; un autre jour tapé affiche le panneau
+         en lecture seule en dessous, la carte "Reprendre" restant visible. */
+      if (selectedDay === todayNum) {
+        panelEl.hidden = true;
+      } else {
+        panelEl.hidden = false;
+        renderDashboardDayPanel(selectedDay);
+      }
       return;
     }
 
+    if (selectedDay === todayNum) {
+      cardEl.hidden = false;
+      panelEl.hidden = true;
+      var todaysRoutines = routines.filter(function (r) { return r.weekdays && r.weekdays.indexOf(todayNum) !== -1; });
+      var routine = todaysRoutines.length ? todaysRoutines[0] : computeNextRoutine();
+      renderDashboardSessionCardPlan(routine);
+    } else {
+      cardEl.hidden = true;
+      panelEl.hidden = false;
+      renderDashboardDayPanel(selectedDay);
+    }
+  }
+
+  /* panneau en lecture seule d'un jour ≠ aujourd'hui : réutilise les
+     cartes compactes du panneau du jour de Programme
+     (buildProgrammeDayPanelCard), jamais démarrable depuis l'Accueil —
+     une séance est toujours datée d'aujourd'hui (buildSessionFromRoutine),
+     donc "Démarrer" n'a de sens que sur le jour courant. */
+  function renderDashboardDayPanel(day) {
+    var panel = document.getElementById('dash-day-panel');
     var todayNum = currentWeekdayNum();
-    var todaysRoutines = routines.filter(function (r) { return r.weekdays && r.weekdays.indexOf(todayNum) !== -1; });
-    var routine = todaysRoutines.length ? todaysRoutines[0] : computeNextRoutine();
-    renderDashboardSessionCardPlan(routine);
+    var routines = OvrykDB.getRoutines().filter(function (r) {
+      return r.weekdays && r.weekdays.indexOf(day) !== -1;
+    });
+    panel.innerHTML = '';
+
+    if (routines.length === 0) {
+      var rest = document.createElement('div');
+      rest.className = 'programme-day-panel-rest';
+      rest.textContent = 'Repos';
+      panel.appendChild(rest);
+      return;
+    }
+
+    var dayLabel = WEEKDAY_NAMES_FR[day - 1].toLowerCase();
+    var readOnlyLabel = (day < todayNum ? 'Était prévue ' : 'Prévue ') + dayLabel + '.';
+    routines.forEach(function (routine) {
+      panel.appendChild(buildProgrammeDayPanelCard(routine, false, readOnlyLabel));
+    });
   }
 
   /* Les deux tuiles "Séances cette semaine" / "Volume cette semaine" (lot 03).
@@ -9504,11 +9598,27 @@
     block.hidden = false;
   }
 
+  /* bande de l'Accueil, cliquable : réutilise renderDashboardWeekStrip
+     (même fonction que Programme, pas une copie), ajoute le clic ici
+     uniquement. Un clic ne rappelle jamais renderDashboardHome() en
+     entier : seules la bande et la carte du jour se rafraîchissent. */
+  function renderDashboardWeekStripWired() {
+    renderDashboardWeekStrip('dash-week-strip', dashboardSelectedDay);
+    var cells = document.querySelectorAll('#dash-week-strip .dash-week-day');
+    cells.forEach(function (cell) {
+      cell.addEventListener('click', function () {
+        dashboardSelectedDay = Number(cell.dataset.weekday);
+        renderDashboardWeekStripWired();
+        renderDashboardHero();
+      });
+    });
+  }
+
   function renderDashboardHome() {
     var today = new Date();
     document.getElementById('dash-header-date').textContent =
       WEEKDAY_NAMES_FR[currentWeekdayNum() - 1] + ' ' + formatDayMonthFr(today);
-    renderDashboardWeekStrip('dash-week-strip');
+    renderDashboardWeekStripWired();
     renderDashboardHero();
     renderDashboardWeekSummary();
     renderDashboardNextTest();
