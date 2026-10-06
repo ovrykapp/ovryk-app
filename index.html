@@ -915,8 +915,7 @@
     margin: 0 0 14px;
   }
 
-  /* bande de 7 pastilles jour (lot 03) — version compacte du badge de
-     jour du Programme (.programme-day-badge), sans carte en dessous */
+  /* bande de 7 pastilles jour (lot 03), compacte, sans carte en dessous */
   .dash-week-strip {
     display: flex;
     gap: 6px;
@@ -1158,77 +1157,6 @@
   }
   .cycle-progress-seg.is-filled { background: var(--blue); }
 
-  .programme-week-list { display: flex; flex-direction: column; gap: var(--space-3); margin-top: var(--space-4); }
-  .programme-day-row { display: flex; gap: 12px; align-items: flex-start; }
-  .programme-day-badge {
-    flex-shrink: 0;
-    width: 52px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 2px;
-    padding: 8px 0;
-    border-radius: var(--radius-card);
-    background: var(--surface);
-  }
-  .programme-day-row.is-today .programme-day-badge {
-    background: var(--orange-fill);
-    border: 1px solid var(--rust);
-  }
-  .programme-day-label {
-    font-family: var(--font-mono);
-    font-size: 10px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    color: var(--steel);
-  }
-  .programme-day-row.is-today .programme-day-label { color: var(--orange-soft); }
-  .programme-day-num {
-    font-family: var(--font-title);
-    font-weight: 700;
-    font-size: 20px;
-    color: var(--ink);
-  }
-  .programme-day-row.is-today .programme-day-num { color: var(--orange-soft); }
-  .programme-day-content { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
-  .programme-day-rest {
-    min-height: 52px;
-    display: flex;
-    align-items: center;
-    font-size: 13px;
-    color: var(--steel);
-  }
-  .programme-day-card {
-    border: 1px solid transparent;
-    border-radius: var(--radius-card);
-    background: var(--surface);
-    padding: var(--space-3) var(--space-4);
-  }
-  .programme-day-row.is-today .programme-day-card { border-color: var(--rust); }
-  .programme-day-card-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
-  .programme-day-card-title {
-    font-family: var(--font-display);
-    font-weight: 700;
-    font-size: 14px;
-    color: var(--ink);
-  }
-  .programme-day-card-count {
-    font-family: var(--font-mono);
-    font-size: 11px;
-    color: var(--steel);
-    margin-top: 2px;
-  }
-  .programme-day-card-today {
-    font-family: var(--font-mono);
-    font-size: 11px;
-    font-weight: 700;
-    text-transform: uppercase;
-    color: var(--orange-soft);
-    margin-top: 4px;
-  }
-  .programme-day-card-badges { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
   .day-badge-tag {
     border-radius: var(--radius-pill);
     padding: 3px 10px;
@@ -1241,7 +1169,6 @@
   }
   .day-badge-tag.is-halterophilie { background: var(--blue-fill); color: var(--blue); }
   .day-badge-tag.is-muscu { background: var(--orange-fill); color: var(--orange-soft); }
-  .programme-day-check { width: 18px; height: 18px; stroke: var(--blue); fill: none; stroke-width: 2.2; flex-shrink: 0; }
 
   /* Profil — weekly-goal steppers and notification toggles */
   .profile-stepper-row, .profile-toggle-row {
@@ -1446,6 +1373,22 @@
     color: var(--steel);
     margin-top: 4px;
   }
+  /* pastilles de jours en lecture seule : pas de bordure, pas de curseur
+     pointer, pas d'effet au survol — pour qu'elles ne ressemblent pas aux
+     pastilles cliquables de l'éditeur de routine (.filter-chip) */
+  .routine-row-days { display: flex; gap: 4px; margin-top: 8px; }
+  .routine-row-day-pill {
+    flex: 1;
+    text-align: center;
+    padding: 3px 0;
+    border-radius: var(--radius-sm);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--steel);
+    background: transparent;
+  }
+  .routine-row-day-pill.is-active { background: var(--field); color: var(--ink); font-weight: 700; }
   .routine-row-start {
     width: 100%;
     margin-top: 10px;
@@ -3064,10 +3007,8 @@
         <div id="programme-cycles-body"></div>
       </div>
 
-      <div id="programme-week-list"></div>
-
       <div id="programme-no-day-section" hidden>
-        <span class="dash-section-eyebrow">SANS JOUR</span>
+        <span class="dash-section-eyebrow">MES SÉANCES</span>
         <div id="routine-list"></div>
       </div>
 
@@ -5354,13 +5295,11 @@
   }
 
   /* ---- routine list ---- */
-  /* Ne liste plus que les routines sans jour (routine.weekdays vide) — les
-     routines rattachées à un jour vivent dans la liste de la semaine
-     (renderProgrammeWeekList). C'est ici qu'une routine retombe dès que son
-     dernier jour est retiré dans l'éditeur, avec Démarrer/Dupliquer/
-     Supprimer intacts (voir buildRoutineRow, inchangée). */
+  /* "Mes séances" : liste unique de toutes les routines, avec ou sans jour
+     (la section de la semaine a été retirée, hors lot, voir LOT-02.md).
+     Démarrer/Dupliquer/Supprimer intacts (voir buildRoutineRow). */
   function renderRoutineList() {
-    var routines = OvrykDB.getRoutines().filter(function (r) { return !r.weekdays || r.weekdays.length === 0; });
+    var routines = OvrykDB.getRoutines();
     var section = document.getElementById('programme-no-day-section');
     var listEl = document.getElementById('routine-list');
     listEl.innerHTML = '';
@@ -5376,6 +5315,24 @@
     section.hidden = false;
   }
 
+  /* 7 pastilles Lun à Dim en lecture seule (le jour se modifie seulement
+     dans la fiche routine, via renderRoutineWeekdayRow) : des <span>, pas
+     des <button>, sans bordure ni effet au survol, pour ne pas ressembler
+     à un contrôle cliquable. */
+  function buildRoutineRowDays(routine) {
+    var wrap = document.createElement('div');
+    wrap.className = 'routine-row-days';
+    var weekdays = routine.weekdays || [];
+    WEEKDAY_LABELS.forEach(function (label, idx) {
+      var day = idx + 1;
+      var pill = document.createElement('span');
+      pill.className = 'routine-row-day-pill' + (weekdays.indexOf(day) !== -1 ? ' is-active' : '');
+      pill.textContent = label;
+      wrap.appendChild(pill);
+    });
+    return wrap;
+  }
+
   function buildRoutineRow(routine) {
     var row = document.createElement('div');
     row.className = 'routine-row';
@@ -5387,6 +5344,8 @@
       '<span class="routine-row-count mono">' + routine.exercises.length + ' ex.</span>';
     main.addEventListener('click', function () { openRoutineEditor(routine.id, false); });
     row.appendChild(main);
+
+    row.appendChild(buildRoutineRowDays(routine));
 
     var last = getLastCompletedSessionForRoutine(routine.id);
     var meta = document.createElement('div');
@@ -5479,16 +5438,6 @@
     return { halterophile: halterophile, muscu: muscu };
   }
 
-  /* "ce jour-là" = le jour civil donné, et uniquement une séance déjà
-     terminée — une séance in_progress ne doit jamais faire apparaître la
-     coche, ni être touchée par cette lecture (purement une recherche,
-     aucune écriture). */
-  function hasCompletedSessionForRoutineOnDate(routineId, date) {
-    return OvrykDB.getSessions().some(function (s) {
-      return s.routineId === routineId && s.status === 'completed' && isSameLocalDay(new Date(s.date), date);
-    });
-  }
-
   function buildCycleProgressBar(current, total) {
     var bar = document.createElement('div');
     bar.className = 'cycle-progress-bar';
@@ -5540,101 +5489,15 @@
     card.hidden = false;
   }
 
-  function buildProgrammeRoutineCard(routine, date) {
-    var card = document.createElement('button');
-    card.type = 'button';
-    card.className = 'programme-day-card';
-
-    var top = document.createElement('div');
-    top.className = 'programme-day-card-top';
-
-    var left = document.createElement('div');
-    left.innerHTML = '<div class="programme-day-card-title">' + escapeHTML(routine.name || 'Sans titre') + '</div>' +
-      '<div class="programme-day-card-count">' + routine.exercises.length + ' exercice' + (routine.exercises.length > 1 ? 's' : '') + '</div>';
-    top.appendChild(left);
-
-    var right = document.createElement('div');
-    right.className = 'programme-day-card-badges';
-    var badges = getRoutineCycleBadges(routine);
-    if (badges.halterophile) right.innerHTML += '<span class="day-badge-tag is-halterophilie">Haltéro</span>';
-    if (badges.muscu) right.innerHTML += '<span class="day-badge-tag is-muscu">Muscu</span>';
-    if (hasCompletedSessionForRoutineOnDate(routine.id, date)) {
-      right.innerHTML += '<svg class="programme-day-check" viewBox="0 0 24 24"><polyline points="4,13 9,18 20,6"/></svg>';
-    }
-    top.appendChild(right);
-
-    card.appendChild(top);
-    card.addEventListener('click', function () { openRoutineEditor(routine.id, false); });
-    return card;
-  }
-
-  function buildProgrammeDayRow(dayNum, date, routinesForDay, isToday) {
-    var row = document.createElement('div');
-    row.className = 'programme-day-row' + (isToday ? ' is-today' : '');
-
-    var badge = document.createElement('div');
-    badge.className = 'programme-day-badge';
-    badge.innerHTML = '<span class="programme-day-label">' + WEEKDAY_LABELS[dayNum - 1] + '</span>' +
-      '<span class="programme-day-num mono">' + date.getDate() + '</span>';
-    row.appendChild(badge);
-
-    var content = document.createElement('div');
-    content.className = 'programme-day-content';
-    if (routinesForDay.length === 0) {
-      var rest = document.createElement('div');
-      rest.className = 'programme-day-rest';
-      rest.textContent = 'Repos';
-      content.appendChild(rest);
-    } else {
-      routinesForDay.forEach(function (routine) {
-        content.appendChild(buildProgrammeRoutineCard(routine, date));
-      });
-      if (isToday) {
-        var todayTag = document.createElement('div');
-        todayTag.className = 'programme-day-card-today';
-        todayTag.textContent = 'Aujourd\'hui';
-        content.appendChild(todayTag);
-      }
-    }
-    row.appendChild(content);
-
-    return row;
-  }
-
-  /* sept lignes lundi à dimanche de la semaine en cours (startOfWeek
-     commence toujours un lundi), plus la section "Sans jour"
-     (renderRoutineList, inchangée) pour les routines sans weekdays —
-     risque signalé par le lot : une routine sans jour ne doit jamais
-     disparaître. */
-  function renderProgrammeWeekList() {
-    var listEl = document.getElementById('programme-week-list');
-    listEl.innerHTML = '';
-
-    var routines = OvrykDB.getRoutines();
-    var monday = startOfWeek(new Date());
-    var today = new Date();
-
-    for (var i = 1; i <= 7; i++) {
-      var date = addDays(monday, i - 1);
-      var routinesForDay = routines.filter(function (r) { return r.weekdays && r.weekdays.indexOf(i) !== -1; });
-      listEl.appendChild(buildProgrammeDayRow(i, date, routinesForDay, isSameLocalDay(date, today)));
-    }
-
-    renderRoutineList();
-  }
-
-  /* point d'entrée unique de l'écran Programme — remplace les anciens
-     appels à renderRoutineList() seule (celle-ci ne couvre plus que la
-     section Sans jour) pour que la semaine et la carte des cycles
-     restent à jour aux mêmes moments (création, duplication,
-     suppression, retour sur l'onglet). */
+  /* point d'entrée unique de l'écran Programme : carte des cycles puis
+     liste "Mes séances" (renderRoutineList). La liste de la semaine
+     (7 lignes Lun à Dim) a été retirée hors lot, voir LOT-02.md. */
   function renderProgrammeWeek() {
     var routines = OvrykDB.getRoutines();
     var emptyState = document.getElementById('programme-empty-state');
 
     if (routines.length === 0) {
       document.getElementById('programme-cycles-card').hidden = true;
-      document.getElementById('programme-week-list').innerHTML = '';
       document.getElementById('programme-no-day-section').hidden = true;
       emptyState.hidden = false;
       emptyState.innerHTML = '<div class="empty-state"><span class="empty-tag">Vide</span>' +
@@ -5644,10 +5507,8 @@
     }
 
     emptyState.hidden = true;
-    var monday = startOfWeek(new Date());
-    document.getElementById('programme-week-sub').textContent = 'Semaine du ' + formatDayMonthFr(monday);
     renderProgrammeCyclesCard();
-    renderProgrammeWeekList();
+    renderRoutineList();
   }
 
   /* ---- editor ---- */

@@ -52,6 +52,10 @@ Aucune règle nouvelle. Les pastilles reprennent la distinction cycle ou muscu d
 
 L'alerte "À surveiller" (lot 13), la liste de l'accueil (lot 03).
 
+## Note (2026-10-06)
+
+La liste de la semaine (point 5 ci-dessus : sept lignes Lun à Dim) a été retirée de l'écran Programme, hors lot, à la demande de l'utilisateur. Programme n'affiche plus que la carte "Cycles en cours" et une liste unique "Mes séances" (renderRoutineList) regroupant toutes les routines, avec ou sans jour, chacune affichant ses pastilles de jours en lecture seule. La bande de la semaine de l'Accueil (renderDashboardWeekStrip, lot 03) n'est pas concernée et n'a pas changé.
+
 ## Prompt pour Claude Code
 
 Copie ce texte dans Claude Code, à la racine du projet, après avoir exporté tes données et fait un commit :
