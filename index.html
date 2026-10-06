@@ -849,6 +849,9 @@
   .cycle-test-form { border-top: 1px solid var(--divider); padding-top: 12px; margin-top: 8px; }
   .cycle-test-form .form-label { margin-bottom: 8px; }
   .cycle-test-field-row { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+  .cycle-test-intro { font-size: 12px; color: var(--steel); line-height: 1.5; margin: 0 0 12px; }
+  .cycle-test-keep-btn { width: 100%; margin-top: 8px; }
+  .cycle-pending-notice .cycle-test-intro { margin-bottom: 10px; }
 
   .cycle-detail-status { font-family: var(--font-mono); font-size: 12px; color: var(--steel); margin-bottom: 10px; }
   .cycle-detail-phase { color: var(--accent-info); font-weight: 700; }
@@ -869,6 +872,72 @@
     margin-bottom: 4px;
   }
   .cycle-full-1rm { font-family: var(--font-mono); font-size: 12px; color: var(--steel); }
+
+  /* écran "Cycle terminé" (lot 06) */
+  .cycle-end-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
+    padding: 0 var(--space-4) var(--space-4);
+  }
+  .cycle-end-stat {
+    border: 1px solid var(--border-card);
+    border-radius: var(--radius-card);
+    padding: 10px 8px;
+    text-align: center;
+  }
+  .cycle-end-stat.is-highlight { border-color: var(--blue); }
+  .cycle-end-stat-label { display: block; font-size: 10px; color: var(--steel); margin-bottom: 4px; }
+  .cycle-end-stat-value { font-family: var(--font-title); font-weight: 700; font-size: 15px; color: var(--ink); }
+  .cycle-end-stat.is-highlight .cycle-end-stat-value { color: var(--blue); }
+  .cycle-end-next-card {
+    margin: 10px var(--space-4) 0;
+    padding: var(--space-4);
+    border: 1px solid var(--rust);
+    border-radius: var(--radius-card);
+    background: var(--surface);
+  }
+  .cycle-end-next-card.is-confirmed { border-color: var(--blue); }
+  .cycle-end-next-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+  .cycle-end-next-length {
+    font-size: 10px;
+    color: var(--ink);
+    background: var(--field);
+    border-radius: var(--radius-pill);
+    padding: 3px 10px;
+  }
+  .cycle-end-next-week1 { font-size: 12px; color: var(--steel); margin-bottom: 4px; }
+  .cycle-end-next-1rm { font-size: 12px; color: var(--ink); font-weight: 700; }
+  .cycle-end-actions-row { display: flex; gap: 8px; margin: var(--space-4) var(--space-4) 0; }
+  .cycle-end-actions-row .routine-action-btn { flex: 1; }
+  .cycle-end-choose-toggle {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: calc(100% - 2 * var(--space-4));
+    margin: var(--space-3) var(--space-4) 0;
+    min-height: 44px;
+    padding: 0 14px;
+    background: transparent;
+    border: 1px solid var(--border-outline);
+    border-radius: var(--radius);
+    color: var(--ink);
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+  }
+  .cycle-end-note {
+    margin: var(--space-4) var(--space-4) 0;
+    padding: var(--space-3);
+    border-radius: var(--radius-card);
+    background: var(--field);
+    color: var(--steel);
+    font-size: 12px;
+    line-height: 1.5;
+  }
+  .cycle-end-launch-btn { width: calc(100% - 2 * var(--space-4)); margin: var(--space-4) var(--space-4); }
+
   .cycle-full-week {
     padding: var(--space-4);
     border-bottom: 1px solid var(--divider);
@@ -3315,6 +3384,15 @@
     <div class="fullscreen-page-body" id="cycle-detail-body"></div>
   </div>
 
+  <div id="cycle-end-page" class="fullscreen-page" hidden>
+    <div class="fullscreen-page-topbar">
+      <button type="button" id="cycle-end-back-btn" class="fullscreen-page-action cancel">Fermer</button>
+      <span class="fullscreen-page-title" id="cycle-end-title"></span>
+      <span class="fullscreen-page-action" aria-hidden="true"></span>
+    </div>
+    <div class="fullscreen-page-body" id="cycle-end-body"></div>
+  </div>
+
   <nav class="bottom-nav" id="bottom-nav">
     <button class="nav-btn active" data-target="dashboard" aria-current="page">
       <svg viewBox="0 0 24 24" stroke-width="1.8"><rect x="3" y="3" width="7.5" height="7.5"/><rect x="13.5" y="3" width="7.5" height="7.5"/><rect x="3" y="13.5" width="7.5" height="7.5"/><rect x="13.5" y="13.5" width="7.5" height="7.5"/></svg>
@@ -4087,6 +4165,41 @@
     return candidates[Math.floor(Math.random() * candidates.length)];
   }
 
+  /* R3/lot 06 : bilan d'un cycle qui se termine, pour historique_cycles.
+     debut = date de la dernière entrée de historique_1rm (le moment où ce
+     cycle a démarré) — si elle manque (cycle lancé avant l'existence de ce
+     repère, ou historique_1rm vidé), le point de départ n'est pas fiable :
+     on renvoie null plutôt que des séances/un taux approximatifs, l'écran
+     affiche alors "indisponible". */
+  function computeCycleStats(exerciseId, debut, fin) {
+    if (!debut) return { seances: null, seances_prevues: null, reussite_pct: null };
+
+    var debutTime = new Date(debut).getTime();
+    var finTime = new Date(fin).getTime();
+    var seances = 0;
+    var totalAttempted = 0;
+    var totalSucceeded = 0;
+
+    OvrykDB.getSessions().forEach(function (s) {
+      if (s.status !== 'completed') return;
+      var t = new Date(s.date).getTime();
+      if (t < debutTime || t > finTime) return;
+      var sex = findExerciseInSession(s, exerciseId);
+      if (!sex) return;
+      var anyDone = sex.sets.some(function (set) { return set.done; });
+      if (!anyDone) return;
+      seances++;
+      sex.sets.forEach(function (set) {
+        if (!set.done || !set.reps) return;
+        totalAttempted += set.reps;
+        totalSucceeded += computeSuccessfulReps(set);
+      });
+    });
+
+    var reussite_pct = totalAttempted > 0 ? Math.round((totalSucceeded / totalAttempted) * 100) : null;
+    return { seances: seances, reussite_pct: reussite_pct };
+  }
+
   /* Prescription jouée avant le démarrage officiel du cycle A-E d'un
      mouvement (voir forceCycleStartDate sur l'exercice) : pas de wave
      loading, pas de calcul en %1RM progressif — une charge fixe pour les
@@ -4232,7 +4345,10 @@
         cycle_actif: tirerProchainCycle(null),
         one_rm_actuel: startingOneRM,
         semaine_actuelle: 1,
-        historique_1rm: [{ date: now, valeur: startingOneRM }]
+        historique_1rm: [{ date: now, valeur: startingOneRM }],
+        historique_cycles: [],
+        prochain_cycle: null,
+        en_attente_de_validation: false
       };
       this.saveForceCycles(map);
       return map[exerciseId];
@@ -4245,21 +4361,82 @@
     advanceForceCycleWeek: function (exerciseId) {
       var map = this.getForceCycles();
       var cycle = map[exerciseId];
-      if (!cycle) return;
+      /* un cycle en attente de validation (lot 06) reste gelé jusqu'au
+         lancement du prochain cycle — protège tout appelant, présent ou
+         futur, pas seulement finishActiveSession. */
+      if (!cycle || cycle.en_attente_de_validation) return;
       if (cycle.semaine_actuelle < cycleLength(cycle.cycle_actif)) {
         cycle.semaine_actuelle += 1;
         this.saveForceCycles(map);
       }
     },
-    submitNewOneRM: function (exerciseId, newValue) {
+    /* lot 06, R3 : remplace submitNewOneRM (seul appelant historique :
+       buildCycleTestForm). En deux temps : ceci clôt le cycle et tire le
+       suivant SANS le démarrer (cycle_actif/semaine_actuelle gelés tant
+       que launchPendingCycle n'a pas tourné). */
+    closeCycleAndDrawNext: function (exerciseId, newOneRM) {
       var map = this.getForceCycles();
       var cycle = map[exerciseId];
       if (!cycle) return;
-      cycle.one_rm_actuel = newValue;
-      cycle.historique_1rm.push({ date: new Date().toISOString(), valeur: newValue });
-      cycle.cycle_actif = tirerProchainCycle(cycle.cycle_actif);
-      cycle.semaine_actuelle = 1;
+
+      var now = new Date().toISOString();
+      var debut = (cycle.historique_1rm && cycle.historique_1rm.length)
+        ? cycle.historique_1rm[cycle.historique_1rm.length - 1].date
+        : null;
+      var stats = computeCycleStats(exerciseId, debut, now);
+
+      cycle.historique_cycles = cycle.historique_cycles || [];
+      cycle.historique_cycles.push({
+        cycle: cycle.cycle_actif,
+        debut: debut,
+        fin: now,
+        seances: stats.seances,
+        seances_prevues: cycleLength(cycle.cycle_actif),
+        reussite_pct: stats.reussite_pct,
+        one_rm_avant: cycle.one_rm_actuel,
+        one_rm_apres: newOneRM
+      });
+
+      cycle.one_rm_actuel = newOneRM;
+      cycle.historique_1rm.push({ date: now, valeur: newOneRM });
+      cycle.prochain_cycle = tirerProchainCycle(cycle.cycle_actif);
+      cycle.en_attente_de_validation = true;
       this.saveForceCycles(map);
+      return cycle;
+    },
+    /* "Relancer" : nouveau tirage au hasard, exclut toujours cycle_actif
+       (le cycle qui vient de finir, encore gelé à ce stade) — R4. */
+    redrawPendingCycle: function (exerciseId) {
+      var map = this.getForceCycles();
+      var cycle = map[exerciseId];
+      if (!cycle || !cycle.en_attente_de_validation) return;
+      cycle.prochain_cycle = tirerProchainCycle(cycle.cycle_actif);
+      this.saveForceCycles(map);
+      return cycle;
+    },
+    /* "Choisir moi même" : choix manuel, R4 ne s'applique qu'au tirage au
+       hasard — n'importe quel cycle est autorisé ici, y compris celui qui
+       vient de finir (décision utilisateur). */
+    setPendingCycle: function (exerciseId, cycleId) {
+      var map = this.getForceCycles();
+      var cycle = map[exerciseId];
+      if (!cycle || !cycle.en_attente_de_validation) return;
+      cycle.prochain_cycle = cycleId;
+      this.saveForceCycles(map);
+      return cycle;
+    },
+    /* "Lancer ce cycle" : seul moment où cycle_actif/semaine_actuelle
+       bougent après closeCycleAndDrawNext. */
+    launchPendingCycle: function (exerciseId) {
+      var map = this.getForceCycles();
+      var cycle = map[exerciseId];
+      if (!cycle || !cycle.en_attente_de_validation) return;
+      cycle.cycle_actif = cycle.prochain_cycle;
+      cycle.semaine_actuelle = 1;
+      cycle.prochain_cycle = null;
+      cycle.en_attente_de_validation = false;
+      this.saveForceCycles(map);
+      return cycle;
     },
 
     getMeta: function () { return readJSON(DB_KEYS.META, {}); },
@@ -4292,12 +4469,23 @@
     var isFirstRun = meta.schemaVersion !== 2;
 
     var today = new Date();
-    var backupKey = 'ovryk.backup.' + today.getFullYear() + '-' + pad2(today.getMonth() + 1) + '-' + pad2(today.getDate());
+    var todayKey = today.getFullYear() + '-' + pad2(today.getMonth() + 1) + '-' + pad2(today.getDate());
+    var backupKey = 'ovryk.backup.' + todayKey;
     if (localStorage.getItem(backupKey) === null) {
       localStorage.setItem(backupKey, JSON.stringify({
         routines: OvrykDB.getRoutines(),
         exercises: OvrykDB.getExercises(),
         settings: OvrykDB.getSettings()
+      }));
+    }
+
+    /* lot 06 : clé dédiée, séparée de la sauvegarde ci-dessus (jamais
+       réécrite), avant toute modification des cycles de force — filet pour
+       historique_1rm/historique_cycles en cas de bug de migration. */
+    var forceCyclesBackupKey = 'ovryk.backup.forceCycles.' + todayKey;
+    if (localStorage.getItem(forceCyclesBackupKey) === null) {
+      localStorage.setItem(forceCyclesBackupKey, JSON.stringify({
+        forceCycles: OvrykDB.getForceCycles()
       }));
     }
 
@@ -4327,6 +4515,19 @@
       if (ex.autoProgression == null) { ex.autoProgression = true; exChanged = true; }
     });
     if (exChanged) OvrykDB.saveExercises(exercises);
+
+    /* lot 06 : complète seulement les 3 nouveaux champs, ne touche jamais
+       cycle_actif, semaine_actuelle, one_rm_actuel ni historique_1rm d'un
+       cycle déjà en cours (y compris A à E). */
+    var forceCycles = OvrykDB.getForceCycles();
+    var cyclesChanged = false;
+    Object.keys(forceCycles).forEach(function (exerciseId) {
+      var c = forceCycles[exerciseId];
+      if (!Array.isArray(c.historique_cycles)) { c.historique_cycles = []; cyclesChanged = true; }
+      if (c.prochain_cycle === undefined) { c.prochain_cycle = null; cyclesChanged = true; }
+      if (c.en_attente_de_validation == null) { c.en_attente_de_validation = false; cyclesChanged = true; }
+    });
+    if (cyclesChanged) OvrykDB.saveForceCycles(forceCycles);
 
     if (isFirstRun) OvrykDB.saveMeta({ schemaVersion: 2 });
   }
@@ -5042,10 +5243,19 @@
     var cycle = OvrykDB.getForceCycle(exercise.id);
     if (!cycle) return null;
 
-    var week = getCycleWeek(cycle);
     var badge = document.createElement('button');
     badge.type = 'button';
     badge.className = 'cycle-active-badge';
+
+    if (cycle.en_attente_de_validation) {
+      /* semaine_actuelle est gelée sur l'ancien cycle à ce stade : ne
+         jamais l'afficher, ce serait trompeur (lot 06). */
+      badge.innerHTML = '<span class="mono">Cycle terminé</span> · en attente de lancement';
+      badge.addEventListener('click', function () { openCycleEndPage(exercise.id); });
+      return badge;
+    }
+
+    var week = getCycleWeek(cycle);
     badge.innerHTML = '<span class="mono">Cycle ' + cycle.cycle_actif + ' · S' + cycle.semaine_actuelle + '/' + cycleLength(cycle.cycle_actif) + '</span> · ' + escapeHTML(week.phase);
     badge.addEventListener('click', function () { openCycleDetailPage(exercise.id); });
     return badge;
@@ -5125,6 +5335,153 @@
   }
 
   document.getElementById('cycle-detail-back-btn').addEventListener('click', closeCycleDetailPage);
+
+  /* résumé de la semaine 1 d'un cycle tiré, pas encore actif — calculé sur
+     le nouveau 1RM, sans dépendre de cycle.semaine_actuelle (gelée). */
+  function formatPendingCycleWeek1(cycleId, oneRM) {
+    var week1 = FORCE_CYCLES[cycleId][0];
+    var heaviest = week1.sets.reduce(function (a, b) { return b.percent > a.percent ? b : a; }, week1.sets[0]);
+    var kg = computeWeightFromPercent(oneRM, heaviest.percent);
+    return 'S1 : ' + week1.phase + ', jusqu\'à ' + (kg != null ? kg + ' kg' : '-') + ' (' + heaviest.percent + ' %)';
+  }
+
+  /* écran "Cycle terminé" (lot 06, maquette 27). Lu depuis la dernière
+     entrée de historique_cycles (stats figées au moment de la clôture,
+     jamais recalculées ici) et prochain_cycle/en_attente_de_validation. */
+  function openCycleEndPage(exerciseId) {
+    var exercise = OvrykDB.getExerciseById(exerciseId);
+    var cycle = OvrykDB.getForceCycle(exerciseId);
+    if (!exercise || !cycle || !cycle.en_attente_de_validation) return;
+    var closed = cycle.historique_cycles[cycle.historique_cycles.length - 1];
+
+    document.getElementById('cycle-end-title').textContent = 'Cycle terminé';
+    var body = document.getElementById('cycle-end-body');
+    body.innerHTML = '';
+
+    var intro = document.createElement('div');
+    intro.className = 'cycle-full-intro';
+    intro.innerHTML = '<div class="cycle-full-name">' + escapeHTML(exercise.name) + ' · Cycle ' + closed.cycle +
+      ' · ' + cycleLength(closed.cycle) + ' semaines</div>';
+    body.appendChild(intro);
+
+    /* "indisponible" seulement si le point de départ (debut) n'est pas
+       fiable — jamais quand il est fiable mais qu'il n'y a simplement eu
+       aucune séance ou aucune rep tentée (alors "0 sur N" / "—", pas
+       "indisponible" qui dirait à tort qu'on ne peut pas savoir). */
+    var debutFiable = closed.debut != null;
+    var seancesText = debutFiable ? (closed.seances + ' sur ' + closed.seances_prevues) : 'indisponible';
+    var reussiteText = !debutFiable ? 'indisponible' : (closed.reussite_pct != null ? closed.reussite_pct + ' %' : '—');
+
+    var stats = document.createElement('div');
+    stats.className = 'cycle-end-stats';
+    stats.innerHTML =
+      '<div class="cycle-end-stat"><span class="cycle-end-stat-label">Séances</span>' +
+      '<span class="cycle-end-stat-value">' + seancesText + '</span></div>' +
+      '<div class="cycle-end-stat"><span class="cycle-end-stat-label">Réussite</span>' +
+      '<span class="cycle-end-stat-value">' + reussiteText + '</span></div>' +
+      '<div class="cycle-end-stat is-highlight"><span class="cycle-end-stat-label">1RM</span>' +
+      '<span class="cycle-end-stat-value">' + closed.one_rm_avant + ' → ' + closed.one_rm_apres + ' kg</span></div>';
+    body.appendChild(stats);
+
+    var sectionLabel = document.createElement('span');
+    sectionLabel.className = 'dash-section-eyebrow';
+    sectionLabel.textContent = 'PROCHAIN CYCLE, TIRÉ AU SORT';
+    body.appendChild(sectionLabel);
+
+    var card = document.createElement('div');
+    card.className = 'cycle-end-next-card';
+    body.appendChild(card);
+
+    function renderNextCard() {
+      var c = OvrykDB.getForceCycle(exerciseId);
+      card.innerHTML = '<div class="cycle-end-next-top">' +
+        '<span class="cycle-full-name">Cycle ' + c.prochain_cycle + '</span>' +
+        '<span class="cycle-end-next-length mono">' + cycleLength(c.prochain_cycle) + ' semaines</span></div>' +
+        '<div class="cycle-end-next-week1">' + escapeHTML(formatPendingCycleWeek1(c.prochain_cycle, closed.one_rm_apres)) + '</div>' +
+        '<div class="cycle-end-next-1rm mono">1RM ' + closed.one_rm_apres + ' kg</div>';
+    }
+    renderNextCard();
+
+    var actionsRow = document.createElement('div');
+    actionsRow.className = 'cycle-end-actions-row';
+
+    var redrawBtn = document.createElement('button');
+    redrawBtn.type = 'button';
+    redrawBtn.className = 'routine-action-btn';
+    redrawBtn.textContent = 'Relancer';
+    redrawBtn.addEventListener('click', function () {
+      OvrykDB.redrawPendingCycle(exerciseId);
+      renderNextCard();
+    });
+    actionsRow.appendChild(redrawBtn);
+
+    /* "Garder ce cycle" ne change rien à prochain_cycle : la carte montre
+       déjà le cycle tiré, "Lancer ce cycle" l'utilisera de toute façon.
+       Confirmation purement visuelle, interprétation à valider avec
+       l'utilisateur (pas détaillé dans le texte du lot). */
+    var keepCycleBtn = document.createElement('button');
+    keepCycleBtn.type = 'button';
+    keepCycleBtn.className = 'routine-action-btn';
+    keepCycleBtn.textContent = 'Garder ce cycle';
+    keepCycleBtn.addEventListener('click', function () {
+      card.classList.add('is-confirmed');
+      setTimeout(function () { card.classList.remove('is-confirmed'); }, 600);
+    });
+    actionsRow.appendChild(keepCycleBtn);
+
+    body.appendChild(actionsRow);
+
+    var chooseToggle = document.createElement('button');
+    chooseToggle.type = 'button';
+    chooseToggle.className = 'cycle-end-choose-toggle';
+    chooseToggle.textContent = 'Choisir moi même';
+    body.appendChild(chooseToggle);
+
+    var chooseList = document.createElement('div');
+    chooseList.className = 'exercise-list';
+    chooseList.hidden = true;
+    GENERIC_CYCLE_IDS.forEach(function (cycleId) {
+      var row = document.createElement('button');
+      row.type = 'button';
+      row.className = 'picker-row';
+      row.innerHTML = '<span class="picker-row-name">Cycle ' + cycleId + ' · ' + escapeHTML(CYCLE_NAMES[cycleId]) + '</span>' +
+        '<span class="picker-row-right"><span class="picker-row-meta mono">' + cycleLength(cycleId) + ' sem.</span></span>';
+      row.addEventListener('click', function () {
+        OvrykDB.setPendingCycle(exerciseId, cycleId);
+        renderNextCard();
+        chooseList.hidden = true;
+      });
+      chooseList.appendChild(row);
+    });
+    body.appendChild(chooseList);
+
+    chooseToggle.addEventListener('click', function () { chooseList.hidden = !chooseList.hidden; });
+
+    var note = document.createElement('p');
+    note.className = 'cycle-end-note';
+    note.textContent = 'Le tirage exclut le cycle qui vient de se terminer. Tes séances passées gardent leurs charges.';
+    body.appendChild(note);
+
+    var launchBtn = document.createElement('button');
+    launchBtn.type = 'button';
+    launchBtn.className = 'btn-primary cycle-end-launch-btn';
+    launchBtn.textContent = 'Lancer ce cycle';
+    launchBtn.addEventListener('click', function () {
+      OvrykDB.launchPendingCycle(exerciseId);
+      closeCycleEndPage();
+      renderCycleAlertBanner();
+    });
+    body.appendChild(launchBtn);
+
+    document.getElementById('cycle-end-page').hidden = false;
+  }
+
+  function closeCycleEndPage() {
+    document.getElementById('cycle-end-page').hidden = true;
+    scrollMainToTop();
+  }
+
+  document.getElementById('cycle-end-back-btn').addEventListener('click', closeCycleEndPage);
 
   function renderExerciseList() {
     var all = OvrykDB.getExercises();
@@ -6858,19 +7215,26 @@
       exercises: routine.exercises.map(function (rex) {
         var exercise = OvrykDB.getExerciseById(rex.exerciseId);
         var cycle = OvrykDB.getForceCycle(rex.exerciseId);
-        var inBaseMode = !cycle && isBeforeForceCycleStart(exercise);
+        /* lot 06 : un cycle en attente de validation (entre
+           closeCycleAndDrawNext et launchPendingCycle) a cycle_actif et
+           semaine_actuelle gelés sur l'ancien cycle — une nouvelle séance
+           ne doit pas rejouer cette semaine de test figée, elle bascule en
+           mode de base comme un mouvement pas encore démarré. */
+        var cyclePending = !!(cycle && cycle.en_attente_de_validation);
+        var activeCycle = cyclePending ? null : cycle;
+        var inBaseMode = !activeCycle && (cyclePending || isBeforeForceCycleStart(exercise));
         /* the routine was edited (sets/reps/weight/rest added, removed or
            changed) after the last session for it was logged — carrying that
            past session's sets forward would silently undo the edit, so drop
            the continuity and use the routine's current prescription instead */
         var routineEditedSinceLastSession = lastSession && routine.updatedAt &&
           new Date(routine.updatedAt) > new Date(lastSession.completedAt || lastSession.date);
-        var pastSex = (cycle || inBaseMode || routineEditedSinceLastSession) ? null : findExerciseInSession(lastSession, rex.exerciseId);
+        var pastSex = (activeCycle || inBaseMode || routineEditedSinceLastSession) ? null : findExerciseInSession(lastSession, rex.exerciseId);
 
         var sets, restSeconds;
-        if (cycle) {
-          sets = buildCycleSessionSets(cycle);
-          restSeconds = getCycleWeek(cycle).restSeconds || 90;
+        if (activeCycle) {
+          sets = buildCycleSessionSets(activeCycle);
+          restSeconds = getCycleWeek(activeCycle).restSeconds || 90;
         } else if (inBaseMode) {
           var basePrescription = getBaseModePrescription(exercise);
           sets = buildSessionSetsFromPrescription(basePrescription.sets);
@@ -7468,7 +7832,9 @@
     }
 
     var cycle = OvrykDB.getForceCycle(sex.exerciseId);
-    if (cycle && getCycleWeek(cycle).isTestWeek) {
+    if (cycle && cycle.en_attente_de_validation) {
+      frag.appendChild(buildCyclePendingNotice(sex.exerciseId));
+    } else if (cycle && getCycleWeek(cycle).isTestWeek) {
       frag.appendChild(buildCycleTestForm(sex.exerciseId, cycle));
     }
 
@@ -7915,9 +8281,17 @@
     return frag;
   }
 
+  /* texte générique, valable que le test soit inclus en dernière semaine
+     (cycles 1, 2, 6, 7, 12, A à E) ou séparé (cycles 3, 4, 5, 8 à 11) —
+     jamais de nombre de semaines écrit en dur ici (R1, CLAUDE.md). */
   function buildCycleTestForm(exerciseId, cycle) {
     var form = document.createElement('div');
     form.className = 'cycle-test-form';
+
+    var intro = document.createElement('p');
+    intro.className = 'cycle-test-intro';
+    intro.textContent = 'Teste ton 1RM : enregistre chaque tentative, puis valide le nouveau 1RM ou garde celui que tu as déjà.';
+    form.appendChild(intro);
 
     var label = document.createElement('label');
     label.className = 'form-label';
@@ -7945,17 +8319,57 @@
     var submitBtn = document.createElement('button');
     submitBtn.type = 'button';
     submitBtn.className = 'btn-primary';
-    submitBtn.textContent = 'Valider le nouveau 1RM';
+    submitBtn.textContent = 'Valider mon 1RM';
     submitBtn.addEventListener('click', function () {
       var v = parseFloat(input.value);
       if (isNaN(v) || v <= 0) return;
-      OvrykDB.submitNewOneRM(exerciseId, v);
-      cycleTestSubmittedIds[exerciseId] = true;
-      renderSeanceActiveView();
+      completeCycleTest(exerciseId, v);
     });
     form.appendChild(submitBtn);
 
+    var keepBtn = document.createElement('button');
+    keepBtn.type = 'button';
+    keepBtn.className = 'btn-back cycle-test-keep-btn';
+    keepBtn.textContent = 'Garder mon 1RM actuel';
+    keepBtn.disabled = cycle.one_rm_actuel == null;
+    keepBtn.addEventListener('click', function () {
+      completeCycleTest(exerciseId, cycle.one_rm_actuel);
+    });
+    form.appendChild(keepBtn);
+
     return form;
+  }
+
+  /* R3 : enregistre le 1RM, clôt le cycle (historique_cycles), tire le
+     prochain cycle en attente, puis ouvre l'écran "Cycle terminé" —
+     jamais de redémarrage immédiat (R3 : "il ne démarre qu'après
+     confirmation"). */
+  function completeCycleTest(exerciseId, newOneRM) {
+    OvrykDB.closeCycleAndDrawNext(exerciseId, newOneRM);
+    cycleTestSubmittedIds[exerciseId] = true;
+    openCycleEndPage(exerciseId);
+  }
+
+  /* affiché à la place du formulaire une fois le test soumis, tant que le
+     prochain cycle n'a pas été lancé — empêche toute resoumission (R3). */
+  function buildCyclePendingNotice(exerciseId) {
+    var wrap = document.createElement('div');
+    wrap.className = 'cycle-test-form cycle-pending-notice';
+
+    var text = document.createElement('p');
+    text.className = 'cycle-test-intro';
+    text.textContent = 'Test déjà validé : le prochain cycle attend d\'être lancé.';
+    wrap.appendChild(text);
+
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'btn-back';
+    btn.style.width = '100%';
+    btn.textContent = 'Voir le cycle terminé';
+    btn.addEventListener('click', function () { openCycleEndPage(exerciseId); });
+    wrap.appendChild(btn);
+
+    return wrap;
   }
 
   /* ---- plate calculator (per movement) ---- */
@@ -9709,9 +10123,22 @@
     var textEl = document.getElementById('cycle-alert-text');
     var cycles = OvrykDB.getForceCycles();
 
+    /* lot 06 : un cycle en attente garde semaine_actuelle gelée sur
+       l'ancienne dernière semaine — il ne doit plus jamais compter comme
+       "semaine de test atteinte" (le test est déjà soumis), d'où l'exclusion
+       explicite dans namesAtWeek. */
+    var pendingIds = Object.keys(cycles).filter(function (exerciseId) { return cycles[exerciseId].en_attente_de_validation; });
+    var namesPending = pendingIds.map(function (exerciseId) {
+      var exercise = OvrykDB.getExerciseById(exerciseId);
+      return exercise ? exercise.name : exerciseId;
+    });
+
     function namesAtWeek(week) {
       return Object.keys(cycles)
-        .filter(function (exerciseId) { var c = cycles[exerciseId]; return c.semaine_actuelle === cycleLength(c.cycle_actif) + week; })
+        .filter(function (exerciseId) {
+          var c = cycles[exerciseId];
+          return !c.en_attente_de_validation && c.semaine_actuelle === cycleLength(c.cycle_actif) + week;
+        })
         .map(function (exerciseId) {
           var exercise = OvrykDB.getExerciseById(exerciseId);
           return exercise ? exercise.name : exerciseId;
@@ -9721,12 +10148,19 @@
     var namesAtWeek6 = namesAtWeek(0);   /* dernière semaine du cycle = test */
     var namesAtWeek5 = namesAtWeek(-1);  /* avant-dernière semaine */
 
-    if (namesAtWeek6.length === 0 && namesAtWeek5.length === 0) {
+    if (namesPending.length === 0 && namesAtWeek6.length === 0 && namesAtWeek5.length === 0) {
       banner.hidden = true;
       return;
     }
 
     var html = '';
+    if (namesPending.length > 0) {
+      html += '<span class="cycle-alert-group">' +
+        '<span class="cycle-alert-title">Cycle terminé</span>' +
+        '<span class="cycle-alert-detail">' + escapeHTML(namesPending.join(', ')) +
+        " : le prochain cycle attend d'être lancé.</span>" +
+        '</span>';
+    }
     if (namesAtWeek6.length > 0) {
       html += '<span class="cycle-alert-group">' +
         '<span class="cycle-alert-title">Semaine de test atteinte</span>' +
@@ -9745,8 +10179,16 @@
     banner.hidden = false;
   }
 
+  /* point 6 du lot : mène au test (Séance) tant qu'aucun cycle n'attend sa
+     validation, puis à l'écran "Cycle terminé" dès qu'un cycle attend. */
   document.getElementById('cycle-alert-banner').addEventListener('click', function () {
-    setActiveView('seance');
+    var cycles = OvrykDB.getForceCycles();
+    var pendingId = Object.keys(cycles).find(function (exerciseId) { return cycles[exerciseId].en_attente_de_validation; });
+    if (pendingId) {
+      openCycleEndPage(pendingId);
+    } else {
+      setActiveView('seance');
+    }
   });
 
   document.getElementById('dash-hero-cta').addEventListener('click', function () {
