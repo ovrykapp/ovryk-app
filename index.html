@@ -4478,10 +4478,14 @@
   ============================================================ */
   var confirmModalState = { onConfirm: null, onCancel: null };
 
-  function showConfirmModal(message, onConfirm, onCancel) {
+  /* confirmLabel/cancelLabel optionnels : "Confirmer"/"Annuler" par défaut,
+     inchangé pour tous les appels existants qui ne les passent pas. */
+  function showConfirmModal(message, onConfirm, onCancel, confirmLabel, cancelLabel) {
     confirmModalState.onConfirm = onConfirm || null;
     confirmModalState.onCancel = onCancel || null;
     document.getElementById('confirm-modal-message').textContent = message;
+    document.getElementById('confirm-modal-confirm').textContent = confirmLabel || 'Confirmer';
+    document.getElementById('confirm-modal-cancel').textContent = cancelLabel || 'Annuler';
     document.getElementById('confirm-modal-overlay').hidden = false;
     document.getElementById('confirm-modal-confirm').focus();
   }
@@ -8288,17 +8292,20 @@
     startSession(buildEmptySession());
   });
 
-  document.getElementById('seance-cancel-btn').addEventListener('click', function () {
+  function cancelActiveSession() {
     if (!activeSession) return;
     showConfirmModal('Annuler cette séance ? Les données saisies seront perdues.', function () {
       OvrykDB.deleteSession(activeSession.id);
       activeSession = null;
       showSeanceStart();
     });
-  });
+  }
 
-  document.getElementById('seance-finish-btn').addEventListener('click', function () {
-    if (!activeSession) return;
+  /* seul endroit de tout le fichier qui marque une séance completed et
+     avance les cycles (vérifié par recherche) : un seul appelant manuel,
+     le bouton Terminer, aucune fin automatique ailleurs à protéger d'un
+     double déclenchement. Logique d'avancement des cycles inchangée. */
+  function finishActiveSession() {
     var now = new Date().toISOString();
     activeSession.completedAt = now;
     activeSession.durationSeconds = Math.round((Date.parse(now) - Date.parse(activeSession.startedAt)) / 1000);
@@ -8319,6 +8326,37 @@
 
     activeSession = null;
     showSeanceStart();
+  }
+
+  document.getElementById('seance-cancel-btn').addEventListener('click', cancelActiveSession);
+
+  document.getElementById('seance-finish-btn').addEventListener('click', function () {
+    if (!activeSession) return;
+
+    var total = 0, done = 0, touchesCycle = false;
+    activeSession.exercises.forEach(function (sex) {
+      total += sex.sets.length;
+      done += sex.sets.filter(function (s) { return s.done; }).length;
+      if (OvrykDB.getForceCycle(sex.exerciseId)) touchesCycle = true;
+    });
+
+    if (done === 0) {
+      /* rien de validé : terminer ferait quand même avancer un cycle pour
+         une séance vide — on redirige vers l'annulation existante plutôt
+         que de le permettre */
+      showConfirmModal(
+        'Aucune série n\'a été validée.',
+        cancelActiveSession,
+        null,
+        'Annuler la séance',
+        'Continuer la séance'
+      );
+      return;
+    }
+
+    var message = done + ' série' + (done > 1 ? 's' : '') + ' validée' + (done > 1 ? 's' : '') + ' sur ' + total + '.' +
+      (touchesCycle ? ' Terminer la séance fera avancer tes cycles.' : '');
+    showConfirmModal(message, finishActiveSession, null, 'Terminer', 'Continuer la séance');
   });
 
   document.getElementById('seance-notes-input').addEventListener('change', function (e) {
