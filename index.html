@@ -2928,6 +2928,12 @@
   /* the remembered last-used grip, pre-highlighted as the default —
      still just one tap away from being overridden by any other option */
   .grip-modal-options .btn-back.is-current { border-color: var(--rust); color: var(--rust); }
+  /* livraison E : même conteneur réutilisé pour le popup de choix de semaine
+     de test (jusqu'à 3 boutons empilés) — seul le bouton bleu "Faire le
+     test" a besoin de cette règle en plus, le bouton .btn-back est déjà
+     couvert ci-dessus. */
+  .grip-modal-options .btn-primary { width: 100%; justify-content: center; }
+  .cycle-test-choice-modal-note { color: var(--steel); font-size: 13px; margin: 0 0 4px; }
 
   /* ============================================================
      REST TIME PICKER — bottom-sheet scroll wheel for choosing a rest
@@ -3651,6 +3657,14 @@
       <p class="modal-message" id="grip-modal-message"></p>
       <div class="grip-modal-options" id="grip-modal-options"></div>
       <button type="button" class="btn-back" id="grip-modal-cancel">Annuler</button>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="cycle-test-choice-modal-overlay" hidden>
+    <div class="modal-box" role="alertdialog" aria-modal="true" aria-labelledby="cycle-test-choice-modal-message">
+      <p class="modal-message" id="cycle-test-choice-modal-message"></p>
+      <div class="grip-modal-options" id="cycle-test-choice-modal-options"></div>
+      <button type="button" class="btn-back" id="cycle-test-choice-modal-cancel">Annuler</button>
     </div>
   </div>
 
@@ -4414,6 +4428,14 @@
     return getCycleWeekAt(cycle, cycle.semaine_actuelle);
   }
 
+  /* livraison E : vrai seulement si le cycle est réellement sur sa semaine
+     de test et que ce test n'a pas encore été soumis (en_attente_de_validation
+     gèle cycle_actif/semaine_actuelle une fois le 1RM enregistré, lot 06) —
+     condition unique utilisée par le popup de choix avant une séance. */
+  function isCycleTestWeekPending(cycle) {
+    return !!cycle && !cycle.en_attente_de_validation && getCycleWeek(cycle).isTestWeek;
+  }
+
   /* affichage seulement (tag "Pic" du détail de cycle, lot 07) : le vrai
      réglage heavyThreshold et la coordination R7 (décalage, 2 cycles lourds
      max) sont lot 08, pas encore implémentés ici. */
@@ -4645,7 +4667,8 @@
         historique_cycles: [],
         prochain_cycle: null,
         en_attente_de_validation: false,
-        semaines_modifiees: {}
+        semaines_modifiees: {},
+        test_report_used: false
       };
       this.saveForceCycles(map);
       return map[exerciseId];
@@ -4759,6 +4782,29 @@
       /* lot 07 : filet si semaines_modifiees survivait encore (redondant
          avec closeCycleAndDrawNext, mais garanti ici aussi). */
       cycle.semaines_modifiees = {};
+      /* livraison E : le report appartient au cycle qui vient de se
+         terminer, jamais reporté sur le suivant (même logique que
+         semaines_modifiees juste au-dessus). */
+      cycle.test_report_used = false;
+      this.saveForceCycles(map);
+      return cycle;
+    },
+    /* livraison E : "Repousser le test d'une semaine" — recule d'une semaine
+       pour rejouer la dernière semaine d'entraînement avec la même
+       prescription (semaine normale, jamais une semaine de test ni une
+       semaine légère). advanceForceCycleWeek (appelé normalement à la fin de
+       la séance rejouée) ramène ensuite tout seul semaine_actuelle sur la
+       semaine de test, sans logique de retour dédiée. Un seul report par
+       cycle (R du lot) : test_report_used bloque tout second appel tant que
+       le cycle n'a pas été relancé (launchPendingCycle le remet à false). */
+    postponeCycleTest: function (exerciseId) {
+      var map = this.getForceCycles();
+      var cycle = map[exerciseId];
+      if (!cycle || cycle.en_attente_de_validation || cycle.test_report_used) return;
+      var total = cycleLength(cycle.cycle_actif);
+      if (cycle.semaine_actuelle !== total) return;
+      cycle.semaine_actuelle = total - 1;
+      cycle.test_report_used = true;
       this.saveForceCycles(map);
       return cycle;
     },
@@ -4863,6 +4909,9 @@
       /* lot 07 : idem, complète seulement, ne touche jamais aux pourcentages
          déjà modifiés d'un cycle en cours. */
       if (!c.semaines_modifiees) { c.semaines_modifiees = {}; cyclesChanged = true; }
+      /* livraison E : idem, défaut "pas encore utilisé" pour un cycle déjà en
+         cours — ne touche jamais semaine_actuelle ni les autres champs gelés. */
+      if (c.test_report_used == null) { c.test_report_used = false; cyclesChanged = true; }
     });
     if (cyclesChanged) OvrykDB.saveForceCycles(forceCycles);
 
@@ -5131,6 +5180,130 @@
         next();
       });
     }
+    next();
+  }
+
+  /* ============================================================
+     CYCLE TEST CHOICE MODAL — livraison E. Popup posé juste avant le
+     lancement d'une séance (ou l'ajout à la volée d'un mouvement) quand son
+     cycle est en semaine de test non encore faite : "Faire le test" (rien ne
+     change), "Repousser le test d'une semaine" (masqué si déjà utilisé sur ce
+     cycle) ou "Changer de cycle sans tester" (chemin "Garder mon 1RM actuel"
+     du lot 06, avec confirmation). Même overlay/options que le modal de
+     prise (grip-modal), même convention onSelect(choice) : choice vaut
+     'test', 'postpone', 'switch' ou null (fermé sans choisir).
+  ============================================================ */
+  var cycleTestChoiceModalState = { onSelect: null };
+
+  function showCycleTestChoiceModal(exerciseId, cycle, onSelect) {
+    cycleTestChoiceModalState.onSelect = onSelect;
+    var exercise = OvrykDB.getExerciseById(exerciseId);
+    document.getElementById('cycle-test-choice-modal-message').textContent =
+      (exercise ? exercise.name : 'Ce mouvement') + ' : la semaine de test est atteinte. Que veux-tu faire ?';
+
+    var optionsEl = document.getElementById('cycle-test-choice-modal-options');
+    optionsEl.innerHTML = '';
+
+    var testBtn = document.createElement('button');
+    testBtn.type = 'button';
+    testBtn.className = 'btn-primary is-blue';
+    testBtn.textContent = 'Faire le test';
+    testBtn.addEventListener('click', function () { closeCycleTestChoiceModal('test'); });
+    optionsEl.appendChild(testBtn);
+
+    if (cycle.test_report_used) {
+      var note = document.createElement('p');
+      note.className = 'cycle-test-choice-modal-note';
+      note.textContent = 'Test déjà repoussé 1 fois sur ce cycle.';
+      optionsEl.appendChild(note);
+    } else {
+      var postponeBtn = document.createElement('button');
+      postponeBtn.type = 'button';
+      postponeBtn.className = 'btn-back';
+      postponeBtn.textContent = 'Repousser le test d\'une semaine';
+      postponeBtn.addEventListener('click', function () { closeCycleTestChoiceModal('postpone'); });
+      optionsEl.appendChild(postponeBtn);
+    }
+
+    var switchBtn = document.createElement('button');
+    switchBtn.type = 'button';
+    switchBtn.className = 'btn-back';
+    switchBtn.textContent = 'Changer de cycle sans tester';
+    switchBtn.addEventListener('click', function () { closeCycleTestChoiceModal('switch'); });
+    optionsEl.appendChild(switchBtn);
+
+    document.getElementById('cycle-test-choice-modal-overlay').hidden = false;
+  }
+
+  function closeCycleTestChoiceModal(choice) {
+    var overlay = document.getElementById('cycle-test-choice-modal-overlay');
+    if (overlay.hidden) return;
+    overlay.hidden = true;
+    var onSelect = cycleTestChoiceModalState.onSelect;
+    cycleTestChoiceModalState.onSelect = null;
+    if (onSelect) onSelect(choice);
+  }
+
+  document.getElementById('cycle-test-choice-modal-cancel').addEventListener('click', function () { closeCycleTestChoiceModal(null); });
+  document.getElementById('cycle-test-choice-modal-overlay').addEventListener('click', function (e) {
+    if (e.target === this) closeCycleTestChoiceModal(null);
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && !document.getElementById('cycle-test-choice-modal-overlay').hidden) {
+      closeCycleTestChoiceModal(null);
+    }
+  });
+
+  /* traite une liste de mouvements en semaine de test, un popup à la fois.
+     Les reports ("postpone") ne sont jamais écrits immédiatement : ils
+     s'accumulent dans postponeList et ne sont appliqués qu'une fois TOUTE la
+     file résolue en 'test'/'postpone' (onAllResolved), pour ne jamais laisser
+     un demi-état si la file est interrompue en cours de route. "switch"
+     (changer de cycle) demande une confirmation puis, si confirmée, clôt ce
+     cycle immédiatement (indépendant du report des autres mouvements de la
+     file) et interrompt toute la file : aucun report en attente n'est écrit,
+     aucune séance ne démarre. Fermer un popup sans choisir interrompt de la
+     même façon, sans rien écrire du tout. */
+  function resolvePendingCycleTestChoices(exerciseIds, onAllResolved, onAborted) {
+    var pending = exerciseIds.slice();
+    var postponeList = [];
+
+    function next() {
+      if (pending.length === 0) {
+        postponeList.forEach(function (id) { OvrykDB.postponeCycleTest(id); });
+        onAllResolved();
+        return;
+      }
+      var exerciseId = pending.shift();
+      var cycle = OvrykDB.getForceCycle(exerciseId);
+      if (!cycle || !isCycleTestWeekPending(cycle)) { next(); return; }
+      ask(exerciseId, cycle);
+    }
+
+    function ask(exerciseId, cycle) {
+      showCycleTestChoiceModal(exerciseId, cycle, function (choice) {
+        if (choice === 'test') {
+          next();
+        } else if (choice === 'postpone') {
+          postponeList.push(exerciseId);
+          next();
+        } else if (choice === 'switch') {
+          showConfirmModal(
+            'Clôturer ce cycle sans test ? Ton 1RM actuel est conservé.',
+            function () {
+              ensureForceCyclesBackupToday();
+              cycleTestManualOneRM[exerciseId] = null;
+              completeCycleTest(exerciseId, cycle.one_rm_actuel);
+              onAborted();
+            },
+            function () { ask(exerciseId, cycle); }
+          );
+        } else {
+          onAborted();
+        }
+      });
+    }
+
     next();
   }
 
@@ -6449,8 +6622,7 @@
     startBtn.className = 'btn-add routine-row-start';
     startBtn.textContent = 'Démarrer';
     startBtn.addEventListener('click', function () {
-      startSession(buildSessionFromRoutine(routine));
-      setActiveView('seance');
+      launchRoutineSession(routine, function () { setActiveView('seance'); });
     });
     row.appendChild(startBtn);
 
@@ -6653,8 +6825,7 @@
       btn.textContent = 'Démarrer';
       btn.disabled = !!active;
       btn.addEventListener('click', function () {
-        startSession(buildSessionFromRoutine(routine));
-        setActiveView('seance');
+        launchRoutineSession(routine, function () { setActiveView('seance'); });
       });
     }
     card.appendChild(btn);
@@ -8115,7 +8286,7 @@
       main.className = 'routine-row-main';
       main.innerHTML = '<span class="routine-row-name">' + escapeHTML(routine.name || 'Sans titre') + '</span>' +
         '<span class="routine-row-count mono">' + routine.exercises.length + ' ex.</span>';
-      main.addEventListener('click', function () { startSession(buildSessionFromRoutine(routine)); });
+      main.addEventListener('click', function () { launchRoutineSession(routine, null); });
       wrap.appendChild(main);
 
       var last = getLastCompletedSessionForRoutine(routine.id);
@@ -8134,6 +8305,35 @@
     cycleTestSubmittedIds = {};
     OvrykDB.addSession(activeSession);
     showSeanceActive();
+  }
+
+  /* livraison E : point d'entrée unique pour lancer une séance à partir
+     d'une routine — pose le popup de choix (voir resolvePendingCycleTestChoices)
+     avant de construire la séance, pour chaque mouvement dont le cycle est en
+     semaine de test non encore faite. Exclut un mouvement déjà joué cette
+     semaine civile (sinon la prochaine séance serait de toute façon légère,
+     R12 : semaine_actuelle n'avance jamais sur une séance légère, donc
+     "Repousser" n'y aurait aucun retour possible). Sans mouvement concerné,
+     comportement strictement inchangé par rapport à avant ce lot. */
+  function launchRoutineSession(routine, afterStart) {
+    var now = new Date().toISOString();
+    var pendingIds = [];
+    routine.exercises.forEach(function (rex) {
+      if (pendingIds.indexOf(rex.exerciseId) !== -1) return;
+      var cycle = OvrykDB.getForceCycle(rex.exerciseId);
+      if (!cycle || !isCycleTestWeekPending(cycle)) return;
+      var prior = getPriorCompletedSessionsThisWeekForExercise(rex.exerciseId, now, null);
+      if (prior.length > 0) return;
+      pendingIds.push(rex.exerciseId);
+    });
+
+    function launch() {
+      startSession(buildSessionFromRoutine(routine));
+      if (afterStart) afterStart();
+    }
+
+    if (pendingIds.length === 0) { launch(); return; }
+    resolvePendingCycleTestChoices(pendingIds, launch, function () { /* interrompu : rien ne démarre */ });
   }
 
   /* ---- active session ---- */
@@ -9639,8 +9839,30 @@
     });
   }
 
+  /* livraison E : aiguillage avant l'ajout réel — si ce mouvement est en
+     semaine de test non encore faite et n'a pas déjà de séance terminée
+     cette semaine civile (même garde que launchRoutineSession, même raison
+     R12), pose le même popup de choix avant de continuer. Fermer sans
+     choisir ou "changer de cycle" annule l'ajout : le sélecteur reste ouvert,
+     rien n'est poussé dans activeSession.exercises. */
   function addExerciseToSession(exerciseId) {
     if (!activeSession) return;
+    var cycle = OvrykDB.getForceCycle(exerciseId);
+    if (cycle && isCycleTestWeekPending(cycle)) {
+      var prior = getPriorCompletedSessionsThisWeekForExercise(exerciseId, activeSession.date, activeSession.id);
+      if (prior.length === 0) {
+        resolvePendingCycleTestChoices(
+          [exerciseId],
+          function () { doAddExerciseToSession(exerciseId); },
+          function () { /* interrompu : l'exercice n'est pas ajouté */ }
+        );
+        return;
+      }
+    }
+    doAddExerciseToSession(exerciseId);
+  }
+
+  function doAddExerciseToSession(exerciseId) {
     var exercise = OvrykDB.getExerciseById(exerciseId);
     var cycle = OvrykDB.getForceCycle(exerciseId);
     /* R12, point D : un mouvement de cycle ajouté à la volée (hors routine)
@@ -10845,8 +11067,7 @@
     var ctaBtn = document.getElementById('dash-session-cta');
     ctaBtn.textContent = 'Commencer la séance';
     ctaBtn.onclick = function () {
-      startSession(buildSessionFromRoutine(routine));
-      setActiveView('seance');
+      launchRoutineSession(routine, function () { setActiveView('seance'); });
     };
 
     /* point 8 : pour lancer une autre routine que celle prévue aujourd'hui
