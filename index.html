@@ -1084,6 +1084,64 @@
   }
   .cycle-full-deactivate { margin: var(--space-4); width: calc(100% - 2 * var(--space-4)); }
 
+  /* lot 07 : tags "Test"/"Pic" (cycle-week-tag) et éditeur inline de
+     pourcentage par semaine (couleur cycles = bleu, CLAUDE.md règle 4) */
+  .cycle-week-tags { display: inline-flex; gap: 4px; margin-left: auto; }
+  .cycle-week-tag {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--blue);
+    background: var(--blue-fill);
+    border-radius: var(--radius-pill);
+    padding: 2px 8px;
+  }
+  .cycle-week-edit-toggle {
+    display: block;
+    margin-top: 10px;
+    background: none;
+    border: none;
+    padding: 0;
+    color: var(--blue);
+    font-size: 12px;
+    font-weight: 600;
+    text-decoration: underline;
+    cursor: pointer;
+  }
+  .cycle-week-editor {
+    margin-top: 10px;
+    padding: var(--space-3);
+    border-radius: var(--radius-card);
+    background: var(--surface);
+    border: 1px solid var(--border-card);
+  }
+  .cycle-week-editor-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 0;
+    border-bottom: 1px solid var(--divider);
+  }
+  .cycle-week-editor-row:last-of-type { border-bottom: none; }
+  .cycle-week-editor-label { flex: 1; color: var(--steel); font-size: 12px; }
+  .cycle-week-editor-input {
+    width: 54px;
+    background: none;
+    border: none;
+    border-bottom: 2px solid var(--border-outline);
+    padding: 0 0 2px;
+    text-align: right;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--ink);
+  }
+  .cycle-week-editor-input:focus { outline: none; }
+  .cycle-week-editor-unit { color: var(--steel); font-size: 12px; }
+  .cycle-week-editor-actions { display: flex; gap: 8px; margin-top: 10px; }
+  .cycle-week-editor-actions .routine-action-btn,
+  .cycle-week-editor-actions .btn-primary { flex: 1; }
+
   /* ============================================================
      DASHBOARD — home (hero / last session / recent progress)
   ============================================================ */
@@ -4329,9 +4387,33 @@
     return weeks ? weeks.length : 6;
   }
 
-  function getCycleWeek(cycle) {
-    return FORCE_CYCLES[cycle.cycle_actif][cycle.semaine_actuelle - 1];
+  /* lot 07, point 6 : cycle.semaines_modifiees[numéroSemaine] (tableau de
+     séries, mêmes reps que le gabarit, pourcentage modifié) prime sur
+     FORCE_CYCLES quand il existe, sans jamais toucher au gabarit lui-même.
+     Toute la chaîne (badge, séance, détail) passe par getCycleWeek/
+     getCycleWeekAt, donc l'override se propage automatiquement partout. */
+  function getCycleWeekAt(cycle, weekNumber) {
+    var template = FORCE_CYCLES[cycle.cycle_actif][weekNumber - 1];
+    var override = cycle.semaines_modifiees && cycle.semaines_modifiees[weekNumber];
+    if (!override) return template;
+    return {
+      week: template.week,
+      phase: template.phase,
+      sets: override,
+      restSeconds: template.restSeconds,
+      timed: template.timed,
+      isTestWeek: template.isTestWeek
+    };
   }
+
+  function getCycleWeek(cycle) {
+    return getCycleWeekAt(cycle, cycle.semaine_actuelle);
+  }
+
+  /* affichage seulement (tag "Pic" du détail de cycle, lot 07) : le vrai
+     réglage heavyThreshold et la coordination R7 (décalage, 2 cycles lourds
+     max) sont lot 08, pas encore implémentés ici. */
+  var PEAK_TAG_THRESHOLD = 85;
 
   /* lot 07 : les 17 cycles entrent dans le tirage (12 génériques + A à E,
      affichés Cycle 13 à 17 — voir displayCycleNumber). Les identifiants
@@ -4552,10 +4634,32 @@
         historique_1rm: [{ date: now, valeur: startingOneRM }],
         historique_cycles: [],
         prochain_cycle: null,
-        en_attente_de_validation: false
+        en_attente_de_validation: false,
+        semaines_modifiees: {}
       };
       this.saveForceCycles(map);
       return map[exerciseId];
+    },
+    /* lot 07, point 6 : pourcentage modifié d'une semaine. weekNumber doit
+       être la semaine en cours ou une semaine suivante, jamais une semaine
+       passée ni la semaine de test — ces garde-fous sont vérifiés par
+       l'appelant (openCycleDetailPage) avant d'appeler cette méthode. */
+    updateForceCycleWeekOverride: function (exerciseId, weekNumber, sets) {
+      var map = this.getForceCycles();
+      var cycle = map[exerciseId];
+      if (!cycle) return;
+      cycle.semaines_modifiees = cycle.semaines_modifiees || {};
+      cycle.semaines_modifiees[weekNumber] = sets;
+      this.saveForceCycles(map);
+      return cycle;
+    },
+    resetForceCycleWeekOverride: function (exerciseId, weekNumber) {
+      var map = this.getForceCycles();
+      var cycle = map[exerciseId];
+      if (!cycle || !cycle.semaines_modifiees) return;
+      delete cycle.semaines_modifiees[weekNumber];
+      this.saveForceCycles(map);
+      return cycle;
     },
     deactivateForceCycle: function (exerciseId) {
       var map = this.getForceCycles();
@@ -4605,6 +4709,9 @@
       cycle.historique_1rm.push({ date: now, valeur: newOneRM });
       cycle.prochain_cycle = tirerProchainCycle(cycle.cycle_actif);
       cycle.en_attente_de_validation = true;
+      /* lot 07 : les pourcentages modifiés appartiennent au cycle qui se
+         termine, jamais reportés sur le suivant. */
+      cycle.semaines_modifiees = {};
       this.saveForceCycles(map);
       return cycle;
     },
@@ -4639,6 +4746,9 @@
       cycle.semaine_actuelle = 1;
       cycle.prochain_cycle = null;
       cycle.en_attente_de_validation = false;
+      /* lot 07 : filet si semaines_modifiees survivait encore (redondant
+         avec closeCycleAndDrawNext, mais garanti ici aussi). */
+      cycle.semaines_modifiees = {};
       this.saveForceCycles(map);
       return cycle;
     },
@@ -4739,6 +4849,9 @@
       if (!Array.isArray(c.historique_cycles)) { c.historique_cycles = []; cyclesChanged = true; }
       if (c.prochain_cycle === undefined) { c.prochain_cycle = null; cyclesChanged = true; }
       if (c.en_attente_de_validation == null) { c.en_attente_de_validation = false; cyclesChanged = true; }
+      /* lot 07 : idem, complète seulement, ne touche jamais aux pourcentages
+         déjà modifiés d'un cycle en cours. */
+      if (!c.semaines_modifiees) { c.semaines_modifiees = {}; cyclesChanged = true; }
     });
     if (cyclesChanged) OvrykDB.saveForceCycles(forceCycles);
 
@@ -5501,6 +5614,76 @@
     return badge;
   }
 
+  /* lot 07, point 6 : numéro de la semaine dont l'éditeur de pourcentage est
+     ouvert dans le détail de cycle courant (une seule à la fois), remis à
+     null à chaque (ré)ouverture de la page. */
+  var cycleDetailEditingWeek = null;
+
+  function buildCycleWeekEditor(exerciseId, cycle, weekNum, week) {
+    var editor = document.createElement('div');
+    editor.className = 'cycle-week-editor';
+
+    var inputs = week.sets.map(function (s) {
+      var row = document.createElement('div');
+      row.className = 'cycle-week-editor-row';
+      var label = document.createElement('span');
+      label.className = 'cycle-week-editor-label mono';
+      label.textContent = s.reps + ' reps';
+      row.appendChild(label);
+      var input = document.createElement('input');
+      input.type = 'number';
+      input.min = '30';
+      input.max = '105';
+      input.step = '1';
+      input.className = 'cycle-week-editor-input mono';
+      input.value = s.percent;
+      row.appendChild(input);
+      var unit = document.createElement('span');
+      unit.className = 'cycle-week-editor-unit mono';
+      unit.textContent = '%';
+      row.appendChild(unit);
+      editor.appendChild(row);
+      return input;
+    });
+
+    var actionsRow = document.createElement('div');
+    actionsRow.className = 'cycle-week-editor-actions';
+
+    var hasOverride = !!(cycle.semaines_modifiees && cycle.semaines_modifiees[weekNum]);
+    if (hasOverride) {
+      var resetBtn = document.createElement('button');
+      resetBtn.type = 'button';
+      resetBtn.className = 'routine-action-btn';
+      resetBtn.textContent = 'Réinitialiser';
+      resetBtn.addEventListener('click', function () {
+        OvrykDB.resetForceCycleWeekOverride(exerciseId, weekNum);
+        cycleDetailEditingWeek = null;
+        openCycleDetailPage(exerciseId);
+      });
+      actionsRow.appendChild(resetBtn);
+    }
+
+    var saveBtn = document.createElement('button');
+    saveBtn.type = 'button';
+    saveBtn.className = 'btn-primary';
+    saveBtn.textContent = 'Enregistrer';
+    saveBtn.addEventListener('click', function () {
+      var newSets = week.sets.map(function (s, idx) {
+        var raw = parseFloat(inputs[idx].value);
+        if (isNaN(raw)) raw = s.percent;
+        var clamped = Math.min(105, Math.max(30, raw));
+        return { reps: s.reps, percent: clamped };
+      });
+      OvrykDB.updateForceCycleWeekOverride(exerciseId, weekNum, newSets);
+      cycleDetailEditingWeek = null;
+      openCycleDetailPage(exerciseId);
+    });
+    actionsRow.appendChild(saveBtn);
+
+    editor.appendChild(actionsRow);
+    return editor;
+  }
+
   function openCycleDetailPage(exerciseId) {
     var exercise = OvrykDB.getExerciseById(exerciseId);
     var cycle = OvrykDB.getForceCycle(exerciseId);
@@ -5516,20 +5699,30 @@
       '<div class="cycle-full-1rm mono">1RM actuel · ' + (cycle.one_rm_actuel != null ? cycle.one_rm_actuel + 'kg' : 'non défini') + '</div>';
     body.appendChild(intro);
 
-    var weeks = FORCE_CYCLES[cycle.cycle_actif];
+    var weeksTemplate = FORCE_CYCLES[cycle.cycle_actif];
     var hideKg = cycle.one_rm_actuel == null;
-    weeks.forEach(function (week, idx) {
+    weeksTemplate.forEach(function (templateWeek, idx) {
       var weekNum = idx + 1;
+      var week = getCycleWeekAt(cycle, weekNum);
       var isCurrent = weekNum === cycle.semaine_actuelle;
+      /* R7 : tag "Pic" purement visuel ici (PEAK_TAG_THRESHOLD) — le seuil
+         réglable et la coordination entre mouvements restent lot 08. */
+      var weekMaxPercent = Math.max.apply(null, week.sets.map(function (s) { return s.percent; }));
+      var isPeak = !week.isTestWeek && weekMaxPercent >= PEAK_TAG_THRESHOLD;
+      var isEditable = weekNum >= cycle.semaine_actuelle && !week.isTestWeek;
 
       var block = document.createElement('div');
       block.className = 'cycle-full-week' + (isCurrent ? ' is-current' : '');
 
       var weekLine = document.createElement('div');
       weekLine.className = 'cycle-week-line';
-      weekLine.innerHTML = '<span class="cycle-week-num mono">Semaine ' + weekNum + ' / ' + weeks.length + '</span>' +
+      weekLine.innerHTML = '<span class="cycle-week-num mono">Semaine ' + weekNum + ' / ' + weeksTemplate.length + '</span>' +
         '<span class="cycle-phase">' + escapeHTML(week.phase) + '</span>' +
-        (isCurrent ? '<span class="cycle-full-current-tag">Actuelle</span>' : '');
+        '<span class="cycle-week-tags">' +
+        (week.isTestWeek ? '<span class="cycle-week-tag">Test</span>' : '') +
+        (isPeak ? '<span class="cycle-week-tag">Pic</span>' : '') +
+        (isCurrent ? '<span class="cycle-full-current-tag">Actuelle</span>' : '') +
+        '</span>';
       block.appendChild(weekLine);
 
       var restLine = document.createElement('div');
@@ -5549,6 +5742,22 @@
         setsWrap.appendChild(buildStackBarRow(setLabel, text, kg, hideKg, maxPercent, s.percent, isLast));
       });
       block.appendChild(setsWrap);
+
+      if (isEditable) {
+        if (cycleDetailEditingWeek === weekNum) {
+          block.appendChild(buildCycleWeekEditor(exerciseId, cycle, weekNum, week));
+        } else {
+          var editToggle = document.createElement('button');
+          editToggle.type = 'button';
+          editToggle.className = 'cycle-week-edit-toggle';
+          editToggle.textContent = 'Modifier';
+          editToggle.addEventListener('click', function () {
+            cycleDetailEditingWeek = weekNum;
+            openCycleDetailPage(exerciseId);
+          });
+          block.appendChild(editToggle);
+        }
+      }
 
       body.appendChild(block);
     });
@@ -5570,6 +5779,7 @@
   }
 
   function closeCycleDetailPage() {
+    cycleDetailEditingWeek = null;
     document.getElementById('cycle-detail-page').hidden = true;
     scrollMainToTop();
   }
