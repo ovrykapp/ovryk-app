@@ -3759,7 +3759,11 @@
     /* R12 (lot 07, point D) : baisse en points de pourcentage appliquée à la
        deuxième séance (ou plus) d'un mouvement de cycle dans la même semaine
        civile. */
-    j2OffsetPoints: 10
+    j2OffsetPoints: 10,
+    /* R7 (lot 08) : seuil à partir duquel une semaine est lourde (isHeavyWeek),
+       et nombre maximal de cycles lourds tolérés la même semaine. */
+    heavyThreshold: 85,
+    maxHeavyCyclesPerWeek: 2
   };
 
   function readJSON(key, fallback) {
@@ -4436,11 +4440,6 @@
     return !!cycle && !cycle.en_attente_de_validation && getCycleWeek(cycle).isTestWeek;
   }
 
-  /* affichage seulement (tag "Pic" du détail de cycle, lot 07) : le vrai
-     réglage heavyThreshold et la coordination R7 (décalage, 2 cycles lourds
-     max) sont lot 08, pas encore implémentés ici. */
-  var PEAK_TAG_THRESHOLD = 85;
-
   /* lot 07 : les 17 cycles entrent dans le tirage (12 génériques + A à E,
      affichés Cycle 13 à 17 — voir displayCycleNumber). Les identifiants
      internes 'A' à 'E' ne changent jamais, seul le tirage s'étend. */
@@ -4668,7 +4667,11 @@
         prochain_cycle: null,
         en_attente_de_validation: false,
         semaines_modifiees: {},
-        test_report_used: false
+        test_report_used: false,
+        /* R7 (lot 08) : nombre de semaines avant le vrai départ, calculé par
+           la coordination (coordinateAndApplyOffsets). 0 tant que rien ne l'a
+           encore coordonné ou qu'aucun décalage n'était nécessaire. */
+        decalage_semaines: 0
       };
       this.saveForceCycles(map);
       return map[exerciseId];
@@ -4786,6 +4789,10 @@
          terminer, jamais reporté sur le suivant (même logique que
          semaines_modifiees juste au-dessus). */
       cycle.test_report_used = false;
+      /* lot 08 : décalage par défaut, remplacé juste après par
+         coordinateAndApplyOffsets (appelé par l'appelant de launchPendingCycle) —
+         jamais celui de l'ancien cycle. */
+      cycle.decalage_semaines = 0;
       this.saveForceCycles(map);
       return cycle;
     },
@@ -4886,6 +4893,8 @@
     if (settings.defaultProgressionStep == null) { settings.defaultProgressionStep = 2.5; settingsChanged = true; }
     if (!settings.defaultRepRange) { settings.defaultRepRange = { min: 8, max: 10 }; settingsChanged = true; }
     if (settings.j2OffsetPoints == null) { settings.j2OffsetPoints = 10; settingsChanged = true; }
+    if (settings.heavyThreshold == null) { settings.heavyThreshold = 85; settingsChanged = true; }
+    if (settings.maxHeavyCyclesPerWeek == null) { settings.maxHeavyCyclesPerWeek = 2; settingsChanged = true; }
     if (settingsChanged) OvrykDB.saveSettings(settings);
 
     var exercises = OvrykDB.getExercises();
@@ -4912,6 +4921,9 @@
       /* livraison E : idem, défaut "pas encore utilisé" pour un cycle déjà en
          cours — ne touche jamais semaine_actuelle ni les autres champs gelés. */
       if (c.test_report_used == null) { c.test_report_used = false; cyclesChanged = true; }
+      /* lot 08 : idem, défaut "pas de décalage connu" — un cycle déjà actif
+         avant ce lot n'a jamais été gelé, 0 est donc toujours correct ici. */
+      if (c.decalage_semaines == null) { c.decalage_semaines = 0; cyclesChanged = true; }
     });
     if (cyclesChanged) OvrykDB.saveForceCycles(forceCycles);
 
@@ -5736,6 +5748,126 @@
     return Math.max(1, Math.ceil(diffMs / (7 * 24 * 3600 * 1000)));
   }
 
+  /* ============================================================
+     R7 (lot 08) — coordination des cycles : décaler le départ pour ne
+     jamais dépasser settings.maxHeavyCyclesPerWeek cycles lourds la même
+     semaine. Fonctions pures (aucune lecture/écriture de forceCycles) —
+     branchées à l'activation et au lancement par coordinateAndApplyOffsets
+     (livraison 2), affichées par l'écran Coordination (livraison 3).
+  ============================================================ */
+
+  /* une semaine est lourde si c'est la semaine de test, ou si son
+     pourcentage maximal atteint le seuil réglable (remplace
+     PEAK_TAG_THRESHOLD du lot 07, seuil fixe à 85). */
+  function isHeavyWeek(week) {
+    if (!week) return false;
+    if (week.isTestWeek) return true;
+    var settings = OvrykDB.getSettings();
+    var threshold = settings.heavyThreshold != null ? settings.heavyThreshold : 85;
+    var maxPercent = Math.max.apply(null, week.sets.map(function (s) { return s.percent; }));
+    return maxPercent >= threshold;
+  }
+
+  /* semaines futures d'un cycle pas encore démarré (ou d'un décalage
+     candidat à l'essai) : offsetWeeks semaines d'attente puis ses
+     cycleLength semaines, numérotées en semaines absolues (1 = la semaine
+     où le décalage se termine, donc offsetWeeks = 0 veut dire "démarre
+     cette semaine-ci"). */
+  function projectCycleWeeksAtOffset(cycle, offsetWeeks) {
+    var total = cycleLength(cycle.cycle_actif);
+    var result = [];
+    for (var w = 1; w <= total; w++) {
+      result.push({ absoluteWeek: offsetWeeks + w, week: getCycleWeekAt(cycle, w) });
+    }
+    return result;
+  }
+
+  /* semaines futures d'un cycle déjà en cours (jamais gelé) — approximation
+     volontaire : semaine_actuelle avance par séance jouée, pas par semaine
+     civile, donc sa date réelle de passage à la semaine suivante n'est pas
+     connue. On la traite comme si elle tombait sur la semaine absolue 1
+     (maintenant) et on projette le reste du cycle à partir de là. Assez bon
+     pour éviter qu'un NOUVEAU cycle ne tombe lourd la même semaine que les
+     cycles déjà en cours, jamais un calendrier figé (voir aussi le bandeau
+     de l'écran Coordination, livraison 3, qui documente cette approximation
+     pour l'utilisateur). */
+  function projectRunningCycleWeeks(cycle) {
+    var total = cycleLength(cycle.cycle_actif);
+    var result = [];
+    for (var w = cycle.semaine_actuelle; w <= total; w++) {
+      result.push({ absoluteWeek: (w - cycle.semaine_actuelle) + 1, week: getCycleWeekAt(cycle, w) });
+    }
+    return result;
+  }
+
+  /* choisit la bonne projection : un mouvement gelé (isBeforeForceCycleStart)
+     se projette depuis sa date de départ, un mouvement déjà en cours depuis
+     sa semaine_actuelle (projectRunningCycleWeeks ci-dessus). */
+  function projectCycleWeeksForCoordination(exercise, cycle) {
+    if (isBeforeForceCycleStart(exercise)) {
+      var offsetWeeks = getWeeksUntilForceCycleStart(exercise);
+      return projectCycleWeeksAtOffset(cycle, offsetWeeks);
+    }
+    return projectRunningCycleWeeks(cycle);
+  }
+
+  /* nombre de cycles lourds par semaine absolue (1..totalWeeks), toutes
+     listes de semaines projetées confondues (les trois fonctions
+     ci-dessus) — une entrée hors fenêtre est simplement ignorée. */
+  function computeHeavyCounts(projectedWeekLists, totalWeeks) {
+    var counts = [];
+    for (var i = 0; i < totalWeeks; i++) counts.push(0);
+    projectedWeekLists.forEach(function (list) {
+      list.forEach(function (entry) {
+        if (entry.absoluteWeek >= 1 && entry.absoluteWeek <= totalWeeks && isHeavyWeek(entry.week)) {
+          counts[entry.absoluteWeek - 1]++;
+        }
+      });
+    });
+    return counts;
+  }
+
+  /* pour chaque nouveau cycle, dans l'ordre donné (newCycles), le plus
+     petit décalage (0 à 8 semaines) qui garde tous les comptes à
+     maxHeavyCyclesPerWeek au plus, compte tenu des cycles fixes (déjà
+     actifs ou déjà gelés par un décalage précédent — jamais repositionnés
+     ici) et des nouveaux déjà placés avant lui dans ce même appel. Sans
+     solution dans 0..8 : au lieu d'imposer 0, choisit le décalage qui
+     minimise le pic de cycles lourds simultanés sur la fenêtre (à égalité,
+     le plus petit), et le signale dans warnings — jamais bloquant. */
+  function suggestStartOffsets(newCycles, fixedCycles) {
+    var settings = OvrykDB.getSettings();
+    var maxHeavy = settings.maxHeavyCyclesPerWeek != null ? settings.maxHeavyCyclesPerWeek : 2;
+    var MAX_OFFSET = 8;
+    var SOLVER_WEEKS = MAX_OFFSET + 8;
+
+    var assigned = fixedCycles.map(function (f) {
+      return projectCycleWeeksForCoordination(f.exercise, f.cycle);
+    });
+    var offsets = {};
+    var warnings = [];
+
+    newCycles.forEach(function (entry) {
+      var chosen = null;
+      var bestFallback = null;
+      for (var candidate = 0; candidate <= MAX_OFFSET; candidate++) {
+        var candidateProjection = projectCycleWeeksAtOffset(entry.cycle, candidate);
+        var counts = computeHeavyCounts(assigned.concat([candidateProjection]), SOLVER_WEEKS);
+        var peak = Math.max.apply(null, counts);
+        if (peak <= maxHeavy) { chosen = candidate; break; }
+        if (!bestFallback || peak < bestFallback.peak) bestFallback = { offset: candidate, peak: peak };
+      }
+      if (chosen === null) {
+        chosen = bestFallback.offset;
+        warnings.push(entry.exerciseId);
+      }
+      offsets[entry.exerciseId] = chosen;
+      assigned.push(projectCycleWeeksAtOffset(entry.cycle, chosen));
+    });
+
+    return { offsets: offsets, warnings: warnings };
+  }
+
   /* Single entry point for auto-starting a force cycle: a Lifting exercise
      with a 1RM set, used in a routine, not already cycling, and past its
      own scheduled start date if one was set (forceCycleStartDate — see
@@ -5889,10 +6021,10 @@
       var weekNum = idx + 1;
       var week = getCycleWeekAt(cycle, weekNum);
       var isCurrent = weekNum === cycle.semaine_actuelle;
-      /* R7 : tag "Pic" purement visuel ici (PEAK_TAG_THRESHOLD) — le seuil
-         réglable et la coordination entre mouvements restent lot 08. */
-      var weekMaxPercent = Math.max.apply(null, week.sets.map(function (s) { return s.percent; }));
-      var isPeak = !week.isTestWeek && weekMaxPercent >= PEAK_TAG_THRESHOLD;
+      /* R7 (lot 08) : tag "Pic" purement visuel ici — la coordination entre
+         mouvements (décalage, 2 cycles lourds max) est sur l'écran
+         Coordination (livraison 3), pas ici. */
+      var isPeak = isHeavyWeek(week) && !week.isTestWeek;
       var isEditable = weekNum >= cycle.semaine_actuelle && !week.isTestWeek;
 
       var block = document.createElement('div');
