@@ -30,6 +30,10 @@ Taille : S = moins d'une heure de travail assisté, M = une demi journée, L = u
 4. Lots 09 à 13 : la muscu libre, les types, l'historique et les alertes.
 5. Lots 14 à 16 : réglages, import, sauvegarde en ligne.
 
+## Livraisons hors plan
+
+* Livraison E (après le lot 07, hors périmètre initial) : popup de choix en semaine de test non encore faite (Faire le test, Repousser le test d'une semaine, Changer de cycle sans tester). Fait.
+
 ## Points de livraison utiles
 
 * Après le lot 03 : l'application a l'allure de la maquette.
