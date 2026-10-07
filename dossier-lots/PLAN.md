@@ -12,7 +12,7 @@ Taille : S = moins d'une heure de travail assisté, M = une demi journée, L = u
 | 05 | Séance d'haltérophilie : réussi ou raté | 3, 10, 11 | fait | 04 |
 | 06 | Test 1RM séparé et fin de cycle | 26, 27 | fait | 05 |
 | 07 | Activation et tirage des cycles (inclut l'affichage Cycle 13-17 et verifier-cycles.js étendu à 17) | 24, 29, 25, 22 | fait | 06 |
-| 08 | Coordination des cycles | 30 | M | 07 |
+| 08 | Coordination des cycles | 30 | fait | 07 |
 | 09 | Muscu libre : éditeur de routine | 20, 21, 23, 7, 9 | M | 04 |
 | 10 | Types d'exercice et fiche exercice | 12, 6 | M | 09 |
 | 11 | Séparateur de bloc | 13 | S | 05, 09 |
