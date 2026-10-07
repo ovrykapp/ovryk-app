@@ -4435,9 +4435,13 @@
   /* livraison E : vrai seulement si le cycle est réellement sur sa semaine
      de test et que ce test n'a pas encore été soumis (en_attente_de_validation
      gèle cycle_actif/semaine_actuelle une fois le 1RM enregistré, lot 06) —
-     condition unique utilisée par le popup de choix avant une séance. */
-  function isCycleTestWeekPending(cycle) {
-    return !!cycle && !cycle.en_attente_de_validation && getCycleWeek(cycle).isTestWeek;
+     condition unique utilisée par le popup de choix avant une séance.
+     lot 08 : faux aussi tant que le mouvement est gelé avant son départ
+     coordonné (isBeforeForceCycleStart) — déjà garanti en pratique car
+     semaine_actuelle reste à 1 pendant le gel (jamais une semaine de test),
+     mais vérifié ici explicitement plutôt que de dépendre de cet invariant. */
+  function isCycleTestWeekPending(cycle, exercise) {
+    return !!cycle && !cycle.en_attente_de_validation && !isBeforeForceCycleStart(exercise) && getCycleWeek(cycle).isTestWeek;
   }
 
   /* lot 07 : les 17 cycles entrent dans le tirage (12 génériques + A à E,
@@ -4707,8 +4711,13 @@
       var cycle = map[exerciseId];
       /* un cycle en attente de validation (lot 06) reste gelé jusqu'au
          lancement du prochain cycle — protège tout appelant, présent ou
-         futur, pas seulement finishActiveSession. */
+         futur, pas seulement finishActiveSession.
+         lot 08 : même gel tant que isBeforeForceCycleStart est vrai — les
+         séances jouées pendant l'attente sont en mode de base
+         (buildSessionFromRoutine), semaine_actuelle ne doit jamais bouger
+         en arrière-plan pendant ce temps. */
       if (!cycle || cycle.en_attente_de_validation) return;
+      if (isBeforeForceCycleStart(this.getExerciseById(exerciseId))) return;
       if (cycle.semaine_actuelle < cycleLength(cycle.cycle_actif)) {
         cycle.semaine_actuelle += 1;
         this.saveForceCycles(map);
@@ -4727,6 +4736,18 @@
       var debut = (cycle.historique_1rm && cycle.historique_1rm.length)
         ? cycle.historique_1rm[cycle.historique_1rm.length - 1].date
         : null;
+      /* lot 08 : un cycle gelé (forceCycleStartDate future au moment de sa
+         création) ne démarre vraiment qu'à cette date — les séances en mode
+         de base jouées avant ne doivent jamais compter dans ses stats.
+         max() avec la date de création : pour un décalage de 0, le lundi de
+         la semaine peut tomber avant le moment réel de création, jamais
+         utilisé pour ne pas inclure des séances antérieures à l'activation
+         elle-même. */
+      var exerciseForStats = this.getExerciseById(exerciseId);
+      if (debut && exerciseForStats && exerciseForStats.forceCycleStartDate) {
+        var effectiveStart = new Date(exerciseForStats.forceCycleStartDate + 'T00:00:00');
+        if (effectiveStart.getTime() > new Date(debut).getTime()) debut = effectiveStart.toISOString();
+      }
       var stats = computeCycleStats(exerciseId, debut, now);
 
       cycle.historique_cycles = cycle.historique_cycles || [];
@@ -4813,6 +4834,27 @@
       cycle.semaine_actuelle = total - 1;
       cycle.test_report_used = true;
       this.saveForceCycles(map);
+      return cycle;
+    },
+    /* R7 (lot 08) : décalage de départ calculé par la coordination
+       (coordinateAndApplyOffsets) ou ajusté à la main (écran Coordination,
+       livraison 3). Écrit toujours les deux champs explicitement, y compris
+       pour weeks = 0 (lundi de cette semaine civile, jamais dans le futur) —
+       pour qu'une ancienne forceCycleStartDate future ne gèle jamais le
+       cycle suivant par accident (correction demandée avant la livraison 2).
+       weeks est borné 0-8, même limite que la recherche de
+       suggestStartOffsets. */
+    setCycleStartOffset: function (exerciseId, weeks) {
+      var map = this.getForceCycles();
+      var cycle = map[exerciseId];
+      if (!cycle) return;
+      var clamped = Math.max(0, Math.min(8, weeks));
+      cycle.decalage_semaines = clamped;
+      var monday = startOfWeek(new Date());
+      monday.setDate(monday.getDate() + clamped * 7);
+      var dateStr = monday.getFullYear() + '-' + pad2(monday.getMonth() + 1) + '-' + pad2(monday.getDate());
+      this.saveForceCycles(map);
+      this.updateExerciseCycleStartDate(exerciseId, dateStr);
       return cycle;
     },
 
@@ -5288,7 +5330,7 @@
       }
       var exerciseId = pending.shift();
       var cycle = OvrykDB.getForceCycle(exerciseId);
-      if (!cycle || !isCycleTestWeekPending(cycle)) { next(); return; }
+      if (!cycle || !isCycleTestWeekPending(cycle, OvrykDB.getExerciseById(exerciseId))) { next(); return; }
       ask(exerciseId, cycle);
     }
 
@@ -5868,6 +5910,50 @@
     return { offsets: offsets, warnings: warnings };
   }
 
+  /* point d'entrée branché sur la validation du lot 07 (handleValidateCyclesDrawn)
+     et le lancement du lot 06 (bouton "Lancer ce cycle") : coordonne les
+     cycles dont l'exerciseId figure dans exerciseIdsOrdonnes (dans cet
+     ordre), contre tous les autres cycles déjà actifs (hors en attente de
+     validation, qui n'occupent aucune semaine tant qu'ils ne sont pas
+     relancés), puis écrit le résultat via setCycleStartOffset. Renvoie la
+     liste des exerciseId pour lesquels aucune solution n'a été trouvée
+     (avertissement non bloquant à afficher par l'appelant). */
+  function coordinateAndApplyOffsets(exerciseIdsOrdonnes) {
+    var allCycles = OvrykDB.getForceCycles();
+    var fixedCycles = Object.keys(allCycles)
+      .filter(function (id) { return exerciseIdsOrdonnes.indexOf(id) === -1 && !allCycles[id].en_attente_de_validation; })
+      .map(function (id) { return { exerciseId: id, exercise: OvrykDB.getExerciseById(id), cycle: allCycles[id] }; });
+    var newCycles = exerciseIdsOrdonnes
+      .map(function (id) { return { exerciseId: id, cycle: allCycles[id] }; })
+      .filter(function (entry) { return !!entry.cycle; });
+
+    var result = suggestStartOffsets(newCycles, fixedCycles);
+    newCycles.forEach(function (entry) {
+      OvrykDB.setCycleStartOffset(entry.exerciseId, result.offsets[entry.exerciseId]);
+    });
+    return result.warnings;
+  }
+
+  /* avertissement non bloquant quand coordinateAndApplyOffsets n'a trouvé
+     aucun décalage (0-8) qui respecte maxHeavyCyclesPerWeek pour un ou
+     plusieurs mouvements — jamais appelé si warnings est vide. */
+  function showCoordinationWarning(exerciseIds) {
+    var settings = OvrykDB.getSettings();
+    var maxHeavy = settings.maxHeavyCyclesPerWeek != null ? settings.maxHeavyCyclesPerWeek : 2;
+    var names = exerciseIds.map(function (id) {
+      var ex = OvrykDB.getExerciseById(id);
+      return ex ? ex.name : id;
+    });
+    showConfirmModal(
+      'Impossible de répartir ' + names.join(', ') + ' sans dépasser ' + maxHeavy +
+        ' cycles lourds la même semaine. Départ au décalage le plus proche possible, ajustable dans le détail du cycle.',
+      function () { openCycleDetailPage(exerciseIds[0]); },
+      null,
+      'Voir le cycle',
+      'Plus tard'
+    );
+  }
+
   /* Single entry point for auto-starting a force cycle: a Lifting exercise
      with a 1RM set, used in a routine, not already cycling, and past its
      own scheduled start date if one was set (forceCycleStartDate — see
@@ -5921,6 +6007,17 @@
          jamais l'afficher, ce serait trompeur (lot 06). */
       badge.innerHTML = '<span class="mono">Cycle terminé</span> · en attente de lancement';
       badge.addEventListener('click', function () { openCycleEndPage(exercise.id); });
+      return badge;
+    }
+
+    if (isBeforeForceCycleStart(exercise)) {
+      /* lot 08 : le cycle existe déjà (coordonné) mais reste gelé en mode
+         de base jusqu'à sa date de départ — semaine_actuelle vaut 1 mais ne
+         doit jamais s'afficher comme "en cours", ce serait trompeur. */
+      var weeksUntilStart = getWeeksUntilForceCycleStart(exercise);
+      badge.innerHTML = '<span class="mono">Cycle ' + displayCycleNumber(cycle.cycle_actif) + '</span> · démarre dans ' +
+        weeksUntilStart + (weeksUntilStart > 1 ? ' semaines' : ' semaine');
+      badge.addEventListener('click', function () { openCycleDetailPage(exercise.id); });
       return badge;
     }
 
@@ -6013,6 +6110,14 @@
     intro.className = 'cycle-full-intro';
     intro.innerHTML = '<div class="cycle-full-name">Cycle ' + displayCycleNumber(cycle.cycle_actif) + ' · ' + escapeHTML(CYCLE_NAMES[cycle.cycle_actif]) + '</div>' +
       '<div class="cycle-full-1rm mono">1RM actuel · ' + (cycle.one_rm_actuel != null ? cycle.one_rm_actuel + 'kg' : 'non défini') + '</div>';
+    /* lot 08 : indique clairement que ce cycle n'a pas encore commencé,
+       sinon "Semaine 1 / N · ACTUELLE" plus bas pourrait laisser croire
+       qu'il est déjà en cours. */
+    if (isBeforeForceCycleStart(exercise)) {
+      var weeksUntilStartDetail = getWeeksUntilForceCycleStart(exercise);
+      intro.innerHTML += '<div class="cycle-full-1rm mono">Démarre le ' + formatShortDate(exercise.forceCycleStartDate) +
+        ' (dans ' + weeksUntilStartDetail + (weeksUntilStartDetail > 1 ? ' semaines)' : ' semaine)') + '</div>';
+    }
     body.appendChild(intro);
 
     var weeksTemplate = FORCE_CYCLES[cycle.cycle_actif];
@@ -6234,8 +6339,14 @@
     launchBtn.textContent = 'Lancer ce cycle';
     launchBtn.addEventListener('click', function () {
       OvrykDB.launchPendingCycle(exerciseId);
+      /* R7 (lot 08) : coordonne ce cycle fraîchement relancé contre tous les
+         autres déjà actifs. */
+      var warnings = coordinateAndApplyOffsets([exerciseId]);
       closeCycleEndPage();
+      renderExerciseList();
+      renderProgrammeWeek();
       renderCycleAlertBanner();
+      if (warnings.length > 0) showCoordinationWarning(warnings);
     });
     body.appendChild(launchBtn);
 
@@ -6481,10 +6592,14 @@
         OvrykDB.updateExerciseOneRepMax(entry.exerciseId, entry.oneRM);
         OvrykDB.activateForceCycle(entry.exerciseId, entry.oneRM, entry.cycleId);
       });
+      /* R7 (lot 08) : coordonne les cycles qu'on vient de créer contre tous
+         les autres déjà actifs, dans l'ordre du tirage. */
+      var warnings = coordinateAndApplyOffsets(cyclesDrawnBatch.map(function (entry) { return entry.exerciseId; }));
       closeCyclesDrawnPage();
       renderExerciseList();
       renderProgrammeWeek();
       renderCycleAlertBanner();
+      if (warnings.length > 0) showCoordinationWarning(warnings);
     }
 
     var conflicts = cyclesDrawnBatch.filter(function (entry) { return !!OvrykDB.getForceCycle(entry.exerciseId); });
@@ -6873,16 +6988,30 @@
     exerciseIds.forEach(function (exerciseId) {
       var cycle = cycles[exerciseId];
       var exercise = OvrykDB.getExerciseById(exerciseId);
-      var total = cycleLength(cycle.cycle_actif);
-      var week = getCycleWeek(cycle);
-      var statusText = 'Semaine ' + cycle.semaine_actuelle + ' sur ' + total +
-        (week.isTestWeek ? ' · Teste ton 1RM' : ' · ' + week.phase);
 
       var row = document.createElement('button');
       row.type = 'button';
       row.className = 'programme-cycle-row';
       var top = document.createElement('div');
       top.className = 'programme-cycle-row-top';
+
+      /* lot 08 : un cycle gelé (coordonné mais pas encore démarré) ne doit
+         jamais afficher sa semaine_actuelle (1, gelée) comme "en cours" —
+         pas de barre de progression non plus, rien n'a encore commencé. */
+      if (isBeforeForceCycleStart(exercise)) {
+        var weeksUntilStart = getWeeksUntilForceCycleStart(exercise);
+        top.innerHTML = '<span class="programme-cycle-name">' + escapeHTML(exercise ? exercise.name : exerciseId) + '</span>' +
+          '<span class="programme-cycle-status">Démarre dans ' + weeksUntilStart + (weeksUntilStart > 1 ? ' semaines' : ' semaine') + '</span>';
+        row.appendChild(top);
+        row.addEventListener('click', function () { openCycleDetailPage(exerciseId); });
+        body.appendChild(row);
+        return;
+      }
+
+      var total = cycleLength(cycle.cycle_actif);
+      var week = getCycleWeek(cycle);
+      var statusText = 'Semaine ' + cycle.semaine_actuelle + ' sur ' + total +
+        (week.isTestWeek ? ' · Teste ton 1RM' : ' · ' + week.phase);
       top.innerHTML = '<span class="programme-cycle-name">' + escapeHTML(exercise ? exercise.name : exerciseId) + '</span>' +
         '<span class="programme-cycle-status">' + escapeHTML(statusText) + '</span>';
       row.appendChild(top);
@@ -8322,9 +8451,13 @@
            closeCycleAndDrawNext et launchPendingCycle) a cycle_actif et
            semaine_actuelle gelés sur l'ancien cycle — une nouvelle séance
            ne doit pas rejouer cette semaine de test figée, elle bascule en
-           mode de base comme un mouvement pas encore démarré. */
+           mode de base comme un mouvement pas encore démarré.
+           lot 08 : même bascule en mode de base tant que le mouvement n'a
+           pas atteint sa date de départ coordonnée (isBeforeForceCycleStart)
+           — le cycle existe déjà (decalage_semaines connu) mais reste gelé,
+           semaine_actuelle n'avance pas (voir advanceForceCycleWeek). */
         var cyclePending = !!(cycle && cycle.en_attente_de_validation);
-        var activeCycle = cyclePending ? null : cycle;
+        var activeCycle = (cyclePending || isBeforeForceCycleStart(exercise)) ? null : cycle;
         var inBaseMode = !activeCycle && (cyclePending || isBeforeForceCycleStart(exercise));
         /* the routine was edited (sets/reps/weight/rest added, removed or
            changed) after the last session for it was logged — carrying that
@@ -8453,7 +8586,7 @@
     routine.exercises.forEach(function (rex) {
       if (pendingIds.indexOf(rex.exerciseId) !== -1) return;
       var cycle = OvrykDB.getForceCycle(rex.exerciseId);
-      if (!cycle || !isCycleTestWeekPending(cycle)) return;
+      if (!cycle || !isCycleTestWeekPending(cycle, OvrykDB.getExerciseById(rex.exerciseId))) return;
       var prior = getPriorCompletedSessionsThisWeekForExercise(rex.exerciseId, now, null);
       if (prior.length > 0) return;
       pendingIds.push(rex.exerciseId);
@@ -9980,7 +10113,7 @@
   function addExerciseToSession(exerciseId) {
     if (!activeSession) return;
     var cycle = OvrykDB.getForceCycle(exerciseId);
-    if (cycle && isCycleTestWeekPending(cycle)) {
+    if (cycle && isCycleTestWeekPending(cycle, OvrykDB.getExerciseById(exerciseId))) {
       var prior = getPriorCompletedSessionsThisWeekForExercise(exerciseId, activeSession.date, activeSession.id);
       if (prior.length === 0) {
         resolvePendingCycleTestChoices(
