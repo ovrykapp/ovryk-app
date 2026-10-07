@@ -12,7 +12,9 @@ Taille : M. Dépend de : 04.
 
 ## Objectif
 
-Restyler l'éditeur de routine selon la maquette et y ajouter les réglages d'un exercice de muscu : plage de reps, charge de départ, pas de montée, progression automatique, allègement.
+Restyler l'éditeur de routine selon la maquette et y ajouter les réglages d'un exercice de muscu : plage de reps, charge de départ, pas de montée, progression automatique.
+
+Note : l'allègement (exercise.deloadMuscu) a été retiré du périmètre, voir "Hors lot".
 
 ## Existant à connaître
 
@@ -24,17 +26,17 @@ Restyler l'éditeur de routine selon la maquette et y ajouter les réglages d'un
 
 1. Écran "Nouvelle routine" (maquette 7) : choix entre créer une séance de muscu, activer des cycles (lot 07) et importer (lot 15). Le parcours "Créer de zéro" mène à l'éditeur.
 2. Éditeur de routine (maquette 20, 21) : nom de la séance, jours de la semaine (lot 02), liste des exercices dans l'ordre avec poignée de déplacement, pastille MUSCU ou HALTÉRO, résumé, bouton "Ajouter un exercice", bouton "Enregistrer".
-3. Réglage d'un exercice de muscu (maquette 23) : séries, plage de reps (bas et haut), charge de départ, pas de montée (1, 2 ou 2,5), progression automatique, allègement en semaine allégée. Écrit set.repsMin et repsMax, set.weightKg, exercise.progressionStep, exercise.autoProgression, exercise.deloadMuscu.
+3. Réglage d'un exercice de muscu (maquette 23) : séries, plage de reps (bas et haut), charge de départ, pas de montée (1, 2 ou 2,5), progression automatique. Écrit set.repsMin et repsMax, set.weightKg, exercise.progressionStep, exercise.autoProgression. Pas d'allègement ici (exercise.deloadMuscu, voir "Hors lot").
 4. Écran "Charges de départ" (maquette 9) : à ne construire que pour les 1RM manquants des mouvements Lifting de la routine et pour la charge de départ des exercices de muscu sans historique. C'est une étape facultative à la fin de la création.
 5. Les valeurs par défaut viennent de settings.defaultProgressionStep et defaultRepRange (lot 14).
 
 ## Données
 
-exercise.progressionStep, exercise.autoProgression, exercise.deloadMuscu, routine.weekdays.
+exercise.progressionStep, exercise.autoProgression, routine.weekdays.
 
 ## Règles métier concernées
 
-R5, R8 pour l'option d'allègement.
+R5.
 
 ## Critères d'acceptation
 
@@ -51,6 +53,8 @@ R5, R8 pour l'option d'allègement.
 ## Hors lot
 
 Les types d'exercice (lot 10) et l'import (lot 15).
+
+exercise.deloadMuscu et l'interrupteur d'allègement (maquette 23) : reportés au lot 13 (R8). Prévu à l'origine dans ce lot, mais aucune fonction ne lit encore ce champ avant que R8 soit construite ; un interrupteur sans effet n'a pas été construit. Voir MODELE-DE-DONNEES.md.
 
 ## Prompt pour Claude Code
 

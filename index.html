@@ -1865,6 +1865,7 @@
   }
   .fullscreen-page[hidden] { display: none; }
   #routine-exercise-picker.fullscreen-page { z-index: 41; }
+  #routine-exercise-settings-page.fullscreen-page { z-index: 41; }
   .fullscreen-page-topbar {
     flex-shrink: 0;
     display: flex;
@@ -2089,6 +2090,61 @@
     font-weight: 700;
     color: var(--ink);
   }
+
+  /* lot 09, livraison 2 : ligne résumée d'un exercice muscu — ouvre
+     routine-exercise-settings-page. La poignée de glisser déposer
+     (livraison 3) sera un élément distinct dans le header, jamais dans
+     cette zone de tap. */
+  .rex-summary-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    width: 100%;
+    background: transparent;
+    border: none;
+    border-top: 1px solid var(--border-card);
+    text-align: left;
+    padding: 10px 12px;
+    cursor: pointer;
+  }
+  .rex-summary-text {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--ink);
+  }
+  .rex-summary-chevron { flex-shrink: 0; color: var(--steel); }
+  .rex-summary-chevron svg { width: 16px; height: 16px; stroke: currentColor; fill: none; }
+
+  /* écran de réglage d'un exercice muscu */
+  .rex-settings-section { padding: var(--space-4) 0; border-bottom: 1px solid var(--border-card); }
+  .rex-settings-section:last-child { border-bottom: none; }
+  .rex-settings-scope-note {
+    font-size: 11px;
+    line-height: 1.5;
+    color: var(--steel);
+    font-weight: 500;
+    margin: 8px 0 0;
+  }
+  .rex-settings-step-row { display: flex; gap: 8px; margin-top: 8px; }
+  .rex-settings-step-row .rep-type-btn { flex: 1; text-align: center; }
+  .rex-settings-info-box {
+    background: var(--orange-fill);
+    border-radius: var(--radius-card);
+    padding: var(--space-4);
+    margin-top: 12px;
+  }
+  .rex-settings-info-title {
+    display: block;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--orange-soft);
+    margin-bottom: 6px;
+  }
+  .rex-settings-info-text { font-size: 12px; line-height: 1.5; color: var(--ink); opacity: 0.9; }
 
   .num-input {
     width: 72px;
@@ -3802,6 +3858,15 @@
     </div>
   </div>
 
+  <div id="routine-exercise-settings-page" class="fullscreen-page" hidden>
+    <div class="fullscreen-page-topbar">
+      <button type="button" id="routine-exercise-settings-back-btn" class="fullscreen-page-action cancel">Fermer</button>
+      <span class="fullscreen-page-title" id="routine-exercise-settings-title"></span>
+      <span class="fullscreen-page-action" aria-hidden="true"></span>
+    </div>
+    <div class="fullscreen-page-body" id="routine-exercise-settings-body"></div>
+  </div>
+
   <div id="routine-exercise-picker" class="fullscreen-page" hidden>
     <div class="fullscreen-page-topbar">
       <button type="button" id="picker-close-btn" class="fullscreen-page-action cancel">Annuler</button>
@@ -4848,6 +4913,26 @@
       var found = list.filter(function (e) { return e.id === id; })[0];
       if (found) {
         found.lastGrip = grip;
+        this.saveExercises(list);
+      }
+    },
+    /* lot 09, livraison 2 : progressionStep/autoProgression existent déjà
+       (migrateSchema, lot 04) — ces deux méthodes ne font qu'écrire dans
+       ces champs existants depuis le nouvel écran de réglage, jamais à
+       l'ouverture de la page, seulement sur une modification réelle. */
+    updateExerciseProgressionStep: function (id, value) {
+      var list = this.getExercises();
+      var found = list.filter(function (e) { return e.id === id; })[0];
+      if (found) {
+        found.progressionStep = value;
+        this.saveExercises(list);
+      }
+    },
+    updateExerciseAutoProgression: function (id, value) {
+      var list = this.getExercises();
+      var found = list.filter(function (e) { return e.id === id; })[0];
+      if (found) {
+        found.autoProgression = value;
         this.saveExercises(list);
       }
     },
@@ -7281,6 +7366,10 @@
   ============================================================ */
   var currentRoutineId = null;
   var pickerState = { search: '', category: 'all', selected: [] };
+  /* lot 09, livraison 2 : routine + exercice en cours de réglage sur
+     routine-exercise-settings-page, relus depuis le stockage à chaque
+     rendu (jamais de copie figée) comme currentRoutineId pour l'éditeur. */
+  var routineExerciseSettingsState = { routineId: null, rexId: null };
 
   function computeWeightFromPercent(oneRepMax, percent) {
     if (oneRepMax === null || oneRepMax === undefined) return null;
@@ -7888,6 +7977,58 @@
     );
   }
 
+  /* lot 09, livraison 2 : résumé d'un exercice muscu dans la liste de
+     l'éditeur (maquette 21) — jamais stocké, recalculé à chaque rendu
+     depuis rex.sets, gère les cas limites (poids au corps = null sur
+     toutes les séries, poids null sur certaines séries seulement, une
+     seule série, reps fixes ou plage). */
+  function aggregateMin(values) {
+    var defined = values.filter(function (v) { return v != null; });
+    return defined.length ? Math.min.apply(null, defined) : null;
+  }
+  function aggregateMax(values) {
+    var defined = values.filter(function (v) { return v != null; });
+    return defined.length ? Math.max.apply(null, defined) : null;
+  }
+  function allSameDefinedValue(values) {
+    return values.length > 0 && values[0] != null && values.every(function (v) { return v === values[0]; });
+  }
+
+  function buildRexSummaryText(rex) {
+    var sets = rex.sets || [];
+    var count = sets.length;
+    if (count === 0) return 'Aucune série';
+
+    var repType = sets[0].repType;
+    var repsHomogeneous, repsText;
+    if (repType === 'range') {
+      var mins = sets.map(function (s) { return s.repsMin; });
+      var maxs = sets.map(function (s) { return s.repsMax; });
+      repsHomogeneous = allSameDefinedValue(mins) && allSameDefinedValue(maxs);
+      var lo = aggregateMin(mins), hi = aggregateMax(maxs);
+      repsText = (lo != null && hi != null) ? (lo + ' à ' + hi + ' reps') : null;
+    } else {
+      var reps = sets.map(function (s) { return s.reps; });
+      repsHomogeneous = allSameDefinedValue(reps);
+      var lo2 = aggregateMin(reps), hi2 = aggregateMax(reps);
+      repsText = lo2 == null ? null : (repsHomogeneous ? (lo2 + ' reps') : (lo2 + ' à ' + hi2 + ' reps'));
+    }
+
+    var weights = sets.map(function (s) { return s.weightKg; });
+    var hasAnyWeight = weights.some(function (v) { return v != null; });
+    var weightHomogeneous = !hasAnyWeight || allSameDefinedValue(weights);
+    var wlo = aggregateMin(weights), whi = aggregateMax(weights);
+    var weightText = !hasAnyWeight ? null : (weightHomogeneous ? (wlo + ' kg') : (wlo + ' à ' + whi + ' kg'));
+
+    if (repsHomogeneous && weightHomogeneous) {
+      return count + ' x ' + (repsText || 'reps non définies') + (weightText ? ', ' + weightText : '');
+    }
+    var parts = [count === 1 ? '1 série' : count + ' séries'];
+    if (repsText) parts.push(repsText);
+    if (weightText) parts.push(weightText);
+    return parts.join(', ');
+  }
+
   function buildRoutineExerciseBlock(routine, rex, index, total, suppressRest) {
     var exercise = OvrykDB.getExerciseById(rex.exerciseId);
     var cycle = OvrykDB.getForceCycle(rex.exerciseId);
@@ -7981,13 +8122,152 @@
 
     var restRow = buildRestRowOrChainNote(routine, rex, exercise, suppressRest);
 
+    /* lot 09, livraison 2 : seul un mouvement Lifting jamais activé (ni
+       cycle, ni date de démarrage programmée — ex. Squat de face, décision
+       13) tombe encore ici. Ce cas rare garde exactement le rendu d'avant
+       le lot 09 : séries éditables en ligne, rien n'est déplacé vers
+       l'écran de réglage (qui ne concerne que la muscu, cf. plus bas). */
+    var isLifting = !!(exercise && exercise.category === 'Lifting');
+    if (isLifting) {
+      var seriesWrap = document.createElement('div');
+      seriesWrap.className = 'rex-series-count';
+
+      var seriesLabel = document.createElement('span');
+      seriesLabel.className = 'form-label';
+      seriesLabel.textContent = 'Séries';
+
+      var minusBtn = document.createElement('button');
+      minusBtn.type = 'button';
+      minusBtn.className = 'stepper-btn';
+      minusBtn.textContent = '−';
+      minusBtn.disabled = rex.sets.length <= 1;
+      minusBtn.addEventListener('click', function () {
+        if (rex.sets.length <= 1) return;
+        rex.sets.pop();
+        OvrykDB.updateRoutine(routine);
+        renderRoutineEditor();
+      });
+
+      var countSpan = document.createElement('span');
+      countSpan.className = 'stepper-value mono';
+      countSpan.textContent = String(rex.sets.length);
+
+      var plusBtn = document.createElement('button');
+      plusBtn.type = 'button';
+      plusBtn.className = 'stepper-btn';
+      plusBtn.textContent = '+';
+      plusBtn.addEventListener('click', function () {
+        var base = rex.sets[rex.sets.length - 1];
+        rex.sets.push(base ? cloneSetForAdd(base) : createDefaultSet(exercise));
+        OvrykDB.updateRoutine(routine);
+        renderRoutineEditor();
+      });
+
+      seriesWrap.appendChild(seriesLabel);
+      seriesWrap.appendChild(minusBtn);
+      seriesWrap.appendChild(countSpan);
+      seriesWrap.appendChild(plusBtn);
+      restRow.appendChild(seriesWrap);
+
+      block.appendChild(restRow);
+
+      var setsWrap = document.createElement('div');
+      setsWrap.className = 'rex-sets';
+      setsWrap.appendChild(buildSetsHeaderRow(routine, rex));
+      rex.sets.forEach(function (set, setIndex) {
+        setsWrap.appendChild(buildSetRow(routine, rex, exercise, set, setIndex));
+      });
+      block.appendChild(setsWrap);
+
+      return block;
+    }
+
+    /* muscu : le repos reste réglable en ligne (inchangé), les séries
+       (séries/reps/poids) et les réglages de l'exercice (palier,
+       progression auto) se règlent dans routine-exercise-settings-page —
+       résumé jamais stocké, recalculé à chaque rendu (buildRexSummaryText). */
+    block.appendChild(restRow);
+
+    var summaryBtn = document.createElement('button');
+    summaryBtn.type = 'button';
+    summaryBtn.className = 'rex-summary-row';
+
+    var summaryText = document.createElement('span');
+    summaryText.className = 'rex-summary-text mono';
+    summaryText.textContent = buildRexSummaryText(rex);
+    summaryBtn.appendChild(summaryText);
+
+    var summaryChevron = document.createElement('span');
+    summaryChevron.className = 'rex-summary-chevron';
+    summaryChevron.innerHTML = '<svg viewBox="0 0 24 24" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="9,6 15,12 9,18"/></svg>';
+    summaryBtn.appendChild(summaryChevron);
+
+    summaryBtn.addEventListener('click', function () {
+      openRoutineExerciseSettingsPage(routine.id, rex.id);
+    });
+    block.appendChild(summaryBtn);
+
+    return block;
+  }
+
+  /* ---- réglage d'un exercice de muscu (lot 09, livraison 2, maquette 23) ---- */
+  function getCurrentSettingsRoutineAndRex() {
+    var routine = OvrykDB.getRoutineById(routineExerciseSettingsState.routineId);
+    if (!routine) return null;
+    var rex = routine.exercises.filter(function (r) { return r.id === routineExerciseSettingsState.rexId; })[0];
+    if (!rex) return null;
+    return { routine: routine, rex: rex };
+  }
+
+  function openRoutineExerciseSettingsPage(routineId, rexId) {
+    routineExerciseSettingsState.routineId = routineId;
+    routineExerciseSettingsState.rexId = rexId;
+    document.getElementById('routine-exercise-settings-page').hidden = false;
+    renderRoutineExerciseSettingsPage();
+  }
+
+  function closeRoutineExerciseSettingsPage() {
+    document.getElementById('routine-exercise-settings-page').hidden = true;
+    routineExerciseSettingsState.routineId = null;
+    routineExerciseSettingsState.rexId = null;
+    /* la ligne résumée de la liste (buildRexSummaryText) doit refléter tout
+       ce qui vient d'être réglé ici — un seul rendu, au retour, pas à
+       chaque modification (celles-ci se suffisent de
+       renderRoutineExerciseSettingsPage pendant que la page est ouverte). */
+    renderRoutineEditor();
+  }
+
+  /* partagée avec applyRepTypeToAllSets (le header Reps/Plage est réutilisé
+     tel quel sur cette page) : rafraîchit la vue réellement affichée,
+     l'éditeur ou cette page, sans jamais rien écrire elle-même. */
+  function refreshRoutineExerciseEditingView() {
+    var settingsPage = document.getElementById('routine-exercise-settings-page');
+    if (settingsPage && !settingsPage.hidden) {
+      renderRoutineExerciseSettingsPage();
+    } else {
+      renderRoutineEditor();
+    }
+  }
+
+  function renderRoutineExerciseSettingsPage() {
+    var ctx = getCurrentSettingsRoutineAndRex();
+    if (!ctx) { closeRoutineExerciseSettingsPage(); return; }
+    var routine = ctx.routine, rex = ctx.rex;
+    var exercise = OvrykDB.getExerciseById(rex.exerciseId);
+
+    document.getElementById('routine-exercise-settings-title').textContent = exercise ? exercise.name : 'Exercice supprimé';
+    var body = document.getElementById('routine-exercise-settings-body');
+    body.innerHTML = '';
+
+    /* ---- séries, reps, poids : propres à CETTE routine ---- */
+    var setsSection = document.createElement('div');
+    setsSection.className = 'rex-settings-section';
+
     var seriesWrap = document.createElement('div');
     seriesWrap.className = 'rex-series-count';
-
     var seriesLabel = document.createElement('span');
     seriesLabel.className = 'form-label';
     seriesLabel.textContent = 'Séries';
-
     var minusBtn = document.createElement('button');
     minusBtn.type = 'button';
     minusBtn.className = 'stepper-btn';
@@ -7997,13 +8277,11 @@
       if (rex.sets.length <= 1) return;
       rex.sets.pop();
       OvrykDB.updateRoutine(routine);
-      renderRoutineEditor();
+      renderRoutineExerciseSettingsPage();
     });
-
     var countSpan = document.createElement('span');
     countSpan.className = 'stepper-value mono';
     countSpan.textContent = String(rex.sets.length);
-
     var plusBtn = document.createElement('button');
     plusBtn.type = 'button';
     plusBtn.className = 'stepper-btn';
@@ -8012,16 +8290,13 @@
       var base = rex.sets[rex.sets.length - 1];
       rex.sets.push(base ? cloneSetForAdd(base) : createDefaultSet(exercise));
       OvrykDB.updateRoutine(routine);
-      renderRoutineEditor();
+      renderRoutineExerciseSettingsPage();
     });
-
     seriesWrap.appendChild(seriesLabel);
     seriesWrap.appendChild(minusBtn);
     seriesWrap.appendChild(countSpan);
     seriesWrap.appendChild(plusBtn);
-    restRow.appendChild(seriesWrap);
-
-    block.appendChild(restRow);
+    setsSection.appendChild(seriesWrap);
 
     var setsWrap = document.createElement('div');
     setsWrap.className = 'rex-sets';
@@ -8029,9 +8304,82 @@
     rex.sets.forEach(function (set, setIndex) {
       setsWrap.appendChild(buildSetRow(routine, rex, exercise, set, setIndex));
     });
-    block.appendChild(setsWrap);
+    setsSection.appendChild(setsWrap);
+    body.appendChild(setsSection);
 
-    return block;
+    /* ---- palier de montée : champ de l'exercice, partagé entre routines —
+       lecture seule à l'ouverture (getExerciseProgressionStep), aucune
+       écriture tant que l'utilisateur ne touche pas un bouton. */
+    var stepSection = document.createElement('div');
+    stepSection.className = 'rex-settings-section';
+    var stepLabel = document.createElement('div');
+    stepLabel.className = 'form-label';
+    stepLabel.textContent = 'Palier de montée';
+    stepSection.appendChild(stepLabel);
+
+    var stepValues = [1, 2, 2.5];
+    var rawStep = exercise ? exercise.progressionStep : null;
+    var displayStep = getExerciseProgressionStep(exercise);
+    var stepToggle = document.createElement('div');
+    stepToggle.className = 'rep-type-toggle rex-settings-step-row';
+    stepValues.forEach(function (v) {
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'rep-type-btn' + (displayStep === v ? ' active' : '');
+      btn.textContent = String(v).replace('.', ',') + ' kg';
+      btn.addEventListener('click', function () {
+        if (!exercise) return;
+        OvrykDB.updateExerciseProgressionStep(exercise.id, v);
+        renderRoutineExerciseSettingsPage();
+      });
+      stepToggle.appendChild(btn);
+    });
+    stepSection.appendChild(stepToggle);
+
+    if (rawStep != null && stepValues.indexOf(rawStep) === -1) {
+      var stepNote = document.createElement('p');
+      stepNote.className = 'rex-settings-scope-note';
+      stepNote.textContent = 'Valeur actuelle non standard : ' + rawStep + ' kg. Choisis un palier ci-dessus pour la changer.';
+      stepSection.appendChild(stepNote);
+    }
+
+    var stepScopeNote = document.createElement('p');
+    stepScopeNote.className = 'rex-settings-scope-note';
+    stepScopeNote.textContent = "S'applique à cet exercice dans toutes tes routines.";
+    stepSection.appendChild(stepScopeNote);
+    body.appendChild(stepSection);
+
+    /* ---- progression automatique : champ de l'exercice, partagé entre
+       routines — même principe, lecture seule tant que rien n'est touché. */
+    var autoSection = document.createElement('div');
+    autoSection.className = 'rex-settings-section';
+    var autoOn = getExerciseAutoProgression(exercise);
+    autoSection.appendChild(buildToggleRow('Progression automatique', autoOn, function () {
+      if (!exercise) return;
+      OvrykDB.updateExerciseAutoProgression(exercise.id, !autoOn);
+      renderRoutineExerciseSettingsPage();
+    }));
+
+    var autoInfo = document.createElement('div');
+    autoInfo.className = 'rex-settings-info-box';
+    var autoInfoTitle = document.createElement('span');
+    autoInfoTitle.className = 'rex-settings-info-title';
+    autoInfoTitle.textContent = 'Progression automatique';
+    var autoInfoText = document.createElement('p');
+    autoInfoText.className = 'rex-settings-info-text';
+    autoInfoText.style.margin = '0';
+    autoInfoText.textContent = autoOn
+      ? 'Tu fais le haut de la plage sur toutes les séries, la charge monte du palier et les reps repartent au bas de la plage.'
+      : 'Désactivée pour cet exercice : la prochaine séance garde la même charge, sans suggestion de montée.';
+    autoInfo.appendChild(autoInfoTitle);
+    autoInfo.appendChild(autoInfoText);
+    autoSection.appendChild(autoInfo);
+
+    var autoScopeNote = document.createElement('p');
+    autoScopeNote.className = 'rex-settings-scope-note';
+    autoScopeNote.textContent = "S'applique à cet exercice dans toutes tes routines.";
+    autoSection.appendChild(autoScopeNote);
+    body.appendChild(autoSection);
   }
 
   /* ---- cycle de force — read-only prescription (Routine tab) ---- */
@@ -8151,7 +8499,11 @@
       }
     });
     OvrykDB.updateRoutine(routine);
-    renderRoutineEditor();
+    /* lot 09, livraison 2 : ce header (et ce toggle) est maintenant partagé
+       entre l'éditeur et routine-exercise-settings-page — rafraîchit la vue
+       réellement affichée plutôt que toujours l'éditeur, sinon la page de
+       réglage resterait affichée avec des champs Reps/Plage obsolètes. */
+    refreshRoutineExerciseEditingView();
   }
 
   /* one-time SÉRIE / KG / REPS header above a set list. REPS doubles as the
@@ -8511,6 +8863,8 @@
     closeNewRoutineChoicePage();
     createAndOpenNewRoutine();
   });
+
+  document.getElementById('routine-exercise-settings-back-btn').addEventListener('click', closeRoutineExerciseSettingsPage);
 
   document.getElementById('routine-cancel-btn').addEventListener('click', cancelRoutineEditor);
   document.getElementById('routine-save-btn').addEventListener('click', function () {
@@ -8873,11 +9227,23 @@
        - Sinon : charge inchangée, objectif = pire repsActual + 1, plafonné
          à repsMax.
      Jamais de baisse automatique de charge, dans aucun cas. */
-  function computeRangeProgressionDecision(pastSex, exercise) {
+  /* lecture seule, jamais d'écriture : utilisées à la fois par la
+     construction de séance (ci-dessous) et par l'écran de réglage d'un
+     exercice muscu (lot 09, livraison 2) pour afficher la valeur réelle ou
+     la valeur par défaut sans jamais rien écrire tant que rien n'est
+     modifié. */
+  function getExerciseProgressionStep(exercise) {
+    if (exercise && exercise.progressionStep != null) return exercise.progressionStep;
     var settings = OvrykDB.getSettings();
-    var step = (exercise && exercise.progressionStep != null) ? exercise.progressionStep :
-      (settings.defaultProgressionStep != null ? settings.defaultProgressionStep : 2.5);
-    var autoProgression = !exercise || exercise.autoProgression !== false;
+    return settings.defaultProgressionStep != null ? settings.defaultProgressionStep : 2.5;
+  }
+  function getExerciseAutoProgression(exercise) {
+    return !exercise || exercise.autoProgression !== false;
+  }
+
+  function computeRangeProgressionDecision(pastSex, exercise) {
+    var step = getExerciseProgressionStep(exercise);
+    var autoProgression = getExerciseAutoProgression(exercise);
 
     var doneSets = pastSex.sets.filter(function (s) {
       return s.repType === 'range' && s.done && s.repsActual != null && s.repsMin != null && s.repsMax != null;
