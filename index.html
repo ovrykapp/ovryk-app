@@ -4225,12 +4225,37 @@
     return FORCE_CYCLES[cycle.cycle_actif][cycle.semaine_actuelle - 1];
   }
 
-  /* Tire un nouveau cycle parmi les 12 génériques (applicables à n'importe
-     quel mouvement), en excluant celui qui vient de se terminer pour ne
-     jamais enchaîner deux fois le même cycle. */
-  function tirerProchainCycle(cycleActuel) {
-    var candidates = GENERIC_CYCLE_IDS.filter(function (id) { return id !== cycleActuel; });
-    return candidates[Math.floor(Math.random() * candidates.length)];
+  /* lot 07 : les 17 cycles entrent dans le tirage (12 génériques + A à E,
+     affichés Cycle 13 à 17 — voir displayCycleNumber). Les identifiants
+     internes 'A' à 'E' ne changent jamais, seul le tirage s'étend. */
+  var ALL_CYCLE_IDS = GENERIC_CYCLE_IDS.concat(CYCLE_LETTERS);
+
+  function displayCycleNumber(cycleId) {
+    var letterIndex = CYCLE_LETTERS.indexOf(cycleId);
+    return letterIndex === -1 ? cycleId : String(13 + letterIndex);
+  }
+
+  /* cycle_actif de tous les mouvements qui ont un cycle actif en ce moment
+     (en_attente_de_validation compris : son cycle_actif reste "occupé"
+     jusqu'au lancement du suivant). */
+  function getActiveCycleIds() {
+    var cycles = OvrykDB.getForceCycles();
+    return Object.keys(cycles).map(function (exerciseId) { return cycles[exerciseId].cycle_actif; });
+  }
+
+  /* Tire un nouveau cycle parmi les 17 (R4), en excluant celui qui vient de
+     se terminer sur ce mouvement pour ne jamais l'enchaîner deux fois.
+     Préfère un cycle qui n'est pas déjà actif sur un autre mouvement ; si
+     tous le sont, autorise (DECISIONS-A-PRENDRE n°11). extraActifs (optionnel)
+     ajoute des cycle_actif à éviter en plus de ceux déjà actifs en base —
+     utilisé par le tirage groupé (lot 07, écran "Tirer mes cycles") pour
+     qu'un même cycle ne soit pas proposé à deux mouvements du même lot. */
+  function tirerProchainCycle(cycleActuel, extraActifs) {
+    var candidates = ALL_CYCLE_IDS.filter(function (id) { return id !== cycleActuel; });
+    var actifs = getActiveCycleIds().concat(extraActifs || []);
+    var preferes = candidates.filter(function (id) { return actifs.indexOf(id) === -1; });
+    var pool = preferes.length ? preferes : candidates;
+    return pool[Math.floor(Math.random() * pool.length)];
   }
 
   /* R3/lot 06 : bilan d'un cycle qui se termine, pour historique_cycles.
@@ -4405,12 +4430,15 @@
     getForceCycle: function (exerciseId) {
       return this.getForceCycles()[exerciseId] || null;
     },
-    activateForceCycle: function (exerciseId, startingOneRM) {
+    /* imposedCycle (optionnel, lot 07) : utilisé par l'écran "Tirer mes
+       cycles" qui a déjà tiré (et laissé relancer) le cycle avant validation
+       — sinon, tirage normal parmi les 17 (tirerProchainCycle). */
+    activateForceCycle: function (exerciseId, startingOneRM, imposedCycle) {
       var map = this.getForceCycles();
       var now = new Date().toISOString();
       map[exerciseId] = {
         exercise_id: exerciseId,
-        cycle_actif: tirerProchainCycle(null),
+        cycle_actif: imposedCycle || tirerProchainCycle(null),
         one_rm_actuel: startingOneRM,
         semaine_actuelle: 1,
         historique_1rm: [{ date: now, valeur: startingOneRM }],
@@ -5351,7 +5379,7 @@
     }
 
     var week = getCycleWeek(cycle);
-    badge.innerHTML = '<span class="mono">Cycle ' + cycle.cycle_actif + ' · S' + cycle.semaine_actuelle + '/' + cycleLength(cycle.cycle_actif) + '</span> · ' + escapeHTML(week.phase);
+    badge.innerHTML = '<span class="mono">Cycle ' + displayCycleNumber(cycle.cycle_actif) + ' · S' + cycle.semaine_actuelle + '/' + cycleLength(cycle.cycle_actif) + '</span> · ' + escapeHTML(week.phase);
     badge.addEventListener('click', function () { openCycleDetailPage(exercise.id); });
     return badge;
   }
@@ -5367,7 +5395,7 @@
 
     var intro = document.createElement('div');
     intro.className = 'cycle-full-intro';
-    intro.innerHTML = '<div class="cycle-full-name">Cycle ' + cycle.cycle_actif + ' · ' + escapeHTML(CYCLE_NAMES[cycle.cycle_actif]) + '</div>' +
+    intro.innerHTML = '<div class="cycle-full-name">Cycle ' + displayCycleNumber(cycle.cycle_actif) + ' · ' + escapeHTML(CYCLE_NAMES[cycle.cycle_actif]) + '</div>' +
       '<div class="cycle-full-1rm mono">1RM actuel · ' + (cycle.one_rm_actuel != null ? cycle.one_rm_actuel + 'kg' : 'non défini') + '</div>';
     body.appendChild(intro);
 
@@ -5455,7 +5483,7 @@
 
     var intro = document.createElement('div');
     intro.className = 'cycle-full-intro';
-    intro.innerHTML = '<div class="cycle-full-name">' + escapeHTML(exercise.name) + ' · Cycle ' + closed.cycle +
+    intro.innerHTML = '<div class="cycle-full-name">' + escapeHTML(exercise.name) + ' · Cycle ' + displayCycleNumber(closed.cycle) +
       ' · ' + cycleLength(closed.cycle) + ' semaines</div>';
     body.appendChild(intro);
 
@@ -5490,7 +5518,7 @@
     function renderNextCard() {
       var c = OvrykDB.getForceCycle(exerciseId);
       card.innerHTML = '<div class="cycle-end-next-top">' +
-        '<span class="cycle-full-name">Cycle ' + c.prochain_cycle + '</span>' +
+        '<span class="cycle-full-name">Cycle ' + displayCycleNumber(c.prochain_cycle) + '</span>' +
         '<span class="cycle-end-next-length mono">' + cycleLength(c.prochain_cycle) + ' semaines</span></div>' +
         '<div class="cycle-end-next-week1">' + escapeHTML(formatPendingCycleWeek1(c.prochain_cycle, closed.one_rm_apres)) + '</div>' +
         '<div class="cycle-end-next-1rm mono">1RM ' + closed.one_rm_apres + ' kg</div>';
@@ -5535,11 +5563,11 @@
     var chooseList = document.createElement('div');
     chooseList.className = 'exercise-list';
     chooseList.hidden = true;
-    GENERIC_CYCLE_IDS.forEach(function (cycleId) {
+    ALL_CYCLE_IDS.forEach(function (cycleId) {
       var row = document.createElement('button');
       row.type = 'button';
       row.className = 'picker-row';
-      row.innerHTML = '<span class="picker-row-name">Cycle ' + cycleId + ' · ' + escapeHTML(CYCLE_NAMES[cycleId]) + '</span>' +
+      row.innerHTML = '<span class="picker-row-name">Cycle ' + displayCycleNumber(cycleId) + ' · ' + escapeHTML(CYCLE_NAMES[cycleId]) + '</span>' +
         '<span class="picker-row-right"><span class="picker-row-meta mono">' + cycleLength(cycleId) + ' sem.</span></span>';
       row.addEventListener('click', function () {
         OvrykDB.setPendingCycle(exerciseId, cycleId);
@@ -6495,7 +6523,7 @@
 
     var weekLine = document.createElement('div');
     weekLine.className = 'cycle-week-line';
-    weekLine.innerHTML = '<span class="cycle-week-num mono">Cycle ' + cycle.cycle_actif + ' · Semaine ' + cycle.semaine_actuelle + ' / ' + cycleLength(cycle.cycle_actif) + '</span>' +
+    weekLine.innerHTML = '<span class="cycle-week-num mono">Cycle ' + displayCycleNumber(cycle.cycle_actif) + ' · Semaine ' + cycle.semaine_actuelle + ' / ' + cycleLength(cycle.cycle_actif) + '</span>' +
       '<span class="cycle-phase">' + escapeHTML(weekPrescription.phase) + '</span>';
     wrap.appendChild(weekLine);
 
@@ -9546,7 +9574,7 @@
     row.className = 'picker-row';
     var count = countSessionsForExercise(exercise.id);
     var cycle = OvrykDB.getForceCycle(exercise.id);
-    var cycleTag = cycle ? ' <span class="cycle-inline-tag mono">' + cycle.cycle_actif + ' S' + cycle.semaine_actuelle + '/' + cycleLength(cycle.cycle_actif) + '</span>' : '';
+    var cycleTag = cycle ? ' <span class="cycle-inline-tag mono">' + displayCycleNumber(cycle.cycle_actif) + ' S' + cycle.semaine_actuelle + '/' + cycleLength(cycle.cycle_actif) + '</span>' : '';
     row.innerHTML = '<span class="picker-row-name">' + escapeHTML(exercise.name) + '</span>' +
       '<span class="picker-row-meta mono">' + count + ' séance' + (count > 1 ? 's' : '') + '</span>' + cycleTag;
     row.addEventListener('click', function () {
@@ -9850,7 +9878,7 @@
 
       var statusLine = document.createElement('div');
       statusLine.className = 'cycle-detail-status';
-      statusLine.innerHTML = 'Cycle actif ' + cycle.cycle_actif + ' · <span class="cycle-detail-phase">Semaine ' + cycle.semaine_actuelle +
+      statusLine.innerHTML = 'Cycle actif ' + displayCycleNumber(cycle.cycle_actif) + ' · <span class="cycle-detail-phase">Semaine ' + cycle.semaine_actuelle +
         '/' + cycleLength(cycle.cycle_actif) + ' · ' + escapeHTML(getCycleWeek(cycle).phase) + '</span>';
       cycleBlock.appendChild(statusLine);
 

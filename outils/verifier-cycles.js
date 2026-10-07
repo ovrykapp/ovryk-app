@@ -1,8 +1,10 @@
-/* Vérifie les 12 cycles génériques : une seule semaine de test, test en dernière
-   semaine, durée de 6 à 8 semaines, pourcentages entre 1 et 100, reps positives. */
-const { FORCE_CYCLES, GENERIC_CYCLE_IDS, CYCLE_NAMES } = require('./extraire-cycles.js')();
+/* Vérifie les 17 cycles (12 génériques et A à E, lot 07) : une seule semaine
+   de test, test en dernière semaine, durée de 6 à 8 semaines, pourcentages
+   entre 1 et 100, reps positives. */
+const { FORCE_CYCLES, GENERIC_CYCLE_IDS, CYCLE_LETTERS, CYCLE_NAMES } = require('./extraire-cycles.js')();
+const ALL_CYCLE_IDS = GENERIC_CYCLE_IDS.concat(CYCLE_LETTERS);
 let erreurs = 0;
-GENERIC_CYCLE_IDS.forEach(function (id) {
+ALL_CYCLE_IDS.forEach(function (id) {
   const semaines = FORCE_CYCLES[id];
   const problemes = [];
   if (semaines.length < 6 || semaines.length > 8) problemes.push('durée ' + semaines.length + ' semaines');

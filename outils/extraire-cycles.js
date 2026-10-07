@@ -9,6 +9,6 @@ module.exports = function charger() {
   if (debut < 0 || fin < 0) throw new Error('Définitions de cycles introuvables dans index.html');
   const code = 'var CYCLE_NAMES = {};\nvar FORCE_CYCLES = {};\n' +
     html.slice(debut, fin) +
-    '\nreturn { CYCLE_NAMES: CYCLE_NAMES, FORCE_CYCLES: FORCE_CYCLES, GENERIC_CYCLE_IDS: GENERIC_CYCLE_IDS, cycleLength: cycleLength };';
+    '\nreturn { CYCLE_NAMES: CYCLE_NAMES, FORCE_CYCLES: FORCE_CYCLES, GENERIC_CYCLE_IDS: GENERIC_CYCLE_IDS, CYCLE_LETTERS: CYCLE_LETTERS, cycleLength: cycleLength };';
   return new Function(code)();
 };
