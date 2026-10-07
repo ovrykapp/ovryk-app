@@ -1456,6 +1456,155 @@
   }
   .cycle-progress-seg.is-filled { background: var(--blue); }
 
+  /* ============================================================
+     PROGRAMME — en-tête de la carte "Cycles en cours" avec le lien vers
+     l'écran Coordination (lot 08, livraison 3)
+  ============================================================ */
+  .programme-cycles-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: var(--space-3);
+  }
+  .programme-cycles-header .dash-section-eyebrow { margin: 0; }
+
+  /* ============================================================
+     ÉCRAN COORDINATION (lot 08, livraison 3, maquette 30)
+  ============================================================ */
+  .coordination-intro {
+    color: var(--steel);
+    font-size: 13px;
+    margin: 0 0 var(--space-4);
+  }
+  .coordination-table-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    border: 1px solid var(--border-card);
+    border-radius: var(--radius-card);
+    margin-bottom: var(--space-4);
+  }
+  .coordination-table { border-collapse: collapse; width: max-content; min-width: 100%; }
+  .coordination-table th, .coordination-table td { padding: 3px; text-align: center; }
+  .coordination-week-head {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--steel);
+    font-weight: 600;
+    min-width: 26px;
+  }
+  .coordination-row-label {
+    position: sticky;
+    left: 0;
+    background: var(--surface);
+    text-align: left;
+    min-width: 108px;
+    max-width: 108px;
+    padding: 6px 8px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--ink);
+    z-index: 1;
+  }
+  .coordination-row-label .mono {
+    display: block;
+    font-weight: 400;
+    font-size: 11px;
+    color: var(--steel);
+    margin-top: 2px;
+  }
+  .coordination-cell-box {
+    width: 22px;
+    height: 22px;
+    margin: 0 auto;
+    border-radius: 6px;
+    background: transparent;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .coordination-cell-box.is-volume { background: var(--blue-fill); border: 1px solid var(--blue); }
+  .coordination-cell-box.is-peak { background: var(--orange-fill); border: 1px solid var(--orange-soft); color: var(--orange-soft); }
+  .coordination-cell-box.is-allegee { background: transparent; border: 1px dashed var(--blue); color: var(--blue); }
+  .coordination-summary-row .coordination-row-label { font-size: 11px; }
+  .coordination-summary-value { font-family: var(--font-mono); font-size: 12px; color: var(--steel); }
+  .coordination-summary-value.is-full { color: var(--orange-soft); font-weight: 700; }
+
+  .coordination-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    margin-bottom: var(--space-4);
+  }
+  .coordination-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--steel);
+  }
+  .coordination-legend-swatch {
+    width: 16px;
+    height: 16px;
+    border-radius: 5px;
+    flex-shrink: 0;
+  }
+  .coordination-legend-swatch.is-volume { background: var(--blue-fill); border: 1px solid var(--blue); }
+  .coordination-legend-swatch.is-peak { background: var(--orange-fill); border: 1px solid var(--orange-soft); }
+
+  .coordination-rule-note {
+    background: var(--field);
+    border-radius: var(--radius-card);
+    padding: 14px;
+    font-size: 13px;
+    color: var(--steel);
+    line-height: 1.4;
+    margin-bottom: var(--space-4);
+  }
+
+  .coordination-warning {
+    background: var(--orange-fill);
+    color: var(--orange-soft);
+    border-radius: var(--radius-card);
+    padding: 14px;
+    font-size: 13px;
+    line-height: 1.4;
+    margin-bottom: var(--space-4);
+  }
+
+  .coordination-start-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    background: var(--surface);
+    border-radius: var(--radius-card);
+    padding: 12px 14px;
+    margin-bottom: 8px;
+  }
+  .coordination-start-name { font-size: 14px; font-weight: 600; color: var(--ink); }
+  .coordination-start-locked-note { font-size: 11px; color: var(--steel); margin-top: 2px; }
+  .coordination-start-controls { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+  .coordination-start-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 1px solid var(--border-outline);
+    background: transparent;
+    color: var(--ink);
+    font-size: 18px;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .coordination-start-btn.is-plus { background: var(--rust); border-color: var(--rust); color: var(--graphite); }
+  .coordination-start-btn:disabled { opacity: 0.35; }
+  .coordination-start-value { font-family: var(--font-mono); font-size: 13px; color: var(--ink); min-width: 64px; text-align: center; }
+
   .day-badge-tag {
     border-radius: var(--radius-pill);
     padding: 3px 10px;
@@ -3299,7 +3448,10 @@
       <div id="programme-day-panel" hidden></div>
 
       <div class="data-io-block" id="programme-cycles-card" hidden>
-        <span class="dash-section-eyebrow">CYCLES EN COURS</span>
+        <div class="programme-cycles-header">
+          <span class="dash-section-eyebrow">CYCLES EN COURS</span>
+          <button type="button" class="routine-action-btn" id="programme-coordination-btn" hidden>Coordination</button>
+        </div>
         <div id="programme-cycles-body"></div>
       </div>
 
@@ -3580,6 +3732,15 @@
       <span class="fullscreen-page-action" aria-hidden="true"></span>
     </div>
     <div class="fullscreen-page-body" id="cycle-detail-body"></div>
+  </div>
+
+  <div id="coordination-page" class="fullscreen-page" hidden>
+    <div class="fullscreen-page-topbar">
+      <button type="button" id="coordination-back-btn" class="fullscreen-page-action cancel">Fermer</button>
+      <span class="fullscreen-page-title">Coordination</span>
+      <span class="fullscreen-page-action" aria-hidden="true"></span>
+    </div>
+    <div class="fullscreen-page-body" id="coordination-body"></div>
   </div>
 
   <div id="cycle-end-page" class="fullscreen-page" hidden>
@@ -6207,6 +6368,220 @@
 
   document.getElementById('cycle-detail-back-btn').addEventListener('click', closeCycleDetailPage);
 
+  /* ============================================================
+     ÉCRAN COORDINATION (lot 08, livraison 3, maquette 30) — un cycle
+     gelé se projette depuis sa date de départ (forceCycleStartDate), un
+     cycle déjà en cours depuis sa semaine_actuelle (projectCycleWeeksForCoordination,
+     livraison 1) ; recalculé à chaque ouverture et après chaque ajustement,
+     jamais mémorisé. En attente de validation (lot 06) exclu : il n'occupe
+     aucune semaine tant qu'il n'a pas été relancé. */
+  var COORDINATION_TABLE_WEEKS = 12;
+
+  function getCoordinationEntries() {
+    var cycles = OvrykDB.getForceCycles();
+    var entries = Object.keys(cycles)
+      .map(function (exerciseId) {
+        return { exerciseId: exerciseId, exercise: OvrykDB.getExerciseById(exerciseId), cycle: cycles[exerciseId] };
+      })
+      .filter(function (e) { return e.exercise && e.cycle && !e.cycle.en_attente_de_validation; });
+
+    entries.forEach(function (e) {
+      e.isFrozen = isBeforeForceCycleStart(e.exercise);
+      e.projection = projectCycleWeeksForCoordination(e.exercise, e.cycle);
+      /* "Semaine N" affichée dans la liste "Départ de chaque cycle" — pour
+         un cycle déjà en cours, cette colonne ne veut rien dire (il a déjà
+         démarré), jamais utilisée dans ce cas (voir buildCoordinationStartRow). */
+      e.effectiveStartColumn = e.isFrozen ? (getWeeksUntilForceCycleStart(e.exercise) + 1) : 1;
+    });
+
+    entries.sort(function (a, b) { return a.effectiveStartColumn - b.effectiveStartColumn; });
+    return entries;
+  }
+
+  /* construit le tableau de 12 semaines dans container, renvoie les comptes
+     "en pic ou test" par semaine (réutilisés pour le bandeau d'avertissement). */
+  function renderCoordinationTable(entries, container) {
+    var settings = OvrykDB.getSettings();
+    var maxHeavy = settings.maxHeavyCyclesPerWeek != null ? settings.maxHeavyCyclesPerWeek : 2;
+
+    var html = '<table class="coordination-table"><thead><tr><th class="coordination-row-label"></th>';
+    for (var w = 1; w <= COORDINATION_TABLE_WEEKS; w++) html += '<th class="coordination-week-head">' + w + '</th>';
+    html += '</tr></thead><tbody>';
+
+    entries.forEach(function (e) {
+      var cellsByWeek = {};
+      e.projection.forEach(function (entry) { cellsByWeek[entry.absoluteWeek] = entry.week; });
+      html += '<tr><td class="coordination-row-label">' + escapeHTML(e.exercise.name) +
+        '<span class="mono">Cycle ' + displayCycleNumber(e.cycle.cycle_actif) + '</span></td>';
+      for (var col = 1; col <= COORDINATION_TABLE_WEEKS; col++) {
+        var week = cellsByWeek[col];
+        var cls = 'is-empty', label = '';
+        if (week) {
+          /* "Allégée" (lot 13) : le drapeau n'existe sur aucune semaine
+             aujourd'hui — cette branche reste invisible tant que ce lot
+             n'est pas fait, volontairement (point 3 de la livraison 3). */
+          if (week.deload) { cls = 'is-allegee'; label = 'A'; }
+          else if (week.isTestWeek) { cls = 'is-peak'; label = 'T'; }
+          else if (isHeavyWeek(week)) { cls = 'is-peak'; label = 'P'; }
+          else { cls = 'is-volume'; }
+        }
+        html += '<td><div class="coordination-cell-box ' + cls + '">' + label + '</div></td>';
+      }
+      html += '</tr>';
+    });
+
+    var counts = computeHeavyCounts(entries.map(function (e) { return e.projection; }), COORDINATION_TABLE_WEEKS);
+    html += '<tr class="coordination-summary-row"><td class="coordination-row-label">En pic ou test</td>';
+    for (var sw = 1; sw <= COORDINATION_TABLE_WEEKS; sw++) {
+      var count = counts[sw - 1];
+      html += '<td><span class="coordination-summary-value' + (count >= maxHeavy ? ' is-full' : '') + '">' + count + '</span></td>';
+    }
+    html += '</tr></tbody></table>';
+
+    container.innerHTML = html;
+    return counts;
+  }
+
+  function buildCoordinationStartRow(e) {
+    var row = document.createElement('div');
+    row.className = 'coordination-start-row';
+
+    var nameWrap = document.createElement('div');
+    var nameEl = document.createElement('div');
+    nameEl.className = 'coordination-start-name';
+    nameEl.textContent = e.exercise.name;
+    nameWrap.appendChild(nameEl);
+    if (!e.isFrozen) {
+      /* point 1 de la livraison 3 : un cycle déjà en cours ne peut pas être
+         décalé depuis cet écran — mention claire plutôt qu'un contrôle
+         simplement désactivé sans explication. */
+      var lockedNote = document.createElement('div');
+      lockedNote.className = 'coordination-start-locked-note';
+      lockedNote.textContent = 'Cycle déjà en cours, décalage non modifiable.';
+      nameWrap.appendChild(lockedNote);
+    }
+    row.appendChild(nameWrap);
+
+    var controls = document.createElement('div');
+    controls.className = 'coordination-start-controls';
+
+    var minusBtn = document.createElement('button');
+    minusBtn.type = 'button';
+    minusBtn.className = 'coordination-start-btn';
+    minusBtn.textContent = '−';
+    minusBtn.disabled = !e.isFrozen || e.cycle.decalage_semaines <= 0;
+    minusBtn.addEventListener('click', function () { adjustCoordinationOffset(e.exerciseId, -1); });
+    controls.appendChild(minusBtn);
+
+    var valueEl = document.createElement('span');
+    valueEl.className = 'coordination-start-value';
+    valueEl.textContent = e.isFrozen ? ('Semaine ' + e.effectiveStartColumn) : 'En cours';
+    controls.appendChild(valueEl);
+
+    var plusBtn = document.createElement('button');
+    plusBtn.type = 'button';
+    plusBtn.className = 'coordination-start-btn is-plus';
+    plusBtn.textContent = '+';
+    plusBtn.disabled = !e.isFrozen || e.cycle.decalage_semaines >= 8;
+    plusBtn.addEventListener('click', function () { adjustCoordinationOffset(e.exerciseId, 1); });
+    controls.appendChild(plusBtn);
+
+    row.appendChild(controls);
+    return row;
+  }
+
+  /* point 6 de la livraison 3 : sauvegarde du jour avant toute écriture de
+     décalage depuis cet écran, comme toute action qui modifie un cycle
+     actif (lot 06, lot 07). Un décalage ramené à 0 dégèle le cycle
+     (setCycleStartOffset écrit toujours une date non future dans ce cas). */
+  function adjustCoordinationOffset(exerciseId, delta) {
+    var cycle = OvrykDB.getForceCycle(exerciseId);
+    if (!cycle) return;
+    var next = cycle.decalage_semaines + delta;
+    if (next < 0 || next > 8) return;
+    ensureForceCyclesBackupToday();
+    OvrykDB.setCycleStartOffset(exerciseId, next);
+    renderCoordinationPage();
+    renderProgrammeCyclesCard();
+    renderExerciseList();
+    renderCycleAlertBanner();
+  }
+
+  function renderCoordinationPage() {
+    var entries = getCoordinationEntries();
+    var body = document.getElementById('coordination-body');
+    body.innerHTML = '';
+
+    var intro = document.createElement('p');
+    intro.className = 'coordination-intro';
+    intro.textContent = 'Les départs sont décalés pour étaler les pics.';
+    body.appendChild(intro);
+
+    var tableWrap = document.createElement('div');
+    tableWrap.className = 'coordination-table-wrap';
+    body.appendChild(tableWrap);
+    var counts = renderCoordinationTable(entries, tableWrap);
+
+    var settings = OvrykDB.getSettings();
+    var maxHeavy = settings.maxHeavyCyclesPerWeek != null ? settings.maxHeavyCyclesPerWeek : 2;
+
+    var legend = document.createElement('div');
+    legend.className = 'coordination-legend';
+    /* "Allégée" absente volontairement (point 3) : aucune semaine n'a
+       aujourd'hui de drapeau deload (lot 13), ce serait une entrée de
+       légende sans jamais aucune case correspondante. */
+    legend.innerHTML =
+      '<span class="coordination-legend-item"><span class="coordination-legend-swatch is-volume"></span>Volume</span>' +
+      '<span class="coordination-legend-item"><span class="coordination-legend-swatch is-peak"></span>Pic (P) ou test (T)</span>';
+    body.appendChild(legend);
+
+    var rule = document.createElement('div');
+    rule.className = 'coordination-rule-note';
+    rule.textContent = 'Règle du tirage : jamais plus de ' + maxHeavy + ' cycles en pic ou test la même semaine. ' +
+      'Les départs sont décalés pour la respecter. Pour un cycle déjà en cours, la semaine affichée part de sa ' +
+      'semaine actuelle, pas du calendrier : une estimation, pas un horaire figé.';
+    body.appendChild(rule);
+
+    var warningEl = document.createElement('div');
+    warningEl.className = 'coordination-warning';
+    warningEl.hidden = counts.every(function (c) { return c <= maxHeavy; });
+    warningEl.textContent = 'Au moins une semaine dépasse ' + maxHeavy + ' cycles lourds en même temps sur ce calendrier. Ajuste les départs ci-dessous si besoin.';
+    body.appendChild(warningEl);
+
+    if (entries.length > 0) {
+      var listLabel = document.createElement('span');
+      listLabel.className = 'dash-section-eyebrow';
+      listLabel.textContent = 'DÉPART DE CHAQUE CYCLE';
+      body.appendChild(listLabel);
+
+      var list = document.createElement('div');
+      list.style.marginTop = '10px';
+      entries.forEach(function (e) { list.appendChild(buildCoordinationStartRow(e)); });
+      body.appendChild(list);
+    }
+
+    var closeBtn = document.createElement('button');
+    closeBtn.type = 'button';
+    closeBtn.className = 'btn-primary';
+    closeBtn.style.width = '100%';
+    closeBtn.style.marginTop = '16px';
+    closeBtn.textContent = 'Valider le calendrier';
+    closeBtn.addEventListener('click', closeCoordinationPage);
+    body.appendChild(closeBtn);
+  }
+
+  function openCoordinationPage() {
+    renderCoordinationPage();
+    document.getElementById('coordination-page').hidden = false;
+  }
+
+  function closeCoordinationPage() {
+    document.getElementById('coordination-page').hidden = true;
+    scrollMainToTop();
+  }
+
+  document.getElementById('coordination-back-btn').addEventListener('click', closeCoordinationPage);
+
   /* résumé de la semaine 1 d'un cycle tiré, pas encore actif — calculé sur
      le nouveau 1RM, sans dépendre de cycle.semaine_actuelle (gelée). */
   function formatPendingCycleWeek1(cycleId, oneRM) {
@@ -6599,6 +6974,11 @@
       renderExerciseList();
       renderProgrammeWeek();
       renderCycleAlertBanner();
+      /* livraison 3 : accès direct à l'écran Coordination juste après la
+         validation du tirage (point validé avec l'utilisateur), toujours,
+         pas seulement en cas d'avertissement — l'avertissement s'affiche
+         par-dessus si nécessaire. */
+      openCoordinationPage();
       if (warnings.length > 0) showCoordinationWarning(warnings);
     }
 
@@ -6980,6 +7360,7 @@
       emptyBtn.textContent = 'Activer des cycles';
       emptyBtn.addEventListener('click', openActivateCyclesPage);
       body.appendChild(emptyBtn);
+      document.getElementById('programme-coordination-btn').hidden = true;
       card.hidden = false;
       return;
     }
@@ -7020,8 +7401,11 @@
       body.appendChild(row);
     });
 
+    document.getElementById('programme-coordination-btn').hidden = false;
     card.hidden = false;
   }
+
+  document.getElementById('programme-coordination-btn').addEventListener('click', openCoordinationPage);
 
   /* jour sélectionné dans la bande de Programme (1 à 7, ou null) — état
      propre à cet écran, jamais partagé avec l'Accueil qui n'a pas de
