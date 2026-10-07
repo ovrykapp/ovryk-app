@@ -5,12 +5,12 @@ Taille : S = moins d'une heure de travail assisté, M = une demi journée, L = u
 | Lot | Titre | Écrans de la maquette | Taille | Dépend de |
 |---|---|---|---|---|
 | 00 | Socle : 12 cycles, durée dynamique, style | aucun | fait | |
-| 01 | Navigation et en-têtes | 1, 4, 5, 6, 16 (barre et titres) | S | 00 |
-| 02 | Programme : cycles en cours et semaine | 4 | M | 01 |
-| 03 | Accueil : séance du jour | 1 | M | 02 |
-| 04 | Séance de muscu et double progression | 2 | M | 01 |
-| 05 | Séance d'haltérophilie : réussi ou raté | 3, 10, 11 | L | 04 |
-| 06 | Test 1RM séparé et fin de cycle | 26, 27 | M | 05 |
+| 01 | Navigation et en-têtes | 1, 4, 5, 6, 16 (barre et titres) | fait | 00 |
+| 02 | Programme : cycles en cours et semaine | 4 | fait | 01 |
+| 03 | Accueil : séance du jour | 1 | fait | 02 |
+| 04 | Séance de muscu et double progression | 2 | fait | 01 |
+| 05 | Séance d'haltérophilie : réussi ou raté | 3, 10, 11 | fait | 04 |
+| 06 | Test 1RM séparé et fin de cycle | 26, 27 | fait | 05 |
 | 07 | Activation et tirage des cycles (inclut l'affichage Cycle 13-17 et verifier-cycles.js étendu à 17) | 24, 29, 25, 22 | M | 06 |
 | 08 | Coordination des cycles | 30 | M | 07 |
 | 09 | Muscu libre : éditeur de routine | 20, 21, 23, 7, 9 | M | 04 |
