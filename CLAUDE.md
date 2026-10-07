@@ -8,7 +8,7 @@ Application de suivi de musculation et d'haltérophilie. Fichier unique index.ht
 2. dossier-lots/ETAT-DES-LIEUX.md, MODELE-DE-DONNEES.md, REGLES-METIER.md, DECISIONS-A-PRENDRE.md, ECRANS-A-ADAPTER.md.
 3. Le lot demandé : dossier-lots/lots/LOT-NN.md, et ses images dans dossier-lots/maquette/.
 
-L'avancement se suit dans dossier-lots/PLAN.md. Les lots 00 à 06 sont faits, le lot 07 est le prochain. Ne jamais traiter plus d'un lot à la fois.
+L'avancement se suit dans dossier-lots/PLAN.md. Les lots 00 à 07 sont faits, le lot 08 est le prochain. Ne jamais traiter plus d'un lot à la fois.
 
 ## Structure du projet
 
