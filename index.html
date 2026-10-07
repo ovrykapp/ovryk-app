@@ -3741,7 +3741,11 @@
   var DEFAULT_SETTINGS = {
     unit: 'kg',
     restTimerSeconds: 90,
-    lastExportAt: null
+    lastExportAt: null,
+    /* R12 (lot 07, point D) : baisse en points de pourcentage appliquée à la
+       deuxième séance (ou plus) d'un mouvement de cycle dans la même semaine
+       civile. */
+    j2OffsetPoints: 10
   };
 
   function readJSON(key, fallback) {
@@ -4472,6 +4476,12 @@
       var anyDone = sex.sets.some(function (set) { return set.done; });
       if (!anyDone) return;
       seances++;
+      /* R12, point D : une séance légère est une vraie séance (comptée dans
+         seances), mais ses pourcentages abaissés rendent la réussite plus
+         facile — exclue du taux pour ne pas le gonfler artificiellement.
+         Une séance antérieure à ce lot n'a pas isLightSession : traitée
+         comme avant (incluse), aucune migration rétroactive. */
+      if (sex.isLightSession) return;
       sex.sets.forEach(function (set) {
         if (!set.done || !set.reps) return;
         totalAttempted += set.reps;
@@ -4829,6 +4839,7 @@
     var settingsChanged = false;
     if (settings.defaultProgressionStep == null) { settings.defaultProgressionStep = 2.5; settingsChanged = true; }
     if (!settings.defaultRepRange) { settings.defaultRepRange = { min: 8, max: 10 }; settingsChanged = true; }
+    if (settings.j2OffsetPoints == null) { settings.j2OffsetPoints = 10; settingsChanged = true; }
     if (settingsChanged) OvrykDB.saveSettings(settings);
 
     var exercises = OvrykDB.getExercises();
@@ -7751,8 +7762,24 @@
     });
   }
 
-  function buildCycleSessionSets(cycle) {
-    return buildSessionSetsFromPrescription(getCycleWeek(cycle).sets);
+  /* exerciseId/referenceDate/excludeSessionId optionnels (rétro-compatible) :
+     sans eux, comportement d'avant R12 (semaine courante, jamais légère) —
+     utilisé par aucun appelant actuellement, gardé pour ne pas casser un
+     futur appel qui ne connaîtrait pas encore le mouvement. */
+  function buildCycleSessionSets(cycle, exerciseId, referenceDate, excludeSessionId) {
+    var firstSession = exerciseId ? getFirstCompletedSessionThisWeekForExercise(exerciseId, referenceDate, excludeSessionId) : null;
+    var firstSex = firstSession ? findExerciseInSession(firstSession, exerciseId) : null;
+    var weekNumber = firstSession ? resolveLightSessionWeekNumber(firstSex, cycle) : cycle.semaine_actuelle;
+    var week = getCycleWeekAt(cycle, weekNumber);
+    var isLightSession = !!firstSession && !week.isTestWeek;
+    var sets = isLightSession ? applyJ2Offset(week.sets) : week.sets;
+    return {
+      sets: buildSessionSetsFromPrescription(sets),
+      restSeconds: week.restSeconds || 90,
+      weekNumberUsed: weekNumber,
+      cycleIdUsed: cycle.cycle_actif,
+      isLightSession: isLightSession
+    };
   }
 
   function getLastCompletedSessionForRoutine(routineId) {
@@ -7769,6 +7796,62 @@
       if (session.exercises[i].exerciseId === exerciseId) return session.exercises[i];
     }
     return null;
+  }
+
+  /* ============================================================
+     R12 (lot 07, point D) — deuxième séance de la semaine. referenceDate
+     est toujours session.date (début, jamais completedAt — même convention
+     que weekKeyOf ailleurs dans le fichier), pour que la semaine civile
+     d'une séance ne bouge jamais entre sa construction et sa fin.
+  ============================================================ */
+
+  /* séances déjà terminées cette semaine civile pour ce mouvement, où il a
+     été réellement fait (au moins une série done) — jamais une séance en
+     cours ni annulée (les annulées sont supprimées, jamais stockées). */
+  function getPriorCompletedSessionsThisWeekForExercise(exerciseId, referenceDate, excludeSessionId) {
+    var wk = weekKeyOf(referenceDate);
+    return OvrykDB.getSessions().filter(function (s) {
+      if (s.status !== 'completed' || s.id === excludeSessionId) return false;
+      if (weekKeyOf(s.date) !== wk) return false;
+      var sex = findExerciseInSession(s, exerciseId);
+      return !!(sex && sex.sets.some(function (set) { return set.done; }));
+    });
+  }
+
+  function getFirstCompletedSessionThisWeekForExercise(exerciseId, referenceDate, excludeSessionId) {
+    var matches = getPriorCompletedSessionsThisWeekForExercise(exerciseId, referenceDate, excludeSessionId);
+    if (!matches.length) return null;
+    return matches.reduce(function (earliest, s) {
+      return new Date(s.date) < new Date(earliest.date) ? s : earliest;
+    });
+  }
+
+  /* Semaine à utiliser pour une séance légère : celle réellement prescrite à
+     la première séance de la semaine civile, jamais cycle.semaine_actuelle
+     (déjà avancée depuis). cycleWeekUsed/cycleIdUsed sont stockés sur
+     l'exercice de séance par buildCycleSessionSets ci-dessous (champs
+     optionnels, jamais présents sur une séance antérieure à ce lot). */
+  function resolveLightSessionWeekNumber(firstSex, cycle) {
+    if (firstSex && firstSex.cycleWeekUsed != null) {
+      if (!firstSex.cycleIdUsed || firstSex.cycleIdUsed === cycle.cycle_actif) {
+        return firstSex.cycleWeekUsed;
+      }
+      /* le cycle a changé depuis la première séance de la semaine (test puis
+         nouveau cycle lancé) : la séance légère s'applique à la semaine 1 du
+         nouveau cycle, jamais aux semaines de l'ancien. */
+      return 1;
+    }
+    /* séance antérieure à ce lot, sans cycleWeekUsed stocké : repli le
+       meilleur effort, jamais de migration rétroactive. */
+    return Math.max(1, cycle.semaine_actuelle - 1);
+  }
+
+  function applyJ2Offset(sets) {
+    var settings = OvrykDB.getSettings();
+    var offset = settings.j2OffsetPoints != null ? settings.j2OffsetPoints : 10;
+    return sets.map(function (s) {
+      return { reps: s.reps, percent: Math.max(50, s.percent - offset) };
+    });
   }
 
   function resolveDoneSets(sex) {
@@ -7948,10 +8031,17 @@
           new Date(routine.updatedAt) > new Date(lastSession.completedAt || lastSession.date);
         var pastSex = (activeCycle || inBaseMode || routineEditedSinceLastSession) ? null : findExerciseInSession(lastSession, rex.exerciseId);
 
-        var sets, restSeconds;
+        var sets, restSeconds, cycleWeekUsed = null, cycleIdUsed = null, isLightSession = false;
         if (activeCycle) {
-          sets = buildCycleSessionSets(activeCycle);
-          restSeconds = getCycleWeek(activeCycle).restSeconds || 90;
+          /* la séance n'existe pas encore en base (excludeSessionId inutile
+             ici) : R12, point D — résout si c'est la première ou une séance
+             légère de la semaine civile pour ce mouvement. */
+          var cycleBuild = buildCycleSessionSets(activeCycle, rex.exerciseId, now, null);
+          sets = cycleBuild.sets;
+          restSeconds = cycleBuild.restSeconds;
+          cycleWeekUsed = cycleBuild.weekNumberUsed;
+          cycleIdUsed = cycleBuild.cycleIdUsed;
+          isLightSession = cycleBuild.isLightSession;
         } else if (inBaseMode) {
           var basePrescription = getBaseModePrescription(exercise);
           sets = buildSessionSetsFromPrescription(basePrescription.sets);
@@ -7974,7 +8064,10 @@
           restSeconds: restSeconds,
           sets: sets,
           groupId: rex.groupId || null,
-          groupType: rex.groupType || null
+          groupType: rex.groupType || null,
+          cycleWeekUsed: cycleWeekUsed,
+          cycleIdUsed: cycleIdUsed,
+          isLightSession: isLightSession
         };
       })
     };
@@ -8514,11 +8607,28 @@
     return card;
   }
 
+  /* R12, point D : lit le réglage réel (jamais un 10 en dur) pour que le
+     texte reste exact si l'utilisateur le change dans les réglages. */
+  function buildLightSessionNotice() {
+    var settings = OvrykDB.getSettings();
+    var offset = settings.j2OffsetPoints != null ? settings.j2OffsetPoints : 10;
+    var wrap = document.createElement('div');
+    wrap.className = 'cycle-test-form';
+    var text = document.createElement('p');
+    text.className = 'cycle-test-intro';
+    text.textContent = 'Séance légère : deuxième séance de la semaine sur ce mouvement. ' +
+      'Pourcentages baissés de ' + offset + ' points (plancher 50 %), mêmes reps.';
+    wrap.appendChild(text);
+    return wrap;
+  }
+
   function buildHalteroLiveBody(sex, index) {
     var frag = document.createDocumentFragment();
     var currentIndex = getCurrentSetIndex(sex);
     var currentSet = currentIndex !== -1 ? sex.sets[currentIndex] : null;
     var counterMode = currentSet ? isHalteroCounterMode(currentSet) : false;
+
+    if (sex.isLightSession) frag.appendChild(buildLightSessionNotice());
 
     var lastSex = getLastLoggedSex(sex.exerciseId);
     var lastHintText = lastSex ? formatLastSessionHint(lastSex) : null;
@@ -9533,6 +9643,11 @@
     if (!activeSession) return;
     var exercise = OvrykDB.getExerciseById(exerciseId);
     var cycle = OvrykDB.getForceCycle(exerciseId);
+    /* R12, point D : un mouvement de cycle ajouté à la volée (hors routine)
+       respecte la même règle de séance légère que buildSessionFromRoutine —
+       activeSession.id existe déjà ici (séance en cours persistée), donc on
+       l'exclut du comptage pour ne pas se compter soi-même. */
+    var cycleBuild = cycle ? buildCycleSessionSets(cycle, exerciseId, activeSession.date, activeSession.id) : null;
     var sex = {
       id: 'sex-' + OvrykDB.generateId(),
       exerciseId: exerciseId,
@@ -9540,11 +9655,14 @@
       category: exercise ? exercise.category : '',
       oneRepMaxSnapshot: cycle ? cycle.one_rm_actuel :
         ((exercise && exercise.category === 'Lifting' && exercise.oneRepMax != null) ? exercise.oneRepMax : null),
-      restSeconds: cycle ? (getCycleWeek(cycle).restSeconds || 90) : 90,
-      sets: cycle ? buildCycleSessionSets(cycle) : [createSessionSet(exercise)],
+      restSeconds: cycleBuild ? cycleBuild.restSeconds : 90,
+      sets: cycleBuild ? cycleBuild.sets : [createSessionSet(exercise)],
       groupId: null,
       groupType: null,
-      grip: null
+      grip: null,
+      cycleWeekUsed: cycleBuild ? cycleBuild.weekNumberUsed : null,
+      cycleIdUsed: cycleBuild ? cycleBuild.cycleIdUsed : null,
+      isLightSession: cycleBuild ? cycleBuild.isLightSession : false
     };
     activeSession.exercises.push(sex);
     persistActiveSession();
@@ -9577,7 +9695,7 @@
   /* seul endroit de tout le fichier qui marque une séance completed et
      avance les cycles (vérifié par recherche) : un seul appelant manuel,
      le bouton Terminer, aucune fin automatique ailleurs à protéger d'un
-     double déclenchement. Logique d'avancement des cycles inchangée. */
+     double déclenchement. */
   function finishActiveSession() {
     var now = new Date().toISOString();
     activeSession.completedAt = now;
@@ -9594,7 +9712,14 @@
     activeSession.exercises.forEach(function (sex) {
       if (advancedIds[sex.exerciseId] || cycleTestSubmittedIds[sex.exerciseId]) return;
       advancedIds[sex.exerciseId] = true;
-      if (OvrykDB.getForceCycle(sex.exerciseId)) OvrykDB.advanceForceCycleWeek(sex.exerciseId);
+      if (!OvrykDB.getForceCycle(sex.exerciseId)) return;
+      /* R12, point D : la semaine du cycle n'avance qu'une seule fois par
+         semaine civile — une séance légère (deuxième ou plus pour ce
+         mouvement cette semaine) ne fait jamais avancer semaine_actuelle.
+         activeSession est déjà sauvegardée completed juste au-dessus, donc
+         on s'exclut explicitement pour ne pas se compter soi-même. */
+      var priorThisWeek = getPriorCompletedSessionsThisWeekForExercise(sex.exerciseId, activeSession.date, activeSession.id);
+      if (priorThisWeek.length === 0) OvrykDB.advanceForceCycleWeek(sex.exerciseId);
     });
 
     activeSession = null;
