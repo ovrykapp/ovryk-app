@@ -853,6 +853,60 @@
   .cycle-test-keep-btn { width: 100%; margin-top: 8px; }
   .cycle-pending-notice .cycle-test-intro { margin-bottom: 10px; }
 
+  /* liste de tentatives du test de 1RM (lot 06, livraison B) */
+  .cycle-test-attempts { display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
+  .cycle-test-attempt-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px;
+    border: 1px solid var(--border-outline);
+    border-radius: var(--radius);
+  }
+  .cycle-test-attempt-row.is-ok { border-color: var(--blue); }
+  .cycle-test-attempt-row.is-fail { border-color: var(--rust); }
+  .cycle-test-attempt-label {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--steel);
+    flex-shrink: 0;
+    width: 64px;
+  }
+  .cycle-test-attempt-weight { flex: 1; min-width: 0; }
+  .cycle-test-attempt-actions { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+  .cycle-test-attempt-ok, .cycle-test-attempt-fail {
+    min-height: 36px;
+    padding: 0 10px;
+    font-size: 11px;
+  }
+  .cycle-test-attempt-status {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+  }
+  .cycle-test-attempt-status svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2.5; }
+  .cycle-test-attempt-status.is-ok { background: var(--blue); color: var(--graphite); }
+  .cycle-test-attempt-status.is-fail { background: var(--orange-fill); border: 2px solid var(--rust); color: var(--rust); }
+  .cycle-test-attempt-delete {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: transparent;
+    border: none;
+    color: var(--steel);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+  }
+  .cycle-test-attempt-delete svg { width: 14px; height: 14px; stroke: currentColor; fill: none; }
+  .cycle-test-add-btn { width: 100%; margin-bottom: 12px; }
+
   .cycle-detail-status { font-family: var(--font-mono); font-size: 12px; color: var(--steel); margin-bottom: 10px; }
   .cycle-detail-phase { color: var(--accent-info); font-weight: 700; }
 
@@ -3466,6 +3520,20 @@
     </div>
   </div>
 
+  <!-- lot 06 : même style que fail-sheet-overlay (feuille "Un raté" du
+       lot 05), contenu minimal — une tentative de 1RM n'a ni "quelle rep"
+       ni "pourquoi", juste réussie ou ratée. -->
+  <div class="rest-picker-overlay" id="test-attempt-fail-overlay" hidden>
+    <div class="rest-picker-sheet" role="dialog" aria-modal="true" aria-labelledby="test-attempt-fail-title">
+      <div class="rest-picker-handle" aria-hidden="true"></div>
+      <h2 class="rest-picker-title" id="test-attempt-fail-title">Tentative ratée</h2>
+      <p class="rest-picker-subtitle" id="test-attempt-fail-subtitle"></p>
+
+      <button type="button" class="btn-primary" id="test-attempt-fail-confirm">Enregistrer le raté</button>
+      <button type="button" class="fail-sheet-cancel" id="test-attempt-fail-cancel">Annuler</button>
+    </div>
+  </div>
+
 <script>
 (function () {
   'use strict';
@@ -5005,6 +5073,33 @@
   document.getElementById('fail-sheet-cancel').addEventListener('click', closeFailSheet);
   document.getElementById('fail-sheet-overlay').addEventListener('click', function (e) {
     if (e.target === this) closeFailSheet();
+  });
+
+  /* lot 06 : feuille "Un raté" pour une tentative de test de 1RM —
+     contenu minimal (pas de rep, pas de cause), reprend juste le style. */
+  var testAttemptFailState = null;
+
+  function openTestAttemptFailSheet(sex, attempt) {
+    testAttemptFailState = { sex: sex, attempt: attempt };
+    document.getElementById('test-attempt-fail-subtitle').textContent = attempt.poids + ' kg';
+    document.getElementById('test-attempt-fail-overlay').hidden = false;
+  }
+
+  function closeTestAttemptFailSheet() {
+    document.getElementById('test-attempt-fail-overlay').hidden = true;
+    testAttemptFailState = null;
+  }
+
+  document.getElementById('test-attempt-fail-confirm').addEventListener('click', function () {
+    if (!testAttemptFailState) return;
+    testAttemptFailState.attempt.reussie = false;
+    persistActiveSession();
+    closeTestAttemptFailSheet();
+    renderSeanceActiveView();
+  });
+  document.getElementById('test-attempt-fail-cancel').addEventListener('click', closeTestAttemptFailSheet);
+  document.getElementById('test-attempt-fail-overlay').addEventListener('click', function (e) {
+    if (e.target === this) closeTestAttemptFailSheet();
   });
 
   function buildRestTimeRow(getValue, setValue, exerciseName) {
@@ -7835,7 +7930,7 @@
     if (cycle && cycle.en_attente_de_validation) {
       frag.appendChild(buildCyclePendingNotice(sex.exerciseId));
     } else if (cycle && getCycleWeek(cycle).isTestWeek) {
-      frag.appendChild(buildCycleTestForm(sex.exerciseId, cycle));
+      frag.appendChild(buildCycleTestForm(sex, cycle));
     }
 
     var addSetBtn = document.createElement('button');
@@ -8281,10 +8376,107 @@
     return frag;
   }
 
+  /* saisie manuelle du 1RM : état local non persisté (pas un champ du
+     modèle de données), clé exerciseId. Survit à "Ajouter une tentative",
+     une correction ou une suppression ; remis à null (= automatique)
+     uniquement quand une NOUVELLE tentative est marquée réussie. */
+  var cycleTestManualOneRM = {};
+
+  /* une ligne par tentative. Poids modifiable tant que non tranchée, puis
+     verrouillé une fois réussie ou ratée — un tap sur la coche/croix la
+     remet à non tranchée (poids de nouveau modifiable), un tap sur la
+     corbeille la supprime. Chaque action persiste immédiatement. */
+  function buildCycleTestAttemptRow(sex, attempt, idx) {
+    var row = document.createElement('div');
+    row.className = 'cycle-test-attempt-row' + (attempt.reussie === true ? ' is-ok' : attempt.reussie === false ? ' is-fail' : '');
+
+    var label = document.createElement('span');
+    label.className = 'cycle-test-attempt-label';
+    label.textContent = 'Tentative ' + (idx + 1);
+    row.appendChild(label);
+
+    var weightInput = document.createElement('input');
+    weightInput.type = 'number';
+    weightInput.className = 'load-input cycle-test-attempt-weight';
+    weightInput.step = '2.5';
+    weightInput.min = '0';
+    weightInput.value = attempt.poids;
+    weightInput.disabled = attempt.reussie !== null;
+    weightInput.addEventListener('change', function () {
+      var v = parseFloat(weightInput.value);
+      if (!isNaN(v) && v > 0) {
+        attempt.poids = v;
+        persistActiveSession();
+      }
+      renderSeanceActiveView();
+    });
+    row.appendChild(weightInput);
+
+    var actions = document.createElement('div');
+    actions.className = 'cycle-test-attempt-actions';
+
+    if (attempt.reussie === null) {
+      var okBtn = document.createElement('button');
+      okBtn.type = 'button';
+      okBtn.className = 'btn-primary is-blue cycle-test-attempt-ok';
+      okBtn.textContent = 'Réussie';
+      okBtn.addEventListener('click', function () {
+        attempt.reussie = true;
+        cycleTestManualOneRM[sex.exerciseId] = null;
+        persistActiveSession();
+        renderSeanceActiveView();
+      });
+      actions.appendChild(okBtn);
+
+      var failBtn = document.createElement('button');
+      failBtn.type = 'button';
+      failBtn.className = 'haltero-fail-btn cycle-test-attempt-fail';
+      failBtn.textContent = 'Un raté';
+      failBtn.addEventListener('click', function () { openTestAttemptFailSheet(sex, attempt); });
+      actions.appendChild(failBtn);
+    } else {
+      var statusBtn = document.createElement('button');
+      statusBtn.type = 'button';
+      statusBtn.className = 'cycle-test-attempt-status' + (attempt.reussie ? ' is-ok' : ' is-fail');
+      statusBtn.setAttribute('aria-label', 'Modifier cette tentative');
+      statusBtn.innerHTML = attempt.reussie
+        ? '<svg viewBox="0 0 24 24"><polyline points="4,13 9,18 20,6"/></svg>'
+        : '<svg viewBox="0 0 24 24"><line x1="5" y1="5" x2="19" y2="19"/><line x1="19" y1="5" x2="5" y2="19"/></svg>';
+      statusBtn.addEventListener('click', function () {
+        attempt.reussie = null;
+        persistActiveSession();
+        renderSeanceActiveView();
+      });
+      actions.appendChild(statusBtn);
+    }
+
+    var deleteBtn = document.createElement('button');
+    deleteBtn.type = 'button';
+    deleteBtn.className = 'cycle-test-attempt-delete';
+    deleteBtn.setAttribute('aria-label', 'Supprimer cette tentative');
+    deleteBtn.innerHTML = '<svg viewBox="0 0 24 24" stroke-width="1.8" stroke-linecap="round"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg>';
+    deleteBtn.addEventListener('click', function () {
+      var i = sex.testAttempts.indexOf(attempt);
+      if (i !== -1) sex.testAttempts.splice(i, 1);
+      persistActiveSession();
+      renderSeanceActiveView();
+    });
+    actions.appendChild(deleteBtn);
+
+    row.appendChild(actions);
+    return row;
+  }
+
   /* texte générique, valable que le test soit inclus en dernière semaine
      (cycles 1, 2, 6, 7, 12, A à E) ou séparé (cycles 3, 4, 5, 8 à 11) —
-     jamais de nombre de semaines écrit en dur ici (R1, CLAUDE.md). */
-  function buildCycleTestForm(exerciseId, cycle) {
+     jamais de nombre de semaines écrit en dur ici (R1, CLAUDE.md).
+     sex.testAttempts : tableau de { poids, reussie }, initialisé ici au
+     premier rendu, jamais par migrateSchema — aucune migration pour une
+     ancienne séance sans ce champ (même principe que repResults au lot 05). */
+  function buildCycleTestForm(sex, cycle) {
+    var exerciseId = sex.exerciseId;
+    if (!Array.isArray(sex.testAttempts)) sex.testAttempts = [];
+
     var form = document.createElement('div');
     form.className = 'cycle-test-form';
 
@@ -8292,6 +8484,35 @@
     intro.className = 'cycle-test-intro';
     intro.textContent = 'Teste ton 1RM : enregistre chaque tentative, puis valide le nouveau 1RM ou garde celui que tu as déjà.';
     form.appendChild(intro);
+
+    var listLabel = document.createElement('p');
+    listLabel.className = 'form-label';
+    listLabel.textContent = 'Tentatives';
+    form.appendChild(listLabel);
+
+    var list = document.createElement('div');
+    list.className = 'cycle-test-attempts';
+    sex.testAttempts.forEach(function (attempt, idx) {
+      list.appendChild(buildCycleTestAttemptRow(sex, attempt, idx));
+    });
+    form.appendChild(list);
+
+    var addBtn = document.createElement('button');
+    addBtn.type = 'button';
+    addBtn.className = 'btn-back cycle-test-add-btn';
+    addBtn.textContent = '+ Ajouter une tentative';
+    addBtn.addEventListener('click', function () {
+      var last = sex.testAttempts[sex.testAttempts.length - 1];
+      var suggested = last ? last.poids + 2.5 : (cycle.one_rm_actuel || 0);
+      sex.testAttempts.push({ poids: suggested, reussie: null });
+      persistActiveSession();
+      renderSeanceActiveView();
+    });
+    form.appendChild(addBtn);
+
+    var bestSuccessful = sex.testAttempts.reduce(function (best, a) {
+      return (a.reussie === true && (best == null || a.poids > best)) ? a.poids : best;
+    }, null);
 
     var label = document.createElement('label');
     label.className = 'form-label';
@@ -8306,6 +8527,8 @@
     input.className = 'load-input';
     input.step = '2.5';
     input.min = '0';
+    var manual = cycleTestManualOneRM[exerciseId];
+    input.value = manual != null ? manual : (bestSuccessful != null ? bestSuccessful : '');
     input.placeholder = cycle.one_rm_actuel != null ? cycle.one_rm_actuel : '';
 
     var unit = document.createElement('span');
@@ -8318,11 +8541,24 @@
 
     var submitBtn = document.createElement('button');
     submitBtn.type = 'button';
-    submitBtn.className = 'btn-primary';
+    submitBtn.className = 'btn-primary is-blue';
     submitBtn.textContent = 'Valider mon 1RM';
+
+    function updateSubmitState() {
+      var v = parseFloat(input.value);
+      submitBtn.disabled = isNaN(v) || v <= 0;
+    }
+    updateSubmitState();
+
+    input.addEventListener('input', function () {
+      cycleTestManualOneRM[exerciseId] = input.value;
+      updateSubmitState();
+    });
+
     submitBtn.addEventListener('click', function () {
       var v = parseFloat(input.value);
       if (isNaN(v) || v <= 0) return;
+      cycleTestManualOneRM[exerciseId] = null;
       completeCycleTest(exerciseId, v);
     });
     form.appendChild(submitBtn);
@@ -8333,6 +8569,7 @@
     keepBtn.textContent = 'Garder mon 1RM actuel';
     keepBtn.disabled = cycle.one_rm_actuel == null;
     keepBtn.addEventListener('click', function () {
+      cycleTestManualOneRM[exerciseId] = null;
       completeCycleTest(exerciseId, cycle.one_rm_actuel);
     });
     form.appendChild(keepBtn);
