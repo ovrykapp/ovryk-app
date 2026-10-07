@@ -992,6 +992,84 @@
   }
   .cycle-end-launch-btn { width: calc(100% - 2 * var(--space-4)); margin: var(--space-4) var(--space-4); }
 
+  /* lot 07 : écrans "Activer des cycles" et "Tes N cycles" */
+  .activate-cycles-intro { color: var(--steel); font-size: 13px; line-height: 1.5; margin-bottom: var(--space-3); }
+  .activate-cycle-row { cursor: pointer; }
+  .activate-cycle-badge {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--steel);
+    background: var(--field);
+    border-radius: var(--radius-pill);
+    padding: 3px 8px;
+    white-space: nowrap;
+  }
+  .activate-cycle-orm-field { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; flex-shrink: 0; }
+  .activate-cycle-orm-label {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--steel);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .activate-cycle-orm-input {
+    width: 60px;
+    background: none;
+    border: none;
+    border-bottom: 2px solid var(--border-outline);
+    padding: 0 0 2px;
+    text-align: right;
+    font-family: var(--font-display);
+    font-size: 16px;
+    font-weight: 800;
+    color: var(--ink);
+  }
+  .activate-cycle-orm-input:focus { outline: none; }
+  .activate-cycle-orm-input.is-missing { border-bottom-color: var(--rust); }
+  #activate-cycles-draw-btn { width: 100%; margin-top: var(--space-4); }
+
+  .cycles-drawn-card {
+    margin: 0 0 var(--space-3);
+    padding: var(--space-4);
+    border: 1px solid var(--border-card);
+    border-radius: var(--radius-card);
+    background: var(--surface);
+  }
+  .cycles-drawn-card-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; margin-bottom: 4px; }
+  .cycles-drawn-card-name { font-family: var(--font-title); font-weight: 700; font-size: 16px; color: var(--ink); }
+  .cycles-drawn-card-tag {
+    display: inline-block;
+    margin-top: 4px;
+    font-size: 10px;
+    color: var(--ink);
+    background: var(--field);
+    border-radius: var(--radius-pill);
+    padding: 3px 10px;
+  }
+  .cycles-drawn-redraw-btn {
+    flex-shrink: 0;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 1px solid var(--border-outline);
+    background: transparent;
+    color: var(--ink);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+  }
+  .cycles-drawn-redraw-btn svg { width: 16px; height: 16px; fill: none; stroke: currentColor; }
+  .cycles-drawn-card-week1 { font-size: 12px; color: var(--steel); margin-top: 8px; }
+  .cycles-drawn-card-orm { font-size: 12px; color: var(--ink); font-weight: 700; margin-top: 2px; }
+  .cycles-drawn-actions-row { display: flex; gap: 8px; margin-top: var(--space-4); }
+  .cycles-drawn-actions-row .routine-action-btn,
+  .cycles-drawn-actions-row .btn-primary { flex: 1; }
+
   .cycle-full-week {
     padding: var(--space-4);
     border-bottom: 1px solid var(--divider);
@@ -3281,6 +3359,8 @@
         <button type="button" id="toggle-add-exercise" class="btn-add">+ Exercice</button>
       </div>
 
+      <button type="button" id="exercises-activate-cycles-btn" class="routine-action-btn" style="width:100%;margin-bottom:16px;">Activer des cycles</button>
+
       <form id="add-exercise-form" class="add-exercise-panel" novalidate>
         <div class="form-row">
           <label class="form-label" for="new-exercise-name">Nom</label>
@@ -3445,6 +3525,34 @@
       <span class="fullscreen-page-action" aria-hidden="true"></span>
     </div>
     <div class="fullscreen-page-body" id="cycle-end-body"></div>
+  </div>
+
+  <div id="activate-cycles-page" class="fullscreen-page" hidden>
+    <div class="fullscreen-page-topbar">
+      <button type="button" id="activate-cycles-cancel-btn" class="fullscreen-page-action cancel">Annuler</button>
+      <span class="fullscreen-page-title">Activer des cycles</span>
+      <span class="fullscreen-page-action" aria-hidden="true"></span>
+    </div>
+    <div class="fullscreen-page-body">
+      <p class="activate-cycles-intro">Choisis tes mouvements et leur 1RM. L'app tire un cycle parmi les 17 pour chacun.</p>
+      <div id="activate-cycles-list"></div>
+      <button type="button" id="activate-cycles-draw-btn" class="btn-primary" disabled>Tirer mes cycles</button>
+    </div>
+  </div>
+
+  <div id="cycles-drawn-page" class="fullscreen-page" hidden>
+    <div class="fullscreen-page-topbar">
+      <button type="button" id="cycles-drawn-cancel-btn" class="fullscreen-page-action cancel">Fermer</button>
+      <span class="fullscreen-page-title" id="cycles-drawn-title"></span>
+      <span class="fullscreen-page-action" aria-hidden="true"></span>
+    </div>
+    <div class="fullscreen-page-body">
+      <div id="cycles-drawn-body"></div>
+      <div class="cycles-drawn-actions-row">
+        <button type="button" id="cycles-drawn-redraw-all-btn" class="routine-action-btn">Tout relancer</button>
+        <button type="button" id="cycles-drawn-validate-btn" class="btn-primary">Valider</button>
+      </div>
+    </div>
   </div>
 
   <nav class="bottom-nav" id="bottom-nav">
@@ -4560,6 +4668,23 @@
      aussi bien une première installation qu'une mise à jour qui a déjà
      tourné une fois (lot 04 ajoute exercices/réglages à une sauvegarde qui
      ne couvrait que les routines jusqu'ici). */
+  /* lot 06 : clé dédiée (ovryk.backup.forceCycles.<jour>), jamais réécrite une
+     fois posée le jour même — filet pour historique_1rm/historique_cycles en
+     cas de bug de migration. Appelée par migrateSchema à chaque démarrage, et
+     par le lot 07 (écran "Tirer mes cycles") juste avant d'écraser un cycle
+     déjà actif, pour garantir que ce filet existe aussi pour les sessions qui
+     tournent depuis plus d'un jour sans recharger la page. */
+  function ensureForceCyclesBackupToday() {
+    var today = new Date();
+    var todayKey = today.getFullYear() + '-' + pad2(today.getMonth() + 1) + '-' + pad2(today.getDate());
+    var forceCyclesBackupKey = 'ovryk.backup.forceCycles.' + todayKey;
+    if (localStorage.getItem(forceCyclesBackupKey) === null) {
+      localStorage.setItem(forceCyclesBackupKey, JSON.stringify({
+        forceCycles: OvrykDB.getForceCycles()
+      }));
+    }
+  }
+
   function migrateSchema() {
     var meta = OvrykDB.getMeta();
     var isFirstRun = meta.schemaVersion !== 2;
@@ -4575,15 +4700,7 @@
       }));
     }
 
-    /* lot 06 : clé dédiée, séparée de la sauvegarde ci-dessus (jamais
-       réécrite), avant toute modification des cycles de force — filet pour
-       historique_1rm/historique_cycles en cas de bug de migration. */
-    var forceCyclesBackupKey = 'ovryk.backup.forceCycles.' + todayKey;
-    if (localStorage.getItem(forceCyclesBackupKey) === null) {
-      localStorage.setItem(forceCyclesBackupKey, JSON.stringify({
-        forceCycles: OvrykDB.getForceCycles()
-      }));
-    }
+    ensureForceCyclesBackupToday();
 
     var routines = OvrykDB.getRoutines();
     var changed = false;
@@ -5606,6 +5723,260 @@
 
   document.getElementById('cycle-end-back-btn').addEventListener('click', closeCycleEndPage);
 
+  /* ============================================================
+     LOT 07 — écrans "Activer des cycles" et "Tes N cycles" : active
+     plusieurs mouvements Lifting d'un coup (R4, R1). activateCyclesSelection
+     (exerciseId -> { checked, oneRM }) porte l'état de l'écran de choix ;
+     cyclesDrawnBatch le résultat du tirage, modifiable avant validation.
+  ============================================================ */
+  var activateCyclesSelection = {};
+  var cyclesDrawnBatch = [];
+
+  function updateActivateCyclesDrawBtnState() {
+    var hasValid = Object.keys(activateCyclesSelection).some(function (id) {
+      var s = activateCyclesSelection[id];
+      return s.checked && s.oneRM != null && s.oneRM > 0;
+    });
+    document.getElementById('activate-cycles-draw-btn').disabled = !hasValid;
+  }
+
+  /* la ligne se re-rend entièrement au clic (coche), mais jamais pendant la
+     saisie du 1RM (state.oneRM mis à jour en place, sans perdre le focus) */
+  function buildActivateCyclesRow(ex) {
+    var state = activateCyclesSelection[ex.id];
+    var cycle = OvrykDB.getForceCycle(ex.id);
+
+    var row = document.createElement('div');
+    row.className = 'picker-row activate-cycle-row' + (state.checked ? ' is-selected' : '');
+
+    var nameEl = document.createElement('span');
+    nameEl.className = 'picker-row-name';
+    nameEl.textContent = ex.name;
+    row.appendChild(nameEl);
+
+    if (cycle) {
+      var badge = document.createElement('span');
+      badge.className = 'activate-cycle-badge';
+      badge.textContent = cycle.en_attente_de_validation ? 'Cycle déjà actif (en attente)' : 'Cycle déjà actif';
+      row.appendChild(badge);
+    }
+
+    var right = document.createElement('span');
+    right.className = 'picker-row-right';
+
+    var ormField = document.createElement('span');
+    ormField.className = 'activate-cycle-orm-field';
+    var ormLabel = document.createElement('span');
+    ormLabel.className = 'activate-cycle-orm-label';
+    ormLabel.textContent = '1RM';
+    ormField.appendChild(ormLabel);
+
+    var ormInput = document.createElement('input');
+    ormInput.type = 'number';
+    ormInput.step = '0.5';
+    ormInput.min = '0';
+    ormInput.placeholder = 'kg';
+    ormInput.className = 'activate-cycle-orm-input mono' + (state.oneRM == null ? ' is-missing' : '');
+    if (state.oneRM != null) ormInput.value = state.oneRM;
+    ormInput.addEventListener('click', function (e) { e.stopPropagation(); });
+    ormInput.addEventListener('input', function () {
+      var val = ormInput.value === '' ? null : parseFloat(ormInput.value);
+      if (val != null && (isNaN(val) || val < 0)) val = null;
+      state.oneRM = val;
+      ormInput.classList.toggle('is-missing', val == null);
+      updateActivateCyclesDrawBtnState();
+    });
+    ormField.appendChild(ormInput);
+    right.appendChild(ormField);
+
+    var check = document.createElement('span');
+    check.className = 'picker-row-check';
+    check.setAttribute('aria-hidden', 'true');
+    right.appendChild(check);
+
+    row.appendChild(right);
+    row.addEventListener('click', function () {
+      state.checked = !state.checked;
+      renderActivateCyclesList();
+    });
+    return row;
+  }
+
+  function renderActivateCyclesList() {
+    var container = document.getElementById('activate-cycles-list');
+    container.innerHTML = '';
+    var liftingExercises = OvrykDB.getExercises()
+      .filter(function (ex) { return ex.category === 'Lifting'; })
+      .sort(function (a, b) { return a.name.localeCompare(b.name, 'fr'); });
+
+    if (liftingExercises.length === 0) {
+      container.innerHTML = '<div class="empty-state"><span class="empty-tag">Vide</span>' +
+        '<h2>Aucun mouvement</h2><p>Ajoute un exercice de catégorie Lifting pour pouvoir activer un cycle.</p></div>';
+      updateActivateCyclesDrawBtnState();
+      return;
+    }
+
+    liftingExercises.forEach(function (ex) { container.appendChild(buildActivateCyclesRow(ex)); });
+    updateActivateCyclesDrawBtnState();
+  }
+
+  function openActivateCyclesPage() {
+    activateCyclesSelection = {};
+    OvrykDB.getExercises().filter(function (ex) { return ex.category === 'Lifting'; }).forEach(function (ex) {
+      var cycle = OvrykDB.getForceCycle(ex.id);
+      activateCyclesSelection[ex.id] = {
+        checked: !cycle,
+        oneRM: cycle ? cycle.one_rm_actuel : (ex.oneRepMax != null ? ex.oneRepMax : null)
+      };
+    });
+    renderActivateCyclesList();
+    document.getElementById('activate-cycles-page').hidden = false;
+  }
+
+  function closeActivateCyclesPage() {
+    document.getElementById('activate-cycles-page').hidden = true;
+    scrollMainToTop();
+  }
+
+  document.getElementById('activate-cycles-cancel-btn').addEventListener('click', closeActivateCyclesPage);
+
+  /* Tire un cycle pour chaque mouvement coché avec un 1RM valide (les autres
+     sont ignorés, cf. critère d'acceptation). assignedSoFar accumule les
+     cycles déjà distribués dans CE lot pour que la préférence R4 s'applique
+     aussi entre les mouvements tirés ensemble, pas seulement contre les
+     cycles déjà actifs en base (tirerProchainCycle s'en charge). */
+  function handleDrawCycles() {
+    var exercises = OvrykDB.getExercises();
+    var selectedIds = Object.keys(activateCyclesSelection).filter(function (id) {
+      var s = activateCyclesSelection[id];
+      return s.checked && s.oneRM != null && s.oneRM > 0;
+    });
+    if (selectedIds.length === 0) return;
+
+    var assignedSoFar = [];
+    cyclesDrawnBatch = selectedIds.map(function (exerciseId) {
+      var exercise = exercises.filter(function (e) { return e.id === exerciseId; })[0];
+      var existingCycle = OvrykDB.getForceCycle(exerciseId);
+      var cycleId = tirerProchainCycle(existingCycle ? existingCycle.cycle_actif : null, assignedSoFar);
+      assignedSoFar.push(cycleId);
+      return { exerciseId: exerciseId, exercise: exercise, oneRM: activateCyclesSelection[exerciseId].oneRM, cycleId: cycleId };
+    });
+
+    closeActivateCyclesPage();
+    openCyclesDrawnPage();
+  }
+
+  document.getElementById('activate-cycles-draw-btn').addEventListener('click', handleDrawCycles);
+
+  function buildCyclesDrawnCard(entry) {
+    var card = document.createElement('div');
+    card.className = 'cycles-drawn-card';
+
+    var top = document.createElement('div');
+    top.className = 'cycles-drawn-card-top';
+
+    var nameWrap = document.createElement('div');
+    nameWrap.innerHTML = '<div class="cycles-drawn-card-name">' + escapeHTML(entry.exercise ? entry.exercise.name : entry.exerciseId) + '</div>' +
+      '<span class="cycles-drawn-card-tag mono">Cycle ' + displayCycleNumber(entry.cycleId) + ' · ' + cycleLength(entry.cycleId) + ' sem.</span>';
+    top.appendChild(nameWrap);
+
+    var redrawBtn = document.createElement('button');
+    redrawBtn.type = 'button';
+    redrawBtn.className = 'cycles-drawn-redraw-btn';
+    redrawBtn.setAttribute('aria-label', 'Relancer le tirage de ' + (entry.exercise ? entry.exercise.name : ''));
+    redrawBtn.innerHTML = '<svg viewBox="0 0 24 24" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>';
+    redrawBtn.addEventListener('click', function () { redrawSingleCard(entry.exerciseId); });
+    top.appendChild(redrawBtn);
+    card.appendChild(top);
+
+    var week1 = document.createElement('div');
+    week1.className = 'cycles-drawn-card-week1';
+    week1.textContent = formatPendingCycleWeek1(entry.cycleId, entry.oneRM);
+    card.appendChild(week1);
+
+    var orm = document.createElement('div');
+    orm.className = 'cycles-drawn-card-orm mono';
+    orm.textContent = '1RM ' + entry.oneRM + ' kg';
+    card.appendChild(orm);
+
+    return card;
+  }
+
+  function renderCyclesDrawnCards() {
+    var body = document.getElementById('cycles-drawn-body');
+    body.innerHTML = '';
+    cyclesDrawnBatch.forEach(function (entry) { body.appendChild(buildCyclesDrawnCard(entry)); });
+  }
+
+  function openCyclesDrawnPage() {
+    document.getElementById('cycles-drawn-title').textContent =
+      'Tes ' + cyclesDrawnBatch.length + ' cycle' + (cyclesDrawnBatch.length > 1 ? 's' : '');
+    renderCyclesDrawnCards();
+    document.getElementById('cycles-drawn-page').hidden = false;
+  }
+
+  function closeCyclesDrawnPage() {
+    document.getElementById('cycles-drawn-page').hidden = true;
+    scrollMainToTop();
+  }
+
+  document.getElementById('cycles-drawn-cancel-btn').addEventListener('click', closeCyclesDrawnPage);
+
+  function redrawSingleCard(exerciseId) {
+    var entry = cyclesDrawnBatch.filter(function (e) { return e.exerciseId === exerciseId; })[0];
+    if (!entry) return;
+    var assignedSoFar = cyclesDrawnBatch
+      .filter(function (e) { return e.exerciseId !== exerciseId; })
+      .map(function (e) { return e.cycleId; });
+    entry.cycleId = tirerProchainCycle(entry.cycleId, assignedSoFar);
+    renderCyclesDrawnCards();
+  }
+
+  function redrawAllCyclesDrawnCards() {
+    var assignedSoFar = [];
+    cyclesDrawnBatch.forEach(function (entry) {
+      var existingCycle = OvrykDB.getForceCycle(entry.exerciseId);
+      entry.cycleId = tirerProchainCycle(existingCycle ? existingCycle.cycle_actif : null, assignedSoFar);
+      assignedSoFar.push(entry.cycleId);
+    });
+    renderCyclesDrawnCards();
+  }
+
+  document.getElementById('cycles-drawn-redraw-all-btn').addEventListener('click', redrawAllCyclesDrawnCards);
+
+  /* Valider : sauvegarde du jour (filet, lot 06), une seule confirmation
+     groupée si au moins un mouvement a déjà un cycle (actif ou en attente de
+     validation — OvrykDB.getForceCycle couvre les deux), puis écrit le 1RM
+     et active chaque cycle avec celui qui a été tiré/choisi. */
+  function handleValidateCyclesDrawn() {
+    function applyBatch() {
+      ensureForceCyclesBackupToday();
+      cyclesDrawnBatch.forEach(function (entry) {
+        OvrykDB.updateExerciseOneRepMax(entry.exerciseId, entry.oneRM);
+        OvrykDB.activateForceCycle(entry.exerciseId, entry.oneRM, entry.cycleId);
+      });
+      closeCyclesDrawnPage();
+      renderExerciseList();
+      renderProgrammeWeek();
+      renderCycleAlertBanner();
+    }
+
+    var conflicts = cyclesDrawnBatch.filter(function (entry) { return !!OvrykDB.getForceCycle(entry.exerciseId); });
+    if (conflicts.length > 0) {
+      var names = conflicts.map(function (entry) { return entry.exercise ? entry.exercise.name : entry.exerciseId; });
+      showConfirmModal(
+        'Remplacer le cycle en cours de ' + names.join(', ') + ' ? L\'historique de son 1RM sera perdu.',
+        applyBatch,
+        null,
+        'Remplacer'
+      );
+    } else {
+      applyBatch();
+    }
+  }
+
+  document.getElementById('cycles-drawn-validate-btn').addEventListener('click', handleValidateCyclesDrawn);
+
   function renderExerciseList() {
     var all = OvrykDB.getExercises();
     var q = normalizeSearch(exerciseFilterState.search.trim());
@@ -5721,6 +6092,8 @@
     renderExerciseList();
   });
   wireSearchClear('exercise-search', 'exercise-search-clear');
+
+  document.getElementById('exercises-activate-cycles-btn').addEventListener('click', openActivateCyclesPage);
 
   var addExercisePanel = document.getElementById('add-exercise-form');
   document.getElementById('toggle-add-exercise').addEventListener('click', function () {
@@ -5955,8 +6328,19 @@
     var cycles = OvrykDB.getForceCycles();
     var exerciseIds = Object.keys(cycles);
 
+    /* lot 07, point d'entrée : aucun cycle actif, la carte propose d'en
+       activer plutôt que de disparaître (seulement quand il y a au moins une
+       routine — sinon renderProgrammeWeek masque déjà toute la carte). */
     if (exerciseIds.length === 0) {
-      card.hidden = true;
+      body.innerHTML = '';
+      var emptyBtn = document.createElement('button');
+      emptyBtn.type = 'button';
+      emptyBtn.className = 'btn-add';
+      emptyBtn.style.width = '100%';
+      emptyBtn.textContent = 'Activer des cycles';
+      emptyBtn.addEventListener('click', openActivateCyclesPage);
+      body.appendChild(emptyBtn);
+      card.hidden = false;
       return;
     }
 
