@@ -863,6 +863,20 @@
 
   .cycle-prescription { padding: 12px; }
   .cycle-week-line { display: flex; align-items: baseline; gap: 10px; margin-bottom: 6px; flex-wrap: wrap; }
+  /* lot 09, point B : variante cliquable du même en-tête (éditeur de
+     routine uniquement) — reset de bouton, le reste (police, couleurs)
+     vient de .cycle-week-line / .cycle-week-num / .cycle-phase, inchangées
+     partout ailleurs. */
+  .cycle-week-line.is-clickable {
+    width: 100%;
+    justify-content: space-between;
+    background: transparent;
+    border: none;
+    padding: 0;
+    color: inherit;
+    text-align: left;
+    cursor: pointer;
+  }
   .cycle-week-num { font-size: 14px; font-weight: 700; color: var(--accent-info); }
   .cycle-phase {
     font-family: var(--font-display);
@@ -8439,7 +8453,7 @@
     block.appendChild(header);
 
     if (cycle) {
-      block.appendChild(buildForceCyclePrescriptionBody(cycle));
+      block.appendChild(buildForceCyclePrescriptionBody(cycle, rex.exerciseId));
       /* rex.restSeconds is already seeded from the cycle's current week
          when the exercise is added (see addExercisesToRoutine) — it just
          used to be stuck at that value with no way to override it, and a
@@ -8739,17 +8753,31 @@
     return row;
   }
 
-  function buildForceCyclePrescriptionBody(cycle) {
+  /* lot 09, point B : en-tête cliquable ("Cycle 7 · Semaine 1/8 · phase")
+     vers openCycleDetailPage (lot 07) — couvre aussi bien un cycle vraiment
+     actif qu'un cycle déjà tiré mais gelé en attente de coordination
+     (isBeforeForceCycleStart), puisque openCycleDetailPage sait déjà
+     afficher "Démarre le..." dans ce cas (voir plus bas dans ce fichier).
+     N'affecte jamais le <div class="cycle-week-line"> des autres usages
+     (openCycleDetailPage lui-même, buildBaseModePrescriptionBody) :
+     seul ce bouton-ci porte la classe is-clickable. */
+  function buildForceCyclePrescriptionBody(cycle, exerciseId) {
     var wrap = document.createElement('div');
     wrap.className = 'cycle-prescription';
 
     var weekPrescription = getCycleWeek(cycle);
     var hideKg = cycle.one_rm_actuel == null;
 
-    var weekLine = document.createElement('div');
-    weekLine.className = 'cycle-week-line';
+    var weekLine = document.createElement('button');
+    weekLine.type = 'button';
+    weekLine.className = 'cycle-week-line is-clickable';
     weekLine.innerHTML = '<span class="cycle-week-num mono">Cycle ' + displayCycleNumber(cycle.cycle_actif) + ' · Semaine ' + cycle.semaine_actuelle + ' / ' + cycleLength(cycle.cycle_actif) + '</span>' +
       '<span class="cycle-phase">' + escapeHTML(weekPrescription.phase) + '</span>';
+    var weekLineChevron = document.createElement('span');
+    weekLineChevron.className = 'rex-summary-chevron';
+    weekLineChevron.innerHTML = '<svg viewBox="0 0 24 24" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="9,6 15,12 9,18"/></svg>';
+    weekLine.appendChild(weekLineChevron);
+    weekLine.addEventListener('click', function () { openCycleDetailPage(exerciseId); });
     wrap.appendChild(weekLine);
 
     var restLine = document.createElement('div');
