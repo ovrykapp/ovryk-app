@@ -21,15 +21,19 @@ L'avancement se suit dans dossier-lots/PLAN.md. Les lots 00 à 08 sont faits (ai
 
 ## Règles
 
-1. Un seul lot à la fois. Proposer un plan sans écrire de code, attendre la validation.
+1. Un seul lot à la fois. Lot d'interface pur (affichage, styles, navigation, aucun changement de données, de cycles, de séances ni de règles métier) : plan, code, vérifications puis commit en local, sans attendre de validation. Lot à risque (migrateSchema, cycles, séances, R4, R12, popup de test, séance en cours, export, import, sauvegardes, écriture dans des données existantes) : un seul plan couvrant tout le lot, attendre l'approbation, puis enchaîner toutes les livraisons du lot sans s'arrêter entre elles. En cas de doute, traiter comme à risque. (règle du 2026-10-10)
 2. Ne jamais changer le format des clés ovryk.* sans migration idempotente testée avec un vrai export. Ne jamais supprimer ni renommer les identifiants 'A' à 'E' : des cycles en cours les utilisent. Seul le nom affiché change (A = Cycle 13, B = 14, C = 15, D = 16, E = 17).
 3. Durée d'un cycle : toujours cycleLength(cycle.cycle_actif), jamais un 6 écrit en dur.
 4. Aucune couleur en dur : variables de :root et section SKIN MAQUETTE. Orange = action principale et muscu, bleu = cycles et haltérophilie.
 5. Textes affichés en français, sans emoji ni tiret long.
 6. Les séances passées ne se réécrivent jamais : le 1RM est figé dans oneRepMaxSnapshot.
 7. Après chaque étape : vérifier la syntaxe du script (extraire le script de index.html et lancer node --check), node outils/verifier-cycles.js, puis python dossier-lots/tests/smoke.py index.html.
-8. Augmenter la version du cache dans sw.js à chaque livraison.
-9. En cas de règle ambiguë : poser la question, ne pas choisir.
+8. Augmenter la version du cache dans sw.js à chaque livraison (chaque commit, pas seulement en fin de lot).
+9. En cas de règle ambiguë sur les données ou les règles métier : poser la question, ne pas choisir. Pas de question à choix multiple pour un détail d'interface : prendre l'option recommandée. Ne demander que si le choix touche aux données, aux règles métier, ou supprime une fonction existante. (règle du 2026-10-10)
+10. Garde-fous constants, sur tout lot : aucun champ existant supprimé ou renommé, champs nouveaux optionnels avec valeur par défaut, migrateSchema idempotent avec sauvegarde, aucune valeur existante écrasée, aucun interrupteur ou bouton qui ne fait rien, aucune écriture à l'ouverture d'un écran. Tests sur la copie locale avec l'export de backups/, jamais sur l'app installée. (règle du 2026-10-10)
+11. Rapport de fin de lot, court : ce qui a changé, ce qui est testé, ce qui n'est pas prouvé, 6 tests manuels, commande pour servir le site en local. Pas de rapport intermédiaire entre les livraisons d'un même lot sauf blocage. Les états des lieux demandés sont inclus dans ce rapport. (règle du 2026-10-10)
+12. Ne jamais pousser (git push) sans accord explicite, même quand le commit local est automatique (règle 1). (règle du 2026-10-10)
+13. Bug trouvé hors du lot en cours : le noter dans dossier-lots/PLAN.md et continuer, sauf s'il casse des données existantes — alors s'arrêter et prévenir. (règle du 2026-10-10)
 
 ## Les 17 cycles
 
