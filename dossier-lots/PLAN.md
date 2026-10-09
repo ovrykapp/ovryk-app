@@ -35,6 +35,10 @@ Taille : S = moins d'une heure de travail assisté, M = une demi journée, L = u
 
 * Livraison E (après le lot 07, hors périmètre initial) : popup de choix en semaine de test non encore faite (Faire le test, Repousser le test d'une semaine, Changer de cycle sans tester). Fait.
 
+## Idées non traitées
+
+* Accès au détail d'un cycle (openCycleDetailPage) depuis l'Accueil (aucune carte "cycles en cours" n'y existe aujourd'hui), depuis le panneau du jour du calendrier (Programme/Accueil, buildProgrammeDayPanelCard ne montre que nom et nombre d'exercices), et depuis la séance en cours (buildHalteroLiveBody n'a aucun lien vers la vue complète du cycle). Fait pour "Tes N cycles" et Coordination (point E, 2026-10-09) ; ces trois-là restent à faire si souhaité.
+
 ## Points de livraison utiles
 
 * Après le lot 03 : l'application a l'allure de la maquette.

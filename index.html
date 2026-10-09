@@ -1080,6 +1080,7 @@
     border: 1px solid var(--border-card);
     border-radius: var(--radius-card);
     background: var(--surface);
+    cursor: pointer;
   }
   .cycles-drawn-card-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; margin-bottom: 4px; }
   .cycles-drawn-card-name { font-family: var(--font-title); font-weight: 700; font-size: 16px; color: var(--ink); }
@@ -1528,6 +1529,7 @@
   }
   .coordination-table { border-collapse: collapse; width: max-content; min-width: 100%; }
   .coordination-table th, .coordination-table td { padding: 3px; text-align: center; }
+  .coordination-data-row { cursor: pointer; }
   .coordination-week-head {
     font-family: var(--font-mono);
     font-size: 10px;
@@ -1908,6 +1910,10 @@
   .fullscreen-page[hidden] { display: none; }
   #routine-exercise-picker.fullscreen-page { z-index: 41; }
   #routine-exercise-settings-page.fullscreen-page { z-index: 41; }
+  /* point E : cycle-detail-page est déclarée avant coordination-page et
+     cycles-drawn-page dans le HTML — sans ceci, l'ordre du DOM les
+     afficherait par-dessus elle au lieu de l'inverse. */
+  #cycle-detail-page.fullscreen-page { z-index: 41; }
   .fullscreen-page-topbar {
     flex-shrink: 0;
     display: flex;
@@ -6441,6 +6447,12 @@
      ouvert dans le détail de cycle courant (une seule à la fois), remis à
      null à chaque (ré)ouverture de la page. */
   var cycleDetailEditingWeek = null;
+  /* point E : appelée par closeCycleDetailPage au retour, pour les écrans
+     dont le contenu peut avoir changé pendant la consultation (Coordination,
+     si "Désactiver le cycle" a été utilisé depuis la page détail) — null
+     partout ailleurs (Exercices, Programme, éditeur de routine…), aucun
+     changement de comportement pour ces appels existants. */
+  var cycleDetailReturnRefresh = null;
 
   function buildCycleWeekEditor(exerciseId, cycle, weekNum, week) {
     var editor = document.createElement('div');
@@ -6507,10 +6519,21 @@
     return editor;
   }
 
-  function openCycleDetailPage(exerciseId) {
+  /* point E : previewCycle (objet { cycle_actif, one_rm_actuel,
+     semaine_actuelle, semaines_modifiees, test_report_used,
+     en_attente_de_validation }) affiche un cycle pas encore enregistré
+     (carte de "Tes N cycles", avant validation) sans jamais le lire ni
+     l'écrire dans OvrykDB — lecture seule, pas de "Modifier" de semaine ni
+     de "Désactiver le cycle" (ces deux actions présupposent un cycle déjà
+     persisté). onCloseRefresh (optionnel) est appelée par
+     closeCycleDetailPage au retour — utilisé par Coordination pour
+     refléter un éventuel "Désactiver le cycle" fait depuis la page détail,
+     absent partout ailleurs (comportement des appels existants inchangé). */
+  function openCycleDetailPage(exerciseId, previewCycle, onCloseRefresh) {
     var exercise = OvrykDB.getExerciseById(exerciseId);
-    var cycle = OvrykDB.getForceCycle(exerciseId);
+    var cycle = previewCycle || OvrykDB.getForceCycle(exerciseId);
     if (!exercise || !cycle) return;
+    var isPreview = !!previewCycle;
 
     document.getElementById('cycle-detail-title').textContent = exercise.name;
     var body = document.getElementById('cycle-detail-body');
@@ -6522,8 +6545,11 @@
       '<div class="cycle-full-1rm mono">1RM actuel · ' + (cycle.one_rm_actuel != null ? cycle.one_rm_actuel + 'kg' : 'non défini') + '</div>';
     /* lot 08 : indique clairement que ce cycle n'a pas encore commencé,
        sinon "Semaine 1 / N · ACTUELLE" plus bas pourrait laisser croire
-       qu'il est déjà en cours. */
-    if (isBeforeForceCycleStart(exercise)) {
+       qu'il est déjà en cours. Omis en aperçu : la coordination (décalage,
+       forceCycleStartDate) ne s'exécute qu'à la validation du tirage, la
+       date éventuellement déjà sur l'exercice ne concernerait pas ce
+       brouillon. */
+    if (!isPreview && isBeforeForceCycleStart(exercise)) {
       var weeksUntilStartDetail = getWeeksUntilForceCycleStart(exercise);
       intro.innerHTML += '<div class="cycle-full-1rm mono">Démarre le ' + formatShortDate(exercise.forceCycleStartDate) +
         ' (dans ' + weeksUntilStartDetail + (weeksUntilStartDetail > 1 ? ' semaines)' : ' semaine)') + '</div>';
@@ -6540,7 +6566,7 @@
          mouvements (décalage, 2 cycles lourds max) est sur l'écran
          Coordination (livraison 3), pas ici. */
       var isPeak = isHeavyWeek(week) && !week.isTestWeek;
-      var isEditable = weekNum >= cycle.semaine_actuelle && !week.isTestWeek;
+      var isEditable = !isPreview && weekNum >= cycle.semaine_actuelle && !week.isTestWeek;
 
       var block = document.createElement('div');
       block.className = 'cycle-full-week' + (isCurrent ? ' is-current' : '');
@@ -6593,19 +6619,22 @@
       body.appendChild(block);
     });
 
-    var deactivateBtn = document.createElement('button');
-    deactivateBtn.type = 'button';
-    deactivateBtn.className = 'routine-action-btn danger cycle-full-deactivate';
-    deactivateBtn.textContent = 'Désactiver le cycle';
-    deactivateBtn.addEventListener('click', function () {
-      showConfirmModal('Désactiver le cycle de force de « ' + exercise.name + ' » ? L\'historique du 1RM sera perdu.', function () {
-        OvrykDB.deactivateForceCycle(exerciseId);
-        closeCycleDetailPage();
-        renderExerciseList();
+    if (!isPreview) {
+      var deactivateBtn = document.createElement('button');
+      deactivateBtn.type = 'button';
+      deactivateBtn.className = 'routine-action-btn danger cycle-full-deactivate';
+      deactivateBtn.textContent = 'Désactiver le cycle';
+      deactivateBtn.addEventListener('click', function () {
+        showConfirmModal('Désactiver le cycle de force de « ' + exercise.name + ' » ? L\'historique du 1RM sera perdu.', function () {
+          OvrykDB.deactivateForceCycle(exerciseId);
+          closeCycleDetailPage();
+          renderExerciseList();
+        });
       });
-    });
-    body.appendChild(deactivateBtn);
+      body.appendChild(deactivateBtn);
+    }
 
+    cycleDetailReturnRefresh = onCloseRefresh || null;
     document.getElementById('cycle-detail-page').hidden = false;
   }
 
@@ -6613,6 +6642,11 @@
     cycleDetailEditingWeek = null;
     document.getElementById('cycle-detail-page').hidden = true;
     scrollMainToTop();
+    if (cycleDetailReturnRefresh) {
+      var refresh = cycleDetailReturnRefresh;
+      cycleDetailReturnRefresh = null;
+      refresh();
+    }
   }
 
   document.getElementById('cycle-detail-back-btn').addEventListener('click', closeCycleDetailPage);
@@ -6660,7 +6694,7 @@
     entries.forEach(function (e) {
       var cellsByWeek = {};
       e.projection.forEach(function (entry) { cellsByWeek[entry.absoluteWeek] = entry.week; });
-      html += '<tr><td class="coordination-row-label">' + escapeHTML(e.exercise.name) +
+      html += '<tr class="coordination-data-row" data-exercise-id="' + escapeHTML(e.exerciseId) + '"><td class="coordination-row-label">' + escapeHTML(e.exercise.name) +
         '<span class="mono">Cycle ' + displayCycleNumber(e.cycle.cycle_actif) + '</span></td>';
       for (var col = 1; col <= COORDINATION_TABLE_WEEKS; col++) {
         var week = cellsByWeek[col];
@@ -6688,6 +6722,24 @@
     html += '</tr></tbody></table>';
 
     container.innerHTML = html;
+
+    /* point E : lignes de données cliquables vers le détail complet du
+       cycle (ligne de synthèse "En pic ou test" exclue — pas de
+       data-exercise-id dessus, non sélectionnée ici). Ces cycles sont déjà
+       enregistrés (getCoordinationEntries lit OvrykDB.getForceCycles), donc
+       openCycleDetailPage sans aperçu : "Modifier"/"Désactiver" restent
+       disponibles depuis la page détail comme partout ailleurs. Un
+       "Désactiver" depuis là-bas est répercuté ici au retour via
+       renderCoordinationPage (3ᵉ argument), sans quoi cette table resterait
+       affichée avec un cycle qui n'existe plus. */
+    entries.forEach(function (e) {
+      var row = container.querySelector('tr[data-exercise-id="' + e.exerciseId + '"]');
+      if (!row) return;
+      row.addEventListener('click', function () {
+        openCycleDetailPage(e.exerciseId, null, renderCoordinationPage);
+      });
+    });
+
     return counts;
   }
 
@@ -7146,7 +7198,10 @@
     redrawBtn.className = 'cycles-drawn-redraw-btn';
     redrawBtn.setAttribute('aria-label', 'Relancer le tirage de ' + (entry.exercise ? entry.exercise.name : ''));
     redrawBtn.innerHTML = '<svg viewBox="0 0 24 24" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>';
-    redrawBtn.addEventListener('click', function () { redrawSingleCard(entry.exerciseId); });
+    redrawBtn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      redrawSingleCard(entry.exerciseId);
+    });
     top.appendChild(redrawBtn);
     card.appendChild(top);
 
@@ -7159,6 +7214,21 @@
     orm.className = 'cycles-drawn-card-orm mono';
     orm.textContent = '1RM ' + entry.oneRM + ' kg';
     card.appendChild(orm);
+
+    /* point E : aperçu en lecture seule, le cycle de cette carte n'est pas
+       encore enregistré (OvrykDB.getForceCycle le confirmerait vide ou
+       montrerait un ancien cycle sans rapport) — jamais lu ni écrit dans le
+       stockage, pas de "Modifier"/"Désactiver" (voir openCycleDetailPage). */
+    card.addEventListener('click', function () {
+      openCycleDetailPage(entry.exerciseId, {
+        cycle_actif: entry.cycleId,
+        one_rm_actuel: entry.oneRM,
+        semaine_actuelle: 1,
+        semaines_modifiees: {},
+        test_report_used: false,
+        en_attente_de_validation: false
+      });
+    });
 
     return card;
   }
