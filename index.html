@@ -2014,6 +2014,38 @@
     padding: 10px 12px;
     gap: 10px;
   }
+  /* lot 09, livraison 3 : poignée de glisser déposer — zone tactile d'au
+     moins 44 px même si l'icône est petite. touch-action: none ici
+     seulement (jamais sur .rex-header ni la liste), pour ne gêner le
+     défilement de page nulle part ailleurs. */
+  .rex-drag-handle {
+    flex-shrink: 0;
+    width: 44px;
+    height: 44px;
+    margin: -10px 0;
+    background: transparent;
+    border: none;
+    color: var(--chalk);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: grab;
+    touch-action: none;
+    padding: 0;
+  }
+  .rex-drag-handle svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 1.8; }
+  .rex-drag-handle.is-disabled { color: var(--steel); opacity: 0.4; cursor: default; pointer-events: none; }
+  /* posé pendant un drag actif (voir startExerciseDrag) : désactive la
+     sélection de texte et le callout iOS sur toute la liste, jamais en
+     dehors d'un drag */
+  #routine-exercise-list.is-drag-active,
+  #routine-exercise-list.is-drag-active * {
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+  }
+  .routine-exercise-block.is-dragging,
+  .exercise-group.is-dragging { opacity: 0.85; box-shadow: var(--shadow-lg, 0 8px 24px rgba(0,0,0,0.3)); z-index: 1; position: relative; }
   .rex-title { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
   .rex-name {
     font-family: var(--font-display);
@@ -7370,6 +7402,12 @@
      routine-exercise-settings-page, relus depuis le stockage à chaque
      rendu (jamais de copie figée) comme currentRoutineId pour l'éditeur. */
   var routineExerciseSettingsState = { routineId: null, rexId: null };
+  /* lot 09, livraison 3 : non nul uniquement pendant un glisser déposer de
+     poignée en cours. routine.exercises n'est jamais modifié tant que
+     routineDragState existe : seule finishExerciseDrag(true), au
+     relâchement, peut écrire. Tout le reste (pointermove, défilement
+     auto) ne touche que des transform CSS. */
+  var routineDragState = null;
 
   function computeWeightFromPercent(oneRepMax, percent) {
     if (oneRepMax === null || oneRepMax === undefined) return null;
@@ -7768,6 +7806,11 @@
   }
 
   function closeRoutineEditor() {
+    /* lot 09, livraison 3 : une fermeture en plein glisser déposer ne doit
+       jamais persister de réordonnancement — abortExerciseDragIfActive ne
+       touche jamais routine.exercises, seulement les transformations
+       visuelles et les écouteurs du drag en cours. */
+    abortExerciseDragIfActive();
     currentRoutineId = null;
     document.getElementById('routine-editor-view').hidden = true;
     renderProgrammeWeek();
@@ -7956,6 +7999,270 @@
     renderRoutineEditor();
   }
 
+  /* ============================================================
+     lot 09, livraison 3 — glisser déposer de la poignée (maquette 21)
+     Pointer Events uniquement, aucune bibliothèque. Le drag ne démarre
+     que depuis .rex-drag-handle (touch-action: none posé en CSS
+     uniquement sur elle, jamais sur .rex-header ni sur la liste).
+     routine.exercises n'est jamais modifié pendant le drag : seule
+     finishExerciseDrag(true), au relâchement, peut écrire — tout le
+     reste (pointermove, défilement auto) ne touche que des transform
+     CSS. pointercancel, la perte de focus de la fenêtre ou la fermeture
+     de l'éditeur appellent finishExerciseDrag(false) : l'ordre reste
+     alors inchangé.
+     Un exercice groupé (superset/circuit) n'a pas de poignée active, au
+     même titre que les flèches monter/descendre déjà désactivées pour
+     lui : il ne se déplace qu'en le dissolvant d'abord. Un exercice non
+     groupé ne peut jamais se déposer à l'intérieur d'un groupe — la
+     cible se cale avant ou après le groupe entier — car
+     findConsecutiveGroups traite un groupe comme un seul segment : il
+     n'existe aucune position "entre deux membres" dans la liste des
+     segments manipulée ici. Visuellement, survoler la moitié haute du
+     bloc d'un groupe cible juste avant lui, sa moitié basse cible juste
+     après (donc avant le segment suivant) ; le groupe se décale alors
+     comme un bloc unique, ses membres ne se séparent jamais.
+  ============================================================ */
+
+  /* offsetHeight + marge basse réelle du nœud, jamais une hauteur fixe :
+     c'est le pas exact dont les autres segments se décalent visuellement
+     quand le segment tiré traverse leur position. */
+  function measureSegmentPitch(node) {
+    var marginBottom = parseFloat(getComputedStyle(node).marginBottom) || 0;
+    return node.offsetHeight + marginBottom;
+  }
+
+  /* la cible de dépôt d'un segment est toujours exprimée comme "avant tel
+     exercice" — pour un groupe, cet exercice de référence est son premier
+     membre, ce qui place systématiquement le dépôt avant le groupe entier
+     (jamais entre deux de ses membres, point 1). */
+  function getSegmentAnchorRex(seg) {
+    return seg.type === 'group' ? seg.members[0] : seg.item;
+  }
+
+  function clearExerciseDragTransforms(state) {
+    state.others.forEach(function (o) { o.node.style.transform = ''; });
+    if (state.draggedNode) {
+      state.draggedNode.style.transform = '';
+      state.draggedNode.classList.remove('is-dragging');
+    }
+  }
+
+  /* vitesse plafonnée à 12px/frame (~720px/s à 60Hz) : au ras du bord, la
+     formule précédente (coefficient 0.6 sans plafond) pouvait atteindre
+     36px/frame, soit plus de 2000px/s — bien trop rapide pour rester
+     maîtrisable au doigt. */
+  function updateExerciseAutoScroll(state) {
+    var container = state.scrollContainer;
+    var rect = state.scrollContainerRect;
+    var margin = 60;
+    var maxSpeed = 12;
+    var y = state.lastClientY;
+    var speed = 0;
+    if (y < rect.top + margin) {
+      speed = -Math.min(maxSpeed, Math.max(2, (margin - (y - rect.top)) * 0.25));
+    } else if (y > rect.bottom - margin) {
+      speed = Math.min(maxSpeed, Math.max(2, (margin - (rect.bottom - y)) * 0.25));
+    }
+    if (speed === 0) return;
+    var maxScrollTop = Math.max(0, container.scrollHeight - container.clientHeight);
+    container.scrollTop = Math.max(0, Math.min(maxScrollTop, container.scrollTop + speed));
+  }
+
+  /* tourne en continu pendant le drag (pas seulement sur pointermove), pour
+     que le défilement auto avance même si le pointeur reste immobile près
+     d'un bord — c'est ce qui exige de recalculer targetSlot à chaque
+     frame à partir du scrollTop courant plutôt qu'une fois pour toutes
+     (point 3) : others[i].contentTop est fixe (espace du contenu,
+     indépendant du défilement), seule la position du pointeur dans ce
+     même espace est recalculée à chaque frame via le scrollTop réel du
+     moment. */
+  function runExerciseDragFrame() {
+    var state = routineDragState;
+    if (!state) return;
+
+    updateExerciseAutoScroll(state);
+
+    var pointerContentY = state.lastClientY - state.scrollContainerRect.top + state.scrollContainer.scrollTop;
+
+    var targetSlot = state.others.length;
+    for (var i = 0; i < state.others.length; i++) {
+      var o = state.others[i];
+      if (pointerContentY < o.contentMid) { targetSlot = i; break; }
+    }
+    state.currentTargetSlot = targetSlot;
+
+    state.others.forEach(function (o, i) {
+      var shift = 0;
+      if (i < state.draggedSegmentPos && i >= targetSlot) shift = state.draggedPitch;
+      else if (i >= state.draggedSegmentPos && i < targetSlot) shift = -state.draggedPitch;
+      o.node.style.transform = shift ? 'translateY(' + shift + 'px)' : '';
+    });
+
+    if (state.draggedNode) {
+      /* le nœud tiré reste dans le flux normal (pas de position: fixed, pour
+         ne jamais provoquer de reflow des voisins) : son décalage doit donc
+         compenser le défilement auto en plus de suivre le pointeur, sinon
+         il dérive avec le contenu qui défile sous lui au lieu de rester
+         collé au doigt. */
+      var scrollDelta = state.scrollContainer.scrollTop - state.scrollTopAtStart;
+      state.draggedNode.style.transform = 'translateY(' + (state.lastClientY - state.startClientY + scrollDelta) + 'px)';
+    }
+
+    state.rafId = requestAnimationFrame(runExerciseDragFrame);
+  }
+
+  function onExerciseDragPointerMove(e) {
+    if (!routineDragState || e.pointerId !== routineDragState.pointerId) return;
+    routineDragState.lastClientY = e.clientY;
+  }
+
+  /* abandon ou succès : routineDragState est mis à null en tout premier,
+     avant le moindre nettoyage DOM — un lostpointercapture déclenché
+     comme conséquence de releasePointerCapture ci-dessous le trouve donc
+     déjà nul et ne fait rien (point 4), qu'il s'agisse d'une fin normale
+     (pointerup) ou d'un abandon. */
+  function finishExerciseDrag(commit) {
+    var state = routineDragState;
+    if (!state) return;
+    routineDragState = null;
+
+    cancelAnimationFrame(state.rafId);
+    window.removeEventListener('blur', state.onBlur);
+    document.removeEventListener('pointermove', state.onMove);
+    document.removeEventListener('pointerup', state.onUp);
+    document.removeEventListener('pointercancel', state.onCancel);
+    state.handle.removeEventListener('lostpointercapture', state.onLostCapture);
+    state.handle.removeEventListener('contextmenu', state.onContextMenu);
+    try { state.handle.releasePointerCapture(state.pointerId); } catch (err) { /* pas de capture active, rien à relâcher */ }
+
+    var listEl = document.getElementById('routine-exercise-list');
+    if (listEl) listEl.classList.remove('is-drag-active');
+    clearExerciseDragTransforms(state);
+
+    if (commit && state.currentTargetSlot !== state.draggedSegmentPos) {
+      var moved = state.routine.exercises.splice(state.fromArrayIndex, 1)[0];
+      if (state.currentTargetSlot >= state.others.length) {
+        state.routine.exercises.push(moved);
+      } else {
+        var anchorRex = getSegmentAnchorRex(state.others[state.currentTargetSlot].seg);
+        var anchorIndex = state.routine.exercises.indexOf(anchorRex);
+        state.routine.exercises.splice(anchorIndex, 0, moved);
+      }
+      OvrykDB.updateRoutine(state.routine);
+    }
+    renderRoutineEditor();
+  }
+
+  function onExerciseLostPointerCapture(e) {
+    if (!routineDragState || e.pointerId !== routineDragState.pointerId) return;
+    finishExerciseDrag(false);
+  }
+
+  /* fermeture de l'éditeur en plein drag (cancelRoutineEditor /
+     closeRoutineEditor) : abandon, jamais d'écriture. */
+  function abortExerciseDragIfActive() {
+    if (routineDragState) finishExerciseDrag(false);
+  }
+
+  function startExerciseDrag(routine, rex, fromArrayIndex, handle, draggedNode, e) {
+    if (routineDragState) return;
+    var editorBody = document.querySelector('#routine-editor-view .fullscreen-page-body');
+    var listEl = document.getElementById('routine-exercise-list');
+    if (!editorBody || !listEl) return;
+
+    var segments = findConsecutiveGroups(routine.exercises);
+    var draggedSegmentPos = -1;
+    segments.forEach(function (seg, i) {
+      if (seg.type === 'single' && seg.item === rex) draggedSegmentPos = i;
+    });
+    if (draggedSegmentPos === -1) return;
+
+    var segmentNodes = Array.prototype.slice.call(listEl.children);
+    var scrollContainerRect = editorBody.getBoundingClientRect();
+    var scrollTopAtStart = editorBody.scrollTop;
+
+    var others = [];
+    segments.forEach(function (seg, i) {
+      if (i === draggedSegmentPos) return;
+      var node = segmentNodes[i];
+      if (!node) return;
+      var rect = node.getBoundingClientRect();
+      var contentTop = rect.top - scrollContainerRect.top + scrollTopAtStart;
+      others.push({ seg: seg, node: node, contentTop: contentTop, contentMid: contentTop + node.offsetHeight / 2 });
+    });
+
+    var state = {
+      routine: routine,
+      fromArrayIndex: fromArrayIndex,
+      draggedSegmentPos: draggedSegmentPos,
+      others: others,
+      draggedNode: draggedNode,
+      draggedPitch: measureSegmentPitch(draggedNode),
+      handle: handle,
+      pointerId: e.pointerId,
+      scrollContainer: editorBody,
+      scrollContainerRect: scrollContainerRect,
+      scrollTopAtStart: scrollTopAtStart,
+      startClientY: e.clientY,
+      lastClientY: e.clientY,
+      currentTargetSlot: draggedSegmentPos,
+      rafId: 0
+    };
+
+    state.onMove = onExerciseDragPointerMove;
+    state.onUp = function (ev) {
+      if (ev.pointerId !== state.pointerId) return;
+      finishExerciseDrag(true);
+    };
+    state.onCancel = function (ev) {
+      if (ev.pointerId !== state.pointerId) return;
+      finishExerciseDrag(false);
+    };
+    state.onLostCapture = onExerciseLostPointerCapture;
+    state.onBlur = function () { finishExerciseDrag(false); };
+    state.onContextMenu = function (ev) { ev.preventDefault(); };
+
+    routineDragState = state;
+
+    /* la capture est un plus (garde les événements adressés à la poignée
+       même si le doigt la quitte) mais pas une condition : si elle échoue
+       (iOS la perd parfois sur un geste système, et tout navigateur peut
+       la refuser), le drag continue quand même grâce aux écouteurs posés
+       sur document ci-dessous, qui ne dépendent jamais d'elle. */
+    try { handle.setPointerCapture(e.pointerId); } catch (err) { /* pas grave, voir ci-dessus */ }
+    document.addEventListener('pointermove', state.onMove);
+    document.addEventListener('pointerup', state.onUp);
+    document.addEventListener('pointercancel', state.onCancel);
+    handle.addEventListener('lostpointercapture', state.onLostCapture);
+    handle.addEventListener('contextmenu', state.onContextMenu);
+    window.addEventListener('blur', state.onBlur);
+
+    listEl.classList.add('is-drag-active');
+    draggedNode.classList.add('is-dragging');
+
+    state.rafId = requestAnimationFrame(runExerciseDragFrame);
+  }
+
+  /* block : le nœud .routine-exercise-block en cours de construction par
+     buildRoutineExerciseBlock (référence stable, même objet DOM une fois
+     inséré dans la liste — pas besoin de le relire plus tard). */
+  function buildDragHandle(routine, rex, index, block) {
+    var handle = document.createElement('button');
+    handle.type = 'button';
+    handle.className = 'rex-drag-handle' + (rex.groupId ? ' is-disabled' : '');
+    handle.setAttribute('aria-label', 'Réordonner');
+    if (rex.groupId) handle.setAttribute('aria-hidden', 'true');
+    handle.innerHTML = '<svg viewBox="0 0 24 24"><line x1="4" y1="8" x2="20" y2="8"/><line x1="4" y1="16" x2="20" y2="16"/></svg>';
+    if (!rex.groupId) {
+      handle.addEventListener('pointerdown', function (e) {
+        if (e.button != null && e.button !== 0) return;
+        e.preventDefault();
+        startExerciseDrag(routine, rex, index, handle, block, e);
+      });
+    }
+    return handle;
+  }
+
   /* shared by a regular exercise's block and a Lifting/cycle one: a
      non-last member of a superset/circuit shows "chained, no rest"
      (the group's actual rest lives on its last member's own row) —
@@ -8038,6 +8345,7 @@
 
     var header = document.createElement('div');
     header.className = 'rex-header';
+    header.appendChild(buildDragHandle(routine, rex, index, block));
 
     var title = document.createElement('div');
     title.className = 'rex-title';
