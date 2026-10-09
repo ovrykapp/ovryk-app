@@ -895,6 +895,22 @@
   .cycle-test-keep-btn { width: 100%; margin-top: 8px; }
   .cycle-pending-notice .cycle-test-intro { margin-bottom: 10px; }
 
+  /* livraison 4 : écran "Charges de départ" */
+  .routine-starting-charge-intro { font-size: 12px; line-height: 1.5; color: var(--steel); margin: 0 0 var(--space-4); }
+  .routine-starting-charge-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px 12px;
+    padding: var(--space-3) 2px;
+    border-bottom: 1px solid color-mix(in srgb, var(--steel) 30%, transparent);
+  }
+  .routine-starting-charge-name { font-weight: 700; color: var(--ink); flex: 1 1 auto; min-width: 0; }
+  .routine-starting-charge-hint { font-size: 11px; color: var(--steel); flex-basis: 100%; }
+  .routine-starting-charge-field { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+  .routine-starting-charge-message { flex-basis: 100%; font-size: 11px; color: var(--accent-info); margin: 2px 0 0; }
+
   /* liste de tentatives du test de 1RM (lot 06, livraison B) */
   .cycle-test-attempts { display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
   .cycle-test-attempt-row {
@@ -1910,6 +1926,7 @@
   .fullscreen-page[hidden] { display: none; }
   #routine-exercise-picker.fullscreen-page { z-index: 41; }
   #routine-exercise-settings-page.fullscreen-page { z-index: 41; }
+  #routine-starting-charges-page.fullscreen-page { z-index: 41; }
   /* point E : cycle-detail-page est déclarée avant coordination-page et
      cycles-drawn-page dans le HTML — sans ceci, l'ordre du DOM les
      afficherait par-dessus elle au lieu de l'inverse. */
@@ -3905,6 +3922,18 @@
 
       <button type="button" id="routine-add-exercise-btn" class="btn-add" style="width:100%;margin-top:6px;">+ Ajouter un exercice</button>
       <button type="button" id="routine-save-btn-bottom" class="btn-primary">Enregistrer</button>
+    </div>
+  </div>
+
+  <div id="routine-starting-charges-page" class="fullscreen-page" hidden>
+    <div class="fullscreen-page-topbar">
+      <button type="button" id="routine-starting-charges-skip-btn" class="fullscreen-page-action cancel">Passer</button>
+      <span class="fullscreen-page-title">Charges de départ</span>
+      <span class="fullscreen-page-action" aria-hidden="true"></span>
+    </div>
+    <div class="fullscreen-page-body">
+      <div id="routine-starting-charges-body"></div>
+      <button type="button" id="routine-starting-charges-done-btn" class="btn-primary">Terminé</button>
     </div>
   </div>
 
@@ -7479,6 +7508,10 @@
      ROUTINES — CRUD, reorder, exercise programming
   ============================================================ */
   var currentRoutineId = null;
+  /* livraison 4 : l'écran "Charges de départ" n'est optionnel qu'à la
+     création, jamais à la modification d'une routine existante — mémorisé
+     ici car openRoutineEditor ne garde isNew que dans le titre. */
+  var routineEditorIsNew = false;
   var pickerState = { search: '', category: 'all', selected: [] };
   /* lot 09, livraison 2 : routine + exercice en cours de réglage sur
      routine-exercise-settings-page, relus depuis le stockage à chaque
@@ -7873,6 +7906,7 @@
   /* ---- editor ---- */
   function openRoutineEditor(id, isNew) {
     currentRoutineId = id;
+    routineEditorIsNew = !!isNew;
     document.getElementById('routine-editor-title').textContent = isNew ? 'Créer une routine' : 'Modifier la routine';
     document.getElementById('routine-editor-view').hidden = false;
     closePicker();
@@ -7911,6 +7945,249 @@
     var isValid = !!(name && name.trim().length > 0 && exerciseCount > 0);
     document.getElementById('routine-save-btn').disabled = !isValid;
     document.getElementById('routine-save-btn-bottom').disabled = !isValid;
+  }
+
+  /* ============================================================
+     LIVRAISON 4 — "Charges de départ" (maquette 9), étape facultative à
+     la toute fin de la CRÉATION d'une routine (jamais à la modification
+     d'une routine existante, voir routineEditorIsNew). Ne construit ni
+     "Augmenter la charge à 10 reps partout" ni "Prévenir si le RPE est
+     trop haut" (hors texte d'origine du lot ; le RPE n'existe plus dans
+     l'app depuis le point D.2).
+  ============================================================ */
+
+  /* 1RM manquants : mouvements Lifting de la routine sans oneRepMax.
+     Charges de départ manquantes : exercices muscu avec au moins une
+     série à weightKg null ou 0 dans CETTE routine — peu importe l'historique
+     (correction demandée : un exercice déjà fait ailleurs mais avec une
+     série vide ici doit quand même apparaître). Dédoublonné par exerciseId
+     pour l'affichage (une seule ligne même si l'exercice apparaît deux
+     fois dans la routine) ; l'écriture, elle, parcourt toutes les
+     occurrences (voir applyStartingWeightToRoutine). */
+  function computeStartingChargesMissing(routine) {
+    var liftingList = [];
+    var muscuList = [];
+    var seenLifting = {};
+    var seenMuscu = {};
+    routine.exercises.forEach(function (rex) {
+      var exercise = OvrykDB.getExerciseById(rex.exerciseId);
+      if (!exercise) return;
+      if (exercise.category === 'Lifting') {
+        if (exercise.oneRepMax == null && !seenLifting[exercise.id]) {
+          seenLifting[exercise.id] = true;
+          liftingList.push(exercise);
+        }
+      } else {
+        var hasEmptySet = rex.sets.some(function (s) { return s.weightKg == null || s.weightKg === 0; });
+        if (hasEmptySet && !seenMuscu[exercise.id]) {
+          seenMuscu[exercise.id] = true;
+          muscuList.push(exercise);
+        }
+      }
+    });
+    return { lifting: liftingList, muscu: muscuList };
+  }
+
+  /* n'écrit jamais une série qui a déjà un poids (null ou 0 seulement) —
+     correction demandée : une routine aux poids différents par série ne
+     doit jamais voir ses séries déjà renseignées modifiées. */
+  function applyStartingWeightToRoutine(routine, exerciseId, value) {
+    routine.exercises.forEach(function (rex) {
+      if (rex.exerciseId !== exerciseId) return;
+      rex.sets.forEach(function (s) {
+        if (s.weightKg == null || s.weightKg === 0) s.weightKg = value;
+      });
+    });
+    OvrykDB.updateRoutine(routine);
+  }
+
+  /* même validation que openOneRepMaxEditor (onglet Exercices), à l'identique
+     (type number, pas 0,5, min 0 ; vide ou invalide -> null, aucune écriture).
+     Après un 1RM réellement saisi : maybeAutoActivateForceCycle (même
+     mécanisme que partout ailleurs dans l'app, pas nouveau) peut démarrer un
+     cycle immédiatement — message affiché sous la ligne pour que cet effet
+     de bord soit visible. Si l'exercice a une date de démarrage future déjà
+     réglée (Exercices > date programmée), le cycle ne se crée pas encore :
+     message "Démarre dans N semaine(s)" à la place, aucun numéro de cycle
+     à annoncer puisqu'il n'est tiré qu'à l'activation réelle. */
+  function buildStartingChargeLiftingRow(exercise) {
+    var row = document.createElement('div');
+    row.className = 'routine-starting-charge-row';
+
+    var label = document.createElement('div');
+    label.className = 'routine-starting-charge-name';
+    label.textContent = exercise.name;
+    row.appendChild(label);
+
+    var fieldRow = document.createElement('div');
+    fieldRow.className = 'routine-starting-charge-field';
+    var input = document.createElement('input');
+    input.type = 'number';
+    input.step = '0.5';
+    input.min = '0';
+    input.className = 'load-input';
+    input.placeholder = 'kg';
+    var unit = document.createElement('span');
+    unit.className = 'field-suffix';
+    unit.textContent = 'kg';
+    fieldRow.appendChild(input);
+    fieldRow.appendChild(unit);
+    row.appendChild(fieldRow);
+
+    input.addEventListener('blur', function () {
+      var existingMsg = row.querySelector('.routine-starting-charge-message');
+      if (existingMsg) existingMsg.remove();
+
+      var val = input.value === '' ? null : parseFloat(input.value);
+      if (val !== null && (isNaN(val) || val < 0)) val = null;
+      OvrykDB.updateExerciseOneRepMax(exercise.id, val);
+      if (val == null) return;
+
+      maybeAutoActivateForceCycle(exercise.id);
+      var freshExercise = OvrykDB.getExerciseById(exercise.id);
+      var cycle = OvrykDB.getForceCycle(exercise.id);
+      var messageText = null;
+      if (cycle) {
+        messageText = 'Cycle ' + displayCycleNumber(cycle.cycle_actif) + ' démarre maintenant.';
+      } else if (isBeforeForceCycleStart(freshExercise)) {
+        var weeksUntil = getWeeksUntilForceCycleStart(freshExercise);
+        messageText = 'Démarre dans ' + weeksUntil + (weeksUntil > 1 ? ' semaines.' : ' semaine.');
+      }
+      if (messageText) {
+        var msgEl = document.createElement('p');
+        msgEl.className = 'routine-starting-charge-message';
+        msgEl.textContent = messageText;
+        row.appendChild(msgEl);
+      }
+    });
+    input.addEventListener('keydown', function (e) { if (e.key === 'Enter') input.blur(); });
+
+    return row;
+  }
+
+  /* une seule valeur par exercice, appliquée à toutes ses séries encore
+     vides dans cette routine (voir applyStartingWeightToRoutine) — rien
+     n'est écrit si le champ reste vide. */
+  function buildStartingChargeMuscuRow(routine, exercise) {
+    var row = document.createElement('div');
+    row.className = 'routine-starting-charge-row';
+
+    var label = document.createElement('div');
+    label.className = 'routine-starting-charge-name';
+    label.textContent = exercise.name;
+    row.appendChild(label);
+
+    var firstRex = routine.exercises.filter(function (r) { return r.exerciseId === exercise.id; })[0];
+    var firstSet = firstRex && firstRex.sets[0];
+    if (firstSet) {
+      var hint = document.createElement('div');
+      hint.className = 'routine-starting-charge-hint mono';
+      hint.textContent = firstSet.repType === 'range'
+        ? ('Plage ' + firstSet.repsMin + ' à ' + firstSet.repsMax + ' reps')
+        : (firstSet.reps != null ? (firstSet.reps + ' reps') : '');
+      row.appendChild(hint);
+    }
+
+    var fieldRow = document.createElement('div');
+    fieldRow.className = 'routine-starting-charge-field';
+    var input = document.createElement('input');
+    input.type = 'number';
+    input.step = '0.5';
+    input.min = '0';
+    input.className = 'load-input';
+    input.placeholder = 'kg';
+    var unit = document.createElement('span');
+    unit.className = 'field-suffix';
+    unit.textContent = 'kg';
+    fieldRow.appendChild(input);
+    fieldRow.appendChild(unit);
+    row.appendChild(fieldRow);
+
+    input.addEventListener('blur', function () {
+      var val = input.value === '' ? null : parseFloat(input.value);
+      if (val !== null && (isNaN(val) || val < 0)) val = null;
+      if (val == null) return;
+      applyStartingWeightToRoutine(routine, exercise.id, val);
+
+      var existingMsg = row.querySelector('.routine-starting-charge-message');
+      if (!existingMsg) {
+        existingMsg = document.createElement('p');
+        existingMsg.className = 'routine-starting-charge-message';
+        row.appendChild(existingMsg);
+      }
+      existingMsg.textContent = 'Appliqué aux séries vides.';
+    });
+    input.addEventListener('keydown', function (e) { if (e.key === 'Enter') input.blur(); });
+
+    return row;
+  }
+
+  function renderRoutineStartingChargesPage() {
+    var routine = OvrykDB.getRoutineById(currentRoutineId);
+    var body = document.getElementById('routine-starting-charges-body');
+    body.innerHTML = '';
+    if (!routine) return;
+
+    var missing = computeStartingChargesMissing(routine);
+    if (missing.lifting.length === 0 && missing.muscu.length === 0) {
+      body.innerHTML = '<div class="empty-state"><span class="empty-tag">Vide</span>' +
+        '<h2>Rien à compléter</h2><p>Tous les 1RM et toutes les charges de cette routine sont déjà renseignés.</p></div>';
+      return;
+    }
+
+    var intro = document.createElement('p');
+    intro.className = 'routine-starting-charge-intro';
+    intro.textContent = "Facultatif : complète ce qui manque pour que les charges se calculent toutes seules dès la première séance.";
+    body.appendChild(intro);
+
+    if (missing.lifting.length > 0) {
+      var liftingLabel = document.createElement('span');
+      liftingLabel.className = 'dash-section-eyebrow';
+      liftingLabel.textContent = '1RM manquants';
+      body.appendChild(liftingLabel);
+      missing.lifting.forEach(function (exercise) {
+        body.appendChild(buildStartingChargeLiftingRow(exercise));
+      });
+    }
+
+    if (missing.muscu.length > 0) {
+      var muscuLabel = document.createElement('span');
+      muscuLabel.className = 'dash-section-eyebrow';
+      if (missing.lifting.length > 0) muscuLabel.style.marginTop = 'var(--space-5)';
+      muscuLabel.textContent = 'Charges de départ';
+      body.appendChild(muscuLabel);
+      missing.muscu.forEach(function (exercise) {
+        body.appendChild(buildStartingChargeMuscuRow(routine, exercise));
+      });
+    }
+  }
+
+  function openRoutineStartingChargesPage() {
+    document.getElementById('routine-starting-charges-page').hidden = false;
+    renderRoutineStartingChargesPage();
+  }
+
+  function closeRoutineStartingChargesPage() {
+    document.getElementById('routine-starting-charges-page').hidden = true;
+    closeRoutineEditor();
+  }
+
+  /* remplace l'appel direct à closeRoutineEditor sur les deux boutons
+     Enregistrer : à la création seulement (jamais à la modification), si
+     quelque chose manque, ouvre l'étape facultative au lieu de fermer tout
+     de suite — sinon comportement inchangé. */
+  function handleRoutineSaveClick() {
+    if (routineEditorIsNew) {
+      var routine = OvrykDB.getRoutineById(currentRoutineId);
+      if (routine) {
+        var missing = computeStartingChargesMissing(routine);
+        if (missing.lifting.length > 0 || missing.muscu.length > 0) {
+          openRoutineStartingChargesPage();
+          return;
+        }
+      }
+    }
+    closeRoutineEditor();
   }
 
   /* ---- superset / circuit grouping — shared by Routine and Séance ---- */
@@ -9273,12 +9550,14 @@
   document.getElementById('routine-cancel-btn').addEventListener('click', cancelRoutineEditor);
   document.getElementById('routine-save-btn').addEventListener('click', function () {
     if (this.disabled) return;
-    closeRoutineEditor();
+    handleRoutineSaveClick();
   });
   document.getElementById('routine-save-btn-bottom').addEventListener('click', function () {
     if (this.disabled) return;
-    closeRoutineEditor();
+    handleRoutineSaveClick();
   });
+  document.getElementById('routine-starting-charges-skip-btn').addEventListener('click', closeRoutineStartingChargesPage);
+  document.getElementById('routine-starting-charges-done-btn').addEventListener('click', closeRoutineStartingChargesPage);
 
   document.getElementById('routine-name-input').addEventListener('input', function (e) {
     var routine = OvrykDB.getRoutineById(currentRoutineId);

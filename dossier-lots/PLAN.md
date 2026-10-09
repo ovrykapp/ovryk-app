@@ -35,6 +35,10 @@ Taille : S = moins d'une heure de travail assisté, M = une demi journée, L = u
 
 * Livraison E (après le lot 07, hors périmètre initial) : popup de choix en semaine de test non encore faite (Faire le test, Repousser le test d'une semaine, Changer de cycle sans tester). Fait.
 
+## Bugs hors lot
+
+* L'activation d'un cycle au fil de l'eau (maybeAutoActivateForceCycle — déclenchée depuis le 1RM de l'onglet Exercices, et depuis la livraison 4 du lot 09 "Charges de départ") ne lance jamais la coordination (R7) : decalage_semaines reste à 0, même si maxHeavyCyclesPerWeek cycles lourds sont déjà actifs ailleurs. Seule la validation groupée de "Tirer mes cycles" (handleValidateCyclesDrawn) appelle coordinateAndApplyOffsets. Vérifié sur la copie locale le 2026-10-10 (livraison 4) : activer un 3ᵉ cycle avec Deadlift et Back Squat déjà actifs ne décale rien. Ne casse aucune donnée, pas de blocage.
+
 ## Idées non traitées
 
 * Accès au détail d'un cycle (openCycleDetailPage) depuis l'Accueil (aucune carte "cycles en cours" n'y existe aujourd'hui), depuis le panneau du jour du calendrier (Programme/Accueil, buildProgrammeDayPanelCard ne montre que nom et nombre d'exercices), et depuis la séance en cours (buildHalteroLiveBody n'a aucun lien vers la vue complète du cycle). Fait pour "Tes N cycles" et Coordination (point E, 2026-10-09) ; ces trois-là restent à faire si souhaité.
