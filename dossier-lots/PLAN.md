@@ -42,6 +42,7 @@ Taille : S = moins d'une heure de travail assisté, M = une demi journée, L = u
 ## Idées non traitées
 
 * Accès au détail d'un cycle (openCycleDetailPage) depuis l'Accueil (aucune carte "cycles en cours" n'y existe aujourd'hui), depuis le panneau du jour du calendrier (Programme/Accueil, buildProgrammeDayPanelCard ne montre que nom et nombre d'exercices), et depuis la séance en cours (buildHalteroLiveBody n'a aucun lien vers la vue complète du cycle). Fait pour "Tes N cycles" et Coordination (point E, 2026-10-09) ; ces trois-là restent à faire si souhaité.
+* Retrait possible des flèches monter/descendre dans l'éditeur de routine, devenues redondantes depuis le glisser-déposer (lot 09, livraison 3). Noté le 2026-10-10, pas encore retiré : à confirmer avant de supprimer une fonction existante (règle 9).
 
 ## Points de livraison utiles
 
