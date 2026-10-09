@@ -609,6 +609,34 @@
     color: var(--graphite);
   }
 
+  /* correctif : le sélecteur de jours de l'éditeur de routine (LUN à DIM,
+     maquette 20) a besoin de ses 7 pastilles sur une seule ligne, largeur
+     égale, jamais sur deux lignes. .filter-chip-row reste en flex-wrap
+     partout ailleurs (listes de catégories à nombre variable) : ce
+     correctif ne cible que cet id, aucun autre .filter-chip-row n'est
+     touché. */
+  #routine-weekday-row {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+  }
+  #routine-weekday-row .filter-chip {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px 2px;
+    min-height: 40px;
+    font-size: 12px;
+    text-align: center;
+  }
+  /* sous 360 px, la police à 12 px laisse trop peu de marge dans chaque
+     colonne (7 pastilles égales, gouttière de page comprise) : repasse à
+     10 px pour garder une seule ligne sans débordement, la hauteur de 40 px
+     et l'état sélectionné ne changent pas. */
+  @media (max-width: 359px) {
+    #routine-weekday-row .filter-chip { font-size: 10px; }
+  }
+
   /* ---- exercise list ---- */
   .exercise-list { margin-top: var(--space-4); }
   .exercise-attribution {
