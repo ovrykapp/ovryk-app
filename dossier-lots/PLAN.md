@@ -21,6 +21,7 @@ Taille : S = moins d'une heure de travail assisté, M = une demi journée, L = u
 | 14 | Réglages et matériel | 16, 17 | M | 01 |
 | 15 | Import de données | 19, 8 | M | 14 |
 | 16 | Compte et sauvegarde en ligne | 18 | L | tous |
+| 17 | À définir : séance sur un seul écran, cercle de validation par série | aucun (absent de la maquette 02/03, qui montre un exercice à la fois avec un bouton "Valider la série" plein largeur) | à définir | 05, 09 |
 
 ## Ordre conseillé
 

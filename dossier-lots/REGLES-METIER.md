@@ -33,8 +33,9 @@ Chaque règle porte un numéro, que les lots citent. Les valeurs entre parenthè
 * Si toutes les séries n'ont pas atteint le haut de la plage : même charge, objectif de reps = reps de la série la plus faible + 1, sans dépasser le haut de la plage.
 * Si toutes les séries ont atteint le haut de la plage : la charge monte du pas, les reps repartent au bas de la plage.
 * Si une série tombe sous le bas de la plage : même charge, pas de baisse. Après deux séances de suite dans ce cas, proposer une baisse de 5 à 10 % sans l'imposer.
-* Si le RPE saisi est 10 alors que la plage est atteinte : afficher un avertissement avant la montée, sans la bloquer.
 * La suggestion est toujours modifiable. Option de désactivation par exercice (autoProgression).
+
+> 2026-10-09 : règle retirée — "Si le RPE saisi est 10 alors que la plage est atteinte : afficher un avertissement avant la montée, sans la bloquer." La saisie du RPE a été retirée de l'interface de séance (point D.2) ; set.rpe, son calcul (resolveDoneSets, getExerciseSessionRecords) et l'export restent intacts, seul l'avertissement disparaît avec l'interface qui le déclenchait.
 
 ## R6. Haltérophilie : réussi ou raté
 
