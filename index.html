@@ -10710,6 +10710,36 @@
     return card;
   }
 
+  /* correctif : buildPlateLoadCard suppose toujours une barre, ce qui
+     affichait "Barre de 20 kg seule" pour un exercice à l'haltère (ex.
+     17,5 kg). equipment vient de l'exercice (EQUIPMENT_LIST), jamais de la
+     séance ni de la série — absent ou vide, on garde le comportement
+     d'avant (carte de plaques) pour ne rien casser sur un exercice déjà
+     créé sans ce champ. Retourne null quand il n'y a rien de pertinent à
+     afficher (Poulie, Machine, Poids du corps, Autre, ou haltères sans
+     poids renseigné) : l'appelant n'ajoute alors aucun bloc. */
+  function buildMuscuLoadCard(exercise, targetWeight) {
+    var equipment = exercise ? exercise.equipment : null;
+    if (!equipment || equipment === 'Barre') {
+      return buildPlateLoadCard(targetWeight);
+    }
+    if (equipment === 'Haltères') {
+      if (targetWeight == null || isNaN(targetWeight) || targetWeight <= 0) return null;
+      var card = document.createElement('div');
+      card.className = 'live-plate-card';
+      var label = document.createElement('div');
+      label.className = 'live-plate-label';
+      label.textContent = 'Chargement';
+      card.appendChild(label);
+      var summary = document.createElement('div');
+      summary.className = 'live-plate-summary mono';
+      summary.textContent = '2 haltères de ' + targetWeight + ' kg';
+      card.appendChild(summary);
+      return card;
+    }
+    return null;
+  }
+
   /* RPE 10 à la plage haute : avertissement discret, non bloquant — la
      montée (calculée au point 7, pas encore fait) n'est jamais empêchée. */
   function buildRpeRow(set) {
@@ -10765,7 +10795,9 @@
     frag.appendChild(buildMuscuSetsTable(sex, currentIndex));
 
     if (refSet) {
-      frag.appendChild(buildPlateLoadCard(refSet.weightKg));
+      var exerciseForLoadCard = OvrykDB.getExerciseById(sex.exerciseId);
+      var loadCard = buildMuscuLoadCard(exerciseForLoadCard, refSet.weightKg);
+      if (loadCard) frag.appendChild(loadCard);
       frag.appendChild(buildRpeRow(refSet));
     }
 
