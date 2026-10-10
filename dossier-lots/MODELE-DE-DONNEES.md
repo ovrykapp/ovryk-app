@@ -70,7 +70,7 @@ Proposition du plan du 2026-10-10 (LOT-16.md), à confirmer après les décision
 
 * ovryk.cloud (nouvelle clé, optionnelle) : { enabled, lastSuccess: { at, sessionsCount, snapshotId }, lastError: { at, reason } }. Absente = sauvegarde en ligne désactivée. Jamais exportée ni mise dans un instantané.
 * ovryk.cloud.auth (nouvelle clé, optionnelle) : jetons de connexion. Jamais exportée, jamais dans un instantané, effacée par "Se déconnecter".
-* Point de restauration local : copie complète avant une restauration, dans IndexedDB (pas dans localStorage, pour ne pas doubler l'occupation).
-* Format d'export et d'instantané : celui de collectAllOvrykData (version 1), avec en plus data.meta (ovryk.meta) et un bloc summary (nombre de séances, date de la dernière, nombre de routines, d'exercices et de cycles, version de schéma, version de l'app, empreinte). Reste lisible par l'import actuel, qui ignore les champs inconnus.
+* Point de restauration local (fait en livraison 1, v124) : base IndexedDB ovryk-restore, magasin points, { id, savedAt, reason, summary, raw } où raw contient les six clés ovryk.* en valeurs brutes (null si absente). 5 copies au plus. Créée seulement à la première restauration, jamais à l'ouverture d'un écran.
+* Format d'export et d'instantané (fait en livraison 1, v124) : celui de collectAllOvrykData (version 1), avec en plus data.meta (ovryk.meta) et un bloc summary (sessionsCompleted, sessionsTotal, inProgressIds, lastSessionAt, routines, exercises, cycles, schemaVersion, checksum). Reste lisible par l'import d'avant, qui ignore les champs inconnus.
 * Côté service : une table d'instantanés (identifiant du compte, date, résumé en colonnes, contenu JSON complet), ajout et lecture seulement depuis l'app, règles d'accès par ligne.
 

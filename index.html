@@ -1772,6 +1772,22 @@
     min-height: 14px;
   }
   .data-io-status.is-error { color: var(--rust); font-weight: 700; }
+  /* lot 16, livraison 1 : écran de restauration */
+  #restore-page.fullscreen-page { z-index: 42; }
+  /* .settings-row impose display:flex : sans cette règle, une ligne masquée
+     (partage, annulation, protection) resterait affichée. */
+  .settings-group > .settings-row[hidden] { display: none; }
+  .restore-table { background: var(--surface); border: 1px solid var(--border-card); border-radius: var(--radius-card); overflow: hidden; margin-bottom: var(--space-4); }
+  .restore-row { display: grid; grid-template-columns: 1.3fr 1fr 1fr; gap: 8px; padding: 12px 14px; border-bottom: 1px solid var(--divider); align-items: baseline; }
+  .restore-row:last-child { border-bottom: none; }
+  .restore-row.is-head { padding-top: 10px; padding-bottom: 10px; }
+  .restore-row.is-head .restore-cell, .restore-row.is-head .restore-cell-label { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--steel); }
+  .restore-cell-label { font-size: 14px; color: var(--ink); }
+  .restore-cell { font-size: 14px; font-weight: 700; color: var(--ink); text-align: right; }
+  .restore-cell.is-incoming { color: var(--orange-soft); }
+  .restore-note { margin: 0 0 var(--space-3); font-size: 13px; line-height: 1.5; color: var(--steel); }
+  .restore-note.is-warn { color: var(--rust); font-weight: 700; }
+  .restore-footer .restore-cancel-btn { display: block; width: 100%; margin-top: 8px; min-height: 44px; background: none; border: none; color: var(--steel); font-family: var(--font-display); font-weight: 700; font-size: 14px; cursor: pointer; }
 
   .cycle-alert-banner {
     display: flex;
@@ -4514,10 +4530,29 @@
             <span class="settings-row-value">.json</span>
             <svg class="settings-row-chevron" viewBox="0 0 24 24" aria-hidden="true"><polyline points="9,6 15,12 9,18"/></svg>
           </button>
+          <!-- lot 16, livraison 1 : affichée seulement si le navigateur sait
+               partager un fichier (feuille de partage iPhone : Fichiers,
+               iCloud Drive). -->
+          <button type="button" id="dashboard-share-btn" class="settings-row is-button" hidden>
+            <span class="settings-row-label">Partager une sauvegarde</span>
+            <span class="settings-row-value">Fichiers, iCloud</span>
+            <svg class="settings-row-chevron" viewBox="0 0 24 24" aria-hidden="true"><polyline points="9,6 15,12 9,18"/></svg>
+          </button>
           <button type="button" id="dashboard-import-btn" class="settings-row is-button">
             <span class="settings-row-label">Importer une sauvegarde</span>
             <span class="settings-row-value">.json</span>
             <svg class="settings-row-chevron" viewBox="0 0 24 24" aria-hidden="true"><polyline points="9,6 15,12 9,18"/></svg>
+          </button>
+          <!-- affichée seulement s'il existe une copie faite avant une
+               restauration (lue sans rien écrire). -->
+          <button type="button" id="restore-undo-btn" class="settings-row is-button" hidden>
+            <span class="settings-row-label">Annuler la dernière restauration</span>
+            <span class="settings-row-value" id="restore-undo-value"></span>
+            <svg class="settings-row-chevron" viewBox="0 0 24 24" aria-hidden="true"><polyline points="9,6 15,12 9,18"/></svg>
+          </button>
+          <button type="button" id="storage-persist-btn" class="settings-row is-button" hidden>
+            <span class="settings-row-label">Protéger les données de cet appareil</span>
+            <span class="settings-row-value" id="storage-persist-value"></span>
           </button>
         </div>
         <input type="file" id="dashboard-import-input" accept="application/json,.json" hidden>
@@ -4759,6 +4794,26 @@
       </div>
     </div>
     <div class="fullscreen-page-body history-body" id="week-load-body"></div>
+  </div>
+
+  <!-- lot 16, livraison 1 : résumé avant et après une restauration (fichier
+       ou annulation). Rien n'est écrit avant "Remplacer" puis la
+       confirmation. -->
+  <div id="restore-page" class="fullscreen-page" hidden>
+    <div class="history-topbar">
+      <button type="button" id="restore-back-btn" class="view-header-back" aria-label="Retour aux réglages">
+        <svg viewBox="0 0 24 24" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="15,6 9,12 15,18"/></svg>
+      </button>
+      <div class="history-title-wrap">
+        <h1 class="history-title is-detail" id="restore-title">Restaurer une sauvegarde</h1>
+        <p class="history-subtitle" id="restore-sub"></p>
+      </div>
+    </div>
+    <div class="fullscreen-page-body history-body" id="restore-body"></div>
+    <div class="history-detail-footer restore-footer">
+      <button type="button" id="restore-confirm-btn" class="btn-primary">Remplacer mes données</button>
+      <button type="button" id="restore-cancel-btn" class="restore-cancel-btn">Annuler</button>
+    </div>
   </div>
 
   <div id="history-detail-page" class="fullscreen-page" hidden>
@@ -6375,6 +6430,7 @@
       renderBarPlatesSummary();
       renderBackupReminder();
       renderStorageWarning();
+      renderDataSafetyRows();
     }
     if (target === 'seance' && !activeSession) {
       renderSeanceRoutineList();
@@ -16289,18 +16345,26 @@
   /* ============================================================
      DASHBOARD — export / import all data
   ============================================================ */
+  /* lot 16, livraison 1 : data.meta (version de schéma) et summary
+     (chiffres lisibles et empreinte de data) en plus. Même enveloppe
+     (version 1) : un ancien import lit data et ignore le reste. */
   function collectAllOvrykData() {
+    var data = {
+      exercises: OvrykDB.getExercises(),
+      routines: OvrykDB.getRoutines(),
+      sessions: OvrykDB.getSessions(),
+      settings: OvrykDB.getSettings(),
+      forceCycles: OvrykDB.getForceCycles(),
+      meta: OvrykDB.getMeta()
+    };
+    var summary = summarizeOvrykData(data);
+    summary.checksum = hashBackupString(JSON.stringify(data));
     return {
       app: 'Ovryk',
       exportedAt: new Date().toISOString(),
-      version: 1,
-      data: {
-        exercises: OvrykDB.getExercises(),
-        routines: OvrykDB.getRoutines(),
-        sessions: OvrykDB.getSessions(),
-        settings: OvrykDB.getSettings(),
-        forceCycles: OvrykDB.getForceCycles()
-      }
+      version: BACKUP_FORMAT_VERSION,
+      data: data,
+      summary: summary
     };
   }
 
@@ -16365,6 +16429,13 @@
      path, so both stay in sync instead of drifting apart over time */
   function downloadOvrykExport() {
     var payload = collectAllOvrykData();
+    /* lot 16 : jamais d'export d'un état vide ou illisible (rien n'est
+       téléchargé ni noté comme sauvegardé, et le message le dit). */
+    var blocker = getBackupBlocker(payload);
+    if (blocker) {
+      showDataIOStatus('Export impossible : ' + blocker, true);
+      return;
+    }
     var json = JSON.stringify(payload, null, 2);
     var blob = new Blob([json], { type: 'application/json' });
     var url = URL.createObjectURL(blob);
@@ -16384,7 +16455,398 @@
     showDataIOStatus('Export téléchargé.', false);
   }
 
+  /* ============================================================
+     SAUVEGARDE FIABLE (lot 16, livraison 1) : export, partage, import et
+     restauration sûrs depuis un fichier, sans aucun appel réseau.
+     * Une seule validation (validateBackupFile) pour tout ce qui entre, une
+       seule garde (getBackupBlocker) pour tout ce qui sort.
+     * Avant toute restauration, copie exacte de l'état actuel (les six clés
+       ovryk.*, séances comprises, valeurs brutes) dans IndexedDB : le
+       localStorage n'est pas doublé. L'annulation remet ces valeurs brutes.
+     * Rien n'est écrit à l'ouverture de Réglages : la lecture de la copie
+       n'ouvre la base que si elle existe déjà (openRestoreDb sans création).
+     ============================================================ */
+  var BACKUP_FORMAT_VERSION = 1;
+  var CURRENT_SCHEMA_VERSION = 2;
+  var RESTORE_DB_NAME = 'ovryk-restore';
+  var RESTORE_STORE = 'points';
+  var RESTORE_KEEP = 5;
+
+  /* empreinte FNV-1a 32 bits du contenu (data), en hexadécimal : détecte
+     un fichier tronqué ou modifié, pas une protection contre la fraude. */
+  function hashBackupString(str) {
+    var h = 0x811c9dc5;
+    for (var i = 0; i < str.length; i++) {
+      h ^= str.charCodeAt(i);
+      h = (h + ((h << 1) + (h << 4) + (h << 7) + (h << 8) + (h << 24))) >>> 0;
+    }
+    return ('0000000' + h.toString(16)).slice(-8);
+  }
+
+  function summarizeOvrykData(data) {
+    var sessions = Array.isArray(data.sessions) ? data.sessions : [];
+    var completed = sessions.filter(function (s) { return s && s.status === 'completed'; });
+    var last = null;
+    completed.forEach(function (s) {
+      var t = Date.parse(s.completedAt || s.date);
+      if (!isNaN(t) && (last === null || t > last)) last = t;
+    });
+    return {
+      sessionsCompleted: completed.length,
+      sessionsTotal: sessions.length,
+      inProgressIds: sessions.filter(function (s) { return s && s.status === 'in_progress'; }).map(function (s) { return s.id; }),
+      lastSessionAt: last !== null ? new Date(last).toISOString() : null,
+      routines: Array.isArray(data.routines) ? data.routines.length : 0,
+      exercises: Array.isArray(data.exercises) ? data.exercises.length : 0,
+      cycles: data.forceCycles && typeof data.forceCycles === 'object' ? Object.keys(data.forceCycles).length : 0,
+      schemaVersion: data.meta && typeof data.meta.schemaVersion === 'number' ? data.meta.schemaVersion : null
+    };
+  }
+
+  function isPlainObject(v) { return !!v && typeof v === 'object' && !Array.isArray(v); }
+
+  /* structure attendue : trois listes, deux objets optionnels. Renvoie la
+     raison d'un refus, ou null. Un élément isolé mal formé n'est pas un
+     refus (voir countMalformedBackupItems) : il ne doit jamais empêcher de
+     sauvegarder ou de restaurer ses propres données. */
+  function getBackupShapeError(data) {
+    if (!isPlainObject(data)) return 'structure inattendue';
+    var lists = [['exercises', 'exercices'], ['routines', 'routines'], ['sessions', 'séances']];
+    for (var i = 0; i < lists.length; i++) {
+      if (!Array.isArray(data[lists[i][0]])) return 'la liste des ' + lists[i][1] + ' est absente ou invalide';
+    }
+    if (data.settings != null && !isPlainObject(data.settings)) return 'réglages invalides';
+    if (data.forceCycles != null && !isPlainObject(data.forceCycles)) return 'cycles de force invalides';
+    if (data.meta != null && !isPlainObject(data.meta)) return 'version de schéma invalide';
+    if (data.exercises.length === 0 && data.routines.length === 0 && data.sessions.length === 0) return 'vide';
+    return null;
+  }
+
+  function countMalformedBackupItems(data) {
+    var n = 0;
+    data.exercises.forEach(function (e) { if (!isPlainObject(e) || !e.id) n++; });
+    data.routines.forEach(function (r) { if (!isPlainObject(r) || !r.id || !Array.isArray(r.exercises)) n++; });
+    data.sessions.forEach(function (s) { if (!isPlainObject(s) || !s.id || !Array.isArray(s.exercises)) n++; });
+    return n;
+  }
+
+  /* garde de sortie : jamais d'export ni d'instantané d'un état vide ou
+     manifestement corrompu. Renvoie un message, ou null. */
+  function getBackupBlocker(payload) {
+    var err = getBackupShapeError(payload.data);
+    if (err === 'vide') return 'rien à sauvegarder, cet appareil ne contient aucune donnée.';
+    if (err) return 'données de cet appareil illisibles (' + err + ').';
+    return null;
+  }
+
+  /* fichier lu : { error } ou { data, fileSummary, exportedAt, malformed }.
+     N'écrit rien. Ancien format brut (les listes à la racine) accepté comme
+     l'import d'avant ce lot. */
+  function validateBackupFile(parsed) {
+    if (!isPlainObject(parsed)) return { error: 'ce fichier n’est pas une sauvegarde Ovryk.' };
+    if (parsed.app != null && parsed.app !== 'Ovryk') return { error: 'ce fichier vient d’une autre application.' };
+    var data;
+    if (isPlainObject(parsed.data)) {
+      if (parsed.version != null && parsed.version !== BACKUP_FORMAT_VERSION) {
+        return { error: 'version de sauvegarde inconnue (' + String(parsed.version) + '). Mets l’app à jour avant de restaurer.' };
+      }
+      data = parsed.data;
+    } else if (Array.isArray(parsed.sessions) || Array.isArray(parsed.exercises) || Array.isArray(parsed.routines)) {
+      data = parsed;
+    } else {
+      return { error: 'ce fichier n’a pas le format d’une sauvegarde Ovryk.' };
+    }
+    var shape = getBackupShapeError(data);
+    if (shape === 'vide') return { error: 'ce fichier est vide, il ne contient aucune donnée.' };
+    if (shape) return { error: 'fichier invalide : ' + shape + '.' };
+    if (data.meta && typeof data.meta.schemaVersion === 'number' && data.meta.schemaVersion > CURRENT_SCHEMA_VERSION) {
+      return { error: 'sauvegarde faite par une version plus récente de l’app. Mets l’app à jour avant de restaurer.' };
+    }
+    if (isPlainObject(parsed.summary) && typeof parsed.summary.checksum === 'string' &&
+        parsed.summary.checksum !== hashBackupString(JSON.stringify(data))) {
+      return { error: 'fichier abîmé ou modifié (empreinte différente). Rien n’a été importé.' };
+    }
+    return {
+      data: data,
+      fileSummary: summarizeOvrykData(data),
+      exportedAt: typeof parsed.exportedAt === 'string' ? parsed.exportedAt : null,
+      malformed: countMalformedBackupItems(data)
+    };
+  }
+
+  /* ---- copie avant restauration (IndexedDB) ---- */
+  function openRestoreDb(createIfMissing, cb) {
+    if (!window.indexedDB) { cb(createIfMissing ? new Error('IndexedDB indisponible') : null, null); return; }
+    var req;
+    try { req = window.indexedDB.open(RESTORE_DB_NAME, 1); } catch (e) { cb(createIfMissing ? e : null, null); return; }
+    req.onupgradeneeded = function (e) {
+      if (!createIfMissing) { e.target.transaction.abort(); return; }
+      e.target.result.createObjectStore(RESTORE_STORE, { keyPath: 'id', autoIncrement: true });
+    };
+    req.onsuccess = function () { cb(null, req.result); };
+    req.onerror = function (e) {
+      if (e && e.preventDefault) e.preventDefault();
+      cb(createIfMissing ? (req.error || new Error('ouverture impossible')) : null, null);
+    };
+  }
+
+  function readRawOvrykState() {
+    var raw = {};
+    Object.keys(DB_KEYS).forEach(function (k) { raw[DB_KEYS[k]] = localStorage.getItem(DB_KEYS[k]); });
+    return raw;
+  }
+
+  function saveRestorePoint(reason, cb) {
+    var point = {
+      savedAt: new Date().toISOString(),
+      reason: reason,
+      summary: summarizeOvrykData(collectAllOvrykData().data),
+      raw: readRawOvrykState()
+    };
+    openRestoreDb(true, function (err, db) {
+      if (err || !db) { cb(err || new Error('IndexedDB indisponible')); return; }
+      var tx;
+      try { tx = db.transaction(RESTORE_STORE, 'readwrite'); } catch (e) { db.close(); cb(e); return; }
+      var store = tx.objectStore(RESTORE_STORE);
+      store.add(point);
+      var keysReq = store.getAllKeys ? store.getAllKeys() : null;
+      if (keysReq) {
+        keysReq.onsuccess = function () {
+          var keys = keysReq.result.slice().sort(function (a, b) { return a - b; });
+          keys.slice(0, Math.max(0, keys.length - RESTORE_KEEP)).forEach(function (k) { store.delete(k); });
+        };
+      }
+      tx.oncomplete = function () { db.close(); cb(null); };
+      tx.onerror = function () { db.close(); cb(tx.error || new Error('écriture impossible')); };
+      tx.onabort = function () { db.close(); cb(tx.error || new Error('écriture annulée')); };
+    });
+  }
+
+  function getLatestRestorePoint(cb) {
+    openRestoreDb(false, function (err, db) {
+      if (err || !db) { cb(null); return; }
+      if (!db.objectStoreNames.contains(RESTORE_STORE)) { db.close(); cb(null); return; }
+      var tx = db.transaction(RESTORE_STORE, 'readonly');
+      var req = tx.objectStore(RESTORE_STORE).openCursor(null, 'prev');
+      req.onsuccess = function () { var c = req.result; db.close(); cb(c ? c.value : null); };
+      req.onerror = function () { db.close(); cb(null); };
+    });
+  }
+
+  /* remet des valeurs brutes exactement (clé absente = supprimée). */
+  function writeRawOvrykState(raw) {
+    try {
+      Object.keys(DB_KEYS).forEach(function (k) {
+        var key = DB_KEYS[k];
+        if (raw[key] === null || raw[key] === undefined) localStorage.removeItem(key);
+        else localStorage.setItem(key, raw[key]);
+      });
+      return true;
+    } catch (e) {
+      console.error('OvrykDB: restauration brute impossible', e);
+      return false;
+    }
+  }
+
+  /* remplace les données par celles d'un fichier validé. Un ovryk.meta
+     absent du fichier (export d'avant ce lot) laisse la version actuelle :
+     migrateSchema complète au rechargement ce qui manque. */
+  function applyBackupData(data) {
+    var ok = OvrykDB.saveExercises(data.exercises) !== false;
+    ok = ok && OvrykDB.saveRoutines(data.routines) !== false;
+    ok = ok && OvrykDB.saveSessions(data.sessions) !== false;
+    ok = ok && OvrykDB.saveSettings(isPlainObject(data.settings) ? data.settings : DEFAULT_SETTINGS) !== false;
+    ok = ok && OvrykDB.saveForceCycles(isPlainObject(data.forceCycles) ? data.forceCycles : {}) !== false;
+    if (ok && isPlainObject(data.meta)) ok = OvrykDB.saveMeta(data.meta) !== false;
+    return ok;
+  }
+
+  /* ---- écran de restauration ---- */
+  var restoreState = null;
+
+  function formatRestoreDate(iso) {
+    if (!iso) return 'inconnue';
+    var d = new Date(iso);
+    if (isNaN(d.getTime())) return 'inconnue';
+    return formatDayMonthFr(d) + ' ' + d.getFullYear() + ' à ' + pad2(d.getHours()) + ':' + pad2(d.getMinutes());
+  }
+
+  function formatRestoreDay(iso) {
+    if (!iso) return '-';
+    var d = new Date(iso);
+    return isNaN(d.getTime()) ? '-' : formatDayMonthFr(d) + ' ' + d.getFullYear();
+  }
+
+  function renderRestorePage() {
+    var st = restoreState;
+    var current = summarizeOvrykData(collectAllOvrykData().data);
+    var incoming = st.summary;
+    document.getElementById('restore-title').textContent = st.mode === 'undo' ? 'Annuler la restauration' : 'Restaurer une sauvegarde';
+    document.getElementById('restore-sub').textContent = st.mode === 'undo'
+      ? 'Copie faite le ' + formatRestoreDate(st.sourceDate) + ', avant la dernière restauration'
+      : (st.fileName ? st.fileName + ', ' : '') + 'exportée le ' + formatRestoreDate(st.sourceDate);
+
+    var body = document.getElementById('restore-body');
+    body.innerHTML = '';
+    var table = document.createElement('div');
+    table.className = 'restore-table';
+    var rows = [
+      ['', 'Ce téléphone', st.mode === 'undo' ? 'Copie' : 'Sauvegarde'],
+      ['Séances terminées', current.sessionsCompleted, incoming.sessionsCompleted],
+      ['Dernière séance', formatRestoreDay(current.lastSessionAt), formatRestoreDay(incoming.lastSessionAt)],
+      ['Routines', current.routines, incoming.routines],
+      ['Exercices', current.exercises, incoming.exercises],
+      ['Cycles de force', current.cycles, incoming.cycles]
+    ];
+    rows.forEach(function (r, i) {
+      var row = document.createElement('div');
+      row.className = 'restore-row' + (i === 0 ? ' is-head' : '');
+      row.innerHTML = '<span class="restore-cell-label">' + escapeHTML(String(r[0])) + '</span>' +
+        '<span class="restore-cell">' + escapeHTML(String(r[1])) + '</span>' +
+        '<span class="restore-cell is-incoming">' + escapeHTML(String(r[2])) + '</span>';
+      table.appendChild(row);
+    });
+    body.appendChild(table);
+
+    var lost = current.sessionsCompleted - incoming.sessionsCompleted;
+    function note(text, isWarn) {
+      var p = document.createElement('p');
+      p.className = 'restore-note' + (isWarn ? ' is-warn' : '');
+      p.textContent = text;
+      body.appendChild(p);
+    }
+    if (lost > 0) note('Attention : ' + (st.mode === 'undo' ? 'la copie' : 'la sauvegarde') + ' contient ' + lost + (lost > 1 ? ' séances terminées de moins' : ' séance terminée de moins') + ' que ce téléphone. Elles seront remplacées.', true);
+    var incomingInProgress = incoming.inProgressIds || [];
+    if ((current.inProgressIds || []).some(function (id) { return incomingInProgress.indexOf(id) === -1; })) {
+      note('Une séance est en cours sur ce téléphone et n\u2019est pas dans ' + (st.mode === 'undo' ? 'la copie' : 'la sauvegarde') + ' : elle sera remplacée.', true);
+    }
+    if (st.malformed > 0) note(st.malformed + (st.malformed > 1 ? ' éléments mal formés seront importés tels quels.' : ' élément mal formé sera importé tel quel.'), false);
+    note('Toutes les données de ce téléphone (exercices, routines, séances, réglages, cycles) seront remplacées. Une copie de l’état actuel est gardée sur ce téléphone : tu pourras annuler depuis Réglages.', false);
+
+    document.getElementById('restore-confirm-btn').textContent = st.mode === 'undo' ? 'Revenir à cette copie' : 'Remplacer mes données';
+    document.getElementById('restore-confirm-btn').disabled = false;
+  }
+
+  function openRestorePage(state) {
+    restoreState = state;
+    renderRestorePage();
+    document.getElementById('restore-page').hidden = false;
+    document.getElementById('restore-body').scrollTop = 0;
+  }
+
+  function closeRestorePage() {
+    document.getElementById('restore-page').hidden = true;
+    restoreState = null;
+  }
+
+  /* deuxième confirmation, puis copie de l'état actuel, puis remplacement.
+     Si la copie échoue, rien n'est remplacé. Si une écriture échoue en
+     cours de remplacement, l'état d'avant est remis tel quel. */
+  function confirmRestore() {
+    var st = restoreState;
+    if (!st) return;
+    var current = summarizeOvrykData(collectAllOvrykData().data);
+    var lost = current.sessionsCompleted - st.summary.sessionsCompleted;
+    showConfirmModal(
+      (lost > 0 ? 'Dernière confirmation : ' + lost + (lost > 1 ? ' séances terminées' : ' séance terminée') + ' de ce téléphone ne sont pas dans ' + (st.mode === 'undo' ? 'la copie' : 'la sauvegarde') + '. ' : 'Dernière confirmation. ') +
+        'Remplacer toutes les données de ce téléphone ? Une copie de l’état actuel sera gardée pour pouvoir annuler.',
+      function () {
+        var btn = document.getElementById('restore-confirm-btn');
+        btn.disabled = true;
+        var before = readRawOvrykState();
+        saveRestorePoint(st.mode === 'undo' ? 'avant annulation' : 'avant restauration', function (err) {
+          if (err) {
+            btn.disabled = false;
+            closeRestorePage();
+            showDataIOStatus('Restauration annulée : impossible de copier l’état actuel (' + (err.message || err) + '). Rien n’a été modifié.', true);
+            return;
+          }
+          var ok = st.mode === 'undo' ? writeRawOvrykState(st.raw) : applyBackupData(st.data);
+          if (!ok) {
+            writeRawOvrykState(before);
+            btn.disabled = false;
+            closeRestorePage();
+            showDataIOStatus('Restauration impossible (stockage plein ?). L’état d’avant a été remis.', true);
+            return;
+          }
+          showDataIOStatus(st.mode === 'undo' ? 'Retour à la copie effectué. Rechargement…' : 'Restauration réussie. Rechargement…', false);
+          setTimeout(function () { window.location.reload(); }, 600);
+        });
+      },
+      null,
+      st.mode === 'undo' ? 'Revenir' : 'Remplacer',
+      'Annuler'
+    );
+  }
+
+  /* ---- lignes de Réglages : annulation, partage, protection ---- */
+  function renderDataSafetyRows() {
+    var undoBtn = document.getElementById('restore-undo-btn');
+    getLatestRestorePoint(function (point) {
+      if (!point || !point.raw) { undoBtn.hidden = true; return; }
+      document.getElementById('restore-undo-value').textContent = formatRestoreDay(point.savedAt);
+      undoBtn.hidden = false;
+    });
+
+    var shareBtn = document.getElementById('dashboard-share-btn');
+    var canShareFiles = false;
+    try {
+      canShareFiles = !!(navigator.canShare && window.File &&
+        navigator.canShare({ files: [new File(['{}'], 'test.json', { type: 'application/json' })] }));
+    } catch (e) { canShareFiles = false; }
+    shareBtn.hidden = !canShareFiles;
+
+    var persistBtn = document.getElementById('storage-persist-btn');
+    if (!(navigator.storage && navigator.storage.persist && navigator.storage.persisted)) { persistBtn.hidden = true; return; }
+    navigator.storage.persisted().then(function (isPersisted) {
+      document.getElementById('storage-persist-value').textContent = isPersisted ? 'Activée' : 'Non activée';
+      persistBtn.disabled = !!isPersisted;
+      persistBtn.hidden = false;
+    }).catch(function () { persistBtn.hidden = true; });
+  }
+
+  function shareOvrykBackup() {
+    var payload = collectAllOvrykData();
+    var blocker = getBackupBlocker(payload);
+    if (blocker) { showDataIOStatus('Partage impossible : ' + blocker, true); return; }
+    var file = new File([JSON.stringify(payload, null, 2)], 'ovryk-export-' + new Date().toISOString().slice(0, 10) + '.json', { type: 'application/json' });
+    navigator.share({ files: [file], title: 'Sauvegarde Ovryk' }).then(function () {
+      var settings = OvrykDB.getSettings();
+      settings.lastExportAt = new Date().toISOString();
+      OvrykDB.saveSettings(settings);
+      renderBackupReminder();
+      showDataIOStatus('Sauvegarde partagée.', false);
+    }).catch(function (err) {
+      if (err && err.name === 'AbortError') return;
+      showDataIOStatus('Partage impossible : ' + ((err && err.message) || 'erreur inconnue') + '.', true);
+    });
+  }
+
+  function requestStoragePersistence() {
+    navigator.storage.persist().then(function (granted) {
+      showDataIOStatus(granted
+        ? 'Protection activée : Safari ne supprimera pas ces données de lui-même.'
+        : 'Safari a refusé pour l’instant. Installe l’app sur l’écran d’accueil et réessaie plus tard.', !granted);
+      renderDataSafetyRows();
+    }).catch(function () {
+      showDataIOStatus('Protection indisponible sur ce navigateur.', true);
+    });
+  }
+
+  function openRestoreUndo() {
+    getLatestRestorePoint(function (point) {
+      if (!point || !point.raw) { renderDataSafetyRows(); return; }
+      openRestorePage({ mode: 'undo', raw: point.raw, summary: point.summary || summarizeOvrykData({}), sourceDate: point.savedAt, malformed: 0 });
+    });
+  }
+
   document.getElementById('dashboard-export-btn').addEventListener('click', downloadOvrykExport);
+  document.getElementById('dashboard-share-btn').addEventListener('click', shareOvrykBackup);
+  document.getElementById('storage-persist-btn').addEventListener('click', requestStoragePersistence);
+  document.getElementById('restore-undo-btn').addEventListener('click', openRestoreUndo);
+  document.getElementById('restore-back-btn').addEventListener('click', closeRestorePage);
+  document.getElementById('restore-cancel-btn').addEventListener('click', closeRestorePage);
+  document.getElementById('restore-confirm-btn').addEventListener('click', confirmRestore);
 
   document.getElementById('dashboard-import-btn').addEventListener('click', function () {
     document.getElementById('dashboard-import-input').click();
@@ -16397,36 +16859,35 @@
     var reader = new FileReader();
     reader.onload = function () {
       var parsed;
+      if (!String(reader.result || '').trim()) {
+        showDataIOStatus('Import refusé : ce fichier est vide.', true);
+        e.target.value = '';
+        return;
+      }
       try {
         parsed = JSON.parse(reader.result);
       } catch (err) {
-        showDataIOStatus('Fichier invalide : JSON illisible.', true);
+        showDataIOStatus('Import refusé : fichier illisible (ce n\u2019est pas du JSON).', true);
         e.target.value = '';
         return;
       }
 
-      var payload = (parsed && parsed.data && typeof parsed.data === 'object') ? parsed.data : parsed;
-      if (!payload || typeof payload !== 'object') {
-        showDataIOStatus('Fichier invalide : structure inattendue.', true);
-        e.target.value = '';
+      /* lot 16, livraison 1 : validation complète, puis écran de résumé
+         avant et après. Rien n'est écrit avant les deux confirmations. */
+      var checked = validateBackupFile(parsed);
+      e.target.value = '';
+      if (checked.error) {
+        showDataIOStatus('Import refusé : ' + checked.error, true);
         return;
       }
-
-      showConfirmModal(
-        'Importer ce fichier remplacera toutes tes données actuelles (exercices, routines, séances, réglages, cycles de force). Continuer ?',
-        function () {
-          OvrykDB.saveExercises(Array.isArray(payload.exercises) ? payload.exercises : []);
-          OvrykDB.saveRoutines(Array.isArray(payload.routines) ? payload.routines : []);
-          OvrykDB.saveSessions(Array.isArray(payload.sessions) ? payload.sessions : []);
-          OvrykDB.saveSettings(payload.settings && typeof payload.settings === 'object' ? payload.settings : DEFAULT_SETTINGS);
-          OvrykDB.saveForceCycles(payload.forceCycles && typeof payload.forceCycles === 'object' ? payload.forceCycles : {});
-
-          showDataIOStatus('Import réussi. Rechargement…', false);
-          e.target.value = '';
-          setTimeout(function () { window.location.reload(); }, 600);
-        },
-        function () { e.target.value = ''; }
-      );
+      openRestorePage({
+        mode: 'file',
+        data: checked.data,
+        summary: checked.fileSummary,
+        sourceDate: checked.exportedAt,
+        fileName: file.name,
+        malformed: checked.malformed
+      });
     };
     reader.onerror = function () {
       showDataIOStatus('Erreur de lecture du fichier.', true);

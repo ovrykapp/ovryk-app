@@ -2,7 +2,7 @@
 
 Taille : L. Dépend de : tous. Lot à risque (export, import, sauvegardes, écriture dans des données existantes).
 
-Statut : plan révisé le 2026-10-10, en attente de décisions (section 12). Aucun code écrit.
+Statut : plan révisé le 2026-10-10, décisions de Ruben prises le 2026-10-10 (voir "Décisions prises"). Livraison 1 faite (sw v124), livraisons 2 à 5 à faire.
 
 ## Écrans de la maquette
 
@@ -60,7 +60,7 @@ Taille d'un instantané aujourd'hui : environ 126 Ko compact. Avec 500 séances 
 Recommandation : **reprendre le format d'export existant**, en restant lisible par l'import actuel.
 
 * Enveloppe : { app: 'Ovryk', exportedAt, version: 1, data: { exercises, routines, sessions, settings, forceCycles, meta }, summary }. L'import actuel lit parsed.data et ignore ce qu'il ne connaît pas : un fichier au nouveau format reste importable par une ancienne version.
-* summary (nouveau, lecture humaine et garde-fous) : nombre de séances terminées, date de la dernière séance terminée, nombre de routines, d'exercices et de cycles, version de schéma, version de l'app, empreinte (somme de contrôle) du contenu de data.
+* summary (nouveau, lecture humaine et garde-fous) : nombre de séances terminées et au total, identifiants des séances en cours, date de la dernière séance terminée, nombre de routines, d'exercices et de cycles, version de schéma, empreinte (somme de contrôle) du contenu de data. Pas de version de l'app : ce serait un deuxième numéro à tenir à jour à côté de sw.js, et la version de schéma suffit à refuser une sauvegarde trop récente.
 * meta.schemaVersion indique la version du modèle. À la restauration, un instantané d'une version plus récente que l'app est refusé avec un message ("Mets à jour l'app avant de restaurer"). Un instantané plus ancien est accepté et passe par migrateSchema.
 * Côté service : une ligne par instantané, avec l'identifiant du compte, la date, le résumé en colonnes (pour lister sans tout télécharger) et le contenu complet en un seul champ JSON.
 
@@ -210,7 +210,21 @@ Chaque livraison a son commit, une version de cache et ses tests sur la copie lo
 
 Hors de ce lot : synchronisation entre plusieurs appareils, connexion Google ou Apple, import depuis Hevy ou Strong, partage avec un coach, fusion complète de deux états, chiffrement côté app avant envoi (possible plus tard ; il protège même contre le service, mais une phrase secrète perdue rend les sauvegardes illisibles), migration du stockage vers IndexedDB.
 
-## 12. Décisions pour Ruben
+## Décisions prises (2026-10-10)
+
+* Service : Supabase, offre gratuite (question 1, A).
+* Connexion : code à 6 chiffres reçu par e-mail (question 2, A).
+* Adresse du projet et clé publique : directement dans l'app (question 3, A).
+* Restauration : remplacer, avec copie de l'état actuel avant et annulation (question 4, A).
+* Quand : après chaque séance terminée, plus un bouton manuel (question 5, A).
+* Rotation (remplace la règle de la section 6) : **les 30 dernières sauvegardes, plus toujours la plus complète** (celle qui contient le plus de séances terminées).
+  * Taille réelle mesurée avec backups/ovryk-export-2026-10-01.json au nouveau format compact (avec meta et summary) : **114 Ko par copie** (18 Ko compressée), environ 5 Ko par séance.
+  * 31 copies aujourd'hui : 3 Mo. Après 1 an (environ 220 séances) : 35 Mo. Après 3 ans : environ 100 Mo. Après 10 ans : environ 320 Mo, sous la limite de 500 Mo.
+  * La règle ne pose donc aucun problème de place. Le stockage local du téléphone (environ 5 Mo) sera saturé bien avant, vers 5 ans, ce qui reste le vrai plafond (section 11, risque 9).
+* Export fichier automatique en fin de séance (question 8) : **conservé au moins un mois après l'activation de la sauvegarde en ligne**, puis réévalué.
+* Région : non tranchée explicitement, recommandation Paris si proposée, sinon Francfort (à choisir à la création du projet).
+
+## 12. Décisions pour Ruben (questions posées le 2026-10-10, réponses ci-dessus)
 
 1. **Où mettre la sauvegarde en ligne ?**
    * A (recommandé) : Supabase, offre gratuite. Fait ce qu'il faut sans serveur à nous, les données restent lisibles, région Europe.
@@ -272,3 +286,17 @@ Sources : https://supabase.com/pricing , https://supabase.com/docs/guides/platfo
 ## Règles métier concernées
 
 R11 (pas de compte obligatoire).
+
+## Avancement
+
+* Livraison 1 faite le 2026-10-10 (sw v124), sans réseau ni dépendance :
+  * Export : collectAllOvrykData ajoute data.meta et summary (empreinte FNV-1a de data, hashBackupString). Même enveloppe version 1, toujours lisible par l'ancien import. Garde de sortie getBackupBlocker : pas d'export (ni bouton, ni export automatique de fin de séance, ni partage) d'un état vide ou illisible, avec message ; l'export automatique de fin de séance est inchangé (il ne peut pas être bloqué juste après une séance terminée).
+  * Partage : ligne "Partager une sauvegarde" (feuille de partage, Fichiers ou iCloud Drive), affichée seulement si le navigateur sait partager un fichier ; note lastExportAt seulement si le partage aboutit.
+  * Import : validateBackupFile refuse sans rien écrire un fichier vide, du JSON illisible, un autre format, une autre application, une version d'enveloppe inconnue, un schéma plus récent, une empreinte différente (fichier abîmé ou modifié), des listes absentes ou invalides, des données vides. L'ancien format brut (listes à la racine) et l'export réel du 2026-10-01 (sans meta ni summary) restent acceptés. Un élément isolé mal formé n'est pas un refus (il est signalé).
+  * Écran "Restaurer une sauvegarde" (restore-page) : comparaison "Ce téléphone" et "Sauvegarde" (séances terminées, dernière séance, routines, exercices, cycles), avertissement rouge si la sauvegarde a moins de séances terminées, ou si une séance en cours sur le téléphone n'y est pas. Double confirmation (bouton, puis fenêtre qui rappelle les séances perdues).
+  * Copie avant restauration : les six clés ovryk.* en valeurs brutes (séances comprises), dans IndexedDB (base ovryk-restore, 5 copies au plus). Si la copie échoue, rien n'est remplacé. Si une écriture échoue pendant le remplacement, l'état d'avant est remis à l'identique.
+  * Annulation : ligne "Annuler la dernière restauration" (visible seulement s'il existe une copie, lue sans créer la base), même écran, même double confirmation ; l'annulation fait elle-même une copie, elle est donc annulable.
+  * "Protéger les données de cet appareil" : navigator.storage.persist() sur un appui, état affiché (Activée ou Non activée), ligne masquée si le navigateur ne le propose pas.
+  * Aucune écriture à l'ouverture de Réglages (ni localStorage, ni création de base IndexedDB). Aucune migration, aucune nouvelle clé dans localStorage.
+  * À savoir : restaurer un fichier remet aussi son lastExportAt, qui est celui d'avant l'export (la date d'export est notée après la préparation du fichier). Le rappel "dernière sauvegarde il y a N jours" peut donc réapparaître après une restauration.
+* Reste pour la livraison 2 : correction du service worker (même domaine seulement), configuration du projet (adresse et clé publique dans l'app), connexion par code e-mail (saisie de l'e-mail, du code, renouvellement du jeton, déconnexion) dans un écran "Sauvegarde en ligne" des Réglages, ovryk.cloud.auth, sans aucun envoi de données d'entraînement. Étapes manuelles de Ruben 1 à 5 et 7 de la section 9 au même moment.
