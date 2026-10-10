@@ -13961,10 +13961,15 @@
     setProfileGoalsExpanded(!profileGoalsExpanded);
   });
 
+  /* lot 14 : seul "Repos terminé" est affiché, c'est le seul réglage lu
+     (sendRestTimerNotification, startRestTimer). "Rappel de séance" et
+     "Résumé hebdomadaire" (clés seance et resume) ne sont lus par aucun
+     code : leurs lignes sont cachées, leurs valeurs stockées et leurs
+     valeurs par défaut restent intactes (DEFAULT_NOTIFICATION_PREFS) et
+     setNotificationPref les réécrit telles quelles. À remettre ici le jour
+     où une notification de séance ou de résumé existera. */
   var NOTIFICATION_TYPES = [
-    { key: 'seance', label: 'Rappel de séance' },
-    { key: 'repos', label: 'Repos terminé' },
-    { key: 'resume', label: 'Résumé hebdomadaire' }
+    { key: 'repos', label: 'Repos terminé' }
   ];
   var DEFAULT_NOTIFICATION_PREFS = { seance: true, repos: true, resume: false };
 
