@@ -10,7 +10,16 @@ Cadrage rédigé et validé le 2026-10-10. Décisions prises : 1A, 2A, 3A (fin d
 * Livraison 2, cartes repliables et état déplié : faite (32798c0, sw v102).
 * Livraison 3, muscu, cercle et saisie dans la ligne : faite (b5cc49a, sw v103).
 * Livraison 4, haltérophilie, cercle, bouton Raté, dé-validation : faite (ef62c63, sw v104).
-* Livraison 5 : en attente. Ruben fait d'abord une vraie séance avec le nouvel écran, puis confirme.
+* Corrections hors livraison (862b20f, sw v105) : 1. muscu à reps fixes, le cercle écrit repsActual et non plus set.reps (la prescription recopiée par la séance suivante) ; getMuscuSetReps lit repsActual sinon reps, et la séance suivante remet repsActual à null sur une série fixe recopiée. 2. "+ Ajouter une série" remet result, repResults, failRep, failCause, repsDone et repsActual à null dans la copie. 3. La série en cours reste visible au dessus de la barre de repos (scroll-margin selon la hauteur réelle de la barre). 4. Le rappel "Meilleur" ne lit que les séances terminées.
+* Livraison 5 : faite le 2026-10-10 (sw v111), après la séance test de Ruben avec le nouvel écran (cercle, minuteur, saisie avec virgule, moins de reps que prévu, dé-validation : RAS). Contenu :
+  * Semaine de test : le formulaire de tentatives (buildCycleTestForm), ou l'avis "test déjà validé" (buildCyclePendingNotice), passe en tête de carte à la place du tableau. Les séries de montée prescrites (40 %, 60 %... jusqu'aux singles) restent dessous sous "Séries de montée", avec leurs cercles : les retirer aurait supprimé une fonction (règle 9). Même condition d'affichage qu'avant (getCycleWeek(cycle).isTestWeek).
+  * Avis R12 "Séance légère" dans l'en-tête de la carte dépliée, sous "Série X sur N" (avant : dans le corps haltérophilie).
+  * Supersets et circuits encadrés dans la liste (findConsecutiveGroups, comme l'éditeur), intitulé Superset ou Circuit, "Enchaîné avec l'exercice suivant" entre les membres. Le repos n'est pas changé (voir PLAN.md).
+  * Emplacement du séparateur du lot 11 : buildLiveBlockSeparator(précédent, suivant), appelé entre deux exercices consécutifs, bloc lu par getLiveExerciseBlock (cycle ou haltérophilie, sinon muscu). Ne renvoie rien tant que le lot 11 n'est pas fait.
+  * Objectif du jour d'une série muscu à reps fixes : ses reps prévues (getMuscuDefaultReps), plus de "- reps" ; la ligne "Plage" seulement pour une série en plage.
+  * "Série X sur N" en bleu sur une carte de cycle ou d'haltérophilie.
+  * Code de l'ancien écran retiré après recherche dans tout index.html (aucun autre appel ni nom en chaîne) : buildLiveSessionExercise, buildLiveSessionHeader (et son bouton retirer en double), buildLiveSessionNextHint, buildLiveAdvanceBanner, goToLiveExercise, liveAdvanceTimeoutId et cancelLiveAdvance (jamais armé, ses 6 appels étaient sans effet), failSheetIndex et le paramètre index d'openFailSheet, styles .live-session-exercise, .live-session-name, .live-session-top-header, .live-session-next-row, .live-advance-banner.
+  * Testé avec l'export de backups/ : séance UPPER B en cours ouverte sans écriture, une série validée, rechargement, reprise avec toutes les séries et les mêmes clés. Séance de test synthétique : formulaire avant les séries de montée, avis R12, superset encadré, objectif à reps fixes, aucune erreur JavaScript.
 
 Précisions de Ruben intégrées (2026-10-10) :
 
@@ -20,7 +29,7 @@ Précisions de Ruben intégrées (2026-10-10) :
 * Une série validée non modifiée écrit les mêmes champs que les anciens boutons. Vérifié sur l'export de backups/ : mêmes clés de série et d'exercice avant et après.
 * Une séance en cours au moment de la mise à jour s'ouvre sans migration (testé avec la séance UPPER B en cours de l'export, et en rechargeant la page en pleine séance).
 
-Reste pour la livraison 5 : test de 1RM (formulaire de tentatives dans la carte, à la place du tableau), avis R12 dans l'en-tête de la carte, supersets et circuits encadrés, emplacement du séparateur du lot 11, retrait du code de l'ancien écran (buildLiveSessionExercise, buildLiveSessionHeader, buildLiveSessionNextHint, buildLiveAdvanceBanner, goToLiveExercise, liveAdvanceTimeoutId, styles .live-session-top-header et .live-session-next-row). À voir aussi : la barre de repos, collée en bas, cache la série suivante (il faut défiler) ; le compteur "Série X sur N" de la carte reste orange sur une carte de cycle.
+Prévu pour la livraison 5 (fait, voir plus haut) : test de 1RM (formulaire de tentatives dans la carte, à la place du tableau), avis R12 dans l'en-tête de la carte, supersets et circuits encadrés, emplacement du séparateur du lot 11, retrait du code de l'ancien écran (buildLiveSessionExercise, buildLiveSessionHeader, buildLiveSessionNextHint, buildLiveAdvanceBanner, goToLiveExercise, liveAdvanceTimeoutId, styles .live-session-top-header et .live-session-next-row). À voir aussi : la barre de repos, collée en bas, cache la série suivante (il faut défiler) ; le compteur "Série X sur N" de la carte reste orange sur une carte de cycle.
 
 ## Écrans de la maquette
 

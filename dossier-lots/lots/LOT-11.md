@@ -1,6 +1,6 @@
 # LOT 11. Séparateur de bloc
 
-Taille : S. Dépend de : 05, 09.
+Taille : S. Dépend de : 05, 09, 17.
 
 ## Écrans de la maquette
 
@@ -8,22 +8,24 @@ Taille : S. Dépend de : 05, 09.
 
 ## Objectif
 
-Afficher un écran de transition quand la séance passe du bloc cycle (haltérophilie) au bloc muscu.
+Marquer, dans la liste de séance du lot 17, le passage du bloc cycle (haltérophilie) au bloc muscu. Réécrit le 2026-10-10 après le lot 17 : l'écran de transition plein écran de la première version n'a plus de sens dans une liste où tous les exercices sont visibles. Le séparateur devient un élément de la liste, entre deux cartes.
 
 ## Existant à connaître
 
-* L'ordre des exercices d'une séance suit la routine (rex.order). Rien ne distingue les blocs.
+* L'ordre des exercices d'une séance suit la routine (rex.order). Rien ne distingue les blocs dans les données.
+* Lot 17, livraison 5 : renderSeanceActiveView appelle buildLiveBlockSeparator(précédent, suivant) entre deux exercices consécutifs (ou entre un exercice et un superset). Le bloc est lu par getLiveExerciseBlock(sex) : 'cycle' si sex.cycleIdUsed ou catégorie Lifting, sinon 'muscu'. La fonction ne renvoie rien aujourd'hui : c'est l'emplacement à remplir.
+* Les cartes repliées montrent déjà le résumé de chaque exercice (summarizeLiveExercise), terminé ou non.
 
 ## À faire
 
-1. Calculer sex.block à la construction de la séance : 'cycle' si l'exercice est piloté par un cycle ou un mode de base, sinon 'muscu'.
-2. Quand le dernier exercice 'cycle' se termine et qu'un exercice 'muscu' suit, afficher l'écran de transition (maquette 13) : progression par bloc (haltérophilie terminé, muscu à venir), récapitulatif du bloc terminé (charges et résultats), séparateur "Bloc muscu", "Ce qui change" (double progression, reps comptées, repos), exercices à venir avec leurs charges, pause conseillée de 3 minutes avec "Passer", bouton "Commencer le bloc muscu".
-3. La pause est une suggestion : elle ne bloque jamais le bouton.
-4. Si l'ordre de la routine mélange les blocs, afficher le séparateur à chaque changement de bloc.
+1. Remplir buildLiveBlockSeparator : quand le bloc change, renvoyer un élément de liste (pas un écran) avec la maquette 13 adaptée : "Bloc haltérophilie terminé" ou "en cours", récapitulatif du bloc qui précède (charges et résultats, lus sur les séries faites), "Bloc muscu", "Ce qui change" (double progression, reps comptées, repos), pause conseillée de 3 minutes avec "Passer".
+2. La pause est une suggestion : elle ne bloque rien, aucune carte n'est verrouillée.
+3. Si l'ordre de la routine mélange les blocs, un séparateur à chaque changement de bloc.
+4. Le séparateur se recalcule à chaque rendu : rien à mémoriser, rien à écrire.
 
 ## Données
 
-sex.block.
+Aucune. Le champ sex.block prévu par la première version n'est plus nécessaire : le bloc se lit sur les champs déjà posés (getLiveExerciseBlock). L'état de la pause, s'il en faut un, reste en mémoire.
 
 ## Règles métier concernées
 
@@ -31,13 +33,15 @@ R6, R5, R10.
 
 ## Critères d'acceptation
 
-* Une séance avec trois exercices de cycle puis deux de muscu affiche le séparateur une fois.
-* Le récapitulatif donne les bonnes charges et les bons résultats.
-* Une séance sans muscu, ou sans cycle, n'affiche pas de séparateur.
+* Une séance avec trois exercices de cycle puis deux de muscu montre un séparateur, entre la troisième et la quatrième carte.
+* Le récapitulatif donne les bonnes charges et les bons résultats, et suit les validations et dé-validations.
+* Une séance sans muscu, ou sans cycle, n'en montre aucun.
+* Une séance reprise après rechargement montre le même séparateur au même endroit, sans écriture.
 
 ## Risques
 
-* Séances reprises après interruption : ne pas réafficher un séparateur déjà passé.
+* Le risque de la première version ("ne pas réafficher un séparateur déjà passé") disparaît : le séparateur est un élément fixe de la liste.
+* Superset qui mélange un mouvement de cycle et un exercice de muscu : le séparateur ne doit pas couper le cadre du superset (renderSeanceActiveView appelle déjà la fonction seulement entre deux segments).
 
 ## Hors lot
 

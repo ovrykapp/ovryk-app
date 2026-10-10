@@ -15,13 +15,13 @@ Taille : S = moins d'une heure de travail assisté, M = une demi journée, L = u
 | 08 | Coordination des cycles | 30 | fait | 07 |
 | 09 | Muscu libre : éditeur de routine | 20, 21, 23, 7, 9 | fait | 04 |
 | 10 | Types d'exercice et fiche exercice | 12, 6 | fait | 09 |
-| 11 | Séparateur de bloc | 13 | S | 05, 09 |
+| 11 | Séparateur de bloc (devient un élément de la liste de séance du lot 17 ; LOT-11.md réécrit le 2026-10-10, emplacement déjà posé : buildLiveBlockSeparator) | 13 | S | 05, 09, 17 |
 | 12 | Historique et détail d'une séance (plus deux accès au détail d'un cycle, depuis l'Accueil et le panneau du jour) | 14, 15 | fait | 05 |
 | 13 | Charge de la semaine et décharge de la muscu | 28 | M | 08, 09 |
 | 14 | Réglages et matériel (cadré le 2026-10-10, décisions 1A, 2A, 3A ; livraisons 1 Réglages restructuré et 3 Barre et disques faites ; livraisons 2 palier et plage par défaut, 4 plus petit saut appliqué à la progression, 5 repos par type en attente) | 16, 17 | M | 01 |
 | 15 | Import de données | 19, 8 | M | 14 |
 | 16 | Compte et sauvegarde en ligne | 18 | L | tous |
-| 17 | Séance sur un seul écran : tous les exercices en cartes repliables, cercle de validation à droite de chaque série, chargement selon le matériel (cadré et validé le 2026-10-10, décisions 1A, 2A, 3A ; livraisons 1 à 4 faites, plus quatre corrections hors livraison : reps fixes lues par repsActual, copie propre d'une série ajoutée, série en cours visible au dessus de la barre de repos, rappel Meilleur sur séances terminées ; livraison 5 en attente de ta séance test avec le nouvel écran) | 2, 3 adaptées (un exercice à la fois dans la maquette), 10, 11 | L | 05, 09, 10 |
+| 17 | Séance sur un seul écran : tous les exercices en cartes repliables, cercle de validation à droite de chaque série, chargement selon le matériel (cadré et validé le 2026-10-10, décisions 1A, 2A, 3A ; livraisons 1 à 4 faites, plus quatre corrections hors livraison : reps fixes lues par repsActual, copie propre d'une série ajoutée, série en cours visible au dessus de la barre de repos, rappel Meilleur sur séances terminées ; livraison 5 faite le 2026-10-10 après ta séance test : test de 1RM et avis R12 dans la carte, supersets encadrés, emplacement du séparateur, objectif à reps fixes, compteur bleu, retrait de l'ancien écran) | 2, 3 adaptées (un exercice à la fois dans la maquette), 10, 11 | fait | 05, 09, 10 |
 
 ## Ordre conseillé
 
@@ -29,7 +29,7 @@ Taille : S = moins d'une heure de travail assisté, M = une demi journée, L = u
 2. Lots 04 et 05 : la séance. C'est le coeur de l'usage au quotidien. Fait.
 3. Lots 06 à 08 : les cycles complets (test, fin de cycle, tirage, coordination). Fait.
 4. Lots 09 et 10 : la muscu libre, les types et la fiche exercice. Fait.
-5. Reste à faire, dans cet ordre (mis à jour le 2026-10-10) : lot 17 livraison 5 (test de 1RM, avis R12, supersets, séparateur, retrait de l'ancien écran, après ta séance test), puis lot 11 (séparateur de bloc, à réécrire pour la liste de cartes), lot 14 (réglages et matériel), lot 13 (charge de la semaine et décharge de la muscu), lot 15 (import de données), lot 16 (compte et sauvegarde en ligne, en dernier car il dépend de tous les autres). Le lot 12 est fait. Le lot 14 est fait pour ses livraisons 1 et 3 ; les livraisons 2, 4 et 5 restent à faire (elles ne bloquent pas les lots suivants).
+5. Reste à faire, dans cet ordre (mis à jour le 2026-10-10) : lot 11 (séparateur de bloc, élément de la liste de cartes, emplacement posé au lot 17), lot 14 (réglages et matériel), lot 13 (charge de la semaine et décharge de la muscu), lot 15 (import de données), lot 16 (compte et sauvegarde en ligne, en dernier car il dépend de tous les autres). Les lots 12 et 17 sont faits. Le lot 14 est fait pour ses livraisons 1 et 3 ; les livraisons 2, 4 et 5 restent à faire (elles ne bloquent pas les lots suivants).
 
 ## Livraisons hors plan
 
@@ -73,3 +73,6 @@ Taille : S = moins d'une heure de travail assisté, M = une demi journée, L = u
 
 * Corrigé le 2026-10-10 : cloneSetsFromPastSex recopiait result, repResults, failRep, failCause et repsDone d'une ancienne série (visible avec "Refaire cette séance" ou une séance relancée sur un mouvement d'haltérophilie sans cycle) ; ces champs repartent à null, comme dans cloneSessionSet. Les séances passées ne sont pas touchées. L'Historique ignore aussi une séance sans exercises ou un exercice null (getExerciseSessionRecords, historyExercises).
 * Noté le 2026-10-10, non corrigé : une séance sans tableau exercises fait encore planter computeWeeklySeriesCounts (onglet Progrès) et d'autres lecteurs de session.exercises. Données mal formées seulement, aucune séance réelle n'est concernée.
+* Noté le 2026-10-10 (lot 17, livraison 5), non corrigé : dans un superset ou un circuit, l'éditeur affiche "Enchaîné, sans repos" pour les membres sauf le dernier, mais la séance lance quand même le repos (sex.restSeconds) à chaque série validée. La liste de séance écrit seulement "Enchaîné avec l'exercice suivant". Changer le repos touche R10 : à décider.
+* Noté le 2026-10-10 (lot 17, livraison 5) : styles .live-session-header-row et .live-set-check (ancien tableau à coche) ne sont plus utilisés par aucun code ; laissés en place, sans effet.
+* Noté le 2026-10-10 (lot 17, livraison 5), comportement d'avant gardé : buildCycleTestForm pose sex.testAttempts = [] en mémoire à l'affichage de la carte de test (écrit avec la séance à la première action suivante). Champ existant depuis le lot 05.

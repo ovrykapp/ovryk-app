@@ -2474,7 +2474,6 @@
      routine editor's blocks reused): kicker + name, a plain SÉRIE/KG/
      REPS/✓ table, one exercise on screen at a time.
   ============================================================ */
-  .live-session-exercise { padding: var(--space-3) 2px var(--space-5); }
   .live-session-kicker {
     display: block;
     font-family: var(--font-mono);
@@ -2491,13 +2490,6 @@
     justify-content: space-between;
     gap: 10px;
     margin-bottom: 14px;
-  }
-  .live-session-name {
-    font-family: var(--font-display);
-    font-weight: 800;
-    font-size: 22px;
-    color: var(--ink);
-    text-transform: uppercase;
   }
   .live-session-remove-btn { margin-top: 2px; }
   .live-set-table { margin-bottom: var(--space-4); }
@@ -2553,71 +2545,6 @@
   .live-set-check svg { width: 12px; height: 12px; stroke: var(--graphite); fill: none; stroke-width: 3; opacity: 0; }
   .live-set-row.is-done .live-set-check { background: var(--rust); }
   .live-set-row.is-done .live-set-check svg { opacity: 1; }
-
-  /* ============================================================
-     SÉANCE — un exercice à la fois (lot 04)
-  ============================================================ */
-  .live-session-top-header {
-    display: flex;
-    align-items: flex-start;
-    gap: 12px;
-    margin-bottom: var(--space-4);
-  }
-  .live-session-back-btn:disabled { opacity: 0.3; cursor: default; }
-  .live-session-title-wrap { flex: 1; min-width: 0; }
-  .live-session-title-wrap .live-session-name { margin-bottom: 2px; }
-  .live-session-title-wrap .live-session-kicker { margin-bottom: 0; }
-  .live-session-top-header .live-session-remove-btn { margin-top: 10px; }
-
-  .live-session-next-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    gap: 10px;
-    width: 100%;
-    background: transparent;
-    border: none;
-    padding: var(--space-3) 2px;
-    border-top: 1px solid var(--divider);
-    text-align: left;
-    cursor: pointer;
-    margin-top: var(--space-3);
-  }
-  .live-session-next-label {
-    font-family: var(--font-mono);
-    font-size: 11px;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: var(--steel);
-    flex-shrink: 0;
-  }
-  .live-session-next-value { font-size: 13px; color: var(--ink); text-align: right; }
-
-  .live-advance-banner {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 10px;
-    margin-top: var(--space-3);
-    padding: 10px 14px;
-    border-radius: var(--radius-card);
-    background: var(--orange-fill);
-    color: var(--orange-soft);
-    font-family: var(--font-mono);
-    font-size: 12px;
-  }
-  .live-advance-cancel {
-    background: transparent;
-    border: 1px solid var(--orange-soft);
-    border-radius: var(--radius);
-    color: var(--orange-soft);
-    padding: 4px 10px;
-    font-family: var(--font-display);
-    font-weight: 700;
-    font-size: 11px;
-    text-transform: uppercase;
-    cursor: pointer;
-  }
 
   .live-objective-card {
     border-radius: var(--radius-card);
@@ -3710,6 +3637,43 @@
   .live-card-done-mark svg { width: 14px; height: 14px; stroke: var(--graphite); fill: none; stroke-width: 3; }
   .live-card-body { padding: 0 12px 4px; }
   .live-card-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: var(--space-3); }
+  /* livraison 5 : compteur "Série X sur N" bleu sur une carte de cycle ou
+     d'haltérophilie, avis R12 en tête de carte, intitulé des séries de
+     montée en semaine de test, supersets et circuits encadrés. */
+  .live-session-kicker.is-cycle { color: var(--blue); }
+  .live-light-notice {
+    margin: 0 0 var(--space-3);
+    padding: 10px 12px;
+    border-radius: var(--radius-card);
+    background: var(--blue-fill);
+  }
+  .live-light-notice-text { margin: 0; font-size: 12px; line-height: 1.5; color: var(--blue); }
+  .live-test-sets-label { margin-top: var(--space-4); }
+  .live-group {
+    border: 2px solid var(--accent-info);
+    border-radius: var(--radius-card);
+    padding: 8px;
+    margin-bottom: var(--space-3);
+  }
+  .live-group .live-card { margin-bottom: 0; }
+  .live-group-label {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--accent-info);
+    margin: 0 4px 8px;
+  }
+  .live-group-link {
+    text-align: center;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--accent-info);
+    padding: 6px 0;
+  }
 
   /* cercle de validation (livraison 3) : zone de tap 44 x 44, cercle de
      26 px. Orange en muscu, bleu en haltérophilie (is-cycle). */
@@ -6670,10 +6634,9 @@
     document.getElementById('fail-sheet-save').disabled = !(failSheetRep && failSheetCause);
   }
 
-  function openFailSheet(sex, set, index) {
+  function openFailSheet(sex, set) {
     failSheetSex = sex;
     failSheetSet = set;
-    failSheetIndex = index;
     failSheetRep = null;
     failSheetCause = null;
 
@@ -6691,7 +6654,6 @@
     document.getElementById('fail-sheet-overlay').hidden = true;
     failSheetSex = null;
     failSheetSet = null;
-    failSheetIndex = null;
     failSheetRep = null;
     failSheetCause = null;
   }
@@ -6700,7 +6662,6 @@
     if (!failSheetRep || !failSheetCause) return;
     var sex = failSheetSex;
     var set = failSheetSet;
-    var index = failSheetIndex;
     /* R6 : un raté arrête la série, les reps après la rep ratée ne sont
        jamais tentées. repResults s'arrête donc à la rep ratée (longueur =
        numéro de la rep ratée), pas à repsCount. */
@@ -10399,26 +10360,20 @@
   var seancePickerState = { search: '', category: 'all' };
   var cycleTestSubmittedIds = {};
 
-  /* Un exercice à la fois (lot 04). Position en mémoire seulement, jamais
+  /* Exercice déplié de la liste (lot 17). Position en mémoire seulement, jamais
      écrite dans la séance stockée : remise à null (= recalcul du meilleur
      point de départ) à chaque démarrage ou reprise de séance
      (showSeanceActive), donc perdue si l'app est complètement fermée puis
      rouverte pendant une séance — mais aucune série saisie n'est jamais
      perdue pour autant, tout passe par persistActiveSession comme avant. */
   var liveSessionIndex = null;
-  var liveAdvanceTimeoutId = null;
-
+  
   /* état de la feuille "Un raté" (livraison B) : la série et l'exercice
      concernés, la rep et la cause en cours de sélection avant validation. */
   var failSheetSex = null;
   var failSheetSet = null;
-  var failSheetIndex = null;
   var failSheetRep = null;
   var failSheetCause = null;
-
-  function cancelLiveAdvance() {
-    if (liveAdvanceTimeoutId) { clearTimeout(liveAdvanceTimeoutId); liveAdvanceTimeoutId = null; }
-  }
 
   /* Premier exercice avec au moins une série non validée, sinon le dernier
      exercice de la séance. */
@@ -10428,14 +10383,6 @@
       if (activeSession.exercises[i].sets.some(function (s) { return !s.done; })) return i;
     }
     return activeSession.exercises.length - 1;
-  }
-
-  function goToLiveExercise(index) {
-    if (!activeSession) return;
-    cancelLiveAdvance();
-    var max = activeSession.exercises.length - 1;
-    liveSessionIndex = Math.max(0, Math.min(index, max));
-    renderSeanceActiveView();
   }
 
   function formatDuration(totalSeconds) {
@@ -11018,7 +10965,6 @@
   function showSeanceStart() {
     stopSessionTimer();
     stopRestTimer();
-    cancelLiveAdvance();
     document.getElementById('seance-active-view').hidden = true;
     document.getElementById('seance-start-view').hidden = false;
     document.getElementById('seance-sticky-topbar').hidden = true;
@@ -11035,7 +10981,6 @@
        nav competing for attention while a set is being logged */
     document.body.classList.add('session-active');
     closeSeancePicker();
-    cancelLiveAdvance();
     liveSessionIndex = null;
     renderSeanceActiveView();
     scrollMainToTop();
@@ -11090,11 +11035,39 @@
     }
 
     listEl.appendChild(buildLiveProgress());
+    /* livraison 5 : supersets et circuits encadrés (même découpage que
+       l'éditeur, findConsecutiveGroups), et point d'insertion du
+       séparateur de bloc du lot 11 à chaque changement de bloc. Lecture
+       seule : cards[i] reste la carte de activeSession.exercises[i]. */
     var cards = [];
-    activeSession.exercises.forEach(function (sex, i) {
-      var card = buildLiveExerciseCard(sex, i);
-      cards.push(card);
-      listEl.appendChild(card);
+    var prevSex = null;
+    findConsecutiveGroups(activeSession.exercises).forEach(function (seg) {
+      var members = seg.type === 'group' ? seg.members : [seg.item];
+      var start = seg.type === 'group' ? seg.startIndex : seg.index;
+      var separator = prevSex ? buildLiveBlockSeparator(prevSex, members[0]) : null;
+      if (separator) listEl.appendChild(separator);
+      var container = listEl;
+      if (seg.type === 'group') {
+        container = document.createElement('div');
+        container.className = 'live-group';
+        var label = document.createElement('div');
+        label.className = 'live-group-label';
+        label.textContent = members[0].groupType === 'circuit' ? 'Circuit' : 'Superset';
+        container.appendChild(label);
+        listEl.appendChild(container);
+      }
+      members.forEach(function (sex, k) {
+        if (k > 0) {
+          var link = document.createElement('div');
+          link.className = 'live-group-link';
+          link.textContent = 'Enchaîné avec l\'exercice suivant';
+          container.appendChild(link);
+        }
+        var card = buildLiveExerciseCard(sex, start + k);
+        cards[start + k] = card;
+        container.appendChild(card);
+      });
+      prevSex = members[members.length - 1];
     });
 
     if (liveScrollToIndex != null && cards[liveScrollToIndex]) {
@@ -11132,6 +11105,21 @@
     var row = listEl.querySelector('.live-card.is-open .muscu-set-row.is-current, .live-card.is-open .haltero-set-row.is-current');
     if (!row) return;
     requestAnimationFrame(function () { row.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); });
+  }
+
+  /* lot 11 : bloc d'un exercice de séance, lu sur les champs déjà posés
+     (cycle ou haltérophilie = 'cycle', sinon 'muscu'), jamais écrit. */
+  function getLiveExerciseBlock(sex) {
+    return sex.cycleIdUsed || sex.category === 'Lifting' ? 'cycle' : 'muscu';
+  }
+
+  /* emplacement du séparateur de bloc (lot 11) : appelé entre deux
+     exercices consécutifs de la liste. Le lot 11 y construira le
+     séparateur (récapitulatif du bloc fini, "Ce qui change", pause
+     conseillée) quand le bloc change ; d'ici là, rien n'est affiché. */
+  function buildLiveBlockSeparator(prevSex, nextSex) {
+    if (getLiveExerciseBlock(prevSex) === getLiveExerciseBlock(nextSex)) return null;
+    return null;
   }
 
   function isLiveExerciseDone(sex) {
@@ -11222,18 +11210,21 @@
     if (isOpen) {
       var body = document.createElement('div');
       body.className = 'live-card-body';
-      body.appendChild(buildLiveCardToolbar(sex));
+      body.appendChild(buildLiveCardToolbar(sex, tag.isCycle));
+      /* livraison 5 : avis R12 dans l'en-tête de la carte, sous le
+         compteur de séries (avant : dans le corps haltérophilie). */
+      if (sex.isLightSession) body.appendChild(buildLightSessionNotice());
       body.appendChild(sex.category === 'Lifting' ? buildHalteroLiveBody(sex, index) : buildMuscuLiveBody(sex, index));
       card.appendChild(body);
     }
     return card;
   }
 
-  function buildLiveCardToolbar(sex) {
+  function buildLiveCardToolbar(sex, isCycle) {
     var bar = document.createElement('div');
     bar.className = 'live-card-toolbar';
     var kicker = document.createElement('span');
-    kicker.className = 'live-session-kicker';
+    kicker.className = 'live-session-kicker' + (isCycle ? ' is-cycle' : '');
     kicker.style.marginBottom = '0';
     var currentIdx = getCurrentSetIndex(sex);
     kicker.textContent = sex.sets.length
@@ -11256,7 +11247,6 @@
       var idx = activeSession.exercises.indexOf(sex);
       if (idx !== -1) activeSession.exercises.splice(idx, 1);
       persistActiveSession();
-      cancelLiveAdvance();
       liveSessionIndex = null;
       renderSeanceActiveView();
     });
@@ -11265,7 +11255,6 @@
   /* une carte repliée s'ouvre (et ferme l'autre), la carte ouverte se
      replie : jamais deux cartes dépliées en même temps. */
   function toggleLiveCard(index) {
-    cancelLiveAdvance();
     if (index === liveSessionIndex) {
       liveSessionIndex = -1;
     } else {
@@ -11289,100 +11278,6 @@
     for (var j = 0; j < from && next === -1; j++) if (!isLiveExerciseDone(list[j])) next = j;
     liveSessionIndex = next;
     if (next !== -1) liveScrollToIndex = next;
-  }
-
-  /* chevron retour (exercice précédent), nom, "Exercice X sur N" — partagé
-     par l'haltérophilie et la muscu. Le chronomètre n'est pas dupliqué ici :
-     celui de .seance-sticky-topbar (#seance-timer-label) reste visible en
-     permanence pendant la séance. */
-  function buildLiveSessionHeader(sex, index, extraKicker) {
-    var header = document.createElement('div');
-    header.className = 'live-session-top-header';
-
-    var backBtn = document.createElement('button');
-    backBtn.type = 'button';
-    backBtn.className = 'view-header-back live-session-back-btn';
-    backBtn.setAttribute('aria-label', 'Exercice précédent');
-    backBtn.innerHTML = '<svg viewBox="0 0 24 24" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="15,6 9,12 15,18"/></svg>';
-    backBtn.disabled = index === 0;
-    backBtn.addEventListener('click', function () { goToLiveExercise(index - 1); });
-    header.appendChild(backBtn);
-
-    var kickerText = 'Exercice ' + (index + 1) + ' sur ' + activeSession.exercises.length + (extraKicker ? ' · ' + extraKicker : '');
-    var titleWrap = document.createElement('div');
-    titleWrap.className = 'live-session-title-wrap';
-    titleWrap.innerHTML = '<div class="live-session-name">' + escapeHTML(sex.exerciseName) + (sex.grip ? ' · ' + escapeHTML(sex.grip) : '') + '</div>' +
-      '<div class="live-session-kicker">' + escapeHTML(kickerText) + '</div>';
-    header.appendChild(titleWrap);
-
-    var removeExBtn = document.createElement('button');
-    removeExBtn.type = 'button';
-    removeExBtn.className = 'rex-remove-btn live-session-remove-btn';
-    removeExBtn.setAttribute('aria-label', "Retirer l'exercice de la séance");
-    removeExBtn.textContent = '×';
-    removeExBtn.addEventListener('click', function () {
-      showConfirmModal('Retirer « ' + sex.exerciseName + ' » de cette séance ? Les séries saisies pour cet exercice seront perdues.', function () {
-        var idx = activeSession.exercises.indexOf(sex);
-        if (idx !== -1) activeSession.exercises.splice(idx, 1);
-        persistActiveSession();
-        cancelLiveAdvance();
-        liveSessionIndex = null;
-        renderSeanceActiveView();
-      });
-    });
-    header.appendChild(removeExBtn);
-
-    return header;
-  }
-
-  /* cliquable : passe à l'exercice suivant même si l'actuel n'est pas fini
-     (ex. machine occupée) — on peut toujours y revenir via le chevron */
-  function buildLiveSessionNextHint(index) {
-    if (index >= activeSession.exercises.length - 1) return null;
-    var nextSex = activeSession.exercises[index + 1];
-    var row = document.createElement('button');
-    row.type = 'button';
-    row.className = 'live-session-next-row';
-    row.innerHTML = '<span class="live-session-next-label">Ensuite</span>' +
-      '<span class="live-session-next-value">' + escapeHTML(nextSex.exerciseName) + '</span>';
-    row.addEventListener('click', function () { goToLiveExercise(index + 1); });
-    return row;
-  }
-
-  function buildLiveAdvanceBanner() {
-    var banner = document.createElement('div');
-    banner.className = 'live-advance-banner';
-    var label = document.createElement('span');
-    label.textContent = 'Exercice suivant…';
-    banner.appendChild(label);
-    var cancelBtn = document.createElement('button');
-    cancelBtn.type = 'button';
-    cancelBtn.className = 'live-advance-cancel';
-    cancelBtn.textContent = 'Annuler';
-    cancelBtn.addEventListener('click', function () { cancelLiveAdvance(); renderSeanceActiveView(); });
-    banner.appendChild(cancelBtn);
-    return banner;
-  }
-
-  function buildLiveSessionExercise(sex, index) {
-    var wrap = document.createElement('div');
-    wrap.className = 'live-session-exercise';
-
-    if (sex.category === 'Lifting') {
-      var currentIdx = getCurrentSetIndex(sex);
-      var setKicker = sex.sets.length
-        ? ('Série ' + ((currentIdx !== -1 ? currentIdx : sex.sets.length - 1) + 1) + ' sur ' + sex.sets.length)
-        : null;
-      wrap.appendChild(buildLiveSessionHeader(sex, index, setKicker));
-      wrap.appendChild(buildHalteroLiveBody(sex, index));
-    } else {
-      wrap.appendChild(buildLiveSessionHeader(sex, index));
-      wrap.appendChild(buildMuscuLiveBody(sex, index));
-    }
-
-    if (liveAdvanceTimeoutId) wrap.appendChild(buildLiveAdvanceBanner());
-
-    return wrap;
   }
 
   /* ============================================================
@@ -11541,7 +11436,6 @@
   }
 
   function unvalidateHalteroSet(set) {
-    cancelLiveAdvance();
     set.done = false;
     set.result = null;
     set.repResults = null;
@@ -11609,7 +11503,7 @@
       failBtn.className = 'haltero-fail-btn haltero-row-fail-btn';
       failBtn.textContent = 'Raté';
       failBtn.setAttribute('aria-label', 'Un raté sur la série ' + (setIndex + 1));
-      failBtn.addEventListener('click', function () { openFailSheet(sex, set, index); });
+      failBtn.addEventListener('click', function () { openFailSheet(sex, set); });
       actions.appendChild(failBtn);
     }
     var circle;
@@ -11761,9 +11655,9 @@
     var settings = OvrykDB.getSettings();
     var offset = settings.j2OffsetPoints != null ? settings.j2OffsetPoints : 10;
     var wrap = document.createElement('div');
-    wrap.className = 'cycle-test-form';
+    wrap.className = 'live-light-notice';
     var text = document.createElement('p');
-    text.className = 'cycle-test-intro';
+    text.className = 'live-light-notice-text';
     text.textContent = 'Séance légère : deuxième séance de la semaine sur ce mouvement. ' +
       'Pourcentages baissés de ' + offset + ' points (plancher 50 %), mêmes reps.';
     wrap.appendChild(text);
@@ -11775,8 +11669,6 @@
     var currentIndex = getCurrentSetIndex(sex);
     var currentSet = currentIndex !== -1 ? sex.sets[currentIndex] : null;
     var counterMode = currentSet ? isHalteroCounterMode(currentSet) : false;
-
-    if (sex.isLightSession) frag.appendChild(buildLightSessionNotice());
 
     var lastSex = getLastLoggedSex(sex.exerciseId);
     var lastHintText = lastSex ? formatLastSessionHint(lastSex) : null;
@@ -11797,6 +11689,26 @@
       frag.appendChild(hints);
     }
 
+    /* livraison 5 : en semaine de test, le formulaire de tentatives (ou
+       l'avis "test déjà validé") prend la place du tableau en tête de
+       carte ; les séries de montée prescrites restent dessous, sous un
+       intitulé, avec leurs cercles. Même condition qu'avant, mêmes
+       fonctions (buildCycleTestForm, completeCycleTest), rien de neuf
+       n'est écrit. */
+    var cycle = OvrykDB.getForceCycle(sex.exerciseId);
+    var testBlock = null;
+    if (cycle && cycle.en_attente_de_validation) testBlock = buildCyclePendingNotice(sex.exerciseId);
+    else if (cycle && getCycleWeek(cycle).isTestWeek) testBlock = buildCycleTestForm(sex, cycle);
+    if (testBlock) {
+      frag.appendChild(testBlock);
+      if (sex.sets.length) {
+        var warmupLabel = document.createElement('p');
+        warmupLabel.className = 'form-label live-test-sets-label';
+        warmupLabel.textContent = 'Séries de montée';
+        frag.appendChild(warmupLabel);
+      }
+    }
+
     frag.appendChild(buildHalteroSetsTable(sex, currentIndex, index));
     if (currentSet && counterMode) frag.appendChild(buildHalteroCounterCard(sex, currentSet));
     if (currentSet) frag.appendChild(buildHalteroChargeToggle(sex, currentSet));
@@ -11806,13 +11718,6 @@
       var halteroLoadCard = buildEquipmentLoadCard(OvrykDB.getExerciseById(sex.exerciseId),
         computeWeightFromPercent(sex.oneRepMaxSnapshot, refSet.percent1rm));
       if (halteroLoadCard) frag.appendChild(halteroLoadCard);
-    }
-
-    var cycle = OvrykDB.getForceCycle(sex.exerciseId);
-    if (cycle && cycle.en_attente_de_validation) {
-      frag.appendChild(buildCyclePendingNotice(sex.exerciseId));
-    } else if (cycle && getCycleWeek(cycle).isTestWeek) {
-      frag.appendChild(buildCycleTestForm(sex, cycle));
     }
 
     var addSetBtn = document.createElement('button');
@@ -11878,7 +11783,9 @@
     var card = document.createElement('div');
     card.className = 'live-objective-card';
 
-    var targetReps = set.targetReps != null ? set.targetReps : set.repsMin;
+    /* livraison 5 : série à reps fixes = ses reps prévues (getMuscuDefaultReps),
+       plus de "- reps" ; la ligne "Plage" seulement pour une série en plage. */
+    var targetReps = getMuscuDefaultReps(set);
     var weight = set.weightKg != null ? set.weightKg : null;
 
     var main = document.createElement('div');
@@ -11886,10 +11793,12 @@
     main.textContent = (targetReps != null ? targetReps : '-') + ' reps à ' + (weight != null ? weight : '-') + ' kg';
     card.appendChild(main);
 
-    var range = document.createElement('div');
-    range.className = 'live-objective-range mono';
-    range.textContent = 'Plage ' + (set.repsMin != null ? set.repsMin : '-') + ' à ' + (set.repsMax != null ? set.repsMax : '-') + ' reps';
-    card.appendChild(range);
+    if (set.repType === 'range') {
+      var range = document.createElement('div');
+      range.className = 'live-objective-range mono';
+      range.textContent = 'Plage ' + (set.repsMin != null ? set.repsMin : '-') + ' à ' + (set.repsMax != null ? set.repsMax : '-') + ' reps';
+      card.appendChild(range);
+    }
 
     if (isHigherWeight) {
       var tag = document.createElement('span');
@@ -12013,7 +11922,6 @@
 
       var doneCircle = buildLiveSetCircle('done', 'Dé-valider la série ' + (setIndex + 1), false);
       doneCircle.addEventListener('click', function () {
-        cancelLiveAdvance();
         cancelScheduledLiveRender();
         set.done = false;
         persistActiveSession();
