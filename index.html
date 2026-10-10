@@ -2389,6 +2389,7 @@
     color: var(--steel);
   }
   .set-summary .rust { color: var(--rust); font-weight: 700; }
+  .set-field-error { color: var(--rust); }
   .set-summary-percent-value {
     font-weight: 700;
     color: var(--ink);
@@ -9391,23 +9392,6 @@
     );
   }
 
-  /* lot 09, livraison 2 : résumé d'un exercice muscu dans la liste de
-     l'éditeur (maquette 21) — jamais stocké, recalculé à chaque rendu
-     depuis rex.sets, gère les cas limites (poids au corps = null sur
-     toutes les séries, poids null sur certaines séries seulement, une
-     seule série, reps fixes ou plage). */
-  function aggregateMin(values) {
-    var defined = values.filter(function (v) { return v != null; });
-    return defined.length ? Math.min.apply(null, defined) : null;
-  }
-  function aggregateMax(values) {
-    var defined = values.filter(function (v) { return v != null; });
-    return defined.length ? Math.max.apply(null, defined) : null;
-  }
-  function allSameDefinedValue(values) {
-    return values.length > 0 && values[0] != null && values.every(function (v) { return v === values[0]; });
-  }
-
   function buildRoutineExerciseBlock(routine, rex, index, total, suppressRest) {
     var exercise = OvrykDB.getExerciseById(rex.exerciseId);
     var cycle = OvrykDB.getForceCycle(rex.exerciseId);
@@ -9998,6 +9982,43 @@
 
     var repsInput, minInput, maxInput, weightInput, computedKgEl, summaryEl;
 
+    /* écriture d'un champ numérique de la série : un champ vidé (ou non
+       numérique) remet la valeur précédente et n'écrit rien, sauf si la
+       série n'a jamais eu de valeur (série neuve : le champ reste vide).
+       validate(v) renvoie un message si la valeur est refusée : valeur
+       précédente remise, message sous la ligne, rien d'écrit. */
+    var errorEl = null, errorTimer = null;
+    function showSetError(text) {
+      if (!errorEl) {
+        errorEl = document.createElement('div');
+        errorEl.className = 'set-summary set-field-error';
+        row.appendChild(errorEl);
+      }
+      errorEl.textContent = text;
+      clearTimeout(errorTimer);
+      errorTimer = setTimeout(function () {
+        if (errorEl && errorEl.parentNode) errorEl.parentNode.removeChild(errorEl);
+        errorEl = null;
+      }, 3000);
+    }
+    function commitSetNumber(input, field, v, validate) {
+      var previous = set[field];
+      if (isNaN(v)) {
+        input.value = previous != null ? previous : '';
+        updateSummary();
+        return;
+      }
+      var message = validate ? validate(v) : null;
+      if (message) {
+        input.value = previous != null ? previous : '';
+        updateSummary();
+        showSetError(message);
+        return;
+      }
+      set[field] = v;
+      OvrykDB.updateRoutine(routine);
+    }
+
     var repsFields = document.createElement('div');
     repsFields.className = 'set-reps-fields';
 
@@ -10024,14 +10045,14 @@
       minInput.addEventListener('input', function () { updateSummary(); });
       maxInput.addEventListener('input', function () { updateSummary(); });
       minInput.addEventListener('change', function () {
-        var v = parseInt(minInput.value, 10);
-        set.repsMin = isNaN(v) ? null : v;
-        OvrykDB.updateRoutine(routine);
+        commitSetNumber(minInput, 'repsMin', parseInt(minInput.value, 10), function (v) {
+          return (set.repsMax != null && v > set.repsMax) ? 'Le minimum ne peut pas dépasser le maximum' : null;
+        });
       });
       maxInput.addEventListener('change', function () {
-        var v = parseInt(maxInput.value, 10);
-        set.repsMax = isNaN(v) ? null : v;
-        OvrykDB.updateRoutine(routine);
+        commitSetNumber(maxInput, 'repsMax', parseInt(maxInput.value, 10), function (v) {
+          return (set.repsMin != null && v < set.repsMin) ? 'Le minimum ne peut pas dépasser le maximum' : null;
+        });
       });
 
       repsValues.appendChild(minInput);
@@ -10045,9 +10066,7 @@
       repsInput.value = set.reps != null ? set.reps : '';
       repsInput.addEventListener('input', function () { updateSummary(); });
       repsInput.addEventListener('change', function () {
-        var v = parseInt(repsInput.value, 10);
-        set.reps = isNaN(v) ? null : v;
-        OvrykDB.updateRoutine(routine);
+        commitSetNumber(repsInput, 'reps', parseInt(repsInput.value, 10), null);
       });
       repsValues.appendChild(repsInput);
     }
@@ -10076,8 +10095,7 @@
       weightInput.value = set.weightKg != null ? set.weightKg : '';
       weightInput.addEventListener('change', function () {
         var v = parseFloat(weightInput.value);
-        set.weightKg = isNaN(v) ? null : (v < 0 ? 0 : v);
-        OvrykDB.updateRoutine(routine);
+        commitSetNumber(weightInput, 'weightKg', isNaN(v) ? v : (v < 0 ? 0 : v), null);
       });
 
       var weightSuffix = document.createElement('span');
