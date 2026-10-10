@@ -25,15 +25,16 @@ Taille : S = moins d'une heure de travail assisté, M = une demi journée, L = u
 
 ## Ordre conseillé
 
-1. Lots 01 à 03 : la structure et l'accueil. Ce sont eux qui changent le plus l'impression générale.
-2. Lots 04 et 05 : la séance. C'est le coeur de l'usage au quotidien.
-3. Lots 06 à 08 : les cycles complets (test, fin de cycle, tirage, coordination).
-4. Lots 09 à 13 : la muscu libre, les types, l'historique et les alertes.
-5. Lots 14 à 16 : réglages, import, sauvegarde en ligne.
+1. Lots 01 à 03 : la structure et l'accueil. Ce sont eux qui changent le plus l'impression générale. Fait.
+2. Lots 04 et 05 : la séance. C'est le coeur de l'usage au quotidien. Fait.
+3. Lots 06 à 08 : les cycles complets (test, fin de cycle, tirage, coordination). Fait.
+4. Lots 09 et 10 : la muscu libre, les types et la fiche exercice. Fait.
+5. Reste à faire, dans cet ordre (mis à jour le 2026-10-10) : cadrage du lot 17 (décision à prendre, séance sur un seul écran), puis lot 12 (historique et détail d'une séance), lot 11 (séparateur de bloc), lot 14 (réglages et matériel), lot 13 (charge de la semaine et décharge de la muscu), lot 15 (import de données), lot 16 (compte et sauvegarde en ligne, en dernier car il dépend de tous les autres).
 
 ## Livraisons hors plan
 
 * Livraison E (après le lot 07, hors périmètre initial) : popup de choix en semaine de test non encore faite (Faire le test, Repousser le test d'une semaine, Changer de cycle sans tester). Fait.
+* Sélecteur de jours de l'éditeur de routine (après le lot 10, hors périmètre d'un lot) : les 7 pastilles sous "Jours" remplacées par un bouton pleine largeur ouvrant une feuille (case à cocher par jour, bouton "Valider") ; rien n'est écrit dans routine.weekdays avant validation, même champ et même format qu'avant. Fait le 2026-10-10.
 
 ## Bugs hors lot
 
