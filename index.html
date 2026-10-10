@@ -3749,6 +3749,11 @@
   .live-set-circle.is-upcoming .live-set-circle-dot { border-color: var(--border-outline); }
   .muscu-set-row.is-current .live-set-input { border-bottom: 1px solid var(--border-outline); }
   .live-validate-row { margin-top: var(--space-3); }
+  .live-card .muscu-set-row.is-current, .live-card .haltero-set-row.is-current { scroll-margin-top: 80px; scroll-margin-bottom: 16px; }
+  body.rest-timer-active .live-card .muscu-set-row.is-current,
+  body.rest-timer-active .live-card .haltero-set-row.is-current {
+    scroll-margin-bottom: calc(var(--nav-height) + max(var(--nav-margin), env(safe-area-inset-bottom, 0px)) + var(--rest-bar-h, 128px) + 16px);
+  }
   .live-validate-row .btn-back.live-validate-btn { flex: 1; width: auto; }
 
   /* haltérophilie (livraison 4) : ronds de reps plus petits dans les cartes
@@ -10041,7 +10046,13 @@
     var clone = cloneSetForAdd(set);
     clone.done = false;
     clone.rpe = null;
-    if (clone.repType === 'range') clone.repsActual = null;
+    if (clone.repType === 'range' || clone.repsActual != null) clone.repsActual = null;
+    /* une série copiée repart propre : ni résultat, ni raté, ni compteur de
+       la série d'origine. Remise à null seulement si le champ existe déjà
+       dans la copie (jamais de clé ajoutée sur une série muscu). */
+    ['result', 'repResults', 'failRep', 'failCause', 'repsDone'].forEach(function (key) {
+      if (clone.hasOwnProperty(key)) clone[key] = null;
+    });
     return clone;
   }
 
@@ -10100,6 +10111,19 @@
     return { attempted: attempted, succeeded: succeeded };
   }
 
+  /* reps réellement faites d'une série muscu : repsActual quand il existe
+     (saisi, ou prérempli au cercle), sinon la prescription set.reps (série
+     à reps fixes d'avant le lot 17, qui n'avait pas de repsActual : elle se
+     lit exactement comme avant). Jamais de set.reps écrit par le cercle :
+     set.reps reste la prescription que la séance suivante recopie. Une
+     série en plage sans repsActual renvoie null (milieu de plage utilisé
+     par le volume, inchangé). */
+  function getMuscuSetReps(set) {
+    if (set.repsActual != null) return set.repsActual;
+    if (set.repType === 'range') return null;
+    return set.reps != null ? set.reps : null;
+  }
+
   function computeSetVolume(sex, set) {
     var repsVal;
     if (set.repType === 'range') {
@@ -10107,7 +10131,7 @@
     } else if (sex.category === 'Lifting') {
       repsVal = computeSuccessfulReps(set);
     } else {
-      repsVal = set.reps || 0;
+      repsVal = getMuscuSetReps(set) || 0;
     }
     var weight;
     if (sex.category === 'Lifting') {
@@ -10241,7 +10265,7 @@
       } else if (sex.category === 'Lifting') {
         reps = computeSuccessfulReps(s);
       } else {
-        reps = s.reps || 0;
+        reps = getMuscuSetReps(s) || 0;
       }
       var weight;
       if (sex.category === 'Lifting') {
@@ -10273,7 +10297,9 @@
   }
 
   function getBestRecordForExercise(exerciseId) {
-    var records = getExerciseSessionRecords(exerciseId);
+    /* rappel "Meilleur" : séances terminées seulement, jamais la séance en
+       cours (sinon il changeait en pleine séance, dès une série validée). */
+    var records = getExerciseSessionRecords(exerciseId, true);
     if (records.length === 0) return null;
     var best = records.reduce(function (b, r) { return r.maxWeight > b.maxWeight ? r : b; }, records[0]);
     if (best.maxWeight <= 0) return null;
@@ -10370,6 +10396,11 @@
       clone.done = false;
       clone.rpe = null;
       applyRangeProgression(clone, decision);
+      /* série à reps fixes : le cercle écrit repsActual, qui ne doit pas
+         devenir le préremplissage de la séance suivante (set.reps, la
+         prescription, est recopié tel quel). Remise à null seulement si le
+         champ existe déjà : aucune clé ajoutée. */
+      if (clone.repType !== 'range' && clone.repsActual != null) clone.repsActual = null;
       return clone;
     });
   }
@@ -10646,8 +10677,38 @@
     if (liveScrollToIndex != null && cards[liveScrollToIndex]) {
       var target = cards[liveScrollToIndex];
       liveScrollToIndex = null;
-      requestAnimationFrame(function () { target.scrollIntoView({ block: 'start', behavior: 'smooth' }); });
+      requestAnimationFrame(function () { scrollLiveCardToTop(target); });
+    } else if (document.body.classList.contains('rest-timer-active')) {
+      keepCurrentSetAboveRestBar(listEl);
     }
+  }
+
+  /* amène une carte en haut de l'écran (marge haute de .live-card). Si le
+     repos tourne et que la série en cours de cette carte se retrouve alors
+     sous la barre de repos (passage à l'exercice suivant juste après une
+     validation), descend juste assez pour la voir : le haut de la carte
+     peut alors sortir de l'écran, la série à faire prime. */
+  function scrollLiveCardToTop(card) {
+    var delta = card.getBoundingClientRect().top - (parseFloat(getComputedStyle(card).scrollMarginTop) || 0);
+    if (document.body.classList.contains('rest-timer-active')) {
+      var row = card.querySelector('.muscu-set-row.is-current, .haltero-set-row.is-current');
+      if (row) {
+        var limit = window.innerHeight - (parseFloat(getComputedStyle(row).scrollMarginBottom) || 0);
+        delta = Math.max(delta, row.getBoundingClientRect().bottom - limit);
+      }
+    }
+    mainScrollEl.scrollBy({ top: delta, behavior: 'smooth' });
+  }
+
+  /* la barre de repos est collée en bas, au dessus de la navigation : tant
+     qu'elle tourne, la série en cours (la suivante après une validation)
+     doit rester visible au dessus d'elle. Défilement minimal (nearest) : ne
+     bouge rien si la ligne est déjà entièrement visible. La marge basse
+     vient du CSS (scroll-margin-bottom, hauteur réelle de la barre). */
+  function keepCurrentSetAboveRestBar(listEl) {
+    var row = listEl.querySelector('.live-card.is-open .muscu-set-row.is-current, .live-card.is-open .haltero-set-row.is-current');
+    if (!row) return;
+    requestAnimationFrame(function () { row.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); });
   }
 
   function isLiveExerciseDone(sex) {
@@ -10699,7 +10760,7 @@
         return ok + '/' + sets.length + (ok > 1 ? ' réussies' : ' réussie');
       }
       return sets.map(function (s) {
-        var r = s.repType === 'range' ? s.repsActual : s.reps;
+        var r = getMuscuSetReps(s);
         return r != null ? r : '-';
       }).join(', ') + ' reps';
     }
@@ -11428,7 +11489,7 @@
     if (!lastSex || !lastSex.sets[setIndex]) return '-';
     var s = lastSex.sets[setIndex];
     if (!s.done) return '-';
-    var reps = s.repType === 'range' ? s.repsActual : s.reps;
+    var reps = getMuscuSetReps(s);
     if (reps == null || s.weightKg == null) return '-';
     return s.weightKg + ' x ' + reps;
   }
@@ -11484,12 +11545,10 @@
     if (!isNaN(kg) && kg >= 0) set.weightKg = kg;
     var reps = parseInt(repsInput.value, 10);
     var hasReps = !isNaN(reps) && reps >= 0;
-    if (set.repType === 'range') {
-      if (hasReps) set.repsActual = reps;
-      else if (set.repsActual == null && getMuscuDefaultReps(set) != null) set.repsActual = getMuscuDefaultReps(set);
-    } else if (hasReps) {
-      set.reps = reps;
-    }
+    /* les reps faites vont toujours dans repsActual, série en plage ou à
+       reps fixes ; set.reps (prescription) n'est jamais écrit ici. */
+    if (hasReps) set.repsActual = reps;
+    else if (set.repsActual == null && getMuscuDefaultReps(set) != null) set.repsActual = getMuscuDefaultReps(set);
     set.done = true;
     persistActiveSession();
     startRestTimer(sex.exerciseName, sex.restSeconds != null ? sex.restSeconds : 90);
@@ -11525,7 +11584,8 @@
 
       var repsDone = document.createElement('div');
       repsDone.className = 'live-set-col-reps';
-      repsDone.textContent = set.repType === 'range' ? (set.repsActual != null ? set.repsActual : '-') : (set.reps != null ? set.reps : '-');
+      var repsDoneValue = getMuscuSetReps(set);
+      repsDone.textContent = repsDoneValue != null ? repsDoneValue : '-';
       row.appendChild(repsDone);
 
       var doneCircle = buildLiveSetCircle('done', 'Dé-valider la série ' + (setIndex + 1), false);
@@ -11571,15 +11631,20 @@
         repsInput.placeholder = defaultReps != null ? String(defaultReps) : '';
         if (set.repsActual != null) repsInput.value = set.repsActual;
       } else {
-        repsInput.value = set.reps != null ? set.reps : '';
+        var shownReps = getMuscuSetReps(set);
+        repsInput.value = shownReps != null ? shownReps : '';
       }
       repsInput.addEventListener('change', function () {
         var v = parseInt(repsInput.value, 10);
         if (set.repType === 'range') {
           set.repsActual = isNaN(v) || v < 0 ? null : v;
         } else {
-          if (isNaN(v) || v < 0) { repsInput.value = set.reps != null ? set.reps : ''; return; }
-          set.reps = v;
+          if (isNaN(v) || v < 0) {
+            var backReps = getMuscuSetReps(set);
+            repsInput.value = backReps != null ? backReps : '';
+            return;
+          }
+          set.repsActual = v;
         }
         persistActiveSession();
       });
@@ -12577,6 +12642,9 @@
     restTimerEndAt = Date.now() + seconds * 1000;
     restTimerBarEl.hidden = false;
     document.body.classList.add('rest-timer-active');
+    /* hauteur réelle de la barre, lue par le CSS pour garder la série en
+       cours visible au dessus d'elle (scroll-margin, lot 17) */
+    document.documentElement.style.setProperty('--rest-bar-h', restTimerBarEl.offsetHeight + 'px');
     tickRestTimer();
     restTimerIntervalId = setInterval(tickRestTimer, 250);
   }
@@ -13025,8 +13093,10 @@
   });
 
   /* ---- exercise detail view ---- */
-  function getExerciseSessionRecords(exerciseId) {
-    var sessions = OvrykDB.getSessions().slice().sort(function (a, b) {
+  function getExerciseSessionRecords(exerciseId, completedOnly) {
+    var sessions = OvrykDB.getSessions().filter(function (session) {
+      return !completedOnly || session.status === 'completed';
+    }).sort(function (a, b) {
       return new Date(a.date) - new Date(b.date);
     });
     var records = [];
