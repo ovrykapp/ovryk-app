@@ -4101,6 +4101,14 @@
   }
   .week-load-alert-text { margin: 0 0 var(--space-3); font-size: 15px; line-height: 1.45; color: var(--ink); }
   .week-load-alert-text:last-child { margin-bottom: 0; }
+  .week-load-alert-text.is-next { margin-top: var(--space-4); padding-top: var(--space-4); border-top: 1px solid var(--divider); }
+  .week-load-alert-actions { margin-bottom: 0; }
+  .week-move-sheet-list { max-height: 60vh; overflow-y: auto; }
+  .week-move-sheet-label {
+    display: block; margin: var(--space-3) 0 4px; font-size: 11px; font-weight: 700;
+    letter-spacing: 0.1em; text-transform: uppercase; color: var(--steel);
+  }
+  .week-move-sheet-list .weekday-sheet-row:disabled { opacity: 0.45; cursor: default; }
   .week-load-alert-actions { display: flex; gap: 10px; margin-top: var(--space-3); }
   .week-load-alert-actions > button { flex: 1; min-height: 48px; }
   .week-load-alert-btn-outline {
@@ -4894,6 +4902,18 @@
        cochée/décochée ne modifie qu'un brouillon en mémoire
        (routineWeekdayDraft), relu dans la vraie routine au clic sur
        Valider seulement. -->
+  <!-- lot 13, livraison 2 : "Déplacer une séance" depuis une alerte de
+       chevauchement. Même style que la feuille "Jours". Rien n'est écrit
+       avant la confirmation qui suit "Valider". -->
+  <div class="rest-picker-overlay" id="week-move-sheet-overlay" hidden>
+    <div class="rest-picker-sheet" role="dialog" aria-modal="true" aria-labelledby="week-move-sheet-title">
+      <div class="rest-picker-handle" aria-hidden="true"></div>
+      <h2 class="rest-picker-title" id="week-move-sheet-title">Déplacer une séance</h2>
+      <div class="weekday-sheet-list week-move-sheet-list" id="week-move-sheet-list"></div>
+      <button type="button" class="btn-primary" id="week-move-sheet-confirm" disabled>Valider</button>
+    </div>
+  </div>
+
   <div class="rest-picker-overlay" id="routine-weekday-sheet-overlay" hidden>
     <div class="rest-picker-sheet" role="dialog" aria-modal="true" aria-labelledby="routine-weekday-sheet-title">
       <div class="rest-picker-handle" aria-hidden="true"></div>
@@ -7623,7 +7643,7 @@
         if (!n) return;
         items.push({ exerciseId: sex.exerciseId, name: sex.exerciseName || 'Exercice', category: sex.category || '', isHaltero: sex.category === 'Lifting', sets: n });
       });
-      if (items.length) entries.push({ day: day, planned: false, label: s.routineName || 'Séance libre', items: items });
+      if (items.length) entries.push({ day: day, planned: false, routineId: s.routineId || null, label: s.routineName || 'Séance libre', items: items });
     });
 
     var routines = OvrykDB.getRoutines();
@@ -7638,7 +7658,7 @@
           if (!n) return;
           items.push({ exerciseId: rex.exerciseId, name: exercise ? exercise.name : 'Exercice', category: exercise ? exercise.category : '', isHaltero: !!(exercise && exercise.category === 'Lifting'), sets: n });
         });
-        if (items.length) entries.push({ day: day, planned: true, label: r.name || 'Sans titre', items: items });
+        if (items.length) entries.push({ day: day, planned: true, routineId: r.id, label: r.name || 'Sans titre', items: items });
       });
     }
     return entries;
@@ -7691,9 +7711,157 @@
       (alert.gap > 1 ? ' jours' : ' jour') + ' d’écart.';
   }
 
+  /* livraison 2 : "Je garde" masque une alerte pour la semaine civile en
+     cours seulement (settings.chargeAlertesMasquees, champ optionnel,
+     absent = rien de masqué). Lecture seule ici. */
+  function getDismissedWeekAlertKeys(refDate) {
+    var stored = OvrykDB.getSettings().chargeAlertesMasquees;
+    var list = stored && stored[weekKeyOf(refDate)];
+    return Array.isArray(list) ? list : [];
+  }
+
   function getWeekLoadSummary(refDate) {
     var entries = collectWeekLoadEntries(refDate);
-    return { entries: entries, alerts: computeWeekOverlaps(entries) };
+    var alerts = computeWeekOverlaps(entries);
+    var dismissed = getDismissedWeekAlertKeys(refDate);
+    return {
+      entries: entries,
+      alerts: alerts,
+      visibleAlerts: alerts.filter(function (a) { return dismissed.indexOf(a.key) === -1; })
+    };
+  }
+
+  /* écrit seulement au clic sur "Je garde". Les semaines passées sont
+     retirées au même moment (une alerte ne vaut que pour sa semaine). */
+  function dismissWeekAlert(alertKey) {
+    var settings = OvrykDB.getSettings();
+    var wk = weekKeyOf(new Date());
+    var prev = settings.chargeAlertesMasquees && settings.chargeAlertesMasquees[wk];
+    var list = Array.isArray(prev) ? prev.slice() : [];
+    if (list.indexOf(alertKey) === -1) list.push(alertKey);
+    var next = {};
+    next[wk] = list;
+    settings.chargeAlertesMasquees = next;
+    OvrykDB.saveSettings(settings);
+    renderWeekLoadPage();
+    renderProgrammeWeekLoadEntry();
+  }
+
+  /* "Déplacer une séance" : séances de l'alerte dont la routine est placée
+     ce jour là (routine.weekdays). Les séances prévues d'abord ; une séance
+     déjà faite ne change que les semaines suivantes. */
+  function getMovableAlertSides(alert) {
+    var sides = [];
+    [alert.a, alert.b].forEach(function (entry) {
+      if (!entry.routineId) return;
+      var routine = OvrykDB.getRoutineById(entry.routineId);
+      if (!routine || !Array.isArray(routine.weekdays) || routine.weekdays.indexOf(entry.day) === -1) return;
+      if (sides.some(function (x) { return x.routineId === routine.id && x.day === entry.day; })) return;
+      sides.push({ routineId: routine.id, name: routine.name || 'Sans titre', day: entry.day, planned: entry.planned });
+    });
+    sides.sort(function (x, y) { return (y.planned ? 1 : 0) - (x.planned ? 1 : 0); });
+    return sides;
+  }
+
+  var weekMoveState = null;
+
+  function formatWeekdayList(days) {
+    return days.length
+      ? days.slice().sort(function (a, b) { return a - b; }).map(function (d) { return WEEKDAY_LABELS[d - 1]; }).join(', ')
+      : 'aucun jour';
+  }
+
+  function renderWeekMoveSheet() {
+    var list = document.getElementById('week-move-sheet-list');
+    list.innerHTML = '';
+    var st = weekMoveState;
+    var side = st.sides[st.sideIndex];
+    var routine = OvrykDB.getRoutineById(side.routineId);
+    var currentDays = (routine && routine.weekdays) || [];
+
+    if (st.sides.length > 1) {
+      var t1 = document.createElement('span');
+      t1.className = 'week-move-sheet-label';
+      t1.textContent = 'Séance à déplacer';
+      list.appendChild(t1);
+      st.sides.forEach(function (sd, idx) {
+        var row = document.createElement('button');
+        row.type = 'button';
+        row.className = 'weekday-sheet-row' + (idx === st.sideIndex ? ' active' : '');
+        row.innerHTML = '<span class="weekday-sheet-checkbox"><svg viewBox="0 0 24 24"><polyline points="5,13 10,18 19,7"/></svg></span>' +
+          '<span>' + escapeHTML(sd.name) + ', ' + WEEKDAY_NAMES_FR[sd.day - 1].toLowerCase() + (sd.planned ? '' : ' (faite, semaines suivantes)') + '</span>';
+        row.addEventListener('click', function () { st.sideIndex = idx; st.targetDay = null; renderWeekMoveSheet(); });
+        list.appendChild(row);
+      });
+    }
+
+    var t2 = document.createElement('span');
+    t2.className = 'week-move-sheet-label';
+    t2.textContent = 'Nouveau jour pour ' + side.name;
+    list.appendChild(t2);
+    WEEKDAY_NAMES_FR.forEach(function (name, idx) {
+      var day = idx + 1;
+      var taken = currentDays.indexOf(day) !== -1;
+      var row = document.createElement('button');
+      row.type = 'button';
+      row.className = 'weekday-sheet-row' + (st.targetDay === day ? ' active' : '');
+      row.disabled = taken;
+      row.innerHTML = '<span class="weekday-sheet-checkbox"><svg viewBox="0 0 24 24"><polyline points="5,13 10,18 19,7"/></svg></span>' +
+        '<span>' + name + (day === side.day ? ' (jour actuel)' : (taken ? ' (déjà prévue)' : '')) + '</span>';
+      if (!taken) row.addEventListener('click', function () { st.targetDay = day; renderWeekMoveSheet(); });
+      list.appendChild(row);
+    });
+    document.getElementById('week-move-sheet-confirm').disabled = st.targetDay == null;
+  }
+
+  function openWeekMoveSheet(alert) {
+    var sides = getMovableAlertSides(alert);
+    if (!sides.length) return;
+    weekMoveState = { sides: sides, sideIndex: 0, targetDay: null };
+    renderWeekMoveSheet();
+    document.getElementById('week-move-sheet-overlay').hidden = false;
+  }
+
+  function closeWeekMoveSheet() {
+    document.getElementById('week-move-sheet-overlay').hidden = true;
+    weekMoveState = null;
+  }
+
+  /* n'écrit que sur confirmation, et seulement routine.weekdays : relu au
+     moment de la confirmation, sans OvrykDB.updateRoutine qui avancerait
+     updatedAt (la séance suivante de la routine ne reprendrait plus la
+     dernière séance, R5). Aucune séance enregistrée ni en cours n'est lue
+     pour écriture. */
+  function confirmWeekMove() {
+    var st = weekMoveState;
+    if (!st || st.targetDay == null) return;
+    var side = st.sides[st.sideIndex];
+    var targetDay = st.targetDay;
+    var routine = OvrykDB.getRoutineById(side.routineId);
+    closeWeekMoveSheet();
+    if (!routine) return;
+    var before = (routine.weekdays || []).slice();
+    var after = before.filter(function (d) { return d !== side.day; });
+    if (after.indexOf(targetDay) === -1) after.push(targetDay);
+    after.sort(function (a, b) { return a - b; });
+    showConfirmModal(
+      'Déplacer « ' + side.name + ' » du ' + WEEKDAY_NAMES_FR[side.day - 1].toLowerCase() + ' au ' +
+        WEEKDAY_NAMES_FR[targetDay - 1].toLowerCase() + ' ? Jours de la routine : ' + formatWeekdayList(before) +
+        ' deviennent ' + formatWeekdayList(after) + '. Aucune séance enregistrée ou en cours n\u2019est modifiée.',
+      function () {
+        var routines = OvrykDB.getRoutines();
+        var target = routines.filter(function (r) { return r.id === side.routineId; })[0];
+        if (!target || !Array.isArray(target.weekdays) || target.weekdays.indexOf(side.day) === -1) return;
+        var next = target.weekdays.filter(function (d) { return d !== side.day; });
+        if (next.indexOf(targetDay) === -1) next.push(targetDay);
+        target.weekdays = next.sort(function (a, b) { return a - b; });
+        OvrykDB.saveRoutines(routines);
+        renderWeekLoadPage();
+        renderProgrammeWeek();
+      },
+      null,
+      'Déplacer'
+    );
   }
 
   var weekLoadAlertsExpanded = false;
@@ -7707,11 +7875,30 @@
     eyebrow.textContent = 'À surveiller';
     card.appendChild(eyebrow);
     var shown = weekLoadAlertsExpanded ? alerts : alerts.slice(0, 1);
-    shown.forEach(function (alert) {
+    shown.forEach(function (alert, idx) {
       var p = document.createElement('p');
-      p.className = 'week-load-alert-text';
+      p.className = 'week-load-alert-text' + (idx > 0 ? ' is-next' : '');
       p.textContent = formatOverlapText(alert);
       card.appendChild(p);
+      var actions = document.createElement('div');
+      actions.className = 'week-load-alert-actions';
+      /* "Déplacer" seulement si une routine de l'alerte est placée ce
+         jour là : jamais de bouton sans effet. */
+      if (getMovableAlertSides(alert).length) {
+        var move = document.createElement('button');
+        move.type = 'button';
+        move.className = 'week-load-alert-btn-outline';
+        move.textContent = 'Déplacer une séance';
+        move.addEventListener('click', function () { openWeekMoveSheet(alert); });
+        actions.appendChild(move);
+      }
+      var keep = document.createElement('button');
+      keep.type = 'button';
+      keep.className = 'week-load-alert-btn-plain';
+      keep.textContent = 'Je garde';
+      keep.addEventListener('click', function () { dismissWeekAlert(alert.key); });
+      actions.appendChild(keep);
+      card.appendChild(actions);
     });
     if (alerts.length > 1 && !weekLoadAlertsExpanded) {
       var more = document.createElement('button');
@@ -7842,7 +8029,7 @@
     document.getElementById('week-load-sub').textContent = 'Semaine du ' + formatDayMonthFr(startOfWeek(refDate));
     var body = document.getElementById('week-load-body');
     body.innerHTML = '';
-    if (summary.alerts.length) body.appendChild(buildWeekLoadAlertCard(summary.alerts));
+    if (summary.visibleAlerts.length) body.appendChild(buildWeekLoadAlertCard(summary.visibleAlerts));
     body.appendChild(buildWeekLoadDays(summary.entries, refDate));
     body.appendChild(buildWeekLoadGroups(refDate));
   }
@@ -7867,16 +8054,28 @@
     var total = summary.entries.reduce(function (sum, entry) {
       return sum + entry.items.reduce(function (t, item) { return t + item.sets; }, 0);
     }, 0);
-    document.getElementById('programme-week-load-eyebrow').textContent = 'Charge de la semaine';
-    document.getElementById('programme-week-load-sub').textContent = total
-      ? total + ' séries, validées et prévues'
-      : 'Aucune série cette semaine';
-    btn.classList.remove('is-alert');
+    var alerts = summary.visibleAlerts;
+    if (alerts.length) {
+      document.getElementById('programme-week-load-eyebrow').textContent = 'À surveiller';
+      document.getElementById('programme-week-load-sub').textContent = formatOverlapText(alerts[0]) +
+        (alerts.length > 1 ? ' Et ' + (alerts.length - 1) + (alerts.length > 2 ? ' autres.' : ' autre.') : '');
+      btn.classList.add('is-alert');
+    } else {
+      document.getElementById('programme-week-load-eyebrow').textContent = 'Charge de la semaine';
+      document.getElementById('programme-week-load-sub').textContent = total
+        ? total + ' séries, validées et prévues'
+        : 'Aucune série cette semaine';
+      btn.classList.remove('is-alert');
+    }
     btn.hidden = false;
   }
 
   document.getElementById('programme-week-load-btn').addEventListener('click', openWeekLoadPage);
   document.getElementById('week-load-back-btn').addEventListener('click', closeWeekLoadPage);
+  document.getElementById('week-move-sheet-confirm').addEventListener('click', confirmWeekMove);
+  document.getElementById('week-move-sheet-overlay').addEventListener('click', function (e) {
+    if (e.target === this) closeWeekMoveSheet();
+  });
 
   /* ============================================================
      ÉCRAN COORDINATION (lot 08, livraison 3, maquette 30) — un cycle
