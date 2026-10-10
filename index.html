@@ -3750,6 +3750,34 @@
   .muscu-set-row.is-current .live-set-input { border-bottom: 1px solid var(--border-outline); }
   .live-validate-row { margin-top: var(--space-3); }
   .live-validate-row .btn-back.live-validate-btn { flex: 1; width: auto; }
+
+  /* haltérophilie (livraison 4) : ronds de reps plus petits dans les cartes
+     pour laisser la place au bouton Raté et au cercle à 390 px. */
+  .live-card .haltero-set-row { padding: 8px 6px 8px 12px; gap: 8px; }
+  .live-card .haltero-set-label { flex: 1; min-width: 0; }
+  .live-card .haltero-rep-dots { gap: 5px; }
+  .live-card .haltero-rep-dot { width: 22px; height: 22px; }
+  .live-card .haltero-rep-dot svg { width: 12px; height: 12px; }
+  .haltero-set-row.is-upcoming { opacity: 0.45; }
+  .haltero-set-actions { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
+  .haltero-row-fail-btn { flex: none; min-height: 36px; padding: 0 10px; font-size: 11px; }
+  .live-set-circle.is-done.is-fail .live-set-circle-dot { background: var(--orange-fill); border-color: var(--rust); }
+  .live-set-circle.is-done.is-fail .live-set-circle-dot svg { stroke: var(--rust); }
+  .haltero-charge-toggle {
+    width: 100%;
+    min-height: 44px;
+    margin-bottom: var(--space-3);
+    background: none;
+    border: 1px dashed var(--border-outline);
+    border-radius: var(--radius);
+    color: var(--blue);
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+  }
 </style>
 </head>
 <body>
@@ -10997,15 +11025,59 @@
     return [];
   }
 
-  function buildHalteroSetRow(sex, set, setIndex, isCurrent) {
+  /* lot 17, livraison 4 : cercle bleu à droite de chaque série.
+     Série en cours : taper le cercle = "Série réussie" (mêmes écritures :
+     repResults tout à true, result 'ok', done) ; à partir de 4 reps (R6),
+     le cercle valide le compteur de la carte "Reps réussies" (repsDone,
+     result, failCause = null, done), comme l'ancien bouton. Bouton "Raté"
+     à côté du cercle (décision 1A), sauf en mode compteur (R6, inchangé) :
+     ouvre la feuille "Un raté" existante. Série faite : retaper le cercle
+     la dé-valide et efface le raté (décision 2A) : done false, result,
+     repResults, failRep et failCause à null (valeurs par défaut du
+     modèle), repsDone gardé comme valeur de départ du compteur. Pas de
+     repos ni d'avance à la dé-validation. Séries à venir : cercle inactif. */
+  function validateHalteroSet(sex, set) {
+    if (isHalteroCounterMode(set)) {
+      var target = set.reps || 0;
+      var finalCount = set.repsDone != null ? set.repsDone : target;
+      set.repsDone = finalCount;
+      set.result = finalCount >= target ? 'ok' : 'fail';
+      set.failCause = null;
+    } else {
+      var results = [];
+      for (var i = 0; i < (set.reps || 0); i++) results.push(true);
+      set.repResults = results;
+      set.result = 'ok';
+    }
+    set.done = true;
+    persistActiveSession();
+    startRestTimer(sex.exerciseName, sex.restSeconds != null ? sex.restSeconds : 90);
+    advanceAfterSetValidated(sex);
+    renderSeanceActiveView();
+  }
+
+  function unvalidateHalteroSet(set) {
+    cancelLiveAdvance();
+    set.done = false;
+    set.result = null;
+    set.repResults = null;
+    set.failRep = null;
+    set.failCause = null;
+    persistActiveSession();
+    renderSeanceActiveView();
+  }
+
+  function buildHalteroSetRow(sex, set, setIndex, isCurrent, index) {
     var row = document.createElement('div');
-    row.className = 'haltero-set-row' + (isCurrent ? ' is-current' : '') + (set.done ? ' is-done' : '');
+    var isUpcoming = !set.done && !isCurrent;
+    row.className = 'haltero-set-row' + (isCurrent ? ' is-current' : '') + (set.done ? ' is-done' : '') + (isUpcoming ? ' is-upcoming' : '');
 
     var label = document.createElement('div');
     label.className = 'haltero-set-label';
     var kg = computeWeightFromPercent(sex.oneRepMaxSnapshot, set.percent1rm);
     label.innerHTML = '<span class="haltero-set-name">Série ' + (setIndex + 1) + '</span>' +
-      '<span class="haltero-set-kg mono">' + (kg != null ? kg + ' kg' : '-') + '</span>';
+      '<span class="haltero-set-kg mono">' + (kg != null ? formatKgFr(kg) + ' kg' : '-') +
+      (set.percent1rm != null ? ', ' + set.percent1rm + ' %' : '') + '</span>';
     row.appendChild(label);
 
     /* R6 : à partir de 4 reps, pas de détail par rep même dans
@@ -11015,72 +11087,96 @@
       var target = set.reps || 0;
       var isFail = set.done && set.result === 'fail';
       summary.className = 'haltero-set-counter-summary mono' + (set.done ? (isFail ? ' is-fail' : ' is-ok') : '');
-      summary.textContent = set.done ? (computeSuccessfulReps(set) + ' sur ' + target) : ('objectif ' + target);
+      if (set.done) summary.textContent = computeSuccessfulReps(set) + ' sur ' + target;
+      else if (isCurrent) summary.textContent = (set.repsDone != null ? set.repsDone : target) + ' sur ' + target;
+      else summary.textContent = target + ' reps';
       row.appendChild(summary);
-      return row;
+    } else {
+      var repsCount = set.reps || 0;
+      var repResults = resolveRepResultsForDisplay(set, repsCount);
+      var dots = document.createElement('div');
+      dots.className = 'haltero-rep-dots';
+      for (var i = 0; i < repsCount; i++) {
+        /* R6 : au-delà de repResults, la série est soit pas encore faite
+           ("pending", pointillés), soit faite mais arrêtée par un raté
+           avant cette rep ("skipped", rond vide plein) — jamais confondue
+           avec une rep ratée. */
+        var state;
+        if (!set.done) state = 'pending';
+        else if (i < repResults.length) state = repResults[i] ? 'ok' : 'fail';
+        else state = 'skipped';
+        var dot = document.createElement('span');
+        dot.className = 'haltero-rep-dot is-' + state;
+        if (state === 'ok') {
+          dot.innerHTML = '<svg viewBox="0 0 24 24"><polyline points="4,13 9,18 20,6"/></svg>';
+        } else if (state === 'fail') {
+          dot.innerHTML = '<svg viewBox="0 0 24 24"><line x1="5" y1="5" x2="19" y2="19"/><line x1="19" y1="5" x2="5" y2="19"/></svg>';
+        }
+        dots.appendChild(dot);
+      }
+      row.appendChild(dots);
     }
 
-    var repsCount = set.reps || 0;
-    var repResults = resolveRepResultsForDisplay(set, repsCount);
-
-    var dots = document.createElement('div');
-    dots.className = 'haltero-rep-dots';
-    for (var i = 0; i < repsCount; i++) {
-      /* R6 : au-delà de repResults, la série est soit pas encore faite
-         ("pending", pointillés), soit faite mais arrêtée par un raté
-         avant cette rep ("skipped", rond vide plein) — jamais confondue
-         avec une rep ratée. */
-      var state;
-      if (!set.done) {
-        state = 'pending';
-      } else if (i < repResults.length) {
-        state = repResults[i] ? 'ok' : 'fail';
-      } else {
-        state = 'skipped';
-      }
-      var dot = document.createElement('span');
-      dot.className = 'haltero-rep-dot is-' + state;
-      if (state === 'ok') {
-        dot.innerHTML = '<svg viewBox="0 0 24 24"><polyline points="4,13 9,18 20,6"/></svg>';
-      } else if (state === 'fail') {
-        dot.innerHTML = '<svg viewBox="0 0 24 24"><line x1="5" y1="5" x2="19" y2="19"/><line x1="19" y1="5" x2="5" y2="19"/></svg>';
-      }
-      dots.appendChild(dot);
+    var actions = document.createElement('div');
+    actions.className = 'haltero-set-actions';
+    if (isCurrent && !isHalteroCounterMode(set)) {
+      var failBtn = document.createElement('button');
+      failBtn.type = 'button';
+      failBtn.className = 'haltero-fail-btn haltero-row-fail-btn';
+      failBtn.textContent = 'Raté';
+      failBtn.setAttribute('aria-label', 'Un raté sur la série ' + (setIndex + 1));
+      failBtn.addEventListener('click', function () { openFailSheet(sex, set, index); });
+      actions.appendChild(failBtn);
     }
-    row.appendChild(dots);
+    var circle;
+    if (set.done) {
+      circle = buildLiveSetCircle('done', 'Dé-valider la série ' + (setIndex + 1), true);
+      if (set.result === 'fail') {
+        circle.classList.add('is-fail');
+        circle.querySelector('svg').innerHTML = '<line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/>';
+      }
+      circle.addEventListener('click', function () { unvalidateHalteroSet(set); });
+    } else if (isCurrent) {
+      circle = buildLiveSetCircle('current', 'Série ' + (setIndex + 1) + ' réussie', true);
+      circle.addEventListener('click', function () { validateHalteroSet(sex, set); });
+    } else {
+      circle = buildLiveSetCircle('upcoming', '', true);
+    }
+    actions.appendChild(circle);
+    row.appendChild(actions);
 
     return row;
   }
 
-  /* lignes faites + la série en cours en détail ; le reste résumé en une
-     seule ligne "à venir" plutôt que détaillé série par série. Si la série
-     en cours est en mode compteur, sa ligne est sautée ici : elle est
-     affichée séparément par la grande carte compteur (buildHalteroLiveBody). */
-  function buildHalteroSetsTable(sex, currentIndex) {
+  /* lot 17 : toutes les séries, faites, en cours et à venir, chacune avec
+     son cercle (l'ancienne ligne résumée "Séries X à Y à venir" disparaît). */
+  function buildHalteroSetsTable(sex, currentIndex, index) {
     var wrap = document.createElement('div');
     wrap.className = 'haltero-sets-table';
-    var currentSet = currentIndex !== -1 ? sex.sets[currentIndex] : null;
-    var skipCurrentRow = currentSet && isHalteroCounterMode(currentSet);
-
     sex.sets.forEach(function (set, setIndex) {
-      if (currentIndex === -1 || setIndex <= currentIndex) {
-        if (setIndex === currentIndex && skipCurrentRow) return;
-        wrap.appendChild(buildHalteroSetRow(sex, set, setIndex, setIndex === currentIndex));
-      }
+      wrap.appendChild(buildHalteroSetRow(sex, set, setIndex, setIndex === currentIndex, index));
     });
+    return wrap;
+  }
 
-    if (currentIndex !== -1 && currentIndex < sex.sets.length - 1) {
-      var upcoming = sex.sets.slice(currentIndex + 1);
-      var kg = computeWeightFromPercent(sex.oneRepMaxSnapshot, upcoming[0].percent1rm);
-      var note = document.createElement('div');
-      note.className = 'haltero-upcoming-note';
-      var label = upcoming.length === 1
-        ? ('Série ' + sex.sets.length + ' à venir')
-        : ('Séries ' + (currentIndex + 2) + ' à ' + sex.sets.length + ' à venir');
-      note.textContent = label + (kg != null ? ', ' + kg + ' kg' : '');
-      wrap.appendChild(note);
-    }
+  /* "Ajuster la charge" replié par défaut, ouvert pour une série à la fois
+     (id de série en mémoire seulement, jamais écrit). */
+  var halteroChargeOpenSetId = null;
 
+  function buildHalteroChargeToggle(sex, set) {
+    var wrap = document.createElement('div');
+    var isOpen = halteroChargeOpenSetId === set.id;
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'haltero-charge-toggle';
+    btn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+    btn.textContent = isOpen ? 'Masquer le réglage de charge' : 'Ajuster la charge';
+    btn.addEventListener('click', function () {
+      halteroChargeOpenSetId = isOpen ? null : set.id;
+      renderSeanceActiveView();
+    });
+    wrap.appendChild(btn);
+    if (isOpen) wrap.appendChild(buildHalteroChargeCard(sex, set));
     return wrap;
   }
 
@@ -11217,9 +11313,9 @@
       frag.appendChild(hints);
     }
 
-    if (currentSet) frag.appendChild(buildHalteroChargeCard(sex, currentSet));
-    frag.appendChild(buildHalteroSetsTable(sex, currentIndex));
+    frag.appendChild(buildHalteroSetsTable(sex, currentIndex, index));
     if (currentSet && counterMode) frag.appendChild(buildHalteroCounterCard(sex, currentSet));
+    if (currentSet) frag.appendChild(buildHalteroChargeToggle(sex, currentSet));
 
     var refSet = currentSet || sex.sets[sex.sets.length - 1];
     if (refSet) {
@@ -11253,9 +11349,9 @@
       frag.appendChild(buildHalteroNoteField(currentSet));
 
       if (counterMode) {
-        /* R6 : pas de bouton "Un raté" en mode compteur — un objectif non
-           atteint se signale par la couleur du bouton de validation, pas
-           par une saisie séparée. */
+        /* R6 : pas de bouton "Raté" en mode compteur — un objectif non
+           atteint se signale par la couleur du compteur de la ligne et du
+           cercle, pas par une saisie séparée. */
 
         /* maquette 11 : simple rappel de la durée de repos qui démarre
            automatiquement à la validation, aucune interaction ici — le
@@ -11267,59 +11363,11 @@
           '<span class="session-hint-value">' + formatRestPickerLabel(sex.restSeconds != null ? sex.restSeconds : 90) + '</span></div>';
         frag.appendChild(restInfo);
 
-        var validateBtn = document.createElement('button');
-        var validateTarget = currentSet.reps || 0;
-        var validateCurrent = currentSet.repsDone != null ? currentSet.repsDone : validateTarget;
-        validateBtn.type = 'button';
-        validateBtn.className = 'btn-primary is-blue haltero-counter-validate' +
-          (validateCurrent < validateTarget ? ' is-under' : '');
-        validateBtn.textContent = 'Valider la série ' + (currentIndex + 1);
-        validateBtn.addEventListener('click', function () {
-          var target = currentSet.reps || 0;
-          var finalCount = currentSet.repsDone != null ? currentSet.repsDone : target;
-          currentSet.repsDone = finalCount;
-          currentSet.result = finalCount >= target ? 'ok' : 'fail';
-          currentSet.failCause = null;
-          currentSet.done = true;
-          persistActiveSession();
-          startRestTimer(sex.exerciseName, sex.restSeconds != null ? sex.restSeconds : 90);
-
-          advanceAfterSetValidated(sex);
-          renderSeanceActiveView();
-        });
-        frag.appendChild(validateBtn);
-      } else {
-        var actionsRow = document.createElement('div');
-        actionsRow.className = 'haltero-actions-row';
-
-        var failBtn = document.createElement('button');
-        failBtn.type = 'button';
-        failBtn.className = 'haltero-fail-btn';
-        failBtn.textContent = 'Un raté';
-        failBtn.addEventListener('click', function () { openFailSheet(sex, currentSet, index); });
-        actionsRow.appendChild(failBtn);
-
-        var successBtn = document.createElement('button');
-        successBtn.type = 'button';
-        successBtn.className = 'btn-primary is-blue haltero-success-btn';
-        successBtn.textContent = 'Série réussie';
-        successBtn.addEventListener('click', function () {
-          var repsCount = currentSet.reps || 0;
-          var results = [];
-          for (var i = 0; i < repsCount; i++) results.push(true);
-          currentSet.repResults = results;
-          currentSet.result = 'ok';
-          currentSet.done = true;
-          persistActiveSession();
-          startRestTimer(sex.exerciseName, sex.restSeconds != null ? sex.restSeconds : 90);
-
-          advanceAfterSetValidated(sex);
-          renderSeanceActiveView();
-        });
-        actionsRow.appendChild(successBtn);
-
-        frag.appendChild(actionsRow);
+        /* lot 17 : la validation passe par le cercle de la ligne
+           (validateHalteroSet), plus de bouton "Valider la série". */
       }
+      /* lot 17 : "Série réussie" et "Un raté" sont dans la ligne de la
+         série en cours (cercle et bouton Raté). */
     }
 
     return frag;
