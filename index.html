@@ -1702,6 +1702,7 @@
   }
   .day-badge-tag.is-halterophilie { background: var(--blue-fill); color: var(--blue); }
   .day-badge-tag.is-muscu { background: var(--orange-fill); color: var(--orange-soft); }
+  .day-badge-tag.is-allegee { background: transparent; border: 1px dashed var(--orange-soft); color: var(--orange-soft); }
 
   /* Profil — weekly-goal steppers and notification toggles */
   .profile-stepper-row, .profile-toggle-row {
@@ -3664,6 +3665,25 @@
     background: var(--blue-fill);
   }
   .live-light-notice-text { margin: 0; font-size: 12px; line-height: 1.5; color: var(--blue); }
+  /* lot 13, livraison 3 : décharge de la muscu (orange = muscu, règle 4) */
+  .live-deload-notice {
+    display: flex; align-items: center; gap: 12px;
+    margin: 0 0 var(--space-3); padding: 10px 12px;
+    border-radius: var(--radius-card); background: var(--orange-fill);
+  }
+  .live-deload-notice-text { flex: 1; min-width: 0; margin: 0; font-size: 12px; line-height: 1.5; color: var(--orange-soft); }
+  .live-deload-btn {
+    flex-shrink: 0; min-height: 40px; padding: 0 12px;
+    background: transparent; border: 1px solid var(--orange-soft); border-radius: var(--radius);
+    color: var(--orange-soft); font-family: var(--font-display); font-weight: 700; font-size: 13px; cursor: pointer;
+  }
+  .deload-mode-row { display: flex; gap: 6px; padding: 8px; }
+  .deload-mode-btn {
+    flex: 1; min-height: 44px; padding: 0 6px;
+    background: transparent; border: 1px solid var(--border-outline); border-radius: var(--radius);
+    color: var(--ink); font-family: var(--font-display); font-weight: 600; font-size: 14px; cursor: pointer;
+  }
+  .deload-mode-btn.is-active { background: var(--orange-fill); border-color: var(--orange-soft); color: var(--orange-soft); }
   .live-test-sets-label { margin-top: var(--space-4); }
   .live-group {
     border: 2px solid var(--accent-info);
@@ -4459,6 +4479,16 @@
           </button>
           <div class="settings-row-body" id="profile-goals-list" hidden></div>
         </div>
+      </div>
+
+      <!-- lot 13, livraison 3 : affiché seulement s'il existe au moins un
+           cycle d'haltérophilie actif (renderProfileDeloadCard). -->
+      <div class="settings-section" id="profile-deload-section" hidden>
+        <span class="settings-eyebrow">Décharge de la muscu</span>
+        <div class="settings-group">
+          <div class="deload-mode-row" id="profile-deload-mode" role="radiogroup" aria-label="Décharge de la muscu"></div>
+        </div>
+        <p class="settings-note" id="profile-deload-note"></p>
       </div>
 
       <div class="settings-section">
@@ -6341,6 +6371,7 @@
     if (target === 'profil') {
       renderProfileGoalsCard();
       renderProfileNotificationsCard();
+      renderProfileDeloadCard();
       renderBarPlatesSummary();
       renderBackupReminder();
       renderStorageWarning();
@@ -7571,8 +7602,8 @@
      * Jour passé, ou aujourd'hui si une séance existe déjà ce jour : séries
        validées (done) des séances de ce jour, terminées ou en cours.
      * Aujourd'hui et jours à venir : séries prévues des routines placées
-       ce jour (routine.weekdays), même nombre de séries que la séance
-       construite (cycle, mode de base ou routine). Une routine = une seule
+       ce jour (routine.weekdays), celles de la séance que
+       buildSessionFromRoutine construirait (getPlannedSessionItems). Une routine = une seule
        occurrence : déjà faite cette semaine (séance avec routineId), elle
        n'est plus comptée comme prévue, même à un autre jour. Deux routines
        différentes le même jour comptent toutes les deux.
@@ -7620,19 +7651,14 @@
     return d === 0 ? 7 : d;
   }
 
-  /* nombre de séries que buildSessionFromRoutine donnerait aujourd'hui à
-     cet exercice de routine, sans rien construire ni écrire. */
-  function getPlannedSetCount(rex) {
-    var exercise = OvrykDB.getExerciseById(rex.exerciseId);
-    var cycle = OvrykDB.getForceCycle(rex.exerciseId);
-    var cyclePending = !!(cycle && cycle.en_attente_de_validation);
-    var beforeStart = isBeforeForceCycleStart(exercise);
-    if (cycle && !cyclePending && !beforeStart) return getCycleWeek(cycle).sets.length;
-    if (cyclePending || beforeStart) {
-      var base = getBaseModePrescription(exercise);
-      return base ? base.sets.length : 0;
-    }
-    return Array.isArray(rex.sets) ? rex.sets.length : 0;
+  /* séries prévues d'une routine : la séance que buildSessionFromRoutine
+     construirait maintenant (cycle, mode de base, reprise de la dernière
+     séance, allègement automatique de la muscu compris), sans rien écrire.
+     Un seul calcul, partagé avec le lancement réel d'une séance. */
+  function getPlannedSessionItems(routine) {
+    return buildSessionFromRoutine(routine).exercises.map(function (sex) {
+      return { exerciseId: sex.exerciseId, name: sex.exerciseName || 'Exercice', category: sex.category || '', isHaltero: sex.category === 'Lifting', sets: sex.sets.length };
+    }).filter(function (item) { return item.sets > 0; });
   }
 
   /* une entrée par séance de la semaine, réalisée ou prévue :
@@ -7663,17 +7689,13 @@
     });
 
     var routines = OvrykDB.getRoutines();
+    var plannedCache = {};
     for (var day = todayNum; day <= 7; day++) {
       routines.forEach(function (r) {
         if (routinesDone[r.id]) return;
         if (!r.weekdays || r.weekdays.indexOf(day) === -1 || !Array.isArray(r.exercises)) return;
-        var items = [];
-        r.exercises.forEach(function (rex) {
-          var exercise = OvrykDB.getExerciseById(rex.exerciseId);
-          var n = getPlannedSetCount(rex);
-          if (!n) return;
-          items.push({ exerciseId: rex.exerciseId, name: exercise ? exercise.name : 'Exercice', category: exercise ? exercise.category : '', isHaltero: !!(exercise && exercise.category === 'Lifting'), sets: n });
-        });
+        if (!plannedCache[r.id]) plannedCache[r.id] = getPlannedSessionItems(r);
+        var items = plannedCache[r.id];
         if (items.length) entries.push({ day: day, planned: true, routineId: r.id, items: items });
       });
     }
@@ -11477,7 +11499,8 @@
       if (activeSession && s.id === activeSession.id) return;
       if (s.status !== 'completed') return;
       var sex = findExerciseInSession(s, exerciseId);
-      if (sex && sex.sets.some(function (set) { return set.done; })) {
+      /* lot 13 : une séance allégée est sautée, on regarde les précédentes */
+      if (sex && !sex.deload && sex.sets.some(function (set) { return set.done; })) {
         candidates.push({ date: s.date, sex: sex });
       }
     });
@@ -11497,8 +11520,15 @@
 
   function cloneSetsFromPastSex(pastSex, exercise) {
     var isLifting = pastSex.category === 'Lifting';
-    var decision = isLifting ? null : computeRangeProgressionDecision(pastSex, exercise);
-    return pastSex.sets.map(function (s) {
+    /* lot 13 : une séance allégée n'est jamais la référence de progression
+       (R5 figée : même charge, mêmes reps cibles) et la séance suivante
+       repart du nombre de séries d'origine (séries retirées remises). */
+    var isDeloadRef = !!pastSex.deload;
+    var decision = (isLifting || isDeloadRef) ? null : computeRangeProgressionDecision(pastSex, exercise);
+    var sourceSets = isDeloadRef && Array.isArray(pastSex.deloadRemovedSets)
+      ? pastSex.sets.concat(pastSex.deloadRemovedSets)
+      : pastSex.sets;
+    return sourceSets.map(function (s) {
       var clone = {};
       for (var k in s) { if (s.hasOwnProperty(k)) clone[k] = s[k]; }
       clone.id = 'sset-' + OvrykDB.generateId();
@@ -11510,7 +11540,11 @@
       ['result', 'repResults', 'failRep', 'failCause', 'repsDone'].forEach(function (key) {
         if (clone.hasOwnProperty(key)) clone[key] = null;
       });
-      applyRangeProgression(clone, decision);
+      if (isDeloadRef) {
+        if (clone.repType === 'range') clone.repsActual = null;
+      } else {
+        applyRangeProgression(clone, decision);
+      }
       /* série à reps fixes : le cercle écrit repsActual, qui ne doit pas
          devenir le préremplissage de la séance suivante (set.reps, la
          prescription, est recopié tel quel). Remise à null seulement si le
@@ -11535,11 +11569,121 @@
     });
   }
 
+  /* ============================================================
+     DÉCHARGE DE LA MUSCU (lot 13, livraison 3, R8). Un seul mécanisme,
+     partagé par le mode automatique (à la construction d'une séance,
+     buildSessionFromRoutine) et le bouton manuel "Alléger cette séance".
+     settings.deloadMuscuMode : 'off', 'auto' ou 'manual' ; absent ou
+     inconnu = 'off', y compris pour les données d'avant ce lot (rien n'est
+     écrit par migrateSchema). Sans cycle d'haltérophilie actif, le mode
+     effectif est toujours 'off' : un programme de muscu seule n'a jamais
+     de décharge, et la valeur stockée est conservée telle quelle. */
+  function getDeloadMuscuMode() {
+    var mode = OvrykDB.getSettings().deloadMuscuMode;
+    return mode === 'auto' || mode === 'manual' ? mode : 'off';
+  }
+
+  /* cycle de force présent, pas en attente de validation, sur un exercice
+     qui existe encore. */
+  function hasActiveHalteroCycle() {
+    var cycles = OvrykDB.getForceCycles() || {};
+    return Object.keys(cycles).some(function (exerciseId) {
+      var cycle = cycles[exerciseId];
+      return !!(cycle && !cycle.en_attente_de_validation && FORCE_CYCLES[cycle.cycle_actif] && OvrykDB.getExerciseById(exerciseId));
+    });
+  }
+
+  function getEffectiveDeloadMuscuMode() {
+    return hasActiveHalteroCycle() ? getDeloadMuscuMode() : 'off';
+  }
+
+  /* cycles actifs en semaine allégée (drapeau deload) pour la semaine
+     civile de refDate. Semaine retenue : celle réellement jouée cette
+     semaine si une séance terminée de ce mouvement existe déjà (même règle
+     que R12, resolveLightSessionWeekNumber), sinon semaine_actuelle.
+     semaine_actuelle avance dès la séance d'haltérophilie terminée : la
+     muscu du lendemain doit rester allégée. Lecture seule. */
+  function getDeloadCyclesForWeek(refDate, excludeSessionId) {
+    var cycles = OvrykDB.getForceCycles() || {};
+    var list = [];
+    Object.keys(cycles).forEach(function (exerciseId) {
+      var cycle = cycles[exerciseId];
+      if (!cycle || cycle.en_attente_de_validation || !FORCE_CYCLES[cycle.cycle_actif]) return;
+      var exercise = OvrykDB.getExerciseById(exerciseId);
+      if (!exercise || isBeforeForceCycleStart(exercise)) return;
+      var firstSession = getFirstCompletedSessionThisWeekForExercise(exerciseId, refDate, excludeSessionId || null);
+      var weekNumber = firstSession
+        ? resolveLightSessionWeekNumber(findExerciseInSession(firstSession, exerciseId), cycle)
+        : cycle.semaine_actuelle;
+      if (!(weekNumber >= 1 && weekNumber <= cycleLength(cycle.cycle_actif))) return;
+      var week = getCycleWeekAt(cycle, weekNumber);
+      if (week && week.deload) list.push({ exerciseId: exerciseId, cycleId: cycle.cycle_actif, weekNumber: weekNumber });
+    });
+    return list;
+  }
+
+  /* R8 : un tiers des séries en moins, arrondi, minimum 2 (3 donne 2,
+     4 donne 3, 6 donne 4 ; 1 et 2 inchangés). */
+  function computeDeloadKeepCount(n) {
+    return Math.max(Math.min(n, 2), n - Math.round(n / 3));
+  }
+
+  /* exercice de muscu (getExerciseType), jamais un mouvement de cycle ni
+     une séance légère R12, pas déjà allégé, et dont les séries à retirer
+     (les dernières) ne sont pas validées : une série validée n'est jamais
+     retirée. */
+  function isDeloadEligibleSex(sex) {
+    if (!sex || !Array.isArray(sex.sets) || sex.deload) return false;
+    if (sex.cycleIdUsed || sex.cycleWeekUsed != null || sex.isLightSession) return false;
+    var exercise = OvrykDB.getExerciseById(sex.exerciseId);
+    if (!exercise || getExerciseType(exercise) !== 'muscu') return false;
+    var keep = computeDeloadKeepCount(sex.sets.length);
+    if (keep >= sex.sets.length) return false;
+    return sex.sets.slice(keep).every(function (set) { return set && !set.done; });
+  }
+
+  /* source : { exerciseId, cycleId, weekNumber } (mode auto) ou 'manual'.
+     Ne modifie que l'objet séance reçu ; l'appelant enregistre (ou pas). */
+  function applyMuscuDeload(session, source) {
+    var count = 0;
+    (Array.isArray(session.exercises) ? session.exercises : []).forEach(function (sex) {
+      if (!isDeloadEligibleSex(sex)) return;
+      sex.deloadRemovedSets = sex.sets.splice(computeDeloadKeepCount(sex.sets.length));
+      sex.deload = true;
+      sex.deloadSource = source;
+      if (sex.deloadIgnored) sex.deloadIgnored = false;
+      count++;
+    });
+    return count;
+  }
+
+  /* "Ignorer" : remet les séries retirées en fin de liste, n'enlève jamais
+     rien. */
+  function ignoreMuscuDeload(session) {
+    var count = 0;
+    (Array.isArray(session.exercises) ? session.exercises : []).forEach(function (sex) {
+      if (!sex || !sex.deload) return;
+      sex.sets = sex.sets.concat(Array.isArray(sex.deloadRemovedSets) ? sex.deloadRemovedSets : []);
+      sex.deload = false;
+      sex.deloadIgnored = true;
+      sex.deloadRemovedSets = null;
+      count++;
+    });
+    return count;
+  }
+
+  /* mode auto seulement : premier cycle allégé de la semaine, ou null. */
+  function getAutoDeloadSource(refDate) {
+    if (getEffectiveDeloadMuscuMode() !== 'auto') return null;
+    var list = getDeloadCyclesForWeek(refDate);
+    return list.length ? list[0] : null;
+  }
+
   function buildSessionFromRoutine(routine) {
     var now = new Date().toISOString();
     var lastSession = getLastCompletedSessionForRoutine(routine.id);
 
-    return {
+    var session = {
       id: 'sess-' + OvrykDB.generateId(),
       routineId: routine.id,
       routineName: routine.name,
@@ -11612,6 +11756,13 @@
         };
       })
     };
+    /* lot 13, livraison 3 : allègement automatique, seulement ici, à la
+       construction (aucune série validée). Une séance déjà commencée n'est
+       jamais allégée automatiquement. Aucune écriture ici : la séance n'est
+       enregistrée que par startSession. */
+    var deloadSource = getAutoDeloadSource(now);
+    if (deloadSource) applyMuscuDeload(session, deloadSource);
+    return session;
   }
 
   function buildEmptySession() {
@@ -11779,6 +11930,8 @@
       liveSessionIndex = computeInitialLiveExerciseIndex();
     }
 
+    var deloadBar = buildLiveDeloadBar();
+    if (deloadBar) listEl.appendChild(deloadBar);
     listEl.appendChild(buildLiveProgress());
     /* livraison 5 : supersets et circuits encadrés (même découpage que
        l'éditeur, findConsecutiveGroups), et point d'insertion du
@@ -11822,6 +11975,55 @@
     } else if (document.body.classList.contains('rest-timer-active')) {
       keepCurrentSetAboveRestBar(listEl);
     }
+  }
+
+  /* lot 13, livraison 3 : bandeau de décharge de la muscu. Séance allégée
+     (auto ou manuel) : texte et "Ignorer". Mode manuel sans allègement :
+     "Alléger cette séance" si au moins un exercice de muscu est allégeable.
+     Écrit seulement au clic. Mode effectif 'off' : rien, sauf "Ignorer"
+     sur une séance déjà allégée (toujours possible de revenir). */
+  function buildLiveDeloadBar() {
+    var deloaded = activeSession.exercises.filter(function (sex) { return sex && sex.deload; });
+    var mode = getEffectiveDeloadMuscuMode();
+    var wrap = document.createElement('div');
+    wrap.className = 'live-deload-notice';
+    var text = document.createElement('p');
+    text.className = 'live-deload-notice-text';
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'live-deload-btn';
+
+    if (deloaded.length) {
+      var source = deloaded[0].deloadSource;
+      if (source && typeof source === 'object' && source.cycleId) {
+        var ex = OvrykDB.getExerciseById(source.exerciseId);
+        text.textContent = 'Séance allégée : semaine allégée du Cycle ' + displayCycleNumber(source.cycleId) +
+          (ex ? ' (' + ex.name + ')' : '') + '. Muscu : un tiers des séries en moins, charges inchangées.';
+      } else {
+        text.textContent = 'Séance allégée. Muscu : un tiers des séries en moins, charges inchangées.';
+      }
+      btn.textContent = 'Ignorer';
+      btn.addEventListener('click', function () {
+        cancelScheduledLiveRender();
+        ignoreMuscuDeload(activeSession);
+        persistActiveSession();
+        renderSeanceActiveView();
+      });
+    } else if (mode === 'manual' && activeSession.exercises.some(isDeloadEligibleSex)) {
+      text.textContent = 'Décharge manuelle : un tiers des séries de muscu en moins, charges inchangées.';
+      btn.textContent = 'Alléger cette séance';
+      btn.addEventListener('click', function () {
+        cancelScheduledLiveRender();
+        applyMuscuDeload(activeSession, 'manual');
+        persistActiveSession();
+        renderSeanceActiveView();
+      });
+    } else {
+      return null;
+    }
+    wrap.appendChild(text);
+    wrap.appendChild(btn);
+    return wrap;
   }
 
   /* amène une carte en haut de l'écran (marge haute de .live-card). Si le
@@ -14182,6 +14384,7 @@
       '<span class="history-row-meta">' +
       (kinds.haltero ? '<span class="day-badge-tag is-halterophilie">Haltéro</span>' : '') +
       (kinds.muscu ? '<span class="day-badge-tag is-muscu">Muscu</span>' : '') +
+      (historyExercises(session).some(function (sex) { return sex && sex.deload; }) ? '<span class="day-badge-tag is-allegee">Allégée</span>' : '') +
       (meta.length ? '<span class="history-row-stats">' + escapeHTML(meta.join(' · ')) + '</span>' : '') +
       '</span></span>' +
       '<svg class="history-row-chevron" viewBox="0 0 24 24" aria-hidden="true"><polyline points="9,6 15,12 9,18"/></svg>';
@@ -14325,6 +14528,7 @@
       '<span class="day-badge-tag ' + (isHaltero ? 'is-halterophilie">Haltéro' : 'is-muscu">Muscu') + '</span>' +
       '<span class="history-ex-name">' + escapeHTML((sex.exerciseName || (exercise && exercise.name) || 'Exercice') + (sex.grip ? ' · ' + sex.grip : '')) + '</span>' +
       (isHistoryRecord(session, sex) ? '<span class="history-record-tag">Record</span>' : '') +
+      (sex.deload ? '<span class="day-badge-tag is-allegee">Allégée</span>' : '') +
       '</div>' +
       '<div class="history-ex-bottom"><span class="history-ex-load">' + escapeHTML(describeHistoryLoad(sex, doneSets, exercise)) + '</span>' +
       '<span class="history-ex-results">' + escapeHTML(describeHistoryResults(sex, doneSets)) + '</span></div>';
@@ -14764,6 +14968,42 @@
     }
   }
 
+  /* lot 13, livraison 3 : réglage de décharge de la muscu. Masqué sans
+     cycle d'haltérophilie actif (la valeur stockée n'est jamais touchée).
+     Lecture seule à l'affichage, écriture au changement de choix. */
+  var DELOAD_MODE_CHOICES = [
+    { key: 'off', label: 'Aucune', note: 'Les séances de muscu ne changent jamais.' },
+    { key: 'auto', label: 'Automatique', note: 'En semaine allégée d\u2019un cycle d\u2019haltérophilie, chaque exercice de muscu perd un tiers de ses séries (3 deviennent 2), charges inchangées. Bouton Ignorer dans la séance.' },
+    { key: 'manual', label: 'Manuelle', note: 'Un bouton Alléger cette séance apparaît dans la séance de muscu en cours. Même allègement, bouton Ignorer pour revenir.' }
+  ];
+
+  function renderProfileDeloadCard() {
+    var section = document.getElementById('profile-deload-section');
+    if (!hasActiveHalteroCycle()) { section.hidden = true; return; }
+    var mode = getDeloadMuscuMode();
+    var row = document.getElementById('profile-deload-mode');
+    row.innerHTML = '';
+    DELOAD_MODE_CHOICES.forEach(function (choice) {
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'deload-mode-btn' + (choice.key === mode ? ' is-active' : '');
+      btn.setAttribute('role', 'radio');
+      btn.setAttribute('aria-checked', choice.key === mode ? 'true' : 'false');
+      btn.textContent = choice.label;
+      btn.addEventListener('click', function () {
+        if (getDeloadMuscuMode() === choice.key) return;
+        var settings = OvrykDB.getSettings();
+        settings.deloadMuscuMode = choice.key;
+        OvrykDB.saveSettings(settings);
+        renderProfileDeloadCard();
+      });
+      row.appendChild(btn);
+    });
+    document.getElementById('profile-deload-note').textContent =
+      DELOAD_MODE_CHOICES.filter(function (c) { return c.key === mode; })[0].note;
+    section.hidden = false;
+  }
+
   function computeWeeklySeriesCounts() {
     var counts = {};
     OvrykDB.getSessions().forEach(function (session) {
@@ -14986,7 +15226,8 @@
           volume: volume,
           sets: resolvedSets,
           estimated1RM: best1RM,
-          avgRPE: avgRPE
+          avgRPE: avgRPE,
+          deload: !!sex.deload
         });
       });
     });
@@ -15000,7 +15241,9 @@
      failed to beat the previous session every single time, the lifter is
      stuck. Fewer than 3 sessions is too little signal to call it. */
   function detectStagnation(exerciseId) {
-    var records = getExerciseSessionRecords(exerciseId);
+    /* lot 13 : moins de séries en séance allégée = moins de reps totales,
+       fausse stagnation. Séances allégées sautées. */
+    var records = getExerciseSessionRecords(exerciseId).filter(function (r) { return !r.deload; });
     if (records.length < 3) return { isStagnant: false, sinceDate: null };
 
     var last3 = records.slice(-3);

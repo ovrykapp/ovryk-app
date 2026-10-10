@@ -34,6 +34,7 @@ Chaque règle porte un numéro, que les lots citent. Les valeurs entre parenthè
 * Si toutes les séries ont atteint le haut de la plage : la charge monte du pas, les reps repartent au bas de la plage.
 * Si une série tombe sous le bas de la plage : même charge, pas de baisse. Après deux séances de suite dans ce cas, proposer une baisse de 5 à 10 % sans l'imposer.
 * La suggestion est toujours modifiable. Option de désactivation par exercice (autoProgression).
+* Une séance allégée (R8) n'est jamais une référence : la séance suivante reprend la même charge et les mêmes reps cibles, avec le nombre de séries d'origine. Elle est aussi sautée pour la baisse suggérée et la détection de stagnation (lot 13).
 
 > 2026-10-09 : règle retirée — "Si le RPE saisi est 10 alors que la plage est atteinte : afficher un avertissement avant la montée, sans la bloquer." La saisie du RPE a été retirée de l'interface de séance (point D.2) ; set.rpe, son calcul (resolveDoneSets, getExerciseSessionRecords) et l'export restent intacts, seul l'avertissement disparaît avec l'interface qui le déclenchait.
 
@@ -59,6 +60,7 @@ Chaque règle porte un numéro, que les lots citent. Les valeurs entre parenthè
 * Une séance est allégée quand au moins un cycle actif est dans une semaine allégée (drapeau deload) et que le réglage deloadMuscuMode vaut 'auto', ou quand l'utilisateur appuie sur "Alléger cette séance" en mode 'manual'. En mode 'off' (valeur par défaut, champ absent), rien n'est allégé (décision du 2026-10-10, lot 13).
 * Les exercices de muscu perdent un tiers de leurs séries, arrondi à l'entier le plus proche, avec un minimum de 2 séries. La charge ne change pas.
 * L'allègement est affiché dans la séance et peut être ignoré en un geste.
+* Le réglage (Aucune, Automatique, Manuelle) n'est proposé que s'il existe au moins un cycle d'haltérophilie actif ; sans cycle actif, aucun allègement. Automatique : seulement à la création d'une séance, jamais sur une séance déjà commencée. Manuelle : bouton "Alléger cette séance". Une série validée n'est jamais retirée.
 
 ## R9. Charge de la semaine
 

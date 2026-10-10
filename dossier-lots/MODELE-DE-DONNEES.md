@@ -46,7 +46,7 @@ Ajouter, avec les valeurs par défaut suivantes :
 * defaultRepRange : { min: 8, max: 10 }
 * restByType : { technique: 150, force: 120, muscu: 90 } en secondes
 * barWeightKg : 20
-* deloadMuscuMode : 'off', 'auto' ou 'manual' (lot 13, livraison 3, décision du 2026-10-10). Absent = 'off', y compris pour les données existantes : migrateSchema ne l'écrit pas. Remplace le booléen deloadMuscu, jamais créé. Affiché dans Réglages seulement s'il existe au moins un cycle d'haltérophilie actif ; sinon masqué, valeur enregistrée conservée.
+* deloadMuscuMode : 'off', 'auto' ou 'manual' (lot 13, livraison 3, décision du 2026-10-10). Absent = 'off', y compris pour les données existantes : migrateSchema ne l'écrit pas. Remplace le booléen deloadMuscu, jamais créé. Affiché dans Réglages (libellés Aucune, Automatique, Manuelle) seulement s'il existe au moins un cycle d'haltérophilie actif ; sinon masqué, valeur enregistrée conservée, et aucun allègement n'a lieu. Fait en v123.
 * chargeAlertesMasquees : { clé de semaine (weekKeyOf): [clés d'alerte 'zone|jour|jour'] }, alertes de chevauchement masquées par "Je garde" (lot 13, livraison 2). Absent = aucune alerte masquée. Écrit seulement au clic sur "Je garde".
 * heavyThreshold : 85 (pourcentage à partir duquel une semaine est lourde)
 * maxHeavyCyclesPerWeek : 2

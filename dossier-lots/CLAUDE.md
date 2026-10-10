@@ -34,6 +34,7 @@ L'avancement se suit dans dossier-lots/PLAN.md. Les lots 00 à 10 sont faits (ai
 11. Rapport de fin de lot, court : ce qui a changé, ce qui est testé, ce qui n'est pas prouvé, 6 tests manuels, commande pour servir le site en local. Pas de rapport intermédiaire entre les livraisons d'un même lot sauf blocage. Les états des lieux demandés sont inclus dans ce rapport. (règle du 2026-10-10)
 12. Ne jamais pousser (git push) sans accord explicite, même quand le commit local est automatique (règle 1). (règle du 2026-10-10)
 13. Bug trouvé hors du lot en cours : le noter dans dossier-lots/PLAN.md et continuer, sauf s'il casse des données existantes — alors s'arrêter et prévenir. (règle du 2026-10-10)
+14. Toute nouvelle écriture de routine dans l'éditeur doit partir d'une relecture de la routine au moment de l'écriture, ou appeler syncEditorRoutine après écriture. Sinon la copie partagée routineEditorLive devient périmée et écrase le nom ou les jours (défaut corrigé en v122). Les changements de jours seuls passent par updateRoutineWeekdays et ne touchent jamais updatedAt. (règle du 2026-10-10)
 
 ## Les 17 cycles
 
