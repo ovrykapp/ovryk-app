@@ -37,7 +37,7 @@ Taille : S = moins d'une heure de travail assisté, M = une demi journée, L = u
 
 ## Bugs hors lot
 
-* L'activation d'un cycle au fil de l'eau (maybeAutoActivateForceCycle — déclenchée depuis le 1RM de l'onglet Exercices, et depuis la livraison 4 du lot 09 "Charges de départ") ne lance jamais la coordination (R7) : decalage_semaines reste à 0, même si maxHeavyCyclesPerWeek cycles lourds sont déjà actifs ailleurs. Seule la validation groupée de "Tirer mes cycles" (handleValidateCyclesDrawn) appelle coordinateAndApplyOffsets. Vérifié sur la copie locale le 2026-10-10 (livraison 4) : activer un 3ᵉ cycle avec Deadlift et Back Squat déjà actifs ne décale rien. Ne casse aucune donnée, pas de blocage.
+* Corrigé le 2026-10-10 : l'activation d'un cycle au fil de l'eau (maybeAutoActivateForceCycle — déclenchée depuis le 1RM de l'onglet Exercices, la date de départ, et depuis la livraison 4 du lot 09 "Charges de départ") ne lançait jamais la coordination (R7) : decalage_semaines restait à 0, même si maxHeavyCyclesPerWeek cycles lourds étaient déjà actifs ailleurs. Seule la validation groupée de "Tirer mes cycles" (handleValidateCyclesDrawn) appelait coordinateAndApplyOffsets. maybeAutoActivateForceCycle appelle désormais coordinateAndApplyOffsets après chaque nouvelle activation, sauf si l'exercice a une date de départ saisie à la main (forceCycleStartDate), jamais écrasée par la coordination. Le message "Cycle X démarre..." (Charges de départ, et la fiche exercice du lot 10) reflète le décalage éventuel via buildCycleStartMessage.
 
 ## Idées non traitées
 

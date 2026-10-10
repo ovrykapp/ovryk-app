@@ -5422,6 +5422,13 @@
   migrateExerciseCatalog();
   migrateSchema();
 
+  /* hissée ici (au lieu de rester plus bas, près de showConfirmModal) car
+     refreshScheduledForceCycleActivations ci-dessous peut désormais (R7,
+     correctif) déclencher showCoordinationWarning → showConfirmModal dès le
+     démarrage — confirmModalState doit déjà exister à ce moment-là, une
+     déclaration var hissée sans sa valeur ne suffit pas. */
+  var confirmModalState = { onConfirm: null, onCancel: null };
+
   /* Rattrapage au démarrage : couvre les données créées avant que le
      démarrage de cycle soit automatique (1RM déjà renseigné + exercice déjà
      dans une routine, sans qu'aucun des deux évènements déclencheurs se
@@ -5561,8 +5568,9 @@
      runs only if the user confirms. Pass onCancel too if the caller needs
      to do cleanup when the user backs out (matches the inverted
      `if (!window.confirm(...)) { ...cleanup...; return; }` pattern).
+     confirmModalState lui-même est déclaré plus haut, avant
+     refreshScheduledForceCycleActivations() — voir le commentaire là-bas.
   ============================================================ */
-  var confirmModalState = { onConfirm: null, onCancel: null };
 
   /* confirmLabel/cancelLabel optionnels : "Confirmer"/"Annuler" par défaut,
      inchangé pour tous les appels existants qui ne les passent pas. */
@@ -6411,7 +6419,43 @@
     if (OvrykDB.getForceCycle(exerciseId)) return;
     if (!isExerciseUsedInRoutine(exerciseId)) return;
     if (isBeforeForceCycleStart(exercise)) return;
+    /* R7 (correctif) : une date de départ saisie à la main (Exercices >
+       Départ) exprime un choix volontaire de l'utilisateur, jamais touché
+       ni remplacé par le résultat de la coordination ci-dessous — on saute
+       simplement coordinateAndApplyOffsets pour ce mouvement, le cycle
+       démarre à la date choisie, telle quelle. */
+    var hadManualStartDate = !!exercise.forceCycleStartDate;
     OvrykDB.activateForceCycle(exerciseId, exercise.oneRepMax);
+    if (!hadManualStartDate) {
+      /* R7 (lot 08) : coordonne ce nouveau cycle contre tous les autres déjà
+         actifs, exactement comme le tirage groupé (handleValidateCyclesDrawn)
+         — ne modifie jamais un cycle déjà actif, seulement celui qu'on vient
+         de créer (voir coordinateAndApplyOffsets). */
+      var warnings = coordinateAndApplyOffsets([exerciseId]);
+      if (warnings.length > 0) showCoordinationWarning(warnings);
+    }
+  }
+
+  /* Message affiché juste après une activation (manuelle ou via
+     maybeAutoActivateForceCycle) — partagé entre "Charges de départ"
+     (buildStartingChargeLiftingRow) et le champ 1RM de la fiche exercice
+     (lot 10) pour que les deux donnent le même texte dans la même
+     situation. cycle doit être lu depuis le stockage après l'activation
+     (OvrykDB.getForceCycle), freshExercise aussi (OvrykDB.getExerciseById)
+     — jamais les objets d'avant l'appel, qui ne reflètent pas un éventuel
+     décalage posé par la coordination (R7). */
+  function buildCycleStartMessage(freshExercise, cycle) {
+    if (cycle && isBeforeForceCycleStart(freshExercise)) {
+      return 'Cycle ' + displayCycleNumber(cycle.cycle_actif) + ' démarre le ' + formatShortDate(freshExercise.forceCycleStartDate) + '.';
+    }
+    if (cycle) {
+      return 'Cycle ' + displayCycleNumber(cycle.cycle_actif) + ' démarre maintenant.';
+    }
+    if (isBeforeForceCycleStart(freshExercise)) {
+      var weeksUntil = getWeeksUntilForceCycleStart(freshExercise);
+      return 'Démarre dans ' + weeksUntil + (weeksUntil > 1 ? ' semaines.' : ' semaine.');
+    }
+    return null;
   }
 
   /* Re-checks every Lifting movement against maybeAutoActivateForceCycle —
@@ -8046,13 +8090,7 @@
       maybeAutoActivateForceCycle(exercise.id);
       var freshExercise = OvrykDB.getExerciseById(exercise.id);
       var cycle = OvrykDB.getForceCycle(exercise.id);
-      var messageText = null;
-      if (cycle) {
-        messageText = 'Cycle ' + displayCycleNumber(cycle.cycle_actif) + ' démarre maintenant.';
-      } else if (isBeforeForceCycleStart(freshExercise)) {
-        var weeksUntil = getWeeksUntilForceCycleStart(freshExercise);
-        messageText = 'Démarre dans ' + weeksUntil + (weeksUntil > 1 ? ' semaines.' : ' semaine.');
-      }
+      var messageText = buildCycleStartMessage(freshExercise, cycle);
       if (messageText) {
         var msgEl = document.createElement('p');
         msgEl.className = 'routine-starting-charge-message';
