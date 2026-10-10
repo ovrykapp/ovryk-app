@@ -3783,6 +3783,191 @@
     letter-spacing: 0.04em;
     cursor: pointer;
   }
+  /* lot 12 : historique global, détail d'une séance et accès aux cycles.
+     Couleurs par variables seulement (règle 4) : orange = muscu, bleu =
+     cycles et haltérophilie. */
+  .progression-top-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+  .history-topbar {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: calc(env(safe-area-inset-top, 0px) + var(--space-3)) max(16px, env(safe-area-inset-right, 0px)) var(--space-3) max(16px, env(safe-area-inset-left, 0px));
+  }
+  #history-detail-page.fullscreen-page { z-index: 42; }
+  .history-title-wrap { flex: 1; min-width: 0; }
+  .history-title {
+    font-family: var(--font-title);
+    font-weight: 700;
+    font-size: 32px;
+    line-height: 1.05;
+    text-transform: uppercase;
+    margin: 0;
+    overflow-wrap: anywhere;
+  }
+  .history-title.is-detail {
+    font-size: 24px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .history-subtitle { margin: 2px 0 0; font-size: 12px; color: var(--steel); }
+  .history-body { padding-top: var(--space-3); }
+  .history-filter-row { margin-bottom: var(--space-3); }
+  .history-week-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 10px;
+    margin: var(--space-4) 2px 10px;
+  }
+  .history-week-label {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--steel);
+  }
+  .history-week-totals { font-size: 12px; color: var(--steel); white-space: nowrap; }
+  .history-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    width: 100%;
+    min-height: 64px;
+    padding: 12px 14px;
+    margin-bottom: 10px;
+    background: var(--surface);
+    border: 1px solid var(--border-card);
+    border-radius: var(--radius-card);
+    color: var(--ink);
+    text-align: left;
+    font-family: inherit;
+    cursor: pointer;
+  }
+  .history-row-date { display: flex; flex-direction: column; align-items: center; width: 38px; flex-shrink: 0; }
+  .history-row-weekday { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--steel); }
+  .history-row-day { font-family: var(--font-title); font-weight: 700; font-size: 22px; line-height: 1.1; }
+  .history-row-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+  .history-row-name { font-size: 15px; font-weight: 700; overflow-wrap: anywhere; }
+  .history-row-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+  .history-row-stats { font-size: 12px; color: var(--steel); }
+  .history-row-chevron, .cycle-link-chevron, .dash-next-test-chevron {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    stroke: var(--steel);
+    fill: none;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  .history-more-btn { width: 100%; justify-content: center; margin: 4px 0 var(--space-4); }
+
+  .history-tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-bottom: var(--space-4); }
+  .history-tile {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+    padding: 12px;
+    background: var(--surface);
+    border: 1px solid var(--border-card);
+    border-radius: var(--radius-card);
+  }
+  .history-tile.is-cycle { background: var(--blue-fill); border-color: transparent; }
+  .history-tile-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--steel); }
+  .history-tile.is-cycle .history-tile-label { color: var(--blue); }
+  .history-tile-value { font-family: var(--font-title); font-weight: 700; font-size: 20px; line-height: 1.1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .history-ex-card {
+    padding: 14px;
+    margin-bottom: 10px;
+    background: var(--surface);
+    border: 1px solid var(--border-card);
+    border-radius: var(--radius-card);
+  }
+  .history-ex-top { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+  .history-ex-name { font-size: 15px; font-weight: 700; min-width: 0; overflow-wrap: anywhere; }
+  .history-record-tag {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 2px 7px;
+    border-radius: var(--radius-pill);
+    border: 1px solid var(--rust);
+    color: var(--rust);
+  }
+  .history-ex-bottom { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-top: 8px; }
+  .history-ex-load { font-size: 13px; color: var(--steel); }
+  .history-ex-results { font-size: 13px; font-weight: 700; text-align: right; overflow-wrap: anywhere; }
+  .history-more-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin: var(--space-3) 2px var(--space-4); }
+  .history-more-text { flex: 1; min-width: 0; font-size: 13px; color: var(--steel); overflow-wrap: anywhere; }
+  .history-more-toggle {
+    flex-shrink: 0;
+    min-height: 44px;
+    padding: 0 4px;
+    background: none;
+    border: none;
+    color: var(--blue);
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 13px;
+    cursor: pointer;
+  }
+  .history-rpe-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px;
+    background: var(--surface);
+    border-radius: var(--radius-card);
+    font-size: 14px;
+    color: var(--steel);
+  }
+  .history-rpe-row strong { color: var(--ink); }
+  .history-detail-footer {
+    flex-shrink: 0;
+    padding: var(--space-3) max(20px, env(safe-area-inset-right, 0px)) calc(var(--space-3) + env(safe-area-inset-bottom, 0px)) max(20px, env(safe-area-inset-left, 0px));
+  }
+  .history-detail-footer .btn-primary { margin-top: 0; }
+  .history-detail-note { margin: 8px 0 0; font-size: 12px; color: var(--steel); text-align: center; }
+
+  .programme-day-panel-cycles { display: flex; flex-direction: column; margin: 8px 0 4px; }
+  .cycle-link-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    min-height: 44px;
+    padding: 8px 0;
+    background: none;
+    border: none;
+    border-top: 1px solid var(--divider);
+    color: var(--ink);
+    font-family: inherit;
+    text-align: left;
+    cursor: pointer;
+  }
+  .cycle-link-name { flex: 1; min-width: 0; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .cycle-link-info { font-family: var(--font-mono); font-size: 12px; font-weight: 700; color: var(--blue); white-space: nowrap; }
+  .dash-session-ex-row.is-link {
+    width: 100%;
+    min-height: 44px;
+    align-items: center;
+    background: none;
+    border: none;
+    border-bottom: 1px solid var(--divider);
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+  }
+  .dash-session-ex-row.is-link:last-child { border-bottom: none; }
+  .dash-next-test[role="button"] { cursor: pointer; }
+  .dash-next-test-row .dash-next-test-chevron { align-self: center; stroke: var(--blue); }
 </style>
 </head>
 <body>
@@ -3857,11 +4042,12 @@
         <div class="dash-cycle-list" id="dash-stagnation-body"></div>
       </div>
 
-      <div class="dash-next-test" id="dash-next-test" hidden>
+      <div class="dash-next-test" id="dash-next-test" role="button" tabindex="0" aria-label="Voir le cycle de ce mouvement" hidden>
         <span class="dash-next-test-eyebrow">Prochain test 1RM</span>
         <div class="dash-next-test-row">
           <span class="dash-next-test-name" id="dash-next-test-name"></span>
           <span class="dash-next-test-eta" id="dash-next-test-eta"></span>
+          <svg class="dash-next-test-chevron" viewBox="0 0 24 24" aria-hidden="true"><polyline points="9,6 15,12 9,18"/></svg>
         </div>
       </div>
     </section>
@@ -3948,7 +4134,10 @@
       </div>
 
       <div id="progression-groups-view">
-        <button type="button" id="progression-targets-toggle" class="btn-back" style="margin-bottom:14px;">Objectifs hebdomadaires</button>
+        <div class="progression-top-actions">
+          <button type="button" id="history-open-btn" class="btn-back">Historique</button>
+          <button type="button" id="progression-targets-toggle" class="btn-back">Objectifs hebdomadaires</button>
+        </div>
 
         <div class="progression-week-nav">
           <button type="button" id="progression-weeks-prev" class="btn-back">‹ Précédent</button>
@@ -4238,6 +4427,35 @@
       <span class="fullscreen-page-action" aria-hidden="true"></span>
     </div>
     <div class="fullscreen-page-body" id="cycle-detail-body"></div>
+  </div>
+
+  <!-- lot 12 (maquettes 14 et 15) : historique global des séances terminées
+       et détail d'une séance, lecture seule. -->
+  <div id="history-page" class="fullscreen-page" hidden>
+    <div class="history-topbar">
+      <button type="button" id="history-back-btn" class="view-header-back" aria-label="Retour">
+        <svg viewBox="0 0 24 24" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="15,6 9,12 15,18"/></svg>
+      </button>
+      <div class="history-title-wrap"><h1 class="history-title">Historique</h1></div>
+    </div>
+    <div class="fullscreen-page-body history-body" id="history-body">
+      <div class="filter-chip-row history-filter-row" id="history-filter-row"></div>
+      <div id="history-list"></div>
+    </div>
+  </div>
+
+  <div id="history-detail-page" class="fullscreen-page" hidden>
+    <div class="history-topbar">
+      <button type="button" id="history-detail-back-btn" class="view-header-back" aria-label="Retour à l'historique">
+        <svg viewBox="0 0 24 24" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="15,6 9,12 15,18"/></svg>
+      </button>
+      <div class="history-title-wrap">
+        <h1 class="history-title is-detail" id="history-detail-title"></h1>
+        <p class="history-subtitle" id="history-detail-date"></p>
+      </div>
+    </div>
+    <div class="fullscreen-page-body history-body" id="history-detail-body"></div>
+    <div class="history-detail-footer" id="history-detail-footer"></div>
   </div>
 
   <div id="exercise-type-page" class="fullscreen-page" hidden>
@@ -8153,7 +8371,7 @@
      l'Accueil pour un jour ≠ aujourd'hui, une séance étant toujours datée
      du jour réel). Programme (seul appelant d'origine) ne passe rien et
      garde exactement son comportement actuel. */
-  function buildProgrammeDayPanelCard(routine, startable, readOnlyLabel) {
+  function buildProgrammeDayPanelCard(routine, startable, readOnlyLabel, onCycleClosed) {
     var card = document.createElement('div');
     card.className = 'programme-day-panel-card';
 
@@ -8162,6 +8380,17 @@
     top.innerHTML = '<span class="routine-row-name">' + escapeHTML(routine.name || 'Sans titre') + '</span>' +
       '<span class="routine-row-count mono">' + routine.exercises.length + ' ex.</span>';
     card.appendChild(top);
+
+    /* lot 12 : accès au détail du cycle de chaque mouvement piloté par un
+       cycle (Programme et Accueil partagent cette carte). onCycleClosed
+       rafraîchit l'écran d'origine au retour (Désactiver le cycle). */
+    var cycleLinks = getRoutineCycleLinks(routine);
+    if (cycleLinks.length) {
+      var linksEl = document.createElement('div');
+      linksEl.className = 'programme-day-panel-cycles';
+      cycleLinks.forEach(function (link) { linksEl.appendChild(buildCycleLinkButton(link, onCycleClosed)); });
+      card.appendChild(linksEl);
+    }
 
     if (startable === false) {
       var readOnly = document.createElement('p');
@@ -8219,7 +8448,7 @@
       panel.appendChild(rest);
     } else {
       routines.forEach(function (routine) {
-        panel.appendChild(buildProgrammeDayPanelCard(routine));
+        panel.appendChild(buildProgrammeDayPanelCard(routine, undefined, undefined, renderProgrammeWeek));
       });
     }
 
@@ -12665,6 +12894,481 @@
     tickRestTimer();
   });
 
+  /* ============================================================
+     LIENS VERS LE DÉTAIL D'UN CYCLE (lot 12) — depuis le panneau du jour
+     (Programme et Accueil) ; la carte de séance et la tuile "Prochain test
+     1RM" de l'Accueil appellent directement openCycleDetailPage. Lecture
+     seule : rien n'est écrit à l'ouverture.
+  ============================================================ */
+  function getRoutineCycleLinks(routine) {
+    var links = [];
+    var seen = {};
+    routine.exercises.forEach(function (rex) {
+      if (seen[rex.exerciseId]) return;
+      seen[rex.exerciseId] = true;
+      var exercise = OvrykDB.getExerciseById(rex.exerciseId);
+      var cycle = exercise && exercise.category === 'Lifting' ? OvrykDB.getForceCycle(rex.exerciseId) : null;
+      if (cycle) links.push({ exerciseId: rex.exerciseId, exercise: exercise, cycle: cycle });
+    });
+    return links;
+  }
+
+  function describeCycleLink(link) {
+    var cycle = link.cycle;
+    var label = 'Cycle ' + displayCycleNumber(cycle.cycle_actif);
+    if (cycle.en_attente_de_validation) return label + ', terminé';
+    if (isBeforeForceCycleStart(link.exercise) && link.exercise.forceCycleStartDate) {
+      return label + ', démarre le ' + formatShortDate(link.exercise.forceCycleStartDate);
+    }
+    return label + ', semaine ' + cycle.semaine_actuelle + ' sur ' + cycleLength(cycle.cycle_actif);
+  }
+
+  function buildCycleLinkButton(link, onCloseRefresh) {
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'cycle-link-row';
+    btn.setAttribute('aria-label', 'Voir le cycle de ' + link.exercise.name);
+    btn.innerHTML = '<span class="cycle-link-name">' + escapeHTML(link.exercise.name) + '</span>' +
+      '<span class="cycle-link-info">' + escapeHTML(describeCycleLink(link)) + '</span>' +
+      '<svg class="cycle-link-chevron" viewBox="0 0 24 24" aria-hidden="true"><polyline points="9,6 15,12 9,18"/></svg>';
+    btn.addEventListener('click', function () { openCycleDetailPage(link.exerciseId, null, onCloseRefresh); });
+    return btn;
+  }
+
+  function openNextTestCycleDetail() {
+    var exerciseId = document.getElementById('dash-next-test').dataset.exerciseId;
+    if (exerciseId) openCycleDetailPage(exerciseId, null, renderDashboardHome);
+  }
+  document.getElementById('dash-next-test').addEventListener('click', openNextTestCycleDetail);
+  document.getElementById('dash-next-test').addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openNextTestCycleDetail(); }
+  });
+
+  /* ============================================================
+     HISTORIQUE (lot 12, maquettes 14 et 15) — liste globale des séances
+     terminées et détail d'une séance. Lecture seule de
+     OvrykDB.getSessions() : aucune écriture, aucun champ ajouté. Une
+     séance ancienne, vide ou sans certains champs (rpe, failRep,
+     repsActual, durationSeconds, cycleWeekUsed...) s'affiche avec ce
+     qu'elle a. Le volume reste celui de computeSetVolume et les records
+     ceux de getExerciseSessionRecords : seul l'affichage des reps d'une
+     série (getMuscuSetReps, repsActual quand il existe) est propre à
+     cet écran.
+  ============================================================ */
+  var HISTORY_PAGE_SIZE = 30;
+  var HISTORY_DETAIL_PREVIEW_COUNT = 4;
+  var historyFilter = 'all';
+  var historyVisibleCount = HISTORY_PAGE_SIZE;
+  var historyDetailSessionId = null;
+  var historyDetailShowAll = false;
+
+  function historyExercises(session) { return Array.isArray(session && session.exercises) ? session.exercises : []; }
+  function historySets(sex) { return Array.isArray(sex && sex.sets) ? sex.sets : []; }
+
+  function historySessionDate(session) {
+    var d = new Date(session.date || session.startedAt);
+    return isNaN(d.getTime()) ? new Date(0) : d;
+  }
+
+  /* même calcul que sessionVolume (computeSetVolume sur les séries faites),
+     avec des lectures tolérantes pour une séance sans exercices ou sans
+     séries. */
+  function historySessionVolume(session) {
+    var total = 0;
+    historyExercises(session).forEach(function (sex) {
+      historySets(sex).forEach(function (set) { if (set && set.done) total += computeSetVolume(sex, set); });
+    });
+    return total;
+  }
+
+  /* Haltéro : au moins un exercice Lifting ; Muscu : au moins un autre. Une
+     séance mixte porte les deux pastilles et sort sous les deux filtres. */
+  function historySessionKinds(session) {
+    var kinds = { haltero: false, muscu: false };
+    historyExercises(session).forEach(function (sex) {
+      if (sex && sex.category === 'Lifting') kinds.haltero = true; else kinds.muscu = true;
+    });
+    return kinds;
+  }
+
+  function getHistorySessionSeconds(session) {
+    if (typeof session.durationSeconds === 'number' && isFinite(session.durationSeconds) && session.durationSeconds > 0) {
+      return session.durationSeconds;
+    }
+    var start = new Date(session.startedAt).getTime();
+    var end = new Date(session.completedAt).getTime();
+    if (isFinite(start) && isFinite(end) && end > start) return Math.round((end - start) / 1000);
+    return null;
+  }
+
+  function formatHistoryDuration(seconds) {
+    if (seconds == null) return null;
+    var minutes = Math.max(1, Math.round(seconds / 60));
+    if (minutes < 60) return minutes + ' min';
+    return Math.floor(minutes / 60) + ' h ' + pad2(minutes % 60);
+  }
+
+  function formatHistoryVolume(volume) {
+    return volume > 0 ? Math.round(volume).toLocaleString('fr-FR') + ' kg' : null;
+  }
+
+  function getHistoryFilteredSessions() {
+    return OvrykDB.getSessions().filter(function (s) {
+      if (s.status !== 'completed') return false;
+      if (historyFilter === 'all') return true;
+      var kinds = historySessionKinds(s);
+      return historyFilter === 'muscu' ? kinds.muscu : kinds.haltero;
+    }).sort(function (a, b) { return historySessionDate(b) - historySessionDate(a); });
+  }
+
+  function historyWeekLabel(weekStart) {
+    var now = new Date();
+    if (weekKeyOf(weekStart) === weekKeyOf(now)) return 'Cette semaine';
+    return 'Semaine du ' + formatDayMonthFr(weekStart) + (weekStart.getFullYear() !== now.getFullYear() ? ' ' + weekStart.getFullYear() : '');
+  }
+
+  function renderHistoryFilters() {
+    var row = document.getElementById('history-filter-row');
+    row.innerHTML = '';
+    [['all', 'Tout'], ['muscu', 'Muscu'], ['haltero', 'Haltérophilie']].forEach(function (f) {
+      var chip = document.createElement('button');
+      chip.type = 'button';
+      chip.className = 'filter-chip' + (historyFilter === f[0] ? ' active' : '');
+      chip.textContent = f[1];
+      chip.setAttribute('aria-pressed', historyFilter === f[0] ? 'true' : 'false');
+      chip.addEventListener('click', function () {
+        historyFilter = f[0];
+        historyVisibleCount = HISTORY_PAGE_SIZE;
+        renderHistoryFilters();
+        renderHistoryList();
+      });
+      row.appendChild(chip);
+    });
+  }
+
+  function buildHistoryWeekHeader(weekStart, totals) {
+    var header = document.createElement('div');
+    header.className = 'history-week-header';
+    var parts = [totals.count + (totals.count > 1 ? ' séances' : ' séance')];
+    var vol = formatHistoryVolume(totals.volume);
+    if (vol) parts.push(vol);
+    header.innerHTML = '<span class="history-week-label">' + escapeHTML(historyWeekLabel(weekStart)) + '</span>' +
+      '<span class="history-week-totals">' + escapeHTML(parts.join(' · ')) + '</span>';
+    return header;
+  }
+
+  function buildHistoryListRow(session, volume) {
+    var d = historySessionDate(session);
+    var kinds = historySessionKinds(session);
+    var meta = [];
+    var duration = formatHistoryDuration(getHistorySessionSeconds(session));
+    if (duration) meta.push(duration);
+    var vol = formatHistoryVolume(volume);
+    if (vol) meta.push(vol);
+
+    var row = document.createElement('button');
+    row.type = 'button';
+    row.className = 'history-row';
+    row.innerHTML = '<span class="history-row-date"><span class="history-row-weekday">' + WEEKDAY_LABELS[(d.getDay() + 6) % 7] + '</span>' +
+      '<span class="history-row-day">' + d.getDate() + '</span></span>' +
+      '<span class="history-row-main"><span class="history-row-name">' + escapeHTML(session.routineName || 'Séance libre') + '</span>' +
+      '<span class="history-row-meta">' +
+      (kinds.haltero ? '<span class="day-badge-tag is-halterophilie">Haltéro</span>' : '') +
+      (kinds.muscu ? '<span class="day-badge-tag is-muscu">Muscu</span>' : '') +
+      (meta.length ? '<span class="history-row-stats">' + escapeHTML(meta.join(' · ')) + '</span>' : '') +
+      '</span></span>' +
+      '<svg class="history-row-chevron" viewBox="0 0 24 24" aria-hidden="true"><polyline points="9,6 15,12 9,18"/></svg>';
+    row.addEventListener('click', function () { openHistoryDetail(session.id); });
+    return row;
+  }
+
+  function renderHistoryList() {
+    var listEl = document.getElementById('history-list');
+    listEl.innerHTML = '';
+    var sessions = getHistoryFilteredSessions();
+
+    if (sessions.length === 0) {
+      listEl.innerHTML = '<div class="empty-state"><span class="empty-tag">Vide</span>' +
+        '<h2>Aucune séance</h2><p>' + (historyFilter === 'all'
+          ? 'Les séances terminées apparaîtront ici.'
+          : 'Aucune séance terminée de ce type pour le moment.') + '</p></div>';
+      return;
+    }
+
+    /* totaux par semaine sur toutes les séances du filtre (pas seulement
+       celles déjà affichées par la pagination), volume calculé une seule
+       fois par séance. */
+    var volumeById = {};
+    var totals = {};
+    sessions.forEach(function (s) {
+      var volume = historySessionVolume(s);
+      volumeById[s.id] = volume;
+      var key = weekKeyOf(historySessionDate(s));
+      var t = totals[key] || (totals[key] = { count: 0, volume: 0 });
+      t.count++;
+      t.volume += volume;
+    });
+
+    var shown = sessions.slice(0, historyVisibleCount);
+    var currentKey = null;
+    shown.forEach(function (s) {
+      var d = historySessionDate(s);
+      var key = weekKeyOf(d);
+      if (key !== currentKey) {
+        currentKey = key;
+        listEl.appendChild(buildHistoryWeekHeader(startOfWeek(d), totals[key]));
+      }
+      listEl.appendChild(buildHistoryListRow(s, volumeById[s.id]));
+    });
+
+    if (sessions.length > shown.length) {
+      var more = document.createElement('button');
+      more.type = 'button';
+      more.className = 'btn-back history-more-btn';
+      more.textContent = 'Afficher plus (' + (sessions.length - shown.length) + ')';
+      more.addEventListener('click', function () {
+        historyVisibleCount += HISTORY_PAGE_SIZE;
+        renderHistoryList();
+      });
+      listEl.appendChild(more);
+    }
+  }
+
+  function openHistoryPage() {
+    historyFilter = 'all';
+    historyVisibleCount = HISTORY_PAGE_SIZE;
+    renderHistoryFilters();
+    renderHistoryList();
+    document.getElementById('history-page').hidden = false;
+    document.getElementById('history-body').scrollTop = 0;
+  }
+
+  function closeHistoryPage() {
+    document.getElementById('history-detail-page').hidden = true;
+    document.getElementById('history-page').hidden = true;
+    historyDetailSessionId = null;
+  }
+
+  function closeHistoryDetail() {
+    document.getElementById('history-detail-page').hidden = true;
+    historyDetailSessionId = null;
+  }
+
+  /* Record : la charge maximale de cet exercice dans cette séance dépasse
+     strictement toutes celles des séances terminées précédentes (au moins
+     une séance précédente avec une charge). Jamais pour une première
+     fois ni pour une charge ordinaire. Mêmes records que la fiche
+     exercice (getExerciseSessionRecords, séances terminées seulement). */
+  function isHistoryRecord(session, sex) {
+    if (!sex || !sex.exerciseId) return false;
+    var records = getExerciseSessionRecords(sex.exerciseId, true);
+    var idx = -1;
+    for (var i = 0; i < records.length; i++) {
+      if (records[i].date === session.date) { idx = i; break; }
+    }
+    if (idx <= 0) return false;
+    var previousMax = 0;
+    for (var j = 0; j < idx; j++) previousMax = Math.max(previousMax, records[j].maxWeight);
+    return previousMax > 0 && records[idx].maxWeight > previousMax;
+  }
+
+  function getHistorySetKg(sex, set) {
+    if (sex.category === 'Lifting') return computeWeightFromPercent(sex.oneRepMaxSnapshot, set.percent1rm);
+    return typeof set.weightKg === 'number' ? set.weightKg : null;
+  }
+
+  /* "5 séries à 72,5 kg", "4 séries, 85 à 95 kg", "3 séries à 12 kg par
+     haltère" (3A : weightKg est le poids d'un haltère). */
+  function describeHistoryLoad(sex, doneSets, exercise) {
+    if (doneSets.length === 0) return 'Aucune série faite';
+    var kgs = doneSets.map(function (set) { return getHistorySetKg(sex, set); })
+      .filter(function (k) { return k != null && k > 0; });
+    var text = doneSets.length + (doneSets.length > 1 ? ' séries' : ' série');
+    if (kgs.length) {
+      var min = Math.min.apply(null, kgs);
+      var max = Math.max.apply(null, kgs);
+      text += min === max ? ' à ' + formatKgFr(min) + ' kg' : ', ' + formatKgFr(min) + ' à ' + formatKgFr(max) + ' kg';
+      if (exercise && exercise.equipment === 'Haltères') text += ' par haltère';
+    }
+    return text;
+  }
+
+  /* haltérophilie (R6) : séries réussies sur séries faites, une série sans
+     result (ancienne) comptant comme réussie ; muscu : les reps de chaque
+     série, repsActual quand il existe (getMuscuSetReps), "-" sinon. */
+  function describeHistoryResults(sex, doneSets) {
+    if (doneSets.length === 0) return '';
+    if (sex.category === 'Lifting') {
+      var ok = doneSets.filter(function (set) { return set.result !== 'fail'; }).length;
+      return ok + ' sur ' + doneSets.length;
+    }
+    return doneSets.map(function (set) {
+      var reps = getMuscuSetReps(set);
+      return reps != null ? reps : '-';
+    }).join(' ') + ' reps';
+  }
+
+  function buildHistoryExerciseCard(session, sex) {
+    var exercise = sex.exerciseId ? OvrykDB.getExerciseById(sex.exerciseId) : null;
+    var isHaltero = sex.category === 'Lifting';
+    var doneSets = historySets(sex).filter(function (set) { return set && set.done; });
+    var card = document.createElement('div');
+    card.className = 'history-ex-card';
+    card.innerHTML = '<div class="history-ex-top">' +
+      '<span class="day-badge-tag ' + (isHaltero ? 'is-halterophilie">Haltéro' : 'is-muscu">Muscu') + '</span>' +
+      '<span class="history-ex-name">' + escapeHTML((sex.exerciseName || (exercise && exercise.name) || 'Exercice') + (sex.grip ? ' · ' + sex.grip : '')) + '</span>' +
+      (isHistoryRecord(session, sex) ? '<span class="history-record-tag">Record</span>' : '') +
+      '</div>' +
+      '<div class="history-ex-bottom"><span class="history-ex-load">' + escapeHTML(describeHistoryLoad(sex, doneSets, exercise)) + '</span>' +
+      '<span class="history-ex-results">' + escapeHTML(describeHistoryResults(sex, doneSets)) + '</span></div>';
+    return card;
+  }
+
+  function buildHistoryTile(label, value, isCycle) {
+    var tile = document.createElement('div');
+    tile.className = 'history-tile' + (isCycle ? ' is-cycle' : '');
+    tile.innerHTML = '<span class="history-tile-label">' + escapeHTML(label) + '</span>' +
+      '<span class="history-tile-value">' + escapeHTML(value) + '</span>';
+    return tile;
+  }
+
+  function renderHistoryDetailFooter(session) {
+    var footer = document.getElementById('history-detail-footer');
+    footer.innerHTML = '';
+    var routine = session.routineId ? OvrykDB.getRoutineById(session.routineId) : null;
+    if (!routine) {
+      var gone = document.createElement('p');
+      gone.className = 'history-detail-note';
+      gone.textContent = session.routineId
+        ? 'La routine de cette séance n\'existe plus : elle ne peut pas être relancée.'
+        : 'Séance libre : il n\'y a pas de routine à relancer.';
+      footer.appendChild(gone);
+      return;
+    }
+
+    /* mêmes garde-fous que le panneau du jour (buildProgrammeDayPanelCard) :
+       startSession n'a aucune protection contre une deuxième séance. */
+    var active = OvrykDB.getActiveSession();
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'btn-primary history-redo-btn';
+    if (active && active.routineId === routine.id) {
+      btn.textContent = 'Reprendre la séance';
+      btn.addEventListener('click', function () { closeHistoryPage(); setActiveView('seance'); });
+    } else {
+      btn.textContent = 'Refaire cette séance';
+      btn.disabled = !!active;
+      btn.addEventListener('click', function () {
+        launchRoutineSession(routine, function () { closeHistoryPage(); setActiveView('seance'); });
+      });
+    }
+    footer.appendChild(btn);
+    if (active && active.routineId !== routine.id) {
+      var hint = document.createElement('p');
+      hint.className = 'history-detail-note';
+      hint.textContent = 'Une autre séance est déjà en cours.';
+      footer.appendChild(hint);
+    }
+  }
+
+  function renderHistoryDetail(session) {
+    var d = historySessionDate(session);
+    document.getElementById('history-detail-title').textContent = session.routineName || 'Séance libre';
+    document.getElementById('history-detail-date').textContent = WEEKDAY_NAMES_FR[(d.getDay() + 6) % 7] + ' ' + formatDayMonthFr(d) +
+      (d.getFullYear() !== new Date().getFullYear() ? ' ' + d.getFullYear() : '');
+
+    var body = document.getElementById('history-detail-body');
+    body.innerHTML = '';
+    var exercises = historyExercises(session);
+
+    var recordCount = exercises.filter(function (sex) { return isHistoryRecord(session, sex); }).length;
+    var cycleWeeks = [];
+    exercises.forEach(function (sex) {
+      if (sex && sex.cycleWeekUsed != null && cycleWeeks.indexOf(sex.cycleWeekUsed) === -1) cycleWeeks.push(sex.cycleWeekUsed);
+    });
+
+    var tiles = document.createElement('div');
+    tiles.className = 'history-tiles';
+    tiles.appendChild(buildHistoryTile('Durée', formatHistoryDuration(getHistorySessionSeconds(session)) || '-', false));
+    tiles.appendChild(buildHistoryTile('Volume', formatHistoryVolume(historySessionVolume(session)) || '-', false));
+    if (cycleWeeks.length) {
+      tiles.appendChild(buildHistoryTile('Cycle', cycleWeeks.map(function (w) { return 'S' + w; }).join(' · '), true));
+    } else {
+      tiles.appendChild(buildHistoryTile(recordCount > 1 ? 'Records' : 'Record', String(recordCount), false));
+    }
+    body.appendChild(tiles);
+
+    if (exercises.length === 0) {
+      var empty = document.createElement('div');
+      empty.className = 'empty-state';
+      empty.innerHTML = '<span class="empty-tag">Vide</span><h2>Aucun exercice</h2><p>Cette séance ne contient aucun exercice.</p>';
+      body.appendChild(empty);
+    } else {
+      var visible = historyDetailShowAll ? exercises : exercises.slice(0, HISTORY_DETAIL_PREVIEW_COUNT);
+      visible.forEach(function (sex) { body.appendChild(buildHistoryExerciseCard(session, sex)); });
+
+      if (exercises.length > HISTORY_DETAIL_PREVIEW_COUNT) {
+        var hidden = exercises.slice(HISTORY_DETAIL_PREVIEW_COUNT);
+        var moreRow = document.createElement('div');
+        moreRow.className = 'history-more-row';
+        var moreText = document.createElement('span');
+        moreText.className = 'history-more-text';
+        moreText.textContent = historyDetailShowAll
+          ? exercises.length + ' exercices au total'
+          : hidden.length + (hidden.length > 1 ? ' exercices' : ' exercice') + ' de plus, ' +
+            hidden.slice(0, 2).map(function (sex) { return sex.exerciseName || 'Exercice'; }).join(', ') +
+            (hidden.length > 2 ? '…' : '');
+        moreRow.appendChild(moreText);
+        var toggle = document.createElement('button');
+        toggle.type = 'button';
+        toggle.className = 'history-more-toggle';
+        toggle.textContent = historyDetailShowAll ? 'Réduire' : 'Tout voir';
+        toggle.addEventListener('click', function () {
+          var scroller = document.getElementById('history-detail-body');
+          var top = scroller.scrollTop;
+          historyDetailShowAll = !historyDetailShowAll;
+          renderHistoryDetail(session);
+          scroller.scrollTop = top;
+        });
+        moreRow.appendChild(toggle);
+        body.appendChild(moreRow);
+      }
+    }
+
+    /* RPE moyen : seulement si au moins une série faite en porte un (le RPE
+       n'est plus saisi dans l'interface depuis le point D.2, mais les
+       séances anciennes peuvent l'avoir). */
+    var rpes = [];
+    exercises.forEach(function (sex) {
+      historySets(sex).forEach(function (set) {
+        if (set && set.done && typeof set.rpe === 'number' && isFinite(set.rpe)) rpes.push(set.rpe);
+      });
+    });
+    if (rpes.length) {
+      var avg = rpes.reduce(function (a, b) { return a + b; }, 0) / rpes.length;
+      var rpeRow = document.createElement('div');
+      rpeRow.className = 'history-rpe-row';
+      rpeRow.innerHTML = '<span>Ressenti moyen (RPE)</span><strong>' + String(Math.round(avg * 10) / 10).replace('.', ',') + '</strong>';
+      body.appendChild(rpeRow);
+    }
+
+    renderHistoryDetailFooter(session);
+  }
+
+  function openHistoryDetail(sessionId) {
+    var session = OvrykDB.getSessions().filter(function (s) { return s.id === sessionId; })[0];
+    if (!session) return;
+    historyDetailSessionId = sessionId;
+    historyDetailShowAll = false;
+    renderHistoryDetail(session);
+    document.getElementById('history-detail-page').hidden = false;
+    document.getElementById('history-detail-body').scrollTop = 0;
+  }
+
+  document.getElementById('history-open-btn').addEventListener('click', openHistoryPage);
+  document.getElementById('history-back-btn').addEventListener('click', closeHistoryPage);
+  document.getElementById('history-detail-back-btn').addEventListener('click', closeHistoryDetail);
+
   var existingActiveSession = OvrykDB.getActiveSession();
   if (existingActiveSession) {
     activeSession = existingActiveSession;
@@ -13829,9 +14533,18 @@
         valueHtml = '<span class="dash-session-ex-value">' + rex.sets.length + ' x ' + repsText + '</span>';
       }
 
-      var row = document.createElement('div');
-      row.className = 'dash-session-ex-row';
-      row.innerHTML = '<span class="dash-session-ex-name">' + escapeHTML(exercise ? exercise.name : 'Exercice supprimé') + '</span>' + valueHtml;
+      /* lot 12 : une ligne de mouvement piloté par un cycle ouvre le détail
+         du cycle (openCycleDetailPage), lecture seule à l'ouverture ; les
+         autres lignes restent inertes. */
+      var row = document.createElement(cycle ? 'button' : 'div');
+      row.className = 'dash-session-ex-row' + (cycle ? ' is-link' : '');
+      row.innerHTML = '<span class="dash-session-ex-name">' + escapeHTML(exercise ? exercise.name : 'Exercice supprimé') + '</span>' + valueHtml +
+        (cycle ? '<svg class="cycle-link-chevron" viewBox="0 0 24 24" aria-hidden="true"><polyline points="9,6 15,12 9,18"/></svg>' : '');
+      if (cycle) {
+        row.type = 'button';
+        row.setAttribute('aria-label', 'Voir le cycle de ' + (exercise ? exercise.name : 'ce mouvement'));
+        row.addEventListener('click', function () { openCycleDetailPage(rex.exerciseId, null, renderDashboardHome); });
+      }
       exercisesEl.appendChild(row);
     });
 
@@ -13929,7 +14642,7 @@
     var dayLabel = WEEKDAY_NAMES_FR[day - 1].toLowerCase();
     var readOnlyLabel = (day < todayNum ? 'Était prévue ' : 'Prévue ') + dayLabel + '.';
     routines.forEach(function (routine) {
-      panel.appendChild(buildProgrammeDayPanelCard(routine, false, readOnlyLabel));
+      panel.appendChild(buildProgrammeDayPanelCard(routine, false, readOnlyLabel, renderDashboardHome));
     });
   }
 
@@ -14021,6 +14734,7 @@
     var total = cycleLength(closest.cycle.cycle_actif);
     document.getElementById('dash-next-test-name').textContent =
       (exercise ? exercise.name : closest.exerciseId) + ', semaine ' + total;
+    block.dataset.exerciseId = exercise ? closest.exerciseId : '';
     document.getElementById('dash-next-test-eta').textContent =
       'Dans ' + closest.remaining + (closest.remaining > 1 ? ' semaines' : ' semaine');
     block.hidden = false;

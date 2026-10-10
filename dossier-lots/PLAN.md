@@ -16,7 +16,7 @@ Taille : S = moins d'une heure de travail assisté, M = une demi journée, L = u
 | 09 | Muscu libre : éditeur de routine | 20, 21, 23, 7, 9 | fait | 04 |
 | 10 | Types d'exercice et fiche exercice | 12, 6 | fait | 09 |
 | 11 | Séparateur de bloc | 13 | S | 05, 09 |
-| 12 | Historique et détail d'une séance | 14, 15 | M | 05 |
+| 12 | Historique et détail d'une séance (plus deux accès au détail d'un cycle, depuis l'Accueil et le panneau du jour) | 14, 15 | fait | 05 |
 | 13 | Charge de la semaine et décharge de la muscu | 28 | M | 08, 09 |
 | 14 | Réglages et matériel | 16, 17 | M | 01 |
 | 15 | Import de données | 19, 8 | M | 14 |
@@ -29,7 +29,7 @@ Taille : S = moins d'une heure de travail assisté, M = une demi journée, L = u
 2. Lots 04 et 05 : la séance. C'est le coeur de l'usage au quotidien. Fait.
 3. Lots 06 à 08 : les cycles complets (test, fin de cycle, tirage, coordination). Fait.
 4. Lots 09 et 10 : la muscu libre, les types et la fiche exercice. Fait.
-5. Reste à faire, dans cet ordre (mis à jour le 2026-10-10) : lot 17 livraison 5 (test de 1RM, avis R12, supersets, séparateur, retrait de l'ancien écran, après ta séance test), puis lot 12 (historique et détail d'une séance), lot 11 (séparateur de bloc, à réécrire pour la liste de cartes), lot 14 (réglages et matériel), lot 13 (charge de la semaine et décharge de la muscu), lot 15 (import de données), lot 16 (compte et sauvegarde en ligne, en dernier car il dépend de tous les autres).
+5. Reste à faire, dans cet ordre (mis à jour le 2026-10-10) : lot 17 livraison 5 (test de 1RM, avis R12, supersets, séparateur, retrait de l'ancien écran, après ta séance test), puis lot 11 (séparateur de bloc, à réécrire pour la liste de cartes), lot 14 (réglages et matériel), lot 13 (charge de la semaine et décharge de la muscu), lot 15 (import de données), lot 16 (compte et sauvegarde en ligne, en dernier car il dépend de tous les autres). Le lot 12 est fait.
 
 ## Livraisons hors plan
 
@@ -47,13 +47,16 @@ Taille : S = moins d'une heure de travail assisté, M = une demi journée, L = u
 * Noté le 2026-10-10 (lot 17), non corrigé : la carte "objectif du jour" d'une série muscu à reps fixes affiche "- reps" et "Plage - à - reps" (elle ne lit que repsMin et repsMax). Comportement d'avant le lot.
 * Noté le 2026-10-10 (lot 17), non corrigé : cloneSetsFromPastSex recopie result, repResults, failRep, failCause et repsDone d'une séance passée pour un mouvement Lifting sans cycle. La série copiée est à faire, mais un raté ou un compteur de la séance d'avant peut rester sur une série validée réussie. Même famille que la copie "+ Ajouter une série", corrigée.
 
+* Noté le 2026-10-10 (lot 12), non corrigé : le détail d'une séance affiche les reps réellement faites (repsActual quand il existe, par exemple "8 8 7 reps") alors que le volume et les records restent calculés sur le milieu de la plage pour les séries en plage (voir l'anomalie précédente). Un écart visible est possible entre les reps affichées et le volume affiché. Même décision à prendre que pour cette anomalie.
+* Noté le 2026-10-10 (lot 12) : dans le détail d'une séance, une série en plage sans repsActual (2 séries dans l'export du 2026-10-01) s'affiche "-" à la place des reps.
+
 ## Réglages sans interface
 
 * settings.restByType ({ technique: 150, force: 120, muscu: 90 }, lot 10, R10) : seul addExercisesToRoutine le lit pour l'instant (repos par défaut à l'ajout d'un exercice dans une routine). Pas d'écran de réglage dans ce lot — à exposer plus tard (lot 14, Réglages et matériel, est le candidat naturel).
 
 ## Idées non traitées
 
-* Accès au détail d'un cycle (openCycleDetailPage) depuis l'Accueil (aucune carte "cycles en cours" n'y existe aujourd'hui), depuis le panneau du jour du calendrier (Programme/Accueil, buildProgrammeDayPanelCard ne montre que nom et nombre d'exercices), et depuis la séance en cours (buildHalteroLiveBody n'a aucun lien vers la vue complète du cycle). Fait pour "Tes N cycles" et Coordination (point E, 2026-10-09) ; ces trois-là restent à faire si souhaité.
+* Accès au détail d'un cycle (openCycleDetailPage) : fait pour "Tes N cycles" et Coordination (point E, 2026-10-09), puis pour l'Accueil (lignes de cycle de la carte de séance, tuile "Prochain test 1RM") et le panneau du jour (Programme et Accueil, buildProgrammeDayPanelCard) au lot 12 (2026-10-10). Reste à faire si souhaité : depuis la séance en cours (buildHalteroLiveBody n'a aucun lien vers la vue complète du cycle ; le lot 12 n'y touche pas).
 * Retrait possible des flèches monter/descendre dans l'éditeur de routine, devenues redondantes depuis le glisser-déposer (lot 09, livraison 3). Noté le 2026-10-10, pas encore retiré : à confirmer avant de supprimer une fonction existante (règle 9).
 
 * Exercice à un seul haltère (ex. "Rowing haltère unilatéral") : la carte de chargement affiche "2 haltères de X kg". Un drapeau unilatéral par exercice serait nécessaire (lot 17, décision 3A : weightKg reste le poids d'un haltère). Noté le 2026-10-10.

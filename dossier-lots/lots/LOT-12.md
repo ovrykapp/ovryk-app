@@ -47,6 +47,21 @@ R6 pour l'affichage des réussites.
 
 Comparer deux séances entre elles.
 
+## Réalisé (2026-10-10)
+
+Lot d'interface seule, lecture seule de OvrykDB.getSessions(). Aucun champ ajouté, renommé ni supprimé, aucune écriture à l'ouverture d'un écran (vérifié : le stockage est identique avant et après l'ouverture de l'historique et des 84 détails de la copie de test).
+
+* Bouton "Historique" dans Progrès, à côté de "Objectifs hebdomadaires" (dans progression-groups-view, donc absent des sous-vues). Il ouvre history-page.
+* Liste : séances terminées seulement (la séance en cours n'y figure pas), triées de la plus récente à la plus ancienne, regroupées par semaine civile ("Cette semaine", "Semaine du 28 septembre", avec l'année pour une autre année), total de séances et de volume par semaine. Filtres Tout, Muscu, Haltérophilie : une séance qui contient les deux types porte les deux pastilles et sort sous les deux filtres ; Haltéro = au moins un exercice Lifting. Les totaux de semaine suivent le filtre. Pagination par 30 séances ("Afficher plus"), les totaux restent ceux de toute la semaine.
+* Détail (history-detail-page) : durée (durationSeconds, sinon calculée depuis startedAt et completedAt, sinon "-"), volume (même computeSetVolume que partout), tuile Cycle (S et cycleWeekUsed) quand la séance en a, sinon tuile Records. Quatre exercices puis "N exercices de plus, A, B..." et "Tout voir" / "Réduire". Haltérophilie : séries réussies sur séries faites (R6, une série sans result compte comme réussie). Muscu : reps de chaque série, repsActual quand il existe (getMuscuSetReps), "-" sinon ; "par haltère" pour le matériel Haltères (décision 3A du lot 17). RPE moyen seulement si au moins une série faite en porte un.
+* Record : la charge maximale de l'exercice dans cette séance dépasse strictement toutes celles des séances terminées précédentes (au moins une avant, avec une charge). Même source que la fiche exercice (getExerciseSessionRecords avec completedOnly). Jamais pour une première fois.
+* "Refaire cette séance" : launchRoutineSession (chemin existant, popup de semaine de test comprise), mêmes garde-fous que le panneau du jour : "Reprendre la séance" si la même routine est en cours, bouton désactivé avec "Une autre séance est déjà en cours." sinon. Absent, avec une note, si la routine n'existe plus ou si la séance était libre. La séance relancée suit la routine actuelle, pas les séries de la séance passée.
+* Accès au détail d'un cycle (demande de Ruben, hors texte du lot) : lignes de mouvement à cycle de la carte de séance de l'Accueil, tuile "Prochain test 1RM", et lignes "Cycle N, semaine X sur Y" dans les cartes du panneau du jour (Programme et Accueil). Au retour, l'écran d'origine se rafraîchit. L'écran de séance en cours n'est pas touché.
+
+Testé à 390 px (cadre) avec l'export de backups/ complété en mémoire du navigateur de séances fabriquées : très longue (25 exercices, nom très long), vide, ancienne (sans durée, completedAt, notes, rpe, repsActual), routine supprimée, séance libre, 70 séances d'une autre année (pagination), séance en cours présente dans les données.
+
+Hors texte du lot, notés dans PLAN.md : écart possible entre reps affichées (repsActual) et volume (milieu de plage).
+
 ## Prompt pour Claude Code
 
 Copie ce texte dans Claude Code, à la racine du projet, après avoir exporté tes données et fait un commit :
