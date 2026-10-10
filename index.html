@@ -3642,6 +3642,74 @@
   .exercise-type-result-phase { font-size: 13px; color: var(--chalk); }
   .exercise-type-result-value { font-family: var(--font-display); font-weight: 800; font-size: 26px; color: var(--chalk); white-space: nowrap; }
   .exercise-type-result-note { font-size: 12px; color: var(--blue); margin-top: 8px; }
+
+  /* lot 17 : séance sur un seul écran. Une carte par exercice, une seule
+     dépliée (liveSessionIndex). Bleu = cycle et haltérophilie, orange =
+     muscu, comme partout ailleurs. */
+  .live-progress { margin: var(--space-3) 2px var(--space-3); }
+  .live-progress-label { font-size: 12px; color: var(--steel); margin-bottom: 6px; }
+  .live-progress-track { height: 4px; border-radius: var(--radius-pill); background: var(--divider); overflow: hidden; }
+  .live-progress-fill { height: 100%; background: var(--rust); border-radius: var(--radius-pill); }
+  .live-card {
+    background: var(--surface);
+    border: 1px solid var(--border-card);
+    border-radius: var(--radius-card);
+    margin-bottom: 10px;
+    scroll-margin-top: 80px;
+  }
+  .live-card.is-open { border-color: var(--border-outline); }
+  .live-card-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    min-height: 56px;
+    padding: 12px 14px;
+    background: none;
+    border: none;
+    text-align: left;
+    color: var(--ink);
+    cursor: pointer;
+  }
+  .live-card-main { flex: 1; min-width: 0; }
+  .live-card-name {
+    font-family: var(--font-title);
+    font-weight: 700;
+    font-size: 17px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .live-card.is-open .live-card-name { font-size: 20px; white-space: normal; }
+  .live-card-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 3px; font-size: 12px; color: var(--steel); }
+  .live-card-tag {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 2px 7px;
+    border-radius: var(--radius-pill);
+    background: var(--orange-fill);
+    color: var(--rust);
+  }
+  .live-card-tag.is-cycle { background: var(--blue-fill); color: var(--blue); }
+  .live-card-count { font-family: var(--font-mono); font-size: 13px; font-weight: 700; color: var(--steel); flex-shrink: 0; }
+  .live-card-done-mark {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: var(--rust);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .live-card-done-mark.is-cycle { background: var(--blue); }
+  .live-card-done-mark svg { width: 14px; height: 14px; stroke: var(--graphite); fill: none; stroke-width: 3; }
+  .live-card-body { padding: 0 12px 4px; }
+  .live-card-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: var(--space-3); }
 </style>
 </head>
 <body>
@@ -6168,14 +6236,7 @@
     closeFailSheet();
 
     startRestTimer(sex.exerciseName, sex.restSeconds != null ? sex.restSeconds : 90);
-    var stillUndone = sex.sets.some(function (s) { return !s.done; });
-    if (!stillUndone && index != null && index < activeSession.exercises.length - 1) {
-      var targetIndex = index + 1;
-      liveAdvanceTimeoutId = setTimeout(function () {
-        liveAdvanceTimeoutId = null;
-        goToLiveExercise(targetIndex);
-      }, 2500);
-    }
+    advanceAfterSetValidated(sex);
     renderSeanceActiveView();
   });
 
@@ -10477,11 +10538,15 @@
     }
   }
 
-  /* single-exercise live logging screen (not the routine editor's blocks
-     reused) — one exercise on screen at a time, plain SÉRIE/KG/REPS/✓
-     table, rest triggered automatically by checking a set. No reorder,
-     remove-exercise or Reps/Plage editing here — those are editing-time
-     concerns, not live-session ones. */
+  /* lot 17 : tous les exercices sur un seul écran, une carte par
+     exercice. Une seule carte dépliée à la fois : liveSessionIndex (en
+     mémoire seulement, jamais écrit dans la séance), -1 = toutes
+     repliées, null = recalcul au premier exercice non terminé
+     (computeInitialLiveExerciseIndex, au démarrage et à la reprise).
+     Déplier, replier et défiler n'écrivent rien : les séries ne
+     s'écrivent que par les handlers de validation existants. */
+  var liveScrollToIndex = null;
+
   function renderSeanceActiveView() {
     if (!activeSession) return;
     document.getElementById('seance-name-label').textContent = activeSession.routineName || 'Séance libre';
@@ -10498,12 +10563,180 @@
       return;
     }
 
-    if (liveSessionIndex == null || liveSessionIndex < 0 || liveSessionIndex >= activeSession.exercises.length) {
+    if (liveSessionIndex == null || liveSessionIndex >= activeSession.exercises.length) {
       liveSessionIndex = computeInitialLiveExerciseIndex();
     }
 
-    var sex = activeSession.exercises[liveSessionIndex];
-    listEl.appendChild(buildLiveSessionExercise(sex, liveSessionIndex));
+    listEl.appendChild(buildLiveProgress());
+    var cards = [];
+    activeSession.exercises.forEach(function (sex, i) {
+      var card = buildLiveExerciseCard(sex, i);
+      cards.push(card);
+      listEl.appendChild(card);
+    });
+
+    if (liveScrollToIndex != null && cards[liveScrollToIndex]) {
+      var target = cards[liveScrollToIndex];
+      liveScrollToIndex = null;
+      requestAnimationFrame(function () { target.scrollIntoView({ block: 'start', behavior: 'smooth' }); });
+    }
+  }
+
+  function isLiveExerciseDone(sex) {
+    return sex.sets.length > 0 && sex.sets.every(function (s) { return !!s.done; });
+  }
+
+  function buildLiveProgress() {
+    var total = activeSession.exercises.length;
+    var done = activeSession.exercises.filter(isLiveExerciseDone).length;
+    var wrap = document.createElement('div');
+    wrap.className = 'live-progress';
+    wrap.innerHTML = '<div class="live-progress-label">' + done + (done > 1 ? ' exercices' : ' exercice') + ' sur ' + total +
+      (done > 1 ? ' terminés' : ' terminé') + '</div>' +
+      '<div class="live-progress-track"><div class="live-progress-fill" style="width:' + Math.round(done / total * 100) + '%"></div></div>';
+    return wrap;
+  }
+
+  /* étiquette de la carte : cycle et semaine (bleu, "légère" si R12),
+     haltérophilie hors cycle (bleu), sinon muscu (orange). Lecture seule
+     des champs déjà posés par buildSessionFromRoutine. */
+  function getLiveCardTag(sex) {
+    if (sex.cycleIdUsed) {
+      var text = 'Cycle ' + displayCycleNumber(sex.cycleIdUsed) + (sex.cycleWeekUsed ? ', sem. ' + sex.cycleWeekUsed : '');
+      if (sex.isLightSession) text += ', légère';
+      return { text: text, isCycle: true };
+    }
+    if (sex.category === 'Lifting') return { text: 'Haltéro', isCycle: true };
+    return { text: 'Muscu', isCycle: false };
+  }
+
+  function getLiveSetKg(sex, set) {
+    if (sex.category === 'Lifting') return computeWeightFromPercent(sex.oneRepMaxSnapshot, set.percent1rm);
+    return set.weightKg != null ? set.weightKg : null;
+  }
+
+  function getLiveSetRepsLabel(set) {
+    if (set.repType === 'range' && set.repsMin != null && set.repsMax != null) return set.repsMin + ' à ' + set.repsMax;
+    return set.reps != null ? String(set.reps) : '-';
+  }
+
+  /* résumé d'une carte repliée : prescription tant que l'exercice n'est
+     pas fini, résultats une fois toutes les séries faites. */
+  function summarizeLiveExercise(sex) {
+    var sets = sex.sets;
+    if (!sets.length) return 'Aucune série';
+    if (isLiveExerciseDone(sex)) {
+      if (sex.category === 'Lifting') {
+        var ok = sets.filter(function (s) { return s.result !== 'fail'; }).length;
+        return ok + '/' + sets.length + (ok > 1 ? ' réussies' : ' réussie');
+      }
+      return sets.map(function (s) {
+        var r = s.repType === 'range' ? s.repsActual : s.reps;
+        return r != null ? r : '-';
+      }).join(', ') + ' reps';
+    }
+    var kgs = sets.map(function (s) { return getLiveSetKg(sex, s); }).filter(function (k) { return k != null; });
+    var repsLabels = sets.map(getLiveSetRepsLabel);
+    var sameReps = repsLabels.every(function (r) { return r === repsLabels[0]; });
+    var minKg = kgs.length ? Math.min.apply(null, kgs) : null;
+    var maxKg = kgs.length ? Math.max.apply(null, kgs) : null;
+    if (sameReps && minKg === maxKg) {
+      return sets.length + ' x ' + repsLabels[0] + ' reps' + (minKg != null ? ', ' + formatKgFr(minKg) + ' kg' : '');
+    }
+    return sets.length + ' séries' + (minKg != null ? ', ' + (minKg === maxKg ? formatKgFr(minKg) : formatKgFr(minKg) + ' à ' + formatKgFr(maxKg)) + ' kg' : '');
+  }
+
+  function buildLiveExerciseCard(sex, index) {
+    var isOpen = index === liveSessionIndex;
+    var tag = getLiveCardTag(sex);
+    var card = document.createElement('div');
+    card.className = 'live-card' + (isOpen ? ' is-open' : '');
+
+    var header = document.createElement('button');
+    header.type = 'button';
+    header.className = 'live-card-header';
+    header.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+    var doneCount = sex.sets.filter(function (s) { return !!s.done; }).length;
+    var right = isLiveExerciseDone(sex)
+      ? '<span class="live-card-done-mark' + (tag.isCycle ? ' is-cycle' : '') + '"><svg viewBox="0 0 24 24"><polyline points="5,13 10,18 19,7"/></svg></span>'
+      : '<span class="live-card-count">' + doneCount + '/' + sex.sets.length + '</span>';
+    header.innerHTML = '<span class="live-card-main">' +
+      '<span class="live-card-name" style="display:block">' + escapeHTML(sex.exerciseName) + (sex.grip ? ' · ' + escapeHTML(sex.grip) : '') + '</span>' +
+      '<span class="live-card-meta"><span class="live-card-tag' + (tag.isCycle ? ' is-cycle' : '') + '">' + escapeHTML(tag.text) + '</span>' +
+      '<span>' + escapeHTML(summarizeLiveExercise(sex)) + '</span></span></span>' + right;
+    header.addEventListener('click', function () { toggleLiveCard(index); });
+    card.appendChild(header);
+
+    if (isOpen) {
+      var body = document.createElement('div');
+      body.className = 'live-card-body';
+      body.appendChild(buildLiveCardToolbar(sex));
+      body.appendChild(sex.category === 'Lifting' ? buildHalteroLiveBody(sex, index) : buildMuscuLiveBody(sex, index));
+      card.appendChild(body);
+    }
+    return card;
+  }
+
+  function buildLiveCardToolbar(sex) {
+    var bar = document.createElement('div');
+    bar.className = 'live-card-toolbar';
+    var kicker = document.createElement('span');
+    kicker.className = 'live-session-kicker';
+    kicker.style.marginBottom = '0';
+    var currentIdx = getCurrentSetIndex(sex);
+    kicker.textContent = sex.sets.length
+      ? ('Série ' + ((currentIdx !== -1 ? currentIdx : sex.sets.length - 1) + 1) + ' sur ' + sex.sets.length)
+      : 'Aucune série';
+    bar.appendChild(kicker);
+
+    var removeExBtn = document.createElement('button');
+    removeExBtn.type = 'button';
+    removeExBtn.className = 'rex-remove-btn live-session-remove-btn';
+    removeExBtn.setAttribute('aria-label', "Retirer l'exercice de la séance");
+    removeExBtn.textContent = '×';
+    removeExBtn.addEventListener('click', function () { confirmRemoveSessionExercise(sex); });
+    bar.appendChild(removeExBtn);
+    return bar;
+  }
+
+  function confirmRemoveSessionExercise(sex) {
+    showConfirmModal('Retirer « ' + sex.exerciseName + ' » de cette séance ? Les séries saisies pour cet exercice seront perdues.', function () {
+      var idx = activeSession.exercises.indexOf(sex);
+      if (idx !== -1) activeSession.exercises.splice(idx, 1);
+      persistActiveSession();
+      cancelLiveAdvance();
+      liveSessionIndex = null;
+      renderSeanceActiveView();
+    });
+  }
+
+  /* une carte repliée s'ouvre (et ferme l'autre), la carte ouverte se
+     replie : jamais deux cartes dépliées en même temps. */
+  function toggleLiveCard(index) {
+    cancelLiveAdvance();
+    if (index === liveSessionIndex) {
+      liveSessionIndex = -1;
+    } else {
+      liveSessionIndex = index;
+      liveScrollToIndex = index;
+    }
+    renderSeanceActiveView();
+  }
+
+  /* remplace les 4 avances automatiques à 2,5 s de l'ancien écran (Série
+     réussie, compteur, Un raté, Valider la série muscu). Appelée seulement
+     après la validation d'une série, jamais après une dé-validation : si
+     l'exercice est fini, sa carte se replie et le prochain exercice non
+     terminé (après lui, sinon avant) se déplie et défile en haut. */
+  function advanceAfterSetValidated(sex) {
+    if (sex.sets.some(function (s) { return !s.done; })) return;
+    var list = activeSession.exercises;
+    var from = list.indexOf(sex);
+    var next = -1;
+    for (var i = from + 1; i < list.length && next === -1; i++) if (!isLiveExerciseDone(list[i])) next = i;
+    for (var j = 0; j < from && next === -1; j++) if (!isLiveExerciseDone(list[j])) next = j;
+    liveSessionIndex = next;
+    if (next !== -1) liveScrollToIndex = next;
   }
 
   /* chevron retour (exercice précédent), nom, "Exercice X sur N" — partagé
@@ -10975,8 +11208,6 @@
     });
     frag.appendChild(addSetBtn);
 
-    var nextHint = buildLiveSessionNextHint(index);
-    if (nextHint) frag.appendChild(nextHint);
 
     if (currentSet) {
       frag.appendChild(buildHalteroNoteField(currentSet));
@@ -11013,14 +11244,7 @@
           persistActiveSession();
           startRestTimer(sex.exerciseName, sex.restSeconds != null ? sex.restSeconds : 90);
 
-          var stillUndone = sex.sets.some(function (s) { return !s.done; });
-          if (!stillUndone && index < activeSession.exercises.length - 1) {
-            var targetIndex = index + 1;
-            liveAdvanceTimeoutId = setTimeout(function () {
-              liveAdvanceTimeoutId = null;
-              goToLiveExercise(targetIndex);
-            }, 2500);
-          }
+          advanceAfterSetValidated(sex);
           renderSeanceActiveView();
         });
         frag.appendChild(validateBtn);
@@ -11049,14 +11273,7 @@
           persistActiveSession();
           startRestTimer(sex.exerciseName, sex.restSeconds != null ? sex.restSeconds : 90);
 
-          var stillUndone = sex.sets.some(function (s) { return !s.done; });
-          if (!stillUndone && index < activeSession.exercises.length - 1) {
-            var targetIndex = index + 1;
-            liveAdvanceTimeoutId = setTimeout(function () {
-              liveAdvanceTimeoutId = null;
-              goToLiveExercise(targetIndex);
-            }, 2500);
-          }
+          advanceAfterSetValidated(sex);
           renderSeanceActiveView();
         });
         actionsRow.appendChild(successBtn);
@@ -11357,8 +11574,6 @@
     });
     frag.appendChild(addSetBtn);
 
-    var nextHint = buildLiveSessionNextHint(index);
-    if (nextHint) frag.appendChild(nextHint);
 
     if (currentSet) {
       var validateRow = document.createElement('div');
@@ -11373,14 +11588,7 @@
         persistActiveSession();
         startRestTimer(sex.exerciseName, sex.restSeconds != null ? sex.restSeconds : 90);
 
-        var stillUndone = sex.sets.some(function (s) { return !s.done; });
-        if (!stillUndone && index < activeSession.exercises.length - 1) {
-          var targetIndex = index + 1;
-          liveAdvanceTimeoutId = setTimeout(function () {
-            liveAdvanceTimeoutId = null;
-            goToLiveExercise(targetIndex);
-          }, 2500);
-        }
+        advanceAfterSetValidated(sex);
         renderSeanceActiveView();
       });
       validateRow.appendChild(validateBtn);
