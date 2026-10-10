@@ -55,6 +55,8 @@ Taille : S = moins d'une heure de travail assisté, M = une demi journée, L = u
 
 * Noté le 2026-10-10 (lot 13), non corrigé : la feuille "Jours" de l'éditeur de routine enregistre par OvrykDB.updateRoutine, qui avance routine.updatedAt. La séance suivante de cette routine ne reprend alors plus la dernière séance (routineEditedSinceLastSession dans buildSessionFromRoutine) : charges et reps cibles de la double progression repartent de la routine, alors que seul le jour a changé. Aucune donnée perdue. "Déplacer une séance" (lot 13) évite ce cas en n'écrivant que weekdays. À décider : faire pareil dans la feuille "Jours".
 
+* Mini-lot à prévoir, "gardes de lecture" (noté le 2026-10-10, audit du lot 13, non fait) : des données mal formées font planter l'application dès le démarrage, déjà le cas en v117 (donc pas une régression du lot 13). Cinq cas reproduits : une séance avec une date invalide (Invalid time value), une séance sans tableau exercises, un exercice de séance sans tableau sets, une routine placée sur un jour sans tableau exercises, un exercice de routine sans tableau sets. S'y ajoute le plantage de l'onglet Progrès déjà noté plus haut (computeWeeklySeriesCounts sur une séance sans exercises). Aucune séance réelle n'est concernée ; correction = gardes de lecture (Array.isArray) sans rien écrire ni réparer dans les données.
+
 ## Réglages sans interface
 
 * settings.restByType ({ technique: 150, force: 120, muscu: 90 }, lot 10, R10) : toujours sans écran de réglage (lot 14, livraison 5, en attente) ; seul addExercisesToRoutine le lit pour l'instant (repos par défaut à l'ajout d'un exercice dans une routine). Pas d'écran de réglage dans ce lot — à exposer plus tard (lot 14, Réglages et matériel, est le candidat naturel).
