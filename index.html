@@ -16472,6 +16472,7 @@
     settings.lastExportAt = new Date().toISOString();
     OvrykDB.saveSettings(settings);
     renderBackupReminder();
+    renderDataSafetyRows();
 
     showDataIOStatus('Export téléchargé.', false);
   }
@@ -16737,6 +16738,19 @@
       try { db.close(); } catch (e2) { /* déjà fermée */ }
       done();
     }
+  }
+
+  /* supprime la copie créée par une tentative qui a été remise en état :
+     elle n'annulerait rien et ne doit pas devenir "la copie à annuler".
+     N'agit que sur cet identifiant ; erreurs ignorées (la copie restante
+     est de toute façon écartée tant qu'elle est identique à l'état). */
+  function deleteRestorePointById(id, done) {
+    if (id == null) { done(); return; }
+    openRestoreDb(false, function (err, db) {
+      if (err || !db) { done(); return; }
+      if (!db.objectStoreNames.contains(RESTORE_STORE)) { db.close(); done(); return; }
+      discardRestorePoint(db, id, done);
+    });
   }
 
   /* copie l'état actuel, la relit par son identifiant et la compare à
@@ -17027,7 +17041,9 @@
                l'état est celui d'avant, le dire sans renvoyer vers la copie. */
             if (writeRawOvrykState(before) || sameRawState(readRawOvrykState(), before)) {
               localStorage.removeItem(RESTORE_MARK_KEY);
-              failRestore('Restauration impossible (stockage plein ?). L’état d’avant a été remis, rien n’a changé.');
+              deleteRestorePointById(pointId, function () {
+                failRestore('Restauration impossible (stockage plein ?). L’état d’avant a été remis, rien n’a changé.');
+              });
             } else {
               failRestore('Restauration interrompue : utilise « ' + restoreRowLabel(saveReason) + ' » dans Réglages pour revenir à la copie d’avant.');
             }
@@ -17088,6 +17104,7 @@
       settings.lastExportAt = new Date().toISOString();
       OvrykDB.saveSettings(settings);
       renderBackupReminder();
+      renderDataSafetyRows();
       showDataIOStatus('Sauvegarde partagée.', false);
     }).catch(function (err) {
       if (err && err.name === 'AbortError') return;
@@ -17270,11 +17287,25 @@
     }
   }
 
+  /* ordre : (la base de copies est déjà supprimée par l'appelant), clés de
+     données, marque, copies quotidiennes, rechargement. Les copies
+     quotidiennes sont filtrées sur le préfixe exact "ovryk.backup." (dont
+     "ovryk.backup.forceCycles."), jamais sur "ovryk." seul : une autre clé
+     ovryk.* (par exemple celles d'une future sauvegarde en ligne) n'est
+     jamais touchée ici. */
+  var DAILY_BACKUP_PREFIX = 'ovryk.backup.';
+
   function wipeAppDataAndReload() {
     Object.keys(DB_KEYS).forEach(function (k) { localStorage.removeItem(DB_KEYS[k]); });
     /* plus de restauration interrompue à proposer après une
        réinitialisation voulue. */
     localStorage.removeItem(RESTORE_MARK_KEY);
+    var dailyKeys = [];
+    for (var i = 0; i < localStorage.length; i++) {
+      var key = localStorage.key(i);
+      if (key && key.indexOf(DAILY_BACKUP_PREFIX) === 0) dailyKeys.push(key);
+    }
+    dailyKeys.forEach(function (key) { localStorage.removeItem(key); });
     window.location.reload();
   }
 
@@ -17285,11 +17316,17 @@
         showDataIOStatus('Suppression en cours…', false);
         deleteRestoreDb(function (err) {
           if (!err) { wipeAppDataAndReload(); return; }
+          /* "pas de réponse" = suppression sans réponse, le plus souvent
+             bloquée par une autre fenêtre de l’app encore ouverte : la demande
+             reste en attente dans le navigateur et aboutira à la fermeture
+             de cette fenêtre, même si l’utilisateur annule ici. */
+          var maybeBlocked = err.message === 'pas de réponse';
+          var laterNote = ' Si une autre fenêtre de l’app est ouverte, ces copies pourront être effacées plus tard, quand cette fenêtre se fermera, même si tu annules.';
           showDataIOStatus('Réinitialisation suspendue : les copies de sécurité n’ont pas pu être effacées. Rien n’a été supprimé.', true);
           showConfirmModal(
-            'Les copies de sécurité de ce téléphone n’ont pas pu être effacées (' + (err.message || err) + '). Rien n’a encore été supprimé. Réinitialiser quand même ? Tes données seront supprimées, mais ces copies resteront sur le téléphone.',
+            'Les copies de sécurité de ce téléphone n’ont pas pu être effacées (' + (err.message || err) + '). Rien n’a encore été supprimé. Réinitialiser quand même ? Tes données seront supprimées, mais ces copies resteront sur le téléphone.' + (maybeBlocked ? laterNote : ''),
             wipeAppDataAndReload,
-            function () { showDataIOStatus('Réinitialisation annulée : rien n’a été supprimé.', false); },
+            function () { showDataIOStatus('Réinitialisation annulée : rien n’a été supprimé.' + (maybeBlocked ? laterNote : ''), false); },
             'Réinitialiser quand même',
             'Annuler'
           );

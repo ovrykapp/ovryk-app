@@ -2,7 +2,7 @@
 
 Taille : L. Dépend de : tous. Lot à risque (export, import, sauvegardes, écriture dans des données existantes).
 
-Statut : plan révisé le 2026-10-10, décisions de Ruben prises le 2026-10-10 (voir "Décisions prises"). Livraison 1 faite (sw v124), corrigée après trois audits (sw v125, v126 et v127), livraisons 2 à 5 à faire.
+Statut : plan révisé le 2026-10-10, décisions de Ruben prises le 2026-10-10 (voir "Décisions prises"). Livraison 1 faite (sw v124), corrigée après quatre audits (sw v125 à v128), livraisons 2 à 5 à faire.
 
 ## Écrans de la maquette
 
@@ -326,6 +326,12 @@ R11 (pas de compte obligatoire).
   1. "Réinitialiser l'app" supprime d'abord la base de copies de restauration (deleteRestoreDb, délai RESET_DB_TIMEOUT_MS de 5 secondes), puis les données, la marque et recharge (wipeAppDataAndReload). Le texte de confirmation mentionne les copies. Si la suppression de la base échoue ou ne répond pas, rien n'est encore supprimé et l'app le dit, puis propose "Réinitialiser quand même" en précisant que les copies resteront, ou "Annuler".
   2. La ligne "Annuler" ou "Rétablir" propose la copie la plus récente QUI DIFFÈRE de l'état actuel (getUndoCandidatePoint, lecture seule), et l'écran d'annulation utilise la même fonction (openRestoreUndo, openRestorePageFromPoint). Une tentative ratée puis remise en état ne masque plus l'annulation d'une vraie restauration. Si toutes les copies sont identiques à l'état actuel, la ligne reste masquée.
   3. Une copie arrivée après l'abandon à 10 secondes, ou relue différente de l'état actuel, est supprimée dès son arrivée (discardRestorePoint), sans aucune écriture dans les clés ovryk.*. Plus de ligne "Annuler" fantôme.
+* Quatrième correction après l'audit de 8fae8a6 (sw v128), sans réseau et sans changer aucune règle d'acceptation d'un fichier :
+  1. "Réinitialiser l'app" supprime aussi les copies quotidiennes (wipeAppDataAndReload), filtrées sur le préfixe exact "ovryk.backup." (dont "ovryk.backup.forceCycles."), jamais sur "ovryk." seul : une clé comme ovryk.cloud.auth n'est pas touchée. Ordre : base de copies, clés de données, marque, copies quotidiennes, rechargement. Le texte de confirmation devient vrai. L'app recrée au démarrage suivant les copies du jour, à partir de l'état vide (vérifié : aucune routine de l'ancien état).
+  2. Une tentative de restauration remise en état supprime la copie qu'elle avait créée (deleteRestorePointById, réutilise discardRestorePoint) : elle ne devient plus "la copie à annuler", et la copie de la restauration précédente reste proposée, y compris après une nouvelle séance.
+  3. Après un export ou un partage, la ligne d'annulation de Réglages est réaffichée (renderDataSafetyRows) : elle reflète la copie que l'écran d'annulation ouvrira.
+  4. Suppression de la base de copies sans réponse (le plus souvent bloquée par une autre fenêtre de l'app) : le message et le statut après "Annuler" précisent que les copies pourront être effacées plus tard, quand cette fenêtre se fermera, même si l'utilisateur annule. Pas de promesse de ce genre pour une erreur franche.
+  * Limite connue : une tentative dont l'échec survient à la pose de la marque ("stockage plein") laisse encore sa copie (identique à l'état). Elle est écartée de la ligne tant qu'elle est identique, mais redevient proposée dès que l'état change (nouvelle séance, export). Non traité ici, hors du périmètre demandé.
 * Défauts restants (faibles) :
   * 6 : comptage des séances perdues par identifiant, limites théoriques impossibles avec des données de l'app (séance sans identifiant, identifiants en double, même séance au contenu différent).
   * 7 : "Ignorer" laisse un éventuel état mélangé (le message le dit, la copie reste dans Réglages tant que le nettoyage ne l'a pas supprimée).
