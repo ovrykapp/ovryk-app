@@ -1,58 +1,274 @@
-# LOT 16. Compte et sauvegarde en ligne
+# LOT 16. Sauvegarde en ligne (compte, instantanés, restauration)
 
-Taille : L. Dépend de : tous.
+Taille : L. Dépend de : tous. Lot à risque (export, import, sauvegardes, écriture dans des données existantes).
+
+Statut : plan révisé le 2026-10-10, en attente de décisions (section 12). Aucun code écrit.
 
 ## Écrans de la maquette
 
-* ../maquette/18-compte-et-sauvegarde.png
+* ../maquette/18-compte-et-sauvegarde.png (à adapter, voir section 1 : pas de bouton Google en premier sur iPhone, "synchronisé" devient "sauvegardé").
 
 ## Objectif
 
-Proposer un compte pour sauvegarder automatiquement les données et les retrouver sur un autre appareil, sans jamais gêner l'usage sans compte.
+Ne plus pouvoir perdre l'historique si le téléphone est perdu, réinitialisé, ou si le navigateur efface les données du site. Un seul appareil au quotidien. L'app reste 100 % utilisable sans compte et sans réseau.
 
-## Existant à connaître
+## Ce qui change par rapport au cadrage d'origine
 
-* Toutes les données sont dans le navigateur. Export et import manuels. Application installable avec service worker.
+Le cadrage d'origine (une table par type de données, synchronisation en arrière plan, "la modification la plus récente gagne", deux appareils) est remplacé par des **instantanés** : une copie complète et datée des données, envoyée sur demande ou après une séance, et une **restauration** volontaire. Raisons :
 
-## À faire
+* Un seul appareil au quotidien : la synchronisation n'apporte rien et ajoute le risque principal (un conflit ou un état vide qui écrase de bonnes données).
+* Un instantané complet est cohérent par construction (routines, séances, cycles et réglages de la même minute). Une synchronisation par entité peut mélanger deux états.
+* Le format d'un instantané est exactement celui de l'export fichier : on peut quitter le service à tout moment, et la restauration en ligne réutilise la même chaîne que l'import de fichier.
+* Les instantanés sont ajoutés, jamais modifiés : une erreur côté app ne peut pas effacer l'historique en ligne.
 
-1. Choisir le service (décision 9) : Supabase est recommandé.
-2. Écran "Compte et sauvegarde" (maquette 18) : connexion avec Google en bouton principal, lien envoyé par e-mail en second, "Plus tard". Pas de connexion avec Apple.
-3. Modèle en ligne : une table par type de données (exercices, routines, séances, réglages, cycles) avec l'identifiant de l'utilisateur et une date de modification, accès limité aux données de l'utilisateur.
-4. Synchronisation : enregistrer d'abord dans le navigateur, puis envoyer en arrière plan. En cas de conflit, la modification la plus récente gagne, sans jamais supprimer une séance.
-5. Première connexion avec des données locales : proposer d'envoyer l'existant. Sur un nouvel appareil : proposer de récupérer.
-6. Indicateur d'état dans les réglages ("Synchronisé", "En attente", "Hors ligne").
-7. Suppression du compte et des données depuis les réglages.
-8. Ne proposer le compte qu'après quelques séances.
+## État des lieux (lu dans le code, 2026-10-10)
 
-## Données
+* Données : localStorage, clés ovryk.exercises, ovryk.routines, ovryk.sessions, ovryk.settings, ovryk.forceCycles, ovryk.meta (DB_KEYS). Sauvegardes locales quotidiennes ovryk.backup.AAAA-MM-JJ (routines, exercices, réglages seulement) et ovryk.backup.forceCycles.AAAA-MM-JJ, écrites par migrateSchema au démarrage : **aucune séance n'y est sauvegardée**.
+* Export : collectAllOvrykData (format { app, exportedAt, version: 1, data: { exercises, routines, sessions, settings, forceCycles } }, sans ovryk.meta), downloadOvrykExport (fichier JSON indenté). Un export est déclenché automatiquement à chaque fin de séance (finishActiveSession), sans confirmation.
+* Import : remplace les cinq clés sans aucun contrôle (un fichier vide ou partiel efface tout), sans copie de l'état actuel avant, sans résumé, sans annulation. Seule protection : une fenêtre de confirmation générique.
+* Service worker (sw.js) : met en cache **toute** requête GET réussie, y compris vers un autre domaine. Un appel à un service de sauvegarde serait servi depuis le cache, donc périmé. À corriger avant tout envoi réseau.
+* Taille mesurée avec backups/ovryk-export-2026-10-01.json : 206 Ko indenté, environ 126 Ko compact, 19 Ko compressé. 10 séances = 56 Ko, soit 5,6 Ko par séance en moyenne (6,5 Ko au plus). Exercices 51 Ko, routines 19 Ko, réglages et cycles moins de 1 Ko.
+* Projection : 4 séances par semaine, environ 1,2 Mo de séances par an. **Le localStorage de Safari est limité à environ 5 Mo par site** : le plafond serait atteint en 3 à 4 ans. Hors de ce lot, mais à noter (section 11).
 
-ovryk.sync (état de synchronisation), dates de modification sur chaque entité.
+## 1. Authentification
+
+Recommandation : **code à 6 chiffres reçu par e-mail** (connexion sans mot de passe par code, "OTP"), saisi dans l'app.
+
+* Pourquoi pas le lien magique : sur iPhone, un lien reçu par e-mail s'ouvre dans Safari, jamais dans l'app installée, et l'app installée a un stockage séparé de Safari. La session serait ouverte dans Safari et pas dans l'app. Le code évite tout lien et toute redirection : tout se passe dans l'app.
+* Pourquoi pas Google en premier (maquette) : la connexion Google passe par une redirection vers google.com puis un retour. Dans une app installée sur iPhone, le retour atterrit souvent dans Safari ou dans une fenêtre intégrée, pas dans l'app (hypothèse forte, non testée ici, voir "certain ou hypothèse"). À garder pour plus tard, pas dans ce lot.
+* Mot de passe : possible (pas d'e-mail à chaque connexion), mais un mot de passe de plus à retenir et à protéger. Alternative acceptable si Ruben préfère (question 2).
+* Durée de session : jeton d'accès court (environ 1 heure) renouvelé automatiquement par un jeton de renouvellement gardé sur l'appareil. On ne se reconnecte que si l'app perd ses données (justement le cas où l'on veut restaurer) ou après une déconnexion.
+* Comptes : un seul compte. Après la création du compte de Ruben, **désactiver les nouvelles inscriptions** dans le service, pour que personne d'autre ne puisse créer un compte avec la clé publique et consommer le quota gratuit.
+
+## 2. Contenu sauvegardé
+
+Sauvegardé dans chaque instantané :
+
+* ovryk.exercises, ovryk.routines, ovryk.sessions (y compris la séance en cours si elle existe, avec son statut in_progress), ovryk.settings, ovryk.forceCycles, ovryk.meta (version de schéma).
+
+Exclu :
+
+* ovryk.backup.* (copies locales, redondantes avec l'instantané).
+* Les nouvelles clés du lot : état de la sauvegarde (ovryk.cloud) et jetons de connexion (ovryk.cloud.auth). Un jeton ne doit jamais partir dans un instantané ni dans un export fichier.
+* Les caches du service worker et le point de restauration local.
+* Dans ovryk.settings : rien n'est exclu. lastExportAt et les préférences sont utiles à la restauration.
+
+Taille d'un instantané aujourd'hui : environ 126 Ko compact. Avec 500 séances (2 ans et demi) : environ 3 Mo. Compression possible plus tard (gain d'un facteur 6 à 10 mesuré), pas nécessaire au départ.
+
+## 3. Format
+
+Recommandation : **reprendre le format d'export existant**, en restant lisible par l'import actuel.
+
+* Enveloppe : { app: 'Ovryk', exportedAt, version: 1, data: { exercises, routines, sessions, settings, forceCycles, meta }, summary }. L'import actuel lit parsed.data et ignore ce qu'il ne connaît pas : un fichier au nouveau format reste importable par une ancienne version.
+* summary (nouveau, lecture humaine et garde-fous) : nombre de séances terminées, date de la dernière séance terminée, nombre de routines, d'exercices et de cycles, version de schéma, version de l'app, empreinte (somme de contrôle) du contenu de data.
+* meta.schemaVersion indique la version du modèle. À la restauration, un instantané d'une version plus récente que l'app est refusé avec un message ("Mets à jour l'app avant de restaurer"). Un instantané plus ancien est accepté et passe par migrateSchema.
+* Côté service : une ligne par instantané, avec l'identifiant du compte, la date, le résumé en colonnes (pour lister sans tout télécharger) et le contenu complet en un seul champ JSON.
+
+## 4. Quand sauvegarder
+
+Recommandation :
+
+* **Manuel** : bouton "Sauvegarder maintenant" dans Réglages.
+* **Automatique après chaque séance terminée**, si la sauvegarde en ligne est activée (même moment que l'export fichier actuel, une action de l'utilisateur).
+* **Pas d'envoi à l'ouverture de l'app** (règle "rien n'est écrit à l'ouverture") et pas de minuterie quotidienne : une PWA iPhone ne tourne pas en arrière plan, un envoi "quotidien" ne serait de toute façon pas fiable.
+* Rappel visible, en lecture seule : si la dernière sauvegarde réussie a plus de 7 jours, Réglages et l'Accueil l'affichent.
+
+Hors ligne et échecs :
+
+* Si l'envoi échoue (pas de réseau, service en pause, session expirée), l'état passe à "En attente" avec la raison et l'heure. Le contenu n'est pas mis en file : au prochain essai, c'est l'état du moment qui est envoyé, plus complet par définition.
+* Nouvel essai : à la prochaine fin de séance, au bouton manuel, et quand le réseau revient pendant que l'app est ouverte (événement "online").
+* Échec silencieux interdit : Réglages affiche toujours "Dernière sauvegarde réussie : date, N séances" et, s'il y en a une, la dernière erreur en clair. Après une séance, un message court dit "Sauvegarde envoyée" ou "Sauvegarde en attente : pas de réseau".
+
+## 5. Restauration
+
+* **Jamais sans confirmation explicite**, sur un écran dédié.
+* **Résumé avant et après** : date de l'instantané, nombre de séances, de routines et de cycles, date de la dernière séance, à côté des mêmes chiffres sur l'appareil. Si l'instantané contient **moins de séances** que l'appareil, avertissement rouge et deuxième confirmation.
+* **Point de restauration local automatique** juste avant de remplacer : copie complète de l'état actuel, séances comprises. Recommandation : le stocker dans IndexedDB plutôt que dans localStorage (une deuxième copie complète doublerait l'occupation et rapprocherait du plafond de 5 Mo). En complément, si la sauvegarde en ligne est active, un instantané "avant restauration" est envoyé avant de remplacer.
+* **Annulation** : bouton "Annuler la dernière restauration" dans Réglages, qui remet le point de restauration (avec la même confirmation).
+* **Remplacer ou fusionner : recommandation "Remplacer", avec point de restauration et annulation.** Raisons : un instantané est cohérent, alors qu'une fusion de routines, de cycles (semaine en cours, 1RM) et de réglages produit des états qu'aucun des deux appareils n'a jamais eus, et une séance peut avoir été modifiée des deux côtés. Option possible plus tard, limitée et sûre : "ajouter seulement les séances absentes" (par identifiant, sans jamais modifier ni supprimer), pour récupérer des séances d'un vieil instantané sans revenir en arrière sur le reste.
+* La même chaîne sert à l'import de fichier : l'import actuel gagne la validation, le résumé, le point de restauration et l'annulation (livraison 1).
+* Validation avant de toucher à quoi que ce soit : structure attendue, tableaux bien formés, empreinte qui correspond, version de schéma acceptée. Un instantané invalide n'est jamais appliqué.
+
+## 6. Historique des instantanés
+
+Recommandation : rotation faite **côté service**, l'app ne peut qu'ajouter et lire.
+
+* On garde : les 10 plus récents, plus un par semaine sur 8 semaines, plus un par mois sur 12 mois, plus **toujours l'instantané qui contient le plus de séances**.
+* Ordre de grandeur : une trentaine d'instantanés au plus, environ 100 Mo avec 3 Mo chacun, sous la limite de 500 Mo.
+* Garde-fous contre une sauvegarde d'un état vide :
+  * Côté app : pas d'envoi si l'appareil a 0 séance terminée alors que le dernier instantané en ligne en avait au moins une. Message "Rien à sauvegarder : cet appareil semble vide. Veux-tu restaurer ?".
+  * Côté app : si le nombre de séances baisse par rapport au dernier instantané, l'envoi reste possible mais l'instantané est marqué "en baisse" et le message le dit.
+  * Côté service : la rotation ne supprime jamais l'instantané le plus complet. Comme un instantané n'est jamais remplacé, un état vide ou corrompu ne peut pas écraser le seul bon.
+
+## 7. Sécurité et données personnelles
+
+* **Règles d'accès par ligne (RLS)** activées sur la table : un compte ne peut lire et ajouter que ses propres lignes. Ni modification ni suppression autorisées depuis l'app.
+* La rotation et "Supprimer mes sauvegardes en ligne" passent par deux fonctions côté service qui n'agissent que sur les lignes du compte connecté.
+* Clés :
+  * La **clé publique** ("publishable", ou "anon" sur les anciens projets) est faite pour être visible dans le navigateur ; la sécurité repose sur RLS. Elle peut figurer dans index.html (question 3).
+  * La **clé secrète** ("secret" ou "service_role") contourne RLS. Elle ne doit jamais apparaître dans index.html, dans le dépôt, ni dans un message.
+* **Inscriptions désactivées** une fois le compte de Ruben créé (section 1).
+* **Région** : Europe, Paris si proposée, sinon Francfort.
+* **Données** : séances, charges, réglages, adresse e-mail. Pas de nom, pas de poids corporel. Usage personnel.
+* **Suppression** :
+  * Bouton "Supprimer mes sauvegardes en ligne" (confirmation en deux temps, supprime toutes les lignes du compte).
+  * Pour tout effacer, compte compris : supprimer le projet depuis le tableau de bord du service (étape documentée).
+* **Mise en pause du projet gratuit** : après 7 jours sans activité, avec un e-mail d'avertissement avant. Le projet reste restaurable pendant 90 jours depuis le tableau de bord.
+  * Pendant la pause, l'envoi échoue et l'app l'affiche ("Service en pause, ouvre le tableau de bord pour le réactiver"). Les données locales ne sont pas touchées.
+  * Une séance par semaine suffit à éviter la pause.
+  * Risque réel : une longue pause d'entraînement de plus de 90 jours pendant laquelle le téléphone est perdu.
+* Le service n'offre **aucune sauvegarde automatique de la base** sur l'offre gratuite : les instantanés en ligne sont la seule copie hors de l'appareil. L'export fichier (vers Fichiers ou iCloud Drive) reste donc utile comme deuxième filet.
+
+## 8. Intégration technique
+
+* **Sans bibliothèque** : appels HTTP simples (fetch, ES5) vers les deux interfaces du service, connexion et table. Pas de SDK de 50 Ko à charger, rien à ajouter au démarrage.
+* **Service worker** : le gestionnaire fetch ne traite plus que les requêtes **du même domaine**. Toute requête vers le service (connexion, lecture, envoi) passe directement au réseau, jamais en cache. Un appel en cours de connexion ou un jeton ne doivent jamais être mis en cache. Version de cache augmentée à cette livraison.
+* **CORS** : l'interface du service accepte les appels depuis un autre domaine avec la clé publique (hypothèse documentée, à vérifier en livraison 2 depuis ovrykapp.github.io).
+* **CSP** : la page n'en déclare pas aujourd'hui. Si on en ajoute une, connect-src doit inclure l'adresse du projet.
+* **Chargement** : aucun appel réseau au démarrage, aucun script externe ajouté, aucune écriture.
+* **Sans compte ou sans réseau**, l'app fonctionne exactement comme aujourd'hui. L'état de la sauvegarde ne s'affiche que dans Réglages, et dans l'Accueil en cas d'échec.
+* **Délai d'attente** : 20 secondes par appel, une seule requête à la fois, bouton désactivé pendant l'envoi.
+* **Données conservées sur l'appareil** :
+  * ovryk.cloud : activé, dernière réussite (date, nombre de séances, identifiant de l'instantané), dernière erreur (date, raison).
+  * ovryk.cloud.auth : jetons.
+  * Point de restauration dans IndexedDB.
+  * Ces clés ne sont pas exportées et sont effacées par "Se déconnecter".
+* **Persistance du stockage** : demander navigator.storage.persist() (Safari 17 et plus) sur une action de Ruben dans Réglages ("Protéger les données de cet appareil"). Safari accorde ce mode plus facilement à une app installée, et les données d'un site en mode persistant sont exclues de l'effacement automatique.
+* **Règle 14** (écritures de routine dans l'éditeur) : ce lot n'écrit dans les routines que par la restauration, qui remplace tout d'un bloc puis recharge l'app. Aucune écriture depuis l'éditeur, donc pas de copie partagée périmée possible (routineEditorLive). La restauration ne doit jamais être proposée pendant que l'éditeur de routine est ouvert.
+
+## 9. Ce que Ruben fait lui-même (étapes, dans l'ordre)
+
+À faire seulement après les décisions de la section 12, et seulement au moment de la livraison 2.
+
+1. Aller sur supabase.com, "Start your project", créer un compte (avec GitHub ou une adresse e-mail).
+2. "New project" : nom ovryk, mot de passe de base de données généré (le garder dans le gestionnaire de mots de passe, l'app n'en a pas besoin), région Europe (Paris ou Francfort), offre Free.
+3. Attendre la fin de la création (1 à 2 minutes).
+4. Menu Authentication, puis Sign In / Providers : vérifier que Email est activé.
+5. Menu Authentication, puis Emails, modèle "Magic Link" : remplacer le texte par une phrase contenant le code, par exemple "Ton code Ovryk : {{ .Token }}" (texte exact fourni à la livraison 2). Enregistrer.
+6. Menu SQL Editor : coller le script fourni à la livraison 3 (table, règles d'accès, rotation, fonction de suppression), cliquer Run, vérifier "Success".
+7. Menu Project Settings, puis API Keys (ou API) : copier l'adresse du projet (Project URL, du type https://xxxx.supabase.co) et la clé publique (publishable, ou anon). Les envoyer pour qu'elles soient mises dans l'app. **Ne jamais copier ni envoyer la clé secrète** (secret ou service_role).
+8. Dans l'app (après la livraison 2) : Réglages, Sauvegarde en ligne, saisir son e-mail, recevoir le code, le saisir.
+9. Revenir dans Authentication, Sign In / Providers, et désactiver "Allow new users to sign up". Le compte existant continue de fonctionner.
+10. Garder l'e-mail d'avertissement de mise en pause en tête : s'il arrive, ouvrir le tableau de bord du projet suffit à le relancer.
+
+## 10. Livraisons
+
+Chaque livraison a son commit, une version de cache et ses tests sur la copie locale avec l'export de backups/. Toutes les livraisons de ce lot sont à risque. Celles qui demandent un **audit Opus avant push** sont indiquées.
+
+1. **Export fiable et restauration sûre depuis un fichier, sans réseau.**
+   * Export au nouveau format (meta et summary, compact).
+   * Bouton "Partager la sauvegarde" (feuille de partage iPhone, vers Fichiers ou iCloud Drive).
+   * Import réécrit sur une chaîne unique : valider, résumer avant et après, point de restauration IndexedDB, remplacer, annuler. Refus d'un fichier vide ou invalide. Avertissement si moins de séances.
+   * "Protéger les données de cet appareil" (persist).
+   * Risque : moyen, l'import touche toutes les données.
+   * Écrit : point de restauration (IndexedDB), données remplacées seulement après confirmation.
+   * Tests : aller-retour export et import identique, fichier vide refusé, fichier ancien format accepté, annulation qui remet l'état exact, aucune écriture à l'ouverture.
+   * **Audit Opus avant push.**
+2. **Connexion, sans envoi de données.**
+   * Correction du service worker (même domaine seulement).
+   * Configuration du projet.
+   * Écran "Sauvegarde en ligne" dans Réglages : saisie de l'e-mail, du code, état connecté, déconnexion. Aucune donnée d'entraînement envoyée.
+   * Risque : moyen (jetons, service worker).
+   * Écrit : ovryk.cloud.auth à la connexion seulement.
+   * Tests : connexion, renouvellement du jeton, déconnexion, mode avion, aucun appel réseau sans action, aucune réponse du service en cache.
+   * **Audit Opus avant push.**
+3. **Sauvegarde manuelle et liste des instantanés.**
+   * Script SQL fourni à Ruben : table, règles d'accès, rotation, garde du plus complet, fonction de suppression.
+   * "Sauvegarder maintenant", garde-fous contre l'état vide ou en baisse.
+   * État visible, liste des instantanés (date, séances).
+   * Risque : moyen.
+   * Écrit : ovryk.cloud (état), une ligne en ligne par envoi.
+   * Tests : envoi, refus d'un état vide, état d'erreur visible, mode avion, service injoignable, lecture interdite des lignes d'un autre compte (vérifié avec un deuxième compte de test, puis supprimé).
+   * **Audit Opus avant push.**
+4. **Sauvegarde automatique après une séance.**
+   * Envoi à la fin d'une séance si la sauvegarde est activée.
+   * Nouvel essai au retour du réseau, messages "envoyée" ou "en attente".
+   * Choix sur l'export fichier automatique actuel (question 8).
+   * Risque : moyen.
+   * Tests : séance terminée en ligne puis hors ligne, retour du réseau, jeton expiré, service en pause simulé.
+   * **Audit Opus avant push.**
+5. **Restauration depuis un instantané en ligne, et suppression des sauvegardes.**
+   * Réutilise la chaîne de la livraison 1, plus un instantané "avant restauration" envoyé d'abord.
+   * "Supprimer mes sauvegardes en ligne".
+   * Risque : élevé, la restauration remplace toutes les données.
+   * Tests : restauration complète sur une copie vierge (téléphone neuf simulé), restauration d'un instantané plus ancien avec avertissement, annulation, refus d'un instantané corrompu ou d'une version plus récente, suppression en ligne.
+   * **Audit Opus avant push.**
+6. (Plus tard, optionnel) "Ajouter les séances absentes" depuis un instantané, sans rien modifier ni supprimer.
+
+## 11. Risques, du plus grave au moins grave
+
+1. **Restauration qui écrase de bonnes données par de vieilles.** Parades : résumé avant et après, avertissement si moins de séances, double confirmation, point de restauration local, instantané "avant restauration" en ligne, annulation.
+2. **Perte silencieuse : on croit être sauvegardé alors que l'envoi échoue** (pause, jeton expiré, réseau). Parades : état toujours visible avec la date de la dernière réussite, rappel au-delà de 7 jours, message après chaque séance, jamais de "réussi" sans réponse positive du service.
+3. **Sauvegarde d'un état vide ou corrompu** (téléphone neuf, données effacées) qui ferait croire que tout est perdu. Parades : refus côté app, instantanés jamais remplacés, rotation qui garde toujours le plus complet.
+4. **Réponses du service en cache dans le service worker** : une restauration recevrait une vieille copie. Parade : correction du service worker en livraison 2, avant tout appel.
+5. **Projet gratuit en pause plus de 90 jours**, ou changement des conditions de l'offre gratuite. Parades : l'export fichier reste disponible et rappelé, format ouvert, contenu récupérable depuis le tableau de bord tant que le projet existe.
+6. **Fuite de la clé secrète** dans le dépôt. Parade : elle n'est jamais demandée ni utilisée par l'app, vérification par recherche dans le dépôt à chaque audit.
+7. **Quelqu'un d'autre crée un compte** avec la clé publique et consomme le quota. Parade : inscriptions désactivées, règles d'accès par ligne.
+8. **Verrouillage sur un service** : faible. Le contenu est le JSON d'export, lisible et réimportable sans le service.
+9. **Plafond du localStorage (environ 5 Mo)** atteint dans 3 à 4 ans au rythme actuel. Hors lot, à prévoir : déplacer les séances vers IndexedDB (lot à part).
+10. **Limite d'e-mails** (2 par heure avec l'envoi intégré) : suffisant pour un seul utilisateur. Un code redemandé trop vite échoue avec un message clair.
+
+Hors de ce lot : synchronisation entre plusieurs appareils, connexion Google ou Apple, import depuis Hevy ou Strong, partage avec un coach, fusion complète de deux états, chiffrement côté app avant envoi (possible plus tard ; il protège même contre le service, mais une phrase secrète perdue rend les sauvegardes illisibles), migration du stockage vers IndexedDB.
+
+## 12. Décisions pour Ruben
+
+1. **Où mettre la sauvegarde en ligne ?**
+   * A (recommandé) : Supabase, offre gratuite. Fait ce qu'il faut sans serveur à nous, les données restent lisibles, région Europe.
+   * B : seulement un fichier envoyé vers Fichiers ou iCloud Drive après chaque séance (aucun compte, aucun service, mais il faut le faire à la main à chaque fois).
+   * C : Firebase. Pas de mise en pause, mais un document est limité à 1 Mo (une sauvegarde dépassera cette taille en 1 à 2 ans), et la connexion par code e-mail n'existe pas : il faudrait un mot de passe.
+   * Dans tous les cas, l'option B arrive en livraison 1, comme filet supplémentaire.
+2. **Comment te connecter sur l'iPhone ?**
+   * A (recommandé) : un code à 6 chiffres reçu par e-mail, saisi dans l'app. Pas de mot de passe, rien qui s'ouvre dans Safari.
+   * B : e-mail et mot de passe.
+   * C : Google. Déconseillé sur une app installée sur iPhone, le retour de connexion tombe souvent dans Safari.
+3. **Où ranger l'adresse du projet et la clé publique ?**
+   * A (recommandé) : directement dans l'app. La clé publique n'est pas un secret et la sécurité vient des règles d'accès.
+   * B : tu les saisis dans Réglages. Rien dans le code, mais à ressaisir si l'app perd ses données, c'est à dire au moment précis où tu veux restaurer.
+4. **Restaurer, c'est remplacer ou fusionner ?**
+   * A (recommandé) : remplacer, avec copie de l'état actuel juste avant et bouton d'annulation.
+   * B : fusionner. Plus risqué : on peut obtenir un mélange qu'aucun téléphone n'a jamais eu.
+   * Plus tard, une option "ajouter seulement les séances absentes".
+5. **Quand sauvegarder ?**
+   * A (recommandé) : après chaque séance terminée, plus un bouton.
+   * B : seulement le bouton.
+   * Une sauvegarde "tous les jours" n'est pas fiable sur iPhone (l'app ne tourne pas en arrière plan).
+6. **Combien d'anciennes sauvegardes garder ?**
+   * A (recommandé) : les 10 dernières, une par semaine sur 2 mois, une par mois sur un an, et toujours la plus complète.
+   * B : toutes, au risque d'atteindre la limite gratuite dans quelques années.
+7. **Région** : A (recommandé) Paris si proposée, sinon B Francfort.
+8. **L'export fichier automatique à chaque fin de séance** (il existe déjà) :
+   * A (recommandé) : le garder tant que la sauvegarde en ligne n'est pas active, puis le remplacer par la sauvegarde en ligne (export à la demande seulement).
+   * B : toujours le garder.
+
+## Certain ou hypothèse
+
+Vérifié dans la documentation officielle le 2026-10-10 :
+* Offre gratuite Supabase (page tarifs) : base de 500 Mo, 1 Go de fichiers, 5 Go de trafic sortant, 50 000 utilisateurs actifs par mois, 2 projets actifs, aucune sauvegarde automatique, pause après 1 semaine d'inactivité.
+* Projet en pause : e-mail d'avertissement, restaurable pendant 90 jours (documentation "Project Pausing" et journal des changements).
+* Connexion par code e-mail : le modèle d'e-mail utilise {{ .Token }}, un code toutes les 60 secondes au plus, code valable 1 heure par défaut. Envoi intégré limité à 2 e-mails par heure (documentation "Rate limits").
+* Clé publique faite pour être visible, sécurité par les règles d'accès par ligne ; la clé secrète contourne ces règles (documentation et guides de sécurité).
+* WebKit, politique de stockage : une app installée sur l'écran d'accueil a son propre compteur de jours et son stockage n'est pas effacé tant qu'elle est utilisée ; navigator.storage.persist() existe depuis Safari 17, accordé selon des heuristiques (dont le fait d'être une app installée) ; un site en mode persistant est exclu de l'effacement automatique ; la politique couvre localStorage (blog WebKit "Updates to Storage Policy" et "Full Third-Party Cookie Blocking and More").
+* Stockage séparé entre Safari et l'app installée, et lien d'e-mail qui s'ouvre dans Safari : bogue WebKit 181849 et retours concordants.
+
+Hypothèses, à vérifier pendant les livraisons :
+* Le retour d'une connexion Google dans une app installée sur iPhone atterrit hors de l'app (largement rapporté, non testé ici).
+* La région Paris est proposée à la création du projet (Francfort l'est à coup sûr).
+* L'interface du service accepte les appels depuis ovrykapp.github.io sans réglage (CORS), et la taille d'une requête de quelques Mo passe.
+* Les noms exacts des menus du tableau de bord (ils changent souvent) : les étapes de la section 9 seront relues au moment de la livraison 2.
+* Le plafond de 5 Mo du localStorage de Safari (valeur couramment observée, pas une garantie écrite).
+* Firebase : limite de 1 Mo par document et quotas gratuits (sources secondaires), et le fait qu'aucune mise en pause n'existe (non trouvé dans la documentation).
+
+Sources : https://supabase.com/pricing , https://supabase.com/docs/guides/platform/free-project-pausing , https://supabase.com/changelog/27497-paused-free-plan-projects-are-restorable-for-90-days , https://supabase.com/docs/guides/auth/auth-email-passwordless , https://supabase.com/docs/guides/auth/rate-limits , https://supabase.com/docs/guides/platform/backups , https://webkit.org/blog/14403/updates-to-storage-policy/ , https://webkit.org/blog/10218/full-third-party-cookie-blocking-and-more/ , https://bugs.webkit.org/show_bug.cgi?id=181849
+
+## Critères d'acceptation (lot entier)
+
+* Sans activer la sauvegarde en ligne, rien ne change et aucun appel réseau n'est fait.
+* Une séance terminée avec la sauvegarde active apparaît dans un nouvel instantané, ou l'état "En attente" est visible avec la raison.
+* Sur une copie vierge (téléphone neuf simulé), la restauration retrouve exactement l'export de départ.
+* Un état vide n'efface jamais un instantané en ligne.
+* Toute restauration peut être annulée.
+* Aucune clé secrète dans le dépôt.
 
 ## Règles métier concernées
 
-R11.
-
-## Critères d'acceptation
-
-* Une séance faite sans réseau est envoyée dès que le réseau revient.
-* Sur un deuxième appareil, les données se retrouvent après connexion.
-* Sans compte, rien ne change.
-* La suppression du compte efface les données en ligne.
-* Aucune séance n'est perdue en cas de conflit.
-
-## Risques
-
-* Le lot le plus risqué : tester la synchronisation avec un export de départ et deux appareils.
-* Les données de santé relèvent du RGPD : suppression sur demande, aucune donnée inutile.
-* Ne pas faire ce lot avant que tous les autres soient stables.
-
-## Hors lot
-
-Partage avec un coach, classements.
-
-## Prompt pour Claude Code
-
-Copie ce texte dans Claude Code, à la racine du projet, après avoir exporté tes données et fait un commit :
-
-> Lis CLAUDE.md et les documents du dossier dossier-lots : METHODE.md, ETAT-DES-LIEUX.md, MODELE-DE-DONNEES.md, REGLES-METIER.md, puis lots/LOT-16.md et les images de maquette citées. Travaille uniquement sur le lot 16. Commence par me proposer un plan des modifications, sans écrire de code, en citant les fonctions et les identifiants que tu comptes toucher. Attends ma validation. Ensuite modifie index.html par petites étapes, vérifie la syntaxe du script, lance node outils/verifier-cycles.js, teste dans un navigateur à 390 x 844 et passe les critères d'acceptation un par un. Ne touche à rien d'autre. Si une règle est ambiguë, pose moi la question.
+R11 (pas de compte obligatoire).
