@@ -2,7 +2,7 @@
 
 Taille : L. Dépend de : tous. Lot à risque (export, import, sauvegardes, écriture dans des données existantes).
 
-Statut : plan révisé le 2026-10-10, décisions de Ruben prises le 2026-10-10 (voir "Décisions prises"). Livraison 1 faite (sw v124), corrigée après deux audits (sw v125 et v126), livraisons 2 à 5 à faire.
+Statut : plan révisé le 2026-10-10, décisions de Ruben prises le 2026-10-10 (voir "Décisions prises"). Livraison 1 faite (sw v124), corrigée après trois audits (sw v125, v126 et v127), livraisons 2 à 5 à faire.
 
 ## Écrans de la maquette
 
@@ -322,10 +322,14 @@ R11 (pas de compte obligatoire).
   4. Après une restauration ratée puis remise en état, la ligne de Réglages n'apparaît plus : elle est masquée quand la copie la plus récente est identique à l'état actuel (lecture seule).
   5. Échec d'une annulation ou d'un rétablissement : le message cite le libellé réellement affiché (restoreRowLabel, partagé avec la ligne).
   6. Cas limite trouvé en testant : si le retour arrière échoue sur une clé jamais modifiée, l'état est en fait intact. L'app dit alors "rien n'a changé" et retire la marque, au lieu de renvoyer vers une ligne masquée.
+* Troisième correction après l'audit de 4bc1427 (sw v127), sans réseau et sans changer aucune règle d'acceptation d'un fichier :
+  1. "Réinitialiser l'app" supprime d'abord la base de copies de restauration (deleteRestoreDb, délai RESET_DB_TIMEOUT_MS de 5 secondes), puis les données, la marque et recharge (wipeAppDataAndReload). Le texte de confirmation mentionne les copies. Si la suppression de la base échoue ou ne répond pas, rien n'est encore supprimé et l'app le dit, puis propose "Réinitialiser quand même" en précisant que les copies resteront, ou "Annuler".
+  2. La ligne "Annuler" ou "Rétablir" propose la copie la plus récente QUI DIFFÈRE de l'état actuel (getUndoCandidatePoint, lecture seule), et l'écran d'annulation utilise la même fonction (openRestoreUndo, openRestorePageFromPoint). Une tentative ratée puis remise en état ne masque plus l'annulation d'une vraie restauration. Si toutes les copies sont identiques à l'état actuel, la ligne reste masquée.
+  3. Une copie arrivée après l'abandon à 10 secondes, ou relue différente de l'état actuel, est supprimée dès son arrivée (discardRestorePoint), sans aucune écriture dans les clés ovryk.*. Plus de ligne "Annuler" fantôme.
 * Défauts restants (faibles) :
   * 6 : comptage des séances perdues par identifiant, limites théoriques impossibles avec des données de l'app (séance sans identifiant, identifiants en double, même séance au contenu différent).
   * 7 : "Ignorer" laisse un éventuel état mélangé (le message le dit, la copie reste dans Réglages tant que le nettoyage ne l'a pas supprimée).
   * 8 : le nettoyage des vieilles copies peut être interrompu par le rechargement, sans conséquence.
-  * 9 : BACKUP_KEY_LABELS répète la liste de DB_KEYS (une nouvelle clé ne serait pas contrôlée à l'export) ; openRestoreUndo et getLatestRestorePoint sont de simples relais.
+  * 9 : BACKUP_KEY_LABELS répète la liste de DB_KEYS (une nouvelle clé ne serait pas contrôlée à l'export).
   * 10 : doublons. Le nom de fichier et lastExportAt sont calculés à la fois par downloadOvrykExport et par shareOvrykBackup, CURRENT_SCHEMA_VERSION répète le 2 de migrateSchema, et summary.sessionsTotal n'est pas affiché.
   * 11 : non vérifié sous Safari, l'abandon de la création de la base IndexedDB quand on ouvre Réglages.

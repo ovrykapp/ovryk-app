@@ -16724,9 +16724,27 @@
     }
   }
 
+  /* supprime une copie qui ne doit pas rester (abandonnée après le délai,
+     ou relue différente), puis ferme la base. Erreurs ignorées : au pire
+     la copie reste, et getUndoCandidatePoint l'écarte si elle est
+     identique à l'état actuel. */
+  function discardRestorePoint(db, id, done) {
+    try {
+      var tx = db.transaction(RESTORE_STORE, 'readwrite');
+      tx.objectStore(RESTORE_STORE).delete(id);
+      tx.oncomplete = tx.onerror = tx.onabort = function () { try { db.close(); } catch (e) { /* déjà fermée */ } done(); };
+    } catch (e) {
+      try { db.close(); } catch (e2) { /* déjà fermée */ }
+      done();
+    }
+  }
+
   /* copie l'état actuel, la relit par son identifiant et la compare à
-     l'état courant ; cb(err, id). Aucune écriture dans localStorage. */
-  function saveRestorePoint(reason, cb) {
+     l'état courant ; cb(err, id). Aucune écriture dans localStorage.
+     isAbandoned (optionnel) : si l'appelant a abandonné entre temps (délai
+     dépassé), la copie arrivée en retard est supprimée au lieu d'être
+     gardée comme une copie valable. */
+  function saveRestorePoint(reason, cb, isAbandoned) {
     var current = readRawOvrykState();
     var point = {
       savedAt: new Date().toISOString(),
@@ -16745,19 +16763,26 @@
       tx.onabort = function () { db.close(); cb(tx.error || new Error('écriture annulée')); };
       tx.oncomplete = function () {
         var id = addReq.result;
+        if (isAbandoned && isAbandoned()) {
+          discardRestorePoint(db, id, function () { cb(new Error('copie arrivée après l’abandon')); });
+          return;
+        }
         var rtx = db.transaction(RESTORE_STORE, 'readonly');
         var getReq = rtx.objectStore(RESTORE_STORE).get(id);
         getReq.onsuccess = function () {
           var stored = getReq.result;
+          if (isAbandoned && isAbandoned()) {
+            discardRestorePoint(db, id, function () { cb(new Error('copie arrivée après l’abandon')); });
+            return;
+          }
           if (!stored || !stored.raw || !sameRawState(stored.raw, current) || !sameRawState(stored.raw, readRawOvrykState())) {
-            db.close();
-            cb(new Error('copie relue différente de l’état actuel'));
+            discardRestorePoint(db, id, function () { cb(new Error('copie relue différente de l’état actuel')); });
             return;
           }
           pruneRestorePoints(db);
           cb(null, id);
         };
-        getReq.onerror = function () { db.close(); cb(getReq.error || new Error('relecture impossible')); };
+        getReq.onerror = function () { discardRestorePoint(db, id, function () { cb(getReq.error || new Error('relecture impossible')); }); };
       };
     });
   }
@@ -16778,7 +16803,25 @@
     });
   }
 
-  function getLatestRestorePoint(cb) { getRestorePoint(null, cb); }
+  /* copie à proposer pour "Annuler" ou "Rétablir" : la plus récente QUI
+     DIFFÈRE de l'état actuel (une copie identique, par exemple après une
+     tentative ratée puis remise en état, n'annulerait rien). Lecture seule,
+     aucune base créée. cb(point ou null). */
+  function getUndoCandidatePoint(cb) {
+    openRestoreDb(false, function (err, db) {
+      if (err || !db) { cb(null); return; }
+      if (!db.objectStoreNames.contains(RESTORE_STORE)) { db.close(); cb(null); return; }
+      var current = readRawOvrykState();
+      var req = db.transaction(RESTORE_STORE, 'readonly').objectStore(RESTORE_STORE).openCursor(null, 'prev');
+      req.onsuccess = function () {
+        var c = req.result;
+        if (!c) { db.close(); cb(null); return; }
+        if (c.value && c.value.raw && !sameRawState(c.value.raw, current)) { db.close(); cb(c.value); return; }
+        c.continue();
+      };
+      req.onerror = function () { db.close(); cb(null); };
+    });
+  }
 
   /* remet des valeurs brutes exactement (clé absente = supprimée), les plus
      petites d'abord : si l'espace manque, les grosses valeurs du nouvel état
@@ -16992,7 +17035,7 @@
           }
           localStorage.removeItem(RESTORE_MARK_KEY);
           lockRestorePageAndReload(st.mode === 'file' ? 'Restauration réussie. Rechargement…' : 'C’est fait. Rechargement…');
-        });
+        }, function () { return settled; });
       },
       null,
       verbs[st.mode],
@@ -17009,10 +17052,10 @@
   /* ---- lignes de Réglages : annulation, partage, protection ---- */
   function renderDataSafetyRows() {
     var undoBtn = document.getElementById('restore-undo-btn');
-    getLatestRestorePoint(function (point) {
-      /* copie identique à l'état actuel (restauration échouée puis remise en
-         état) : rien à annuler, pas de ligne. Lecture seule. */
-      if (!point || !point.raw || sameRawState(point.raw, readRawOvrykState())) { undoBtn.hidden = true; return; }
+    getUndoCandidatePoint(function (point) {
+      /* aucune copie qui diffère de l'état actuel : rien à annuler, pas de
+         ligne. Lecture seule. */
+      if (!point) { undoBtn.hidden = true; return; }
       document.getElementById('restore-undo-label').textContent = restoreRowLabel(point.reason);
       document.getElementById('restore-undo-value').textContent = formatRestoreDay(point.savedAt);
       undoBtn.hidden = false;
@@ -17076,17 +17119,32 @@
         }
         return;
       }
-      openRestorePage({
-        mode: point.reason === 'avant annulation' ? 'redo' : 'undo',
-        raw: point.raw,
-        incomingSessions: parseRawSessions(point.raw),
-        summary: point.summary || summarizeOvrykData({}),
-        sourceDate: point.savedAt
-      });
+      openRestorePageFromPoint(point);
     });
   }
 
-  function openRestoreUndo() { openRestorePointPage(null); }
+  function openRestorePageFromPoint(point) {
+    openRestorePage({
+      mode: point.reason === 'avant annulation' ? 'redo' : 'undo',
+      raw: point.raw,
+      incomingSessions: parseRawSessions(point.raw),
+      summary: point.summary || summarizeOvrykData({}),
+      sourceDate: point.savedAt
+    });
+  }
+
+  /* ligne de Réglages : même choix de copie que l'affichage de la ligne
+     (getUndoCandidatePoint), jamais simplement la plus récente. */
+  function openRestoreUndo() {
+    getUndoCandidatePoint(function (point) {
+      if (!point) {
+        renderDataSafetyRows();
+        showDataIOStatus('Plus rien à annuler : l’état actuel est identique aux copies de ce téléphone.', true);
+        return;
+      }
+      openRestorePageFromPoint(point);
+    });
+  }
 
   /* bandeau de l'Accueil : seulement si une restauration a été
      interrompue (marque encore posée). Lecture seule. */
@@ -17186,15 +17244,56 @@
     reader.readAsText(file);
   });
 
+  /* lot 16 : la réinitialisation supprime aussi la base de copies de
+     restauration (IndexedDB), d'abord, avant de toucher aux données. Si
+     elle échoue ou ne répond pas dans le délai, rien n'est encore supprimé
+     et l'utilisateur choisit en connaissance de cause. */
+  var RESET_DB_TIMEOUT_MS = 5000;
+
+  function deleteRestoreDb(cb) {
+    if (!window.indexedDB) { cb(null); return; }
+    var done = false;
+    function finish(err) {
+      if (done) return;
+      done = true;
+      clearTimeout(timer);
+      cb(err);
+    }
+    var timer = setTimeout(function () { finish(new Error('pas de réponse')); }, RESET_DB_TIMEOUT_MS);
+    try {
+      var req = window.indexedDB.deleteDatabase(RESTORE_DB_NAME);
+      req.onsuccess = function () { finish(null); };
+      req.onerror = function () { finish(req.error || new Error('erreur inconnue')); };
+      req.onblocked = function () { /* une connexion encore ouverte : le délai tranche */ };
+    } catch (e) {
+      finish(e);
+    }
+  }
+
+  function wipeAppDataAndReload() {
+    Object.keys(DB_KEYS).forEach(function (k) { localStorage.removeItem(DB_KEYS[k]); });
+    /* plus de restauration interrompue à proposer après une
+       réinitialisation voulue. */
+    localStorage.removeItem(RESTORE_MARK_KEY);
+    window.location.reload();
+  }
+
   document.getElementById('reset-app-btn').addEventListener('click', function () {
     showConfirmModal(
-      "Réinitialiser l'app ? Toutes tes données (exercices, routines, séances, réglages, cycles de force) seront supprimées définitivement. Cette action est irréversible.",
+      "Réinitialiser l'app ? Toutes tes données (exercices, routines, séances, réglages, cycles de force) et les copies de sécurité de ce téléphone seront supprimées définitivement. Cette action est irréversible.",
       function () {
-        Object.keys(DB_KEYS).forEach(function (k) { localStorage.removeItem(DB_KEYS[k]); });
-        /* lot 16 : plus de restauration interrompue à proposer après une
-           réinitialisation voulue. */
-        localStorage.removeItem(RESTORE_MARK_KEY);
-        window.location.reload();
+        showDataIOStatus('Suppression en cours…', false);
+        deleteRestoreDb(function (err) {
+          if (!err) { wipeAppDataAndReload(); return; }
+          showDataIOStatus('Réinitialisation suspendue : les copies de sécurité n’ont pas pu être effacées. Rien n’a été supprimé.', true);
+          showConfirmModal(
+            'Les copies de sécurité de ce téléphone n’ont pas pu être effacées (' + (err.message || err) + '). Rien n’a encore été supprimé. Réinitialiser quand même ? Tes données seront supprimées, mais ces copies resteront sur le téléphone.',
+            wipeAppDataAndReload,
+            function () { showDataIOStatus('Réinitialisation annulée : rien n’a été supprimé.', false); },
+            'Réinitialiser quand même',
+            'Annuler'
+          );
+        });
       }
     );
   });
