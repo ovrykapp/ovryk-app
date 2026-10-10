@@ -4038,6 +4038,52 @@
   .settings-note { margin: 8px 2px 0; font-size: 12px; line-height: 1.5; color: var(--steel); max-width: 46ch; }
   .settings-note[hidden] { display: none; }
   .settings-section > .backup-reminder { margin: 0 2px var(--space-3); }
+  /* lot 14, livraison 3 : page Barre et disques (maquette 17). Variables
+     seulement (règle 4) ; orange = action et muscu, bleu = aperçu. */
+  .bar-section-gap { margin-top: var(--space-5); }
+  .bar-choice-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+  .bar-choice, .plate-toggle {
+    min-height: 52px;
+    padding: 0 8px;
+    background: var(--surface);
+    border: 1px solid var(--border-outline);
+    border-radius: var(--radius);
+    color: var(--ink);
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 15px;
+    cursor: pointer;
+  }
+  .bar-choice.is-active, .plate-toggle.is-active { background: var(--rust); border-color: var(--rust); color: var(--graphite); }
+  .plate-toggle:not(.is-active) { background: none; border-style: dashed; color: var(--steel); }
+  .bar-other-row { margin-top: var(--space-3); }
+  .plate-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+  .bar-error { margin: 8px 2px 0; font-size: 12px; font-weight: 700; color: var(--rust); }
+  .bar-error[hidden] { display: none; }
+  .bar-preview-card, .bar-jump-card {
+    margin-top: var(--space-4);
+    padding: var(--space-4);
+    border-radius: var(--radius-card);
+  }
+  .bar-preview-card { background: var(--surface); border: 1px solid var(--border-card); }
+  .bar-jump-card { background: var(--orange-fill); }
+  .bar-card-eyebrow {
+    display: block;
+    margin-bottom: 8px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--blue);
+  }
+  .bar-card-eyebrow.is-jump { color: var(--rust); }
+  .bar-preview-row, .bar-jump-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .bar-preview-text { min-width: 0; }
+  .bar-preview-total, .bar-jump-value { font-family: var(--font-title); font-weight: 700; font-size: 28px; line-height: 1.1; white-space: nowrap; }
+  .bar-preview-sub { margin-top: 4px; font-size: 13px; color: var(--steel); overflow-wrap: anywhere; }
+  .bar-preview-visual { flex-shrink: 0; }
+  .bar-jump-text { margin: 0; font-size: 13px; line-height: 1.4; color: var(--ink); }
 </style>
 </head>
 <body>
@@ -4333,6 +4379,11 @@
       <div class="settings-section">
         <span class="settings-eyebrow">Général</span>
         <div class="settings-group">
+          <button type="button" id="bar-plates-open-btn" class="settings-row is-button">
+            <span class="settings-row-label">Barre et disques</span>
+            <span class="settings-row-value" id="bar-plates-summary"></span>
+            <svg class="settings-row-chevron" viewBox="0 0 24 24" aria-hidden="true"><polyline points="9,6 15,12 9,18"/></svg>
+          </button>
           <div id="profile-notifications-list"></div>
         </div>
         <p class="settings-note" id="profile-notifications-note" hidden></p>
@@ -4529,6 +4580,54 @@
     <div class="fullscreen-page-body history-body" id="history-body">
       <div class="filter-chip-row history-filter-row" id="history-filter-row"></div>
       <div id="history-list"></div>
+    </div>
+  </div>
+
+  <!-- lot 14, livraison 3 (maquette 17) : barre et disques. Réutilise les
+       classes de mise en page de l'historique (history-topbar, history-body,
+       history-detail-footer). -->
+  <div id="bar-plates-page" class="fullscreen-page" hidden>
+    <div class="history-topbar">
+      <button type="button" id="bar-plates-back-btn" class="view-header-back" aria-label="Retour aux réglages">
+        <svg viewBox="0 0 24 24" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="15,6 9,12 15,18"/></svg>
+      </button>
+      <div class="history-title-wrap"><h1 class="history-title is-detail">Barre et disques</h1></div>
+    </div>
+    <div class="fullscreen-page-body history-body" id="bar-plates-body">
+      <span class="settings-eyebrow">Poids de la barre</span>
+      <div class="bar-choice-row" id="bar-choice-row"></div>
+      <div class="bar-other-row" id="bar-other-row" hidden>
+        <label class="form-label" for="bar-other-input">Poids de la barre, en kg</label>
+        <input type="number" id="bar-other-input" class="form-input" inputmode="decimal" step="0.5" min="5" max="50" placeholder="Entre 5 et 50">
+      </div>
+      <p class="bar-error" id="bar-error" hidden>La barre doit peser entre 5 et 50 kg.</p>
+
+      <span class="settings-eyebrow bar-section-gap">Disques disponibles, en kg</span>
+      <div class="plate-grid" id="plate-grid"></div>
+      <p class="settings-note">Touche un disque pour l'ajouter ou le retirer.</p>
+      <p class="bar-error" id="plate-error" hidden>Garde au moins un disque.</p>
+
+      <div class="bar-preview-card">
+        <span class="bar-card-eyebrow">Aperçu du chargement</span>
+        <div class="bar-preview-row">
+          <div class="bar-preview-text">
+            <div class="bar-preview-total" id="bar-preview-total"></div>
+            <div class="bar-preview-sub" id="bar-preview-sub"></div>
+          </div>
+          <div class="bar-preview-visual" id="bar-preview-visual"></div>
+        </div>
+      </div>
+
+      <div class="bar-jump-card">
+        <span class="bar-card-eyebrow is-jump">Plus petit saut de charge</span>
+        <div class="bar-jump-row">
+          <p class="bar-jump-text">Deux fois le plus petit disque, chargé de chaque côté de la barre.</p>
+          <span class="bar-jump-value" id="bar-jump-value"></span>
+        </div>
+      </div>
+    </div>
+    <div class="history-detail-footer">
+      <button type="button" id="bar-plates-save-btn" class="btn-primary" disabled>Enregistrer</button>
     </div>
   </div>
 
@@ -6112,6 +6211,7 @@
     if (target === 'profil') {
       renderProfileGoalsCard();
       renderProfileNotificationsCard();
+      renderBarPlatesSummary();
       renderBackupReminder();
       renderStorageWarning();
     }
@@ -12018,16 +12118,35 @@
      inchangé). Retourne null quand il n'y a rien de juste à afficher
      (charge vide ou nulle) : l'appelant n'ajoute alors aucun bloc.
      Lecture seule : getPlateSetForDisplay n'écrit jamais le jeu de disques
-     par défaut dans les réglages (ensurePlateSet, lui, l'écrit). Le poids de
-     barre ne passe que par getBarWeightKg, seul endroit à changer au
-     lot 14 (settings.barWeightKg). */
+     par défaut dans les réglages. Lot 14, livraison 3 : le poids de barre
+     (settings.barWeightKg, absent = 20 kg) et le jeu de disques
+     (settings.plateSet, absent ou vide = liste d'origine) se lisent ici et
+     seulement ici ; rien n'est écrit tant que "Enregistrer" de la page
+     Barre et disques n'a pas été tapé. */
+  function isValidBarWeight(v) {
+    return typeof v === 'number' && isFinite(v) && v >= BAR_WEIGHT_MIN_KG && v <= BAR_WEIGHT_MAX_KG;
+  }
+
   function getBarWeightKg() {
-    return BAR_WEIGHT_KG;
+    var stored = OvrykDB.getSettings().barWeightKg;
+    return isValidBarWeight(stored) ? stored : DEFAULT_BAR_WEIGHT_KG;
+  }
+
+  /* jeu de disques propre : nombres positifs, sans doublon, du plus lourd
+     au plus léger ; null s'il n'en reste aucun. */
+  function normalizePlateSet(list) {
+    if (!Array.isArray(list)) return null;
+    var seen = {};
+    var out = [];
+    list.forEach(function (w) {
+      if (typeof w === 'number' && isFinite(w) && w > 0 && !seen[w]) { seen[w] = true; out.push(w); }
+    });
+    out.sort(function (a, b) { return b - a; });
+    return out.length ? out : null;
   }
 
   function getPlateSetForDisplay() {
-    var settings = OvrykDB.getSettings();
-    return (Array.isArray(settings.plateSet) && settings.plateSet.length) ? settings.plateSet : DEFAULT_PLATE_SET;
+    return normalizePlateSet(OvrykDB.getSettings().plateSet) || DEFAULT_PLATE_SET.slice();
   }
 
   function formatKgFr(kg) {
@@ -12055,8 +12174,12 @@
       return buildLoadCardShell('Chargement par côté', 'Barre de ' + formatKgFr(bar) + ' kg');
     }
     var result = computePlateLoad(targetWeight, getPlateSetForDisplay());
-    if (result.tooLight || result.plates.length === 0) {
+    if (result.tooLight) {
       return buildLoadCardShell('Chargement par côté', 'Barre de ' + formatKgFr(bar) + ' kg seule');
+    }
+    if (result.plates.length === 0) {
+      return buildLoadCardShell('Chargement par côté', 'Barre de ' + formatKgFr(bar) + ' kg seule (il manque ' +
+        formatKgFr(Math.round(result.remainder * 2 * 100) / 100) + ' kg)');
     }
     /* chaque disque répété autant de fois qu'il est chargé (2 x 20 donne
        "20 + 20"), l'ancienne carte n'en montrait qu'un par poids */
@@ -12385,17 +12508,10 @@
   }
 
   /* ---- plate calculator (per movement) ---- */
-  var BAR_WEIGHT_KG = 20;
+  var DEFAULT_BAR_WEIGHT_KG = 20;
+  var BAR_WEIGHT_MIN_KG = 5;
+  var BAR_WEIGHT_MAX_KG = 50;
   var DEFAULT_PLATE_SET = [25, 20, 15, 10, 5, 2.5, 1.25];
-
-  function ensurePlateSet() {
-    var settings = OvrykDB.getSettings();
-    if (!Array.isArray(settings.plateSet) || settings.plateSet.length === 0) {
-      settings.plateSet = DEFAULT_PLATE_SET.slice();
-      OvrykDB.saveSettings(settings);
-    }
-    return settings.plateSet;
-  }
 
   function savePlateSet(plateSet) {
     var settings = OvrykDB.getSettings();
@@ -12403,11 +12519,16 @@
     OvrykDB.saveSettings(settings);
   }
 
-  function computePlateLoad(targetWeight, plateSet) {
-    var perSide = (targetWeight - BAR_WEIGHT_KG) / 2;
+  /* barWeightKg (optionnel) sert à l'aperçu de la page Barre et disques,
+     qui calcule sur un brouillon sans rien écrire ; absent = barre réglée. */
+  function computePlateLoad(targetWeight, plateSet, barWeightKg) {
+    var bar = barWeightKg != null ? barWeightKg : getBarWeightKg();
+    var perSide = (targetWeight - bar) / 2;
     if (perSide <= 0) return { perSide: 0, plates: [], remainder: 0, tooLight: true };
 
-    var sorted = plateSet.slice().sort(function (a, b) { return b - a; });
+    /* un disque nul ou négatif ferait boucler le calcul : écarté */
+    var sorted = plateSet.filter(function (p) { return typeof p === 'number' && p > 0; })
+      .sort(function (a, b) { return b - a; });
     var remaining = perSide;
     var EPS = 0.001;
     var plates = [];
@@ -12432,7 +12553,7 @@
         return s.weightKg;
       }
     }
-    return BAR_WEIGHT_KG;
+    return getBarWeightKg();
   }
 
   function buildPlateStackVisual(plates, mirrored) {
@@ -12481,13 +12602,15 @@
 
     function renderChips() {
       chipsRow.innerHTML = '';
-      ensurePlateSet().slice().sort(function (a, b) { return b - a; }).forEach(function (w) {
+      getPlateSetForDisplay().forEach(function (w) {
         var chip = document.createElement('button');
         chip.type = 'button';
         chip.className = 'plate-chip mono';
         chip.textContent = w + 'kg ×';
         chip.addEventListener('click', function () {
-          savePlateSet(ensurePlateSet().filter(function (x) { return x !== w; }));
+          var current = getPlateSetForDisplay();
+          if (current.length <= 1) return;
+          savePlateSet(current.filter(function (x) { return x !== w; }));
           renderChips();
           onChange();
         });
@@ -12513,7 +12636,7 @@
     addBtn.addEventListener('click', function () {
       var v = parseFloat(addInput.value);
       if (isNaN(v) || v <= 0) return;
-      var plateSet = ensurePlateSet();
+      var plateSet = getPlateSetForDisplay();
       if (plateSet.indexOf(v) === -1) {
         plateSet.push(v);
         savePlateSet(plateSet);
@@ -12573,22 +12696,23 @@
         return;
       }
 
-      var result = computePlateLoad(target, ensurePlateSet());
+      var result = computePlateLoad(target, getPlateSetForDisplay());
+      var barKg = getBarWeightKg();
 
       if (result.tooLight) {
         var msg2 = document.createElement('p');
         msg2.className = 'chart-empty';
-        msg2.textContent = 'Poids ≤ barre seule (' + BAR_WEIGHT_KG + 'kg).';
+        msg2.textContent = 'Poids ≤ barre seule (' + barKg + 'kg).';
         resultWrap.appendChild(msg2);
         return;
       }
 
       var perSideLoaded = result.perSide - result.remainder;
-      var actualTotal = BAR_WEIGHT_KG + 2 * perSideLoaded;
+      var actualTotal = barKg + 2 * perSideLoaded;
 
       var totalLine = document.createElement('div');
       totalLine.className = 'plate-calc-total mono';
-      totalLine.innerHTML = 'Barre ' + BAR_WEIGHT_KG + 'kg + <span class="rust">' + perSideLoaded + 'kg / côté</span> = <span class="rust">' + actualTotal + 'kg</span>';
+      totalLine.innerHTML = 'Barre ' + barKg + 'kg + <span class="rust">' + perSideLoaded + 'kg / côté</span> = <span class="rust">' + actualTotal + 'kg</span>';
       resultWrap.appendChild(totalLine);
 
       if (result.remainder > 0.01) {
@@ -12626,6 +12750,186 @@
     render();
     return panel;
   }
+
+  /* ============================================================
+     PAGE "BARRE ET DISQUES" (lot 14, livraison 3, maquette 17) — poids de
+     la barre (5 à 50 kg) et disques disponibles. Tout se passe sur un
+     brouillon en mémoire : rien n'est écrit dans les réglages tant que
+     "Enregistrer" n'est pas tapé, et seuls les champs réellement changés
+     sont écrits (settings.barWeightKg, settings.plateSet). Aucune séance
+     n'est lue ni modifiée : les poids stockés sont des kilos totaux, le
+     "par côté" se calcule à l'affichage.
+  ============================================================ */
+  var BAR_PLATE_BASE_CHOICES = [25, 20, 15, 10, 5, 2.5, 1.25, 0.5];
+  var barPlatesOriginal = null;
+  var barPlatesDraft = null;
+  var barPlatesOtherMode = false;
+  var barPlatesBarValid = true;
+
+  function sameNumberSet(a, b) {
+    if (a.length !== b.length) return false;
+    var sa = a.slice().sort(function (x, y) { return x - y; });
+    var sb = b.slice().sort(function (x, y) { return x - y; });
+    return sa.every(function (v, i) { return v === sb[i]; });
+  }
+
+  function renderBarPlatesSummary() {
+    document.getElementById('bar-plates-summary').textContent = 'Barre de ' + formatKgFr(getBarWeightKg()) + ' kg';
+  }
+
+  function isBarPlatesDirty() {
+    return barPlatesDraft.bar !== barPlatesOriginal.bar || !sameNumberSet(barPlatesDraft.plates, barPlatesOriginal.plates);
+  }
+
+  function renderBarPlatesDerived() {
+    var plates = barPlatesDraft.plates.slice().sort(function (a, b) { return b - a; });
+    var hasPlates = plates.length > 0;
+    var valid = barPlatesBarValid && hasPlates;
+    var bar = barPlatesDraft.bar;
+
+    document.getElementById('bar-error').hidden = barPlatesBarValid;
+    document.getElementById('plate-error').hidden = hasPlates;
+
+    var totalEl = document.getElementById('bar-preview-total');
+    var subEl = document.getElementById('bar-preview-sub');
+    var visualEl = document.getElementById('bar-preview-visual');
+    visualEl.innerHTML = '';
+    if (!barPlatesBarValid) {
+      totalEl.textContent = '-';
+      subEl.textContent = 'Indique un poids de barre valide.';
+    } else if (!hasPlates) {
+      totalEl.textContent = formatKgFr(bar) + ' kg';
+      subEl.textContent = 'Barre seule, aucun disque disponible.';
+    } else {
+      /* exemple fixe et lisible : le disque le plus lourd et le plus léger de
+         chaque côté (jeu d'origine : 25 + 1,25 donne 72,5 kg). */
+      var largest = plates[0];
+      var smallest = plates[plates.length - 1];
+      var sample = bar + 2 * (largest === smallest ? largest : largest + smallest);
+      var result = computePlateLoad(sample, plates, bar);
+      var perSide = [];
+      result.plates.forEach(function (pl) { for (var i = 0; i < pl.count; i++) perSide.push(formatKgFr(pl.weight)); });
+      totalEl.textContent = formatKgFr(sample) + ' kg';
+      subEl.textContent = 'Par côté : ' + perSide.join(' + ');
+      visualEl.appendChild(buildPlateStackVisual(result.plates, false));
+    }
+
+    var jumpEl = document.getElementById('bar-jump-value');
+    jumpEl.textContent = hasPlates ? formatKgFr(Math.round(2 * plates[plates.length - 1] * 100) / 100) + ' kg' : '-';
+
+    document.getElementById('bar-plates-save-btn').disabled = !(valid && isBarPlatesDirty());
+  }
+
+  function renderBarPlatesBarChoices() {
+    var row = document.getElementById('bar-choice-row');
+    row.innerHTML = '';
+    var current = barPlatesDraft.bar;
+    var activeKey = barPlatesOtherMode || (current !== 15 && current !== 20) ? 'other' : String(current);
+    [['15', '15 kg', 15], ['20', '20 kg', 20], ['other', 'Autre', null]].forEach(function (c) {
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'bar-choice' + (activeKey === c[0] ? ' is-active' : '');
+      btn.textContent = c[1];
+      btn.setAttribute('aria-pressed', activeKey === c[0] ? 'true' : 'false');
+      btn.addEventListener('click', function () {
+        if (c[2] != null) {
+          barPlatesOtherMode = false;
+          barPlatesBarValid = true;
+          barPlatesDraft.bar = c[2];
+        } else {
+          barPlatesOtherMode = true;
+        }
+        renderBarPlatesBarChoices();
+        renderBarPlatesDerived();
+        if (c[2] == null) document.getElementById('bar-other-input').focus();
+      });
+      row.appendChild(btn);
+    });
+    var otherRow = document.getElementById('bar-other-row');
+    otherRow.hidden = activeKey !== 'other';
+    if (activeKey === 'other') {
+      var input = document.getElementById('bar-other-input');
+      if (document.activeElement !== input) input.value = barPlatesBarValid ? String(barPlatesDraft.bar) : input.value;
+    }
+  }
+
+  function renderBarPlatesPlateGrid() {
+    var grid = document.getElementById('plate-grid');
+    grid.innerHTML = '';
+    var choices = BAR_PLATE_BASE_CHOICES.slice();
+    barPlatesOriginal.plates.concat(barPlatesDraft.plates).forEach(function (w) {
+      if (choices.indexOf(w) === -1) choices.push(w);
+    });
+    choices.sort(function (a, b) { return b - a; });
+    choices.forEach(function (w) {
+      var on = barPlatesDraft.plates.indexOf(w) !== -1;
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'plate-toggle' + (on ? ' is-active' : '');
+      btn.textContent = formatKgFr(w);
+      btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+      btn.setAttribute('aria-label', 'Disque de ' + formatKgFr(w) + ' kg');
+      btn.addEventListener('click', function () {
+        var pos = barPlatesDraft.plates.indexOf(w);
+        if (pos === -1) barPlatesDraft.plates.push(w); else barPlatesDraft.plates.splice(pos, 1);
+        renderBarPlatesPlateGrid();
+        renderBarPlatesDerived();
+      });
+      grid.appendChild(btn);
+    });
+  }
+
+  function openBarPlatesPage() {
+    var bar = getBarWeightKg();
+    var plates = getPlateSetForDisplay();
+    barPlatesOriginal = { bar: bar, plates: plates.slice() };
+    barPlatesDraft = { bar: bar, plates: plates.slice() };
+    barPlatesOtherMode = bar !== 15 && bar !== 20;
+    barPlatesBarValid = true;
+    document.getElementById('bar-other-input').value = barPlatesOtherMode ? String(bar) : '';
+    renderBarPlatesBarChoices();
+    renderBarPlatesPlateGrid();
+    renderBarPlatesDerived();
+    document.getElementById('bar-plates-page').hidden = false;
+    document.getElementById('bar-plates-body').scrollTop = 0;
+  }
+
+  function closeBarPlatesPage() {
+    document.getElementById('bar-plates-page').hidden = true;
+    barPlatesOriginal = null;
+    barPlatesDraft = null;
+  }
+
+  function saveBarPlatesPage() {
+    if (!barPlatesDraft || !barPlatesBarValid || barPlatesDraft.plates.length === 0 || !isBarPlatesDirty()) return;
+    var settings = OvrykDB.getSettings();
+    if (barPlatesDraft.bar !== barPlatesOriginal.bar) settings.barWeightKg = barPlatesDraft.bar;
+    if (!sameNumberSet(barPlatesDraft.plates, barPlatesOriginal.plates)) {
+      settings.plateSet = barPlatesDraft.plates.slice().sort(function (a, b) { return b - a; });
+    }
+    OvrykDB.saveSettings(settings);
+    closeBarPlatesPage();
+    renderBarPlatesSummary();
+    /* la séance en cours suit le nouveau réglage : simple nouveau rendu du
+       "par côté", aucune série n'est modifiée. */
+    if (activeSession) renderSeanceActiveView();
+  }
+
+  document.getElementById('bar-plates-open-btn').addEventListener('click', openBarPlatesPage);
+  document.getElementById('bar-plates-save-btn').addEventListener('click', saveBarPlatesPage);
+  document.getElementById('bar-plates-back-btn').addEventListener('click', function () {
+    if (barPlatesDraft && isBarPlatesDirty()) {
+      showConfirmModal('Abandonner les modifications de la barre et des disques ?', closeBarPlatesPage);
+    } else {
+      closeBarPlatesPage();
+    }
+  });
+  document.getElementById('bar-other-input').addEventListener('input', function (e) {
+    var v = parseFloat(String(e.target.value).replace(',', '.'));
+    barPlatesBarValid = isValidBarWeight(v);
+    if (barPlatesBarValid) barPlatesDraft.bar = Math.round(v * 100) / 100;
+    renderBarPlatesDerived();
+  });
 
   /* ---- session exercise picker ---- */
   function openSeancePicker() {

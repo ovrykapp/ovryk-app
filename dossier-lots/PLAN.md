@@ -18,7 +18,7 @@ Taille : S = moins d'une heure de travail assisté, M = une demi journée, L = u
 | 11 | Séparateur de bloc | 13 | S | 05, 09 |
 | 12 | Historique et détail d'une séance (plus deux accès au détail d'un cycle, depuis l'Accueil et le panneau du jour) | 14, 15 | fait | 05 |
 | 13 | Charge de la semaine et décharge de la muscu | 28 | M | 08, 09 |
-| 14 | Réglages et matériel (cadré le 2026-10-10, 5 livraisons, 3 décisions en attente dans LOT-14.md : arrondi et plus petit saut, repos par type, portée des réglages par défaut) | 16, 17 | M | 01 |
+| 14 | Réglages et matériel (cadré le 2026-10-10, décisions 1A, 2A, 3A ; livraisons 1 Réglages restructuré et 3 Barre et disques faites ; livraisons 2 palier et plage par défaut, 4 plus petit saut appliqué à la progression, 5 repos par type en attente) | 16, 17 | M | 01 |
 | 15 | Import de données | 19, 8 | M | 14 |
 | 16 | Compte et sauvegarde en ligne | 18 | L | tous |
 | 17 | Séance sur un seul écran : tous les exercices en cartes repliables, cercle de validation à droite de chaque série, chargement selon le matériel (cadré et validé le 2026-10-10, décisions 1A, 2A, 3A ; livraisons 1 à 4 faites, plus quatre corrections hors livraison : reps fixes lues par repsActual, copie propre d'une série ajoutée, série en cours visible au dessus de la barre de repos, rappel Meilleur sur séances terminées ; livraison 5 en attente de ta séance test avec le nouvel écran) | 2, 3 adaptées (un exercice à la fois dans la maquette), 10, 11 | L | 05, 09, 10 |
@@ -29,7 +29,7 @@ Taille : S = moins d'une heure de travail assisté, M = une demi journée, L = u
 2. Lots 04 et 05 : la séance. C'est le coeur de l'usage au quotidien. Fait.
 3. Lots 06 à 08 : les cycles complets (test, fin de cycle, tirage, coordination). Fait.
 4. Lots 09 et 10 : la muscu libre, les types et la fiche exercice. Fait.
-5. Reste à faire, dans cet ordre (mis à jour le 2026-10-10) : lot 17 livraison 5 (test de 1RM, avis R12, supersets, séparateur, retrait de l'ancien écran, après ta séance test), puis lot 11 (séparateur de bloc, à réécrire pour la liste de cartes), lot 14 (réglages et matériel), lot 13 (charge de la semaine et décharge de la muscu), lot 15 (import de données), lot 16 (compte et sauvegarde en ligne, en dernier car il dépend de tous les autres). Le lot 12 est fait.
+5. Reste à faire, dans cet ordre (mis à jour le 2026-10-10) : lot 17 livraison 5 (test de 1RM, avis R12, supersets, séparateur, retrait de l'ancien écran, après ta séance test), puis lot 11 (séparateur de bloc, à réécrire pour la liste de cartes), lot 14 (réglages et matériel), lot 13 (charge de la semaine et décharge de la muscu), lot 15 (import de données), lot 16 (compte et sauvegarde en ligne, en dernier car il dépend de tous les autres). Le lot 12 est fait. Le lot 14 est fait pour ses livraisons 1 et 3 ; les livraisons 2, 4 et 5 restent à faire (elles ne bloquent pas les lots suivants).
 
 ## Livraisons hors plan
 
@@ -50,9 +50,12 @@ Taille : S = moins d'une heure de travail assisté, M = une demi journée, L = u
 * Noté le 2026-10-10 (lot 12), non corrigé : le détail d'une séance affiche les reps réellement faites (repsActual quand il existe, par exemple "8 8 7 reps") alors que le volume et les records restent calculés sur le milieu de la plage pour les séries en plage (voir l'anomalie précédente). Un écart visible est possible entre les reps affichées et le volume affiché. Même décision à prendre que pour cette anomalie.
 * Noté le 2026-10-10 (lot 12) : dans le détail d'une séance, une série en plage sans repsActual (2 séries dans l'export du 2026-10-01) s'affiche "-" à la place des reps.
 
+* Noté le 2026-10-10 (lot 14), non corrigé : dans Réglages, les interrupteurs "Rappel de séance" et "Résumé hebdomadaire" (settings.notificationPrefs.seance et .resume) ne sont lus par aucun code : seul "Repos terminé" a un effet (notification de fin de repos). Ils existaient avant le lot et sont restés tels quels (règle 9, suppression d'une fonction existante à confirmer). À brancher, retirer ou garder, à décider.
+* Noté le 2026-10-10 (lot 14), non corrigé : le calculateur de disques (buildPlateCalcPanel et buildPlateSetEditor) n'est appelé nulle part. Il suit maintenant la barre et les disques réglés, mais reste du code inutilisé.
+
 ## Réglages sans interface
 
-* settings.restByType ({ technique: 150, force: 120, muscu: 90 }, lot 10, R10) : seul addExercisesToRoutine le lit pour l'instant (repos par défaut à l'ajout d'un exercice dans une routine). Pas d'écran de réglage dans ce lot — à exposer plus tard (lot 14, Réglages et matériel, est le candidat naturel).
+* settings.restByType ({ technique: 150, force: 120, muscu: 90 }, lot 10, R10) : toujours sans écran de réglage (lot 14, livraison 5, en attente) ; seul addExercisesToRoutine le lit pour l'instant (repos par défaut à l'ajout d'un exercice dans une routine). Pas d'écran de réglage dans ce lot — à exposer plus tard (lot 14, Réglages et matériel, est le candidat naturel).
 
 ## Idées non traitées
 
