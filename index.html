@@ -2234,6 +2234,45 @@
     font-size: 13px;
     color: var(--ink);
   }
+  /* ligne d'édition directe (séries identiques) : champs de 44 px de haut
+     au moins, la flèche garde sa zone de 44 x 44. Variables seulement. */
+  .rex-inline-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-top: 1px solid var(--border-card);
+    padding: 4px 4px 4px 12px;
+  }
+  .rex-inline-count, .rex-inline-unit { font-family: var(--font-mono); font-size: 13px; color: var(--steel); flex-shrink: 0; }
+  .rex-inline-group { display: flex; align-items: center; gap: 4px; min-width: 0; }
+  .rex-inline-input {
+    width: 48px;
+    min-height: 44px;
+    padding: 0 4px;
+    text-align: center;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid var(--border-outline);
+    border-radius: 0;
+    color: var(--ink);
+    font-size: 16px;
+    font-weight: 700;
+  }
+  .rex-inline-input:focus { outline: none; border-bottom-color: var(--rust); color: var(--rust); }
+  .rex-inline-open {
+    margin-left: auto;
+    flex-shrink: 0;
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    color: var(--steel);
+    cursor: pointer;
+  }
+  .rex-inline-open svg { width: 16px; height: 16px; stroke: currentColor; fill: none; }
   .rex-summary-chevron { flex-shrink: 0; color: var(--steel); }
   .rex-summary-chevron svg { width: 16px; height: 16px; stroke: currentColor; fill: none; }
 
@@ -9601,6 +9640,15 @@
        résumé jamais stocké, recalculé à chaque rendu (buildRexSummaryText). */
     block.appendChild(restRow);
 
+    /* séries toutes identiques : reps et kilos modifiables dans la ligne,
+       la flèche ouvre toujours l'écran de réglages ; sinon (pyramide,
+       dégressif) le résumé ci-dessous, inchangé. */
+    var inlineRow = buildRexInlineEditRow(routine, rex);
+    if (inlineRow) {
+      block.appendChild(inlineRow);
+      return block;
+    }
+
     var summaryBtn = document.createElement('button');
     summaryBtn.type = 'button';
     summaryBtn.className = 'rex-summary-row';
@@ -9621,6 +9669,141 @@
     block.appendChild(summaryBtn);
 
     return block;
+  }
+
+  /* ---- édition directe sur la ligne d'un exercice de muscu ----
+     Lecture seule : valeurs communes à toutes les séries (même type de
+     reps, mêmes reps ou même plage, même poids, null compris), sinon null.
+     Rien n'est écrit à l'affichage. */
+  function getRexUniformValues(rex) {
+    var sets = rex.sets || [];
+    if (!sets.length) return null;
+    var first = sets[0];
+    var isRange = first.repType === 'range';
+    var same = sets.every(function (s) {
+      if ((s.repType === 'range') !== isRange) return false;
+      if (s.weightKg !== first.weightKg) return false;
+      return isRange ? (s.repsMin === first.repsMin && s.repsMax === first.repsMax) : s.reps === first.reps;
+    });
+    if (!same) return null;
+    return { isRange: isRange, reps: first.reps, repsMin: first.repsMin, repsMax: first.repsMax, weightKg: first.weightKg };
+  }
+
+  /* lecture d'un champ : virgule acceptée (42,5), vide ou invalide = null */
+  function parseRexInlineNumber(raw, isInt) {
+    var text = String(raw).trim().replace(',', '.');
+    if (text === '') return null;
+    var v = isInt ? parseInt(text, 10) : parseFloat(text);
+    return isNaN(v) || !isFinite(v) ? null : v;
+  }
+
+  function formatRexInlineNumber(v) {
+    return v != null ? String(v).replace('.', ',') : '';
+  }
+
+  /* Écriture seulement au "change" d'un champ, appliquée à toutes les
+     séries, par le même OvrykDB.updateRoutine que l'écran de réglages.
+     Champ vide ou invalide : rien n'est écrit, la valeur est remise.
+     Kilos négatifs ramenés à 0 (comme l'écran de réglages), plage refusée
+     si le min dépasse le max. Pas de nouveau rendu de la liste : le
+     défilement ne bouge pas. */
+  function buildRexInlineEditRow(routine, rex) {
+    var uniform = getRexUniformValues(rex);
+    if (!uniform) return null;
+
+    var row = document.createElement('div');
+    row.className = 'rex-inline-row';
+
+    var count = document.createElement('span');
+    count.className = 'rex-inline-count mono';
+    count.textContent = rex.sets.length + ' x';
+    row.appendChild(count);
+
+    function makeInput(value, isInt, label, placeholder) {
+      var input = document.createElement('input');
+      input.type = 'text';
+      input.inputMode = isInt ? 'numeric' : 'decimal';
+      input.autocomplete = 'off';
+      input.className = 'rex-inline-input mono';
+      input.value = formatRexInlineNumber(value);
+      input.placeholder = placeholder || '-';
+      input.setAttribute('aria-label', label);
+      return input;
+    }
+
+    function applyToAllSets(field, value) {
+      rex.sets.forEach(function (s) { s[field] = value; });
+      uniform[field] = value;
+      OvrykDB.updateRoutine(routine);
+    }
+
+    function bindReps(input, field, check) {
+      input.addEventListener('change', function () {
+        var v = parseRexInlineNumber(input.value, true);
+        if (v == null || v < 0 || (check && !check(v))) {
+          input.value = formatRexInlineNumber(uniform[field]);
+          return;
+        }
+        input.value = String(v);
+        if (v !== uniform[field]) applyToAllSets(field, v);
+      });
+    }
+
+    var repsWrap = document.createElement('span');
+    repsWrap.className = 'rex-inline-group';
+    if (uniform.isRange) {
+      var minInput = makeInput(uniform.repsMin, true, 'Reps minimum, toutes les séries');
+      var maxInput = makeInput(uniform.repsMax, true, 'Reps maximum, toutes les séries');
+      bindReps(minInput, 'repsMin', function (v) { return uniform.repsMax == null || v <= uniform.repsMax; });
+      bindReps(maxInput, 'repsMax', function (v) { return uniform.repsMin == null || v >= uniform.repsMin; });
+      var sep = document.createElement('span');
+      sep.className = 'rex-inline-unit';
+      sep.textContent = 'à';
+      repsWrap.appendChild(minInput);
+      repsWrap.appendChild(sep);
+      repsWrap.appendChild(maxInput);
+    } else {
+      var repsInput = makeInput(uniform.reps, true, 'Reps, toutes les séries');
+      bindReps(repsInput, 'reps', null);
+      repsWrap.appendChild(repsInput);
+    }
+    var repsUnit = document.createElement('span');
+    repsUnit.className = 'rex-inline-unit';
+    repsUnit.textContent = 'reps';
+    repsWrap.appendChild(repsUnit);
+    row.appendChild(repsWrap);
+
+    var kgWrap = document.createElement('span');
+    kgWrap.className = 'rex-inline-group';
+    var kgInput = makeInput(uniform.weightKg, false, 'Kilos, toutes les séries');
+    kgInput.addEventListener('change', function () {
+      var v = parseRexInlineNumber(kgInput.value, false);
+      if (v == null) { kgInput.value = formatRexInlineNumber(uniform.weightKg); return; }
+      if (v < 0) v = 0;
+      kgInput.value = formatRexInlineNumber(v);
+      if (v !== uniform.weightKg) applyToAllSets('weightKg', v);
+    });
+    var kgUnit = document.createElement('span');
+    kgUnit.className = 'rex-inline-unit';
+    kgUnit.textContent = 'kg';
+    kgWrap.appendChild(kgInput);
+    kgWrap.appendChild(kgUnit);
+    row.appendChild(kgWrap);
+
+    var openBtn = document.createElement('button');
+    openBtn.type = 'button';
+    openBtn.className = 'rex-inline-open';
+    openBtn.setAttribute('aria-label', "Réglages de l'exercice");
+    openBtn.innerHTML = '<svg viewBox="0 0 24 24" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="9,6 15,12 9,18"/></svg>';
+    openBtn.addEventListener('click', function () {
+      /* une saisie encore active s'écrit d'abord (son "change"), puis
+         l'écran de réglages relit la routine enregistrée. */
+      if (document.activeElement && row.contains(document.activeElement)) document.activeElement.blur();
+      openRoutineExerciseSettingsPage(routine.id, rex.id);
+    });
+    row.appendChild(openBtn);
+
+    return row;
   }
 
   /* ---- réglage d'un exercice de muscu (lot 09, livraison 2, maquette 23) ---- */
