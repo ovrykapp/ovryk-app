@@ -3643,6 +3643,21 @@
   /* livraison 5 : compteur "Série X sur N" bleu sur une carte de cycle ou
      d'haltérophilie, avis R12 en tête de carte, intitulé des séries de
      montée en semaine de test, supersets et circuits encadrés. */
+  /* lot 11 : séparateur de bloc dans la liste de séance */
+  .live-block-sep { margin: var(--space-4) 0 var(--space-3); }
+  .live-block-recap { padding: 12px 14px; border-radius: var(--radius-card); background: var(--orange-fill); }
+  .live-block-recap.is-cycle { background: var(--blue-fill); }
+  .live-block-recap-title { font-family: var(--font-mono); font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--rust); margin-bottom: 6px; }
+  .live-block-recap.is-cycle .live-block-recap-title { color: var(--blue); }
+  .live-block-recap-row { display: flex; justify-content: space-between; gap: 12px; font-size: 13px; color: var(--ink); padding: 3px 0; }
+  .live-block-recap-value { color: var(--steel); text-align: right; }
+  .live-block-title { display: flex; align-items: center; gap: 12px; margin: var(--space-4) 0 var(--space-3); font-family: var(--font-display); font-weight: 800; font-size: 18px; text-transform: uppercase; color: var(--rust); }
+  .live-block-title.is-cycle { color: var(--blue); }
+  .live-block-title::before, .live-block-title::after { content: ''; flex: 1; height: 1px; background: var(--divider); }
+  .live-block-changes { padding: 12px 14px; border: 1px solid var(--border-card); border-radius: var(--radius-card); }
+  .live-block-changes-title { font-family: var(--font-mono); font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--rust); margin-bottom: 6px; }
+  .live-block-changes-label { color: var(--steel); }
+  .live-block-pause { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: var(--space-3); font-size: 12px; color: var(--steel); }
   .live-session-kicker.is-cycle { color: var(--blue); }
   .live-light-notice {
     margin: 0 0 var(--space-3);
@@ -11147,13 +11162,92 @@
     return sex.cycleIdUsed || sex.category === 'Lifting' ? 'cycle' : 'muscu';
   }
 
-  /* emplacement du séparateur de bloc (lot 11) : appelé entre deux
-     exercices consécutifs de la liste. Le lot 11 y construira le
-     séparateur (récapitulatif du bloc fini, "Ce qui change", pause
-     conseillée) quand le bloc change ; d'ici là, rien n'est affiché. */
+  /* séparateur de bloc (lot 11) : élément de la liste, appelé entre deux
+     segments consécutifs (jamais dans un superset ni un circuit, jamais en
+     tête de liste). Rien n'est affiché sans changement de bloc. Calculé à
+     chaque rendu depuis les champs déjà posés, rien n'est stocké ni écrit ;
+     seule la pause conseillée lance la barre de repos, sur un tap. */
   function buildLiveBlockSeparator(prevSex, nextSex) {
-    if (getLiveExerciseBlock(prevSex) === getLiveExerciseBlock(nextSex)) return null;
-    return null;
+    var prevBlock = getLiveExerciseBlock(prevSex);
+    var nextBlock = getLiveExerciseBlock(nextSex);
+    if (prevBlock === nextBlock) return null;
+    var list = activeSession.exercises;
+    var end = list.indexOf(prevSex);
+    if (end === -1) return null;
+    var prevRun = [];
+    for (var i = end; i >= 0 && getLiveExerciseBlock(list[i]) === prevBlock; i--) prevRun.unshift(list[i]);
+
+    var prevLabel = prevBlock === 'cycle' ? 'haltérophilie' : 'muscu';
+    var nextLabel = nextBlock === 'cycle' ? 'haltérophilie' : 'muscu';
+    var wrap = document.createElement('div');
+    wrap.className = 'live-block-sep';
+
+    var allDone = prevRun.every(isLiveExerciseDone);
+    var recap = document.createElement('div');
+    recap.className = 'live-block-recap' + (prevBlock === 'cycle' ? ' is-cycle' : '');
+    var recapTitle = document.createElement('div');
+    recapTitle.className = 'live-block-recap-title';
+    recapTitle.textContent = 'Bloc ' + prevLabel + (allDone ? ' terminé' : ' en cours');
+    recap.appendChild(recapTitle);
+    prevRun.forEach(function (sex) {
+      var kgs = sex.sets.map(function (s) { return getLiveSetKg(sex, s); }).filter(function (k) { return k != null; });
+      var row = document.createElement('div');
+      row.className = 'live-block-recap-row';
+      var left = document.createElement('span');
+      left.textContent = sex.exerciseName + (kgs.length ? ', ' + formatKgFr(Math.max.apply(null, kgs)) + ' kg' : '');
+      var right = document.createElement('span');
+      right.className = 'live-block-recap-value';
+      var doneCount = sex.sets.filter(function (s) { return !!s.done; }).length;
+      right.textContent = isLiveExerciseDone(sex) ? summarizeLiveExercise(sex) : doneCount + '/' + sex.sets.length + ' séries';
+      row.appendChild(left);
+      row.appendChild(right);
+      recap.appendChild(row);
+    });
+    wrap.appendChild(recap);
+
+    var title = document.createElement('div');
+    title.className = 'live-block-title' + (nextBlock === 'cycle' ? ' is-cycle' : '');
+    title.innerHTML = '<span>Bloc ' + nextLabel + '</span>';
+    wrap.appendChild(title);
+
+    var changes = document.createElement('div');
+    changes.className = 'live-block-changes';
+    var changesTitle = document.createElement('div');
+    changesTitle.className = 'live-block-changes-title';
+    changesTitle.textContent = 'Ce qui change';
+    changes.appendChild(changesTitle);
+    var rest = nextSex.restSeconds != null ? nextSex.restSeconds : 90;
+    [
+      ['Charge', nextBlock === 'cycle' ? 'Pourcentage du 1RM' : 'Double progression'],
+      ['Validation', nextBlock === 'cycle' ? 'Réussi ou raté' : 'Reps comptées'],
+      ['Repos entre séries', formatRestPickerLabel(rest)]
+    ].forEach(function (pair) {
+      var row = document.createElement('div');
+      row.className = 'live-block-recap-row';
+      var l = document.createElement('span');
+      l.className = 'live-block-changes-label';
+      l.textContent = pair[0];
+      var v = document.createElement('span');
+      v.textContent = pair[1];
+      row.appendChild(l);
+      row.appendChild(v);
+      changes.appendChild(row);
+    });
+    wrap.appendChild(changes);
+
+    var pause = document.createElement('div');
+    pause.className = 'live-block-pause';
+    var pauseText = document.createElement('span');
+    pauseText.textContent = 'Pause de transition conseillée : 3 min';
+    var pauseBtn = document.createElement('button');
+    pauseBtn.type = 'button';
+    pauseBtn.className = 'btn-back';
+    pauseBtn.textContent = 'Lancer';
+    pauseBtn.addEventListener('click', function () { startRestTimer('Transition', 180); });
+    pause.appendChild(pauseText);
+    pause.appendChild(pauseBtn);
+    wrap.appendChild(pause);
+    return wrap;
   }
 
   function isLiveExerciseDone(sex) {

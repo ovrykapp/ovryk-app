@@ -1,6 +1,6 @@
 # LOT 11. Séparateur de bloc
 
-Taille : S. Dépend de : 05, 09, 17.
+Taille : S. Dépend de : 05, 09, 17. Statut : fait le 2026-10-10 (sw v116).
 
 ## Écrans de la maquette
 
@@ -52,3 +52,8 @@ L'ordre automatique des blocs.
 Copie ce texte dans Claude Code, à la racine du projet, après avoir exporté tes données et fait un commit :
 
 > Lis CLAUDE.md et les documents du dossier dossier-lots : METHODE.md, ETAT-DES-LIEUX.md, MODELE-DE-DONNEES.md, REGLES-METIER.md, puis lots/LOT-11.md et les images de maquette citées. Travaille uniquement sur le lot 11. Commence par me proposer un plan des modifications, sans écrire de code, en citant les fonctions et les identifiants que tu comptes toucher. Attends ma validation. Ensuite modifie index.html par petites étapes, vérifie la syntaxe du script, lance node outils/verifier-cycles.js, teste dans un navigateur à 390 x 844 et passe les critères d'acceptation un par un. Ne touche à rien d'autre. Si une règle est ambiguë, pose moi la question.
+
+## Réalisé
+
+* buildLiveBlockSeparator rend, entre deux segments de la liste dont le bloc change : récapitulatif du bloc qui précède (bleu pour l'haltérophilie, orange pour la muscu), titre du bloc suivant, "Ce qui change" (charge, validation, repos du premier exercice du bloc suivant), pause conseillée de 3 min avec un bouton Lancer qui démarre la barre de repos (elle a son propre Passer). Le bouton "Commencer le bloc" de la maquette n'existe pas : les cartes ne sont pas verrouillées.
+* Testé sur l'export de backups/ à 390 px : cycle puis muscu (1 séparateur), muscu seule (0), haltérophilie seule (0), cycle puis superset puis muscu (1, avant le groupe, aucun dedans), muscu puis superset (0), un seul exercice (0), muscu puis cycle (1), reprise après rechargement (même séparateur, sessions inchangées).
