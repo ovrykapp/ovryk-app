@@ -1782,6 +1782,8 @@
   .restore-interrupted-title { margin: 0 0 6px; font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--orange-soft); }
   .restore-interrupted-text { margin: 0; font-size: 14px; line-height: 1.45; color: var(--ink); }
   .restore-interrupted-actions { display: flex; gap: 10px; margin-top: var(--space-3); }
+  .restore-interrupted-error { margin: 8px 0 0; font-size: 13px; line-height: 1.45; color: var(--rust); font-weight: 700; }
+  .restore-interrupted-error[hidden], .restore-interrupted-actions > button[hidden] { display: none; }
   .restore-interrupted-actions > button { flex: 1; min-height: 48px; }
   .restore-table { background: var(--surface); border: 1px solid var(--border-card); border-radius: var(--radius-card); overflow: hidden; margin-bottom: var(--space-4); }
   .restore-row { display: grid; grid-template-columns: 1.3fr 1fr 1fr; gap: 8px; padding: 12px 14px; border-bottom: 1px solid var(--divider); align-items: baseline; }
@@ -4239,7 +4241,8 @@
            à l'affichage, rien n'est écrit sans un appui. -->
       <div class="restore-interrupted-banner" id="restore-interrupted-banner" hidden>
         <p class="restore-interrupted-title">Restauration interrompue</p>
-        <p class="restore-interrupted-text">Une restauration ne s'est pas terminée. Tes données peuvent être incomplètes. La copie faite juste avant est sur ce téléphone.</p>
+        <p class="restore-interrupted-text">Une restauration ne s'est pas terminée. Tes données peuvent être incomplètes.<span id="restore-interrupted-copy-note"> La copie faite juste avant est sur ce téléphone.</span></p>
+        <p class="restore-interrupted-error" id="restore-interrupted-msg" hidden>La copie d'avant est introuvable sur ce téléphone (supprimée ou effacée). Il n'y a plus de retour possible : tu peux ignorer ce message.</p>
         <div class="restore-interrupted-actions">
           <button type="button" class="week-load-alert-btn-outline" id="restore-interrupted-back-btn">Revenir à la copie d'avant</button>
           <button type="button" class="week-load-alert-btn-plain" id="restore-interrupted-dismiss-btn">Ignorer</button>
@@ -16495,6 +16498,7 @@
   var RESTORE_STORE = 'points';
   var RESTORE_KEEP = 5;
   var RESTORE_MARK_KEY = 'ovryk.restoreInProgress';
+  var RESTORE_COPY_TIMEOUT_MS = 10000;
   var BACKUP_KEY_LABELS = {
     'ovryk.exercises': 'exercices', 'ovryk.routines': 'routines', 'ovryk.sessions': 'séances',
     'ovryk.settings': 'réglages', 'ovryk.forceCycles': 'cycles de force', 'ovryk.meta': 'version de schéma'
@@ -16548,35 +16552,43 @@
     return null;
   }
 
-  /* éléments qui font planter l'app au démarrage (vérifié le 2026-10-10 :
-     les 17 variantes testées plantent, plusieurs rendent Réglages et donc
-     l'annulation inaccessibles). Une app qui fonctionne ne peut pas les
-     contenir : les refuser ne bloque jamais un fichier produit par Ovryk.
-     Renvoie la raison du premier problème, ou null. */
+  /* éléments refusés à l'import (vérifié le 2026-10-10 : les 17 variantes
+     vides ou sans liste plantent l'app au démarrage, plusieurs rendent
+     Réglages et donc l'annulation inaccessibles). Un élément sans
+     identifiant ne fait pas planter l'app mais reste refusé : l'app en
+     produit toujours un, et le décompte des séances perdues en dépend.
+     Une app qui fonctionne ne peut contenir aucun de ces cas : les refuser
+     ne bloque jamais un fichier produit par Ovryk. Renvoie
+     { text, blocksStart } pour le premier problème, ou null. */
   function getBackupCrashError(data) {
     var i, j, k;
+    function crash(text) { return { text: text, blocksStart: true }; }
+    function noId(text) { return { text: text, blocksStart: false }; }
     for (i = 0; i < data.exercises.length; i++) {
       var ex = data.exercises[i];
-      if (!isPlainObject(ex) || !ex.id) return 'exercice n° ' + (i + 1) + ' du catalogue vide ou sans identifiant';
+      if (!isPlainObject(ex)) return crash('exercice n° ' + (i + 1) + ' du catalogue vide');
+      if (!ex.id) return noId('exercice n° ' + (i + 1) + ' du catalogue sans identifiant');
     }
     for (i = 0; i < data.routines.length; i++) {
       var r = data.routines[i];
-      if (!isPlainObject(r) || !r.id) return 'routine n° ' + (i + 1) + ' vide ou sans identifiant';
-      if (!Array.isArray(r.exercises)) return 'routine « ' + (r.name || r.id) + ' » sans liste d’exercices';
+      if (!isPlainObject(r)) return crash('routine n° ' + (i + 1) + ' vide');
+      if (!r.id) return noId('routine n° ' + (i + 1) + ' sans identifiant');
+      if (!Array.isArray(r.exercises)) return crash('routine « ' + (r.name || r.id) + ' » sans liste d’exercices');
       for (j = 0; j < r.exercises.length; j++) {
-        if (!isPlainObject(r.exercises[j]) || !Array.isArray(r.exercises[j].sets)) return 'routine « ' + (r.name || r.id) + ' », exercice n° ' + (j + 1) + ' sans séries';
+        if (!isPlainObject(r.exercises[j]) || !Array.isArray(r.exercises[j].sets)) return crash('routine « ' + (r.name || r.id) + ' », exercice n° ' + (j + 1) + ' sans séries');
       }
     }
     for (i = 0; i < data.sessions.length; i++) {
       var s = data.sessions[i];
-      if (!isPlainObject(s) || !s.id) return 'séance n° ' + (i + 1) + ' vide ou sans identifiant';
-      if (isNaN(Date.parse(s.date))) return 'séance n° ' + (i + 1) + ' sans date valide';
-      if (!Array.isArray(s.exercises)) return 'séance du ' + formatRestoreDay(s.date) + ' sans liste d’exercices';
+      if (!isPlainObject(s)) return crash('séance n° ' + (i + 1) + ' vide');
+      if (!s.id) return noId('séance n° ' + (i + 1) + ' sans identifiant');
+      if (isNaN(Date.parse(s.date))) return crash('séance n° ' + (i + 1) + ' sans date valide');
+      if (!Array.isArray(s.exercises)) return crash('séance du ' + formatRestoreDay(s.date) + ' sans liste d’exercices');
       for (j = 0; j < s.exercises.length; j++) {
         var sex = s.exercises[j];
-        if (!isPlainObject(sex) || !Array.isArray(sex.sets)) return 'séance du ' + formatRestoreDay(s.date) + ', exercice n° ' + (j + 1) + ' vide ou sans séries';
+        if (!isPlainObject(sex) || !Array.isArray(sex.sets)) return crash('séance du ' + formatRestoreDay(s.date) + ', exercice n° ' + (j + 1) + ' vide ou sans séries');
         for (k = 0; k < sex.sets.length; k++) {
-          if (!isPlainObject(sex.sets[k])) return 'séance du ' + formatRestoreDay(s.date) + ', exercice n° ' + (j + 1) + ', série n° ' + (k + 1) + ' vide';
+          if (!isPlainObject(sex.sets[k])) return crash('séance du ' + formatRestoreDay(s.date) + ', exercice n° ' + (j + 1) + ', série n° ' + (k + 1) + ' vide');
         }
       }
     }
@@ -16584,7 +16596,7 @@
     var ids = Object.keys(cycles);
     for (i = 0; i < ids.length; i++) {
       var c = cycles[ids[i]];
-      if (!isPlainObject(c) || !FORCE_CYCLES[c.cycle_actif]) return 'cycle de force « ' + ids[i] + ' » vide ou inconnu';
+      if (!isPlainObject(c) || !FORCE_CYCLES[c.cycle_actif]) return crash('cycle de force « ' + ids[i] + ' » vide ou inconnu');
     }
     return null;
   }
@@ -16636,7 +16648,11 @@
       return { error: 'fichier abîmé ou modifié (empreinte différente). Rien n’a été importé.' };
     }
     var crash = getBackupCrashError(data);
-    if (crash) return { error: 'fichier abîmé : ' + crash + '. Il empêcherait l’app de démarrer. Rien n’a été importé.' };
+    if (crash) {
+      return { error: 'fichier abîmé : ' + crash.text + '.' +
+        (crash.blocksStart ? ' Il empêcherait l’app de démarrer.' : ' Une sauvegarde faite par Ovryk en a toujours un.') +
+        ' Rien n’a été importé.' };
+    }
     return {
       data: data,
       fileSummary: summarizeOvrykData(data),
@@ -16939,7 +16955,19 @@
       function () {
         setRestorePageLocked(true);
         var before = readRawOvrykState();
-        saveRestorePoint(st.mode === 'file' ? 'avant restauration' : st.mode === 'undo' ? 'avant annulation' : 'avant rétablissement', function (err, pointId) {
+        var saveReason = st.mode === 'file' ? 'avant restauration' : st.mode === 'undo' ? 'avant annulation' : 'avant rétablissement';
+        /* IndexedDB qui ne répond jamais : abandon après RESTORE_COPY_TIMEOUT_MS,
+           écran débloqué, rien remplacé. Une réponse tardive est ignorée. */
+        var settled = false;
+        var timer = setTimeout(function () {
+          if (settled) return;
+          settled = true;
+          failRestore('La copie de sécurité n’a pas pu être faite, rien n’a été remplacé. Réessaie plus tard.');
+        }, RESTORE_COPY_TIMEOUT_MS);
+        saveRestorePoint(saveReason, function (err, pointId) {
+          if (settled) return;
+          settled = true;
+          clearTimeout(timer);
           if (err) {
             failRestore('Restauration annulée : impossible de copier l’état actuel (' + (err.message || err) + '). Rien n’a été modifié.');
             return;
@@ -16952,11 +16980,13 @@
           }
           var ok = st.mode === 'file' ? applyBackupData(st.data) : writeRawOvrykState(st.raw);
           if (!ok) {
-            if (writeRawOvrykState(before)) {
+            /* retour arrière réussi, ou en échec sur une clé jamais modifiée :
+               l'état est celui d'avant, le dire sans renvoyer vers la copie. */
+            if (writeRawOvrykState(before) || sameRawState(readRawOvrykState(), before)) {
               localStorage.removeItem(RESTORE_MARK_KEY);
               failRestore('Restauration impossible (stockage plein ?). L’état d’avant a été remis, rien n’a changé.');
             } else {
-              failRestore('Restauration interrompue : utilise Annuler la dernière restauration pour revenir à la copie d’avant.');
+              failRestore('Restauration interrompue : utilise « ' + restoreRowLabel(saveReason) + ' » dans Réglages pour revenir à la copie d’avant.');
             }
             return;
           }
@@ -16970,13 +17000,20 @@
     );
   }
 
+  /* libellé de la ligne de Réglages pour une copie : partagé par la ligne
+     et par les messages d'échec, pour citer exactement ce qui est affiché. */
+  function restoreRowLabel(reason) {
+    return reason === 'avant annulation' ? 'Rétablir la restauration annulée' : 'Annuler la dernière restauration';
+  }
+
   /* ---- lignes de Réglages : annulation, partage, protection ---- */
   function renderDataSafetyRows() {
     var undoBtn = document.getElementById('restore-undo-btn');
     getLatestRestorePoint(function (point) {
-      if (!point || !point.raw) { undoBtn.hidden = true; return; }
-      document.getElementById('restore-undo-label').textContent = point.reason === 'avant annulation'
-        ? 'Rétablir la restauration annulée' : 'Annuler la dernière restauration';
+      /* copie identique à l'état actuel (restauration échouée puis remise en
+         état) : rien à annuler, pas de ligne. Lecture seule. */
+      if (!point || !point.raw || sameRawState(point.raw, readRawOvrykState())) { undoBtn.hidden = true; return; }
+      document.getElementById('restore-undo-label').textContent = restoreRowLabel(point.reason);
       document.getElementById('restore-undo-value').textContent = formatRestoreDay(point.savedAt);
       undoBtn.hidden = false;
     });
@@ -17028,12 +17065,15 @@
 
   /* id absent = la copie la plus récente (ligne de Réglages) ; id donné =
      la copie liée à une restauration interrompue (bandeau). */
-  function openRestorePointPage(id) {
+  function openRestorePointPage(id, fromBanner) {
     getRestorePoint(id, function (point) {
       if (!point || !point.raw) {
         renderDataSafetyRows();
-        renderRestoreInterruptedBanner();
-        showDataIOStatus('Copie introuvable sur ce téléphone.', true);
+        if (fromBanner) {
+          showRestoreBannerCopyMissing();
+        } else {
+          showDataIOStatus('Copie introuvable sur ce téléphone.', true);
+        }
         return;
       }
       openRestorePage({
@@ -17050,15 +17090,30 @@
 
   /* bandeau de l'Accueil : seulement si une restauration a été
      interrompue (marque encore posée). Lecture seule. */
+  var restoreBannerCopyMissing = false;
+
   function renderRestoreInterruptedBanner() {
     var banner = document.getElementById('restore-interrupted-banner');
     if (!banner) return;
-    banner.hidden = !readRestoreMark();
+    var mark = readRestoreMark();
+    if (!mark) restoreBannerCopyMissing = false;
+    banner.hidden = !mark;
+    document.getElementById('restore-interrupted-msg').hidden = !restoreBannerCopyMissing;
+    document.getElementById('restore-interrupted-back-btn').hidden = restoreBannerCopyMissing;
+    document.getElementById('restore-interrupted-copy-note').hidden = restoreBannerCopyMissing;
+  }
+
+  /* message dans le bandeau lui-même (l'Accueil n'affiche pas le statut
+     de Réglages) : seule action restante, "Ignorer". Rien n'est écrit. */
+  function showRestoreBannerCopyMissing() {
+    restoreBannerCopyMissing = true;
+    renderRestoreInterruptedBanner();
   }
 
   function dismissRestoreInterrupted() {
     showConfirmModal(
-      'Ignorer ce message ? Tes données restent telles qu’elles sont. La copie d’avant reste disponible dans Réglages.',
+      'Ignorer ce message ? Tes données restent telles qu’elles sont.' +
+        (restoreBannerCopyMissing ? '' : ' La copie d’avant reste disponible dans Réglages.'),
       function () {
         localStorage.removeItem(RESTORE_MARK_KEY);
         renderRestoreInterruptedBanner();
@@ -17078,7 +17133,7 @@
   document.getElementById('restore-confirm-btn').addEventListener('click', confirmRestore);
   document.getElementById('restore-interrupted-back-btn').addEventListener('click', function () {
     var mark = readRestoreMark();
-    openRestorePointPage(mark && mark.pointId != null ? mark.pointId : null);
+    openRestorePointPage(mark && mark.pointId != null ? mark.pointId : null, true);
   });
   document.getElementById('restore-interrupted-dismiss-btn').addEventListener('click', dismissRestoreInterrupted);
   renderRestoreInterruptedBanner();
@@ -17136,6 +17191,9 @@
       "Réinitialiser l'app ? Toutes tes données (exercices, routines, séances, réglages, cycles de force) seront supprimées définitivement. Cette action est irréversible.",
       function () {
         Object.keys(DB_KEYS).forEach(function (k) { localStorage.removeItem(DB_KEYS[k]); });
+        /* lot 16 : plus de restauration interrompue à proposer après une
+           réinitialisation voulue. */
+        localStorage.removeItem(RESTORE_MARK_KEY);
         window.location.reload();
       }
     );

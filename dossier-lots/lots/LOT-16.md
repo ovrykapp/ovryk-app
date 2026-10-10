@@ -2,7 +2,7 @@
 
 Taille : L. Dépend de : tous. Lot à risque (export, import, sauvegardes, écriture dans des données existantes).
 
-Statut : plan révisé le 2026-10-10, décisions de Ruben prises le 2026-10-10 (voir "Décisions prises"). Livraison 1 faite (sw v124), corrigée après audit (sw v125), livraisons 2 à 5 à faire.
+Statut : plan révisé le 2026-10-10, décisions de Ruben prises le 2026-10-10 (voir "Décisions prises"). Livraison 1 faite (sw v124), corrigée après deux audits (sw v125 et v126), livraisons 2 à 5 à faire.
 
 ## Écrans de la maquette
 
@@ -315,6 +315,17 @@ R11 (pas de compte obligatoire).
   7. Le nettoyage des vieilles copies est fait à part, après coup, erreurs ignorées : il ne bloque plus une restauration.
   8. Plus de délai de 600 ms : l'écran est bloqué et la page rechargée tout de suite.
   9. Libellé : après une annulation, la ligne de Réglages et l'écran disent "Rétablir la restauration" (la copie la plus récente a été faite avant une annulation) ; après un rétablissement, de nouveau "Annuler".
-* Défauts restants de l'audit (faibles) :
+* Seconde correction après l'audit de fe0773b (sw v126), sans réseau et sans changer aucune règle d'acceptation ou de refus d'un fichier :
+  1. IndexedDB qui ne répond jamais : la restauration est abandonnée après 10 secondes (RESTORE_COPY_TIMEOUT_MS) avec "La copie de sécurité n'a pas pu être faite, rien n'a été remplacé". L'écran est débloqué, aucune donnée n'est touchée, et une réponse tardive est ignorée.
+  2. "Réinitialiser l'app" retire aussi la marque ovryk.restoreInProgress. Si la copie est introuvable, "Revenir à la copie d'avant" le dit dans le bandeau même (showRestoreBannerCopyMissing) : le bouton est masqué, il ne reste que "Ignorer", et la phrase "la copie est sur ce téléphone" est retirée.
+  3. Refus "sans identifiant" : la règle est identique, mais le message est devenu exact. Il ne dit plus que l'app ne démarrerait pas (vérifié : un élément sans identifiant ne la fait pas planter). Les autres refus gardent la mention.
+  4. Après une restauration ratée puis remise en état, la ligne de Réglages n'apparaît plus : elle est masquée quand la copie la plus récente est identique à l'état actuel (lecture seule).
+  5. Échec d'une annulation ou d'un rétablissement : le message cite le libellé réellement affiché (restoreRowLabel, partagé avec la ligne).
+  6. Cas limite trouvé en testant : si le retour arrière échoue sur une clé jamais modifiée, l'état est en fait intact. L'app dit alors "rien n'a changé" et retire la marque, au lieu de renvoyer vers une ligne masquée.
+* Défauts restants (faibles) :
+  * 6 : comptage des séances perdues par identifiant, limites théoriques impossibles avec des données de l'app (séance sans identifiant, identifiants en double, même séance au contenu différent).
+  * 7 : "Ignorer" laisse un éventuel état mélangé (le message le dit, la copie reste dans Réglages tant que le nettoyage ne l'a pas supprimée).
+  * 8 : le nettoyage des vieilles copies peut être interrompu par le rechargement, sans conséquence.
+  * 9 : BACKUP_KEY_LABELS répète la liste de DB_KEYS (une nouvelle clé ne serait pas contrôlée à l'export) ; openRestoreUndo et getLatestRestorePoint sont de simples relais.
   * 10 : doublons. Le nom de fichier et lastExportAt sont calculés à la fois par downloadOvrykExport et par shareOvrykBackup, CURRENT_SCHEMA_VERSION répète le 2 de migrateSchema, et summary.sessionsTotal n'est pas affiché.
-  * 11 : non vérifié sous Safari, l'abandon de la création de la base IndexedDB quand on ouvre Réglages (vérifié seulement sous Chromium).
+  * 11 : non vérifié sous Safari, l'abandon de la création de la base IndexedDB quand on ouvre Réglages.
