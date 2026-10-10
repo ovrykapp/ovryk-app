@@ -29,7 +29,7 @@ Taille : S = moins d'une heure de travail assisté, M = une demi journée, L = u
 2. Lots 04 et 05 : la séance. C'est le coeur de l'usage au quotidien. Fait.
 3. Lots 06 à 08 : les cycles complets (test, fin de cycle, tirage, coordination). Fait.
 4. Lots 09 et 10 : la muscu libre, les types et la fiche exercice. Fait.
-5. Reste à faire, dans cet ordre (mis à jour le 2026-10-10) : lot 11 (séparateur de bloc, élément de la liste de cartes, emplacement posé au lot 17), lot 14 (réglages et matériel), lot 13 (charge de la semaine et décharge de la muscu), lot 15 (import de données), lot 16 (compte et sauvegarde en ligne, en dernier car il dépend de tous les autres). Les lots 12 et 17 sont faits. Le lot 14 est fait pour ses livraisons 1 et 3 ; les livraisons 2, 4 et 5 restent à faire (elles ne bloquent pas les lots suivants).
+5. Reste à faire, dans cet ordre (mis à jour le 2026-10-10) : lot 11 (séparateur de bloc, à réécrire d'abord pour la liste de cartes, emplacement posé au lot 17), lot 14 livraisons 2 (palier et plage par défaut), 4 (plus petit saut appliqué à la progression) et 5 (repos par type), lot 13 (charge de la semaine et décharge de la muscu), lot 15 (import de données), lot 16 (compte et sauvegarde en ligne, en dernier car il dépend de tous les autres). Les lots 12 et 17 sont faits, ainsi que l'édition directe des séries, kilos et reps dans l'éditeur de routine (v113 à v115, avec gardes : champ vidé et min supérieur au max refusés). À décider : le bouton Reps/Plage de l'en-tête de l'éditeur s'applique à toutes les séries et fait perdre la plage d'origine au retour à reps fixes.
 
 ## Livraisons hors plan
 
