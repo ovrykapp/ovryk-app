@@ -3710,6 +3710,46 @@
   .live-card-done-mark svg { width: 14px; height: 14px; stroke: var(--graphite); fill: none; stroke-width: 3; }
   .live-card-body { padding: 0 12px 4px; }
   .live-card-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: var(--space-3); }
+
+  /* cercle de validation (livraison 3) : zone de tap 44 x 44, cercle de
+     26 px. Orange en muscu, bleu en haltérophilie (is-cycle). */
+  .muscu-set-table .live-set-col-n { width: 9%; }
+  .muscu-set-table .live-set-col-prev { width: 24%; }
+  .muscu-set-table .live-set-col-kg { flex: 1; width: auto; }
+  .muscu-set-table .live-set-col-reps { flex: 1; width: auto; }
+  .muscu-set-table .live-set-col-check { width: 44px; flex-shrink: 0; display: flex; justify-content: flex-end; }
+  .muscu-set-table .live-set-row { gap: 4px; padding-top: 4px; padding-bottom: 4px; min-height: 52px; }
+  .live-set-circle {
+    width: 44px;
+    height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .live-set-circle-dot {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    border: 2px solid var(--rust);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .live-set-circle.is-cycle .live-set-circle-dot { border-color: var(--blue); }
+  .live-set-circle-dot svg { width: 14px; height: 14px; stroke: var(--graphite); fill: none; stroke-width: 3; visibility: hidden; }
+  .live-set-circle.is-done .live-set-circle-dot { background: var(--rust); }
+  .live-set-circle.is-done.is-cycle .live-set-circle-dot { background: var(--blue); }
+  .live-set-circle.is-done .live-set-circle-dot svg { visibility: visible; }
+  .live-set-circle.is-upcoming { cursor: default; }
+  .live-set-circle.is-upcoming .live-set-circle-dot { border-color: var(--border-outline); }
+  .muscu-set-row.is-current .live-set-input { border-bottom: 1px solid var(--border-outline); }
+  .live-validate-row { margin-top: var(--space-3); }
+  .live-validate-row .btn-back.live-validate-btn { flex: 1; width: auto; }
 </style>
 </head>
 <body>
@@ -11345,10 +11385,70 @@
     return s.weightKg + ' x ' + reps;
   }
 
-  /* une série déjà validée reste modifiable : taper sa coche la dé-valide
-     (set.done = false) et la rouvre en édition — la "série en cours"
-     n'est jamais qu'une position (la première non validée), donc elle
-     redevient naturellement la cible du bouton Valider */
+  /* lot 17, livraison 3 : cercle de validation à droite de chaque série.
+     Série en cours : kg et reps saisis dans la ligne, préremplis (poids
+     prescrit, reps cibles) ; taper le cercle écrit la valeur affichée, ou
+     la valeur modifiée si elle a été changée. Série faite : retaper le
+     cercle la dé-valide (set.done = false), sans relancer le repos ni
+     l'avance d'exercice. Séries à venir : cercle vide, inactif. Un champ
+     vidé ou invalide n'écrit jamais NaN ni null par-dessus une valeur
+     prévue (weightKg, reps) ; repsActual vide reste vide (la cible
+     s'affiche en clair). Mêmes champs qu'avant : done, weightKg, reps
+     (série fixe), repsActual (série en plage). */
+  var liveRenderTimeoutId = null;
+
+  /* re-rendu différé après une saisie : un rendu immédiat sur "change"
+     remplacerait le cercle juste avant que le tap qui a fait perdre le
+     focus au champ n'arrive dessus, et le tap serait perdu. */
+  function scheduleLiveRender() {
+    if (liveRenderTimeoutId) clearTimeout(liveRenderTimeoutId);
+    liveRenderTimeoutId = setTimeout(function () {
+      liveRenderTimeoutId = null;
+      renderSeanceActiveView();
+    }, 350);
+  }
+
+  function cancelScheduledLiveRender() {
+    if (liveRenderTimeoutId) { clearTimeout(liveRenderTimeoutId); liveRenderTimeoutId = null; }
+  }
+
+  function getMuscuDefaultReps(set) {
+    if (set.repType === 'range') return set.targetReps != null ? set.targetReps : set.repsMin;
+    return set.reps;
+  }
+
+  function buildLiveSetCircle(state, label, isCycle) {
+    var el = document.createElement(state === 'upcoming' ? 'span' : 'button');
+    el.className = 'live-set-circle is-' + state + (isCycle ? ' is-cycle' : '');
+    if (state === 'upcoming') {
+      el.setAttribute('aria-hidden', 'true');
+    } else {
+      el.type = 'button';
+      el.setAttribute('aria-label', label);
+    }
+    el.innerHTML = '<span class="live-set-circle-dot"><svg viewBox="0 0 24 24"><polyline points="5,13 10,18 19,7"/></svg></span>';
+    return el;
+  }
+
+  function validateMuscuSet(sex, set, kgInput, repsInput) {
+    cancelScheduledLiveRender();
+    var kg = parseFloat(kgInput.value);
+    if (!isNaN(kg) && kg >= 0) set.weightKg = kg;
+    var reps = parseInt(repsInput.value, 10);
+    var hasReps = !isNaN(reps) && reps >= 0;
+    if (set.repType === 'range') {
+      if (hasReps) set.repsActual = reps;
+      else if (set.repsActual == null && getMuscuDefaultReps(set) != null) set.repsActual = getMuscuDefaultReps(set);
+    } else if (hasReps) {
+      set.reps = reps;
+    }
+    set.done = true;
+    persistActiveSession();
+    startRestTimer(sex.exerciseName, sex.restSeconds != null ? sex.restSeconds : 90);
+    advanceAfterSetValidated(sex);
+    renderSeanceActiveView();
+  }
+
   function buildMuscuSetRow(sex, set, setIndex, currentIndex, lastSex) {
     var row = document.createElement('div');
     var isDone = !!set.done;
@@ -11366,10 +11466,13 @@
     prevEl.textContent = formatPrevMuscuSetText(lastSex, setIndex);
     row.appendChild(prevEl);
 
+    var circleEl = document.createElement('div');
+    circleEl.className = 'live-set-col-check';
+
     if (isDone) {
       var kgDone = document.createElement('div');
       kgDone.className = 'live-set-col-kg';
-      kgDone.textContent = set.weightKg != null ? set.weightKg : '-';
+      kgDone.textContent = set.weightKg != null ? formatKgFr(set.weightKg) : '-';
       row.appendChild(kgDone);
 
       var repsDone = document.createElement('div');
@@ -11377,35 +11480,32 @@
       repsDone.textContent = set.repType === 'range' ? (set.repsActual != null ? set.repsActual : '-') : (set.reps != null ? set.reps : '-');
       row.appendChild(repsDone);
 
-      var checkEl = document.createElement('div');
-      checkEl.className = 'live-set-col-check';
-      var checkBtn = document.createElement('button');
-      checkBtn.type = 'button';
-      checkBtn.className = 'live-set-check';
-      checkBtn.setAttribute('aria-label', 'Modifier la série ' + (setIndex + 1));
-      checkBtn.innerHTML = '<svg viewBox="0 0 24 24"><polyline points="4,13 9,18 20,6"/></svg>';
-      checkBtn.addEventListener('click', function () {
+      var doneCircle = buildLiveSetCircle('done', 'Dé-valider la série ' + (setIndex + 1), false);
+      doneCircle.addEventListener('click', function () {
         cancelLiveAdvance();
+        cancelScheduledLiveRender();
         set.done = false;
         persistActiveSession();
         renderSeanceActiveView();
       });
-      checkEl.appendChild(checkBtn);
-      row.appendChild(checkEl);
+      circleEl.appendChild(doneCircle);
     } else if (isCurrent) {
       var kgEl = document.createElement('div');
       kgEl.className = 'live-set-col-kg';
       var kgInput = document.createElement('input');
       kgInput.type = 'number';
+      kgInput.inputMode = 'decimal';
       kgInput.className = 'live-set-input';
       kgInput.min = '0';
       kgInput.step = '0.5';
       kgInput.value = set.weightKg != null ? set.weightKg : '';
+      kgInput.setAttribute('aria-label', 'Charge de la série ' + (setIndex + 1));
       kgInput.addEventListener('change', function () {
         var v = parseFloat(kgInput.value);
-        set.weightKg = isNaN(v) ? null : (v < 0 ? 0 : v);
+        if (isNaN(v) || v < 0) { kgInput.value = set.weightKg != null ? set.weightKg : ''; return; }
+        set.weightKg = v;
         persistActiveSession();
-        renderSeanceActiveView();
+        scheduleLiveRender();
       });
       kgEl.appendChild(kgInput);
       row.appendChild(kgEl);
@@ -11414,30 +11514,49 @@
       repsEl.className = 'live-set-col-reps';
       var repsInput = document.createElement('input');
       repsInput.type = 'number';
+      repsInput.inputMode = 'numeric';
       repsInput.className = 'live-set-input';
-      var defaultReps = set.targetReps != null ? set.targetReps : set.repsMin;
-      repsInput.placeholder = defaultReps != null ? String(defaultReps) : '';
-      if (set.repsActual != null) repsInput.value = set.repsActual;
+      repsInput.min = '0';
+      repsInput.setAttribute('aria-label', 'Reps de la série ' + (setIndex + 1));
+      var defaultReps = getMuscuDefaultReps(set);
+      if (set.repType === 'range') {
+        repsInput.placeholder = defaultReps != null ? String(defaultReps) : '';
+        if (set.repsActual != null) repsInput.value = set.repsActual;
+      } else {
+        repsInput.value = set.reps != null ? set.reps : '';
+      }
       repsInput.addEventListener('change', function () {
         var v = parseInt(repsInput.value, 10);
-        set.repsActual = isNaN(v) ? null : v;
+        if (set.repType === 'range') {
+          set.repsActual = isNaN(v) || v < 0 ? null : v;
+        } else {
+          if (isNaN(v) || v < 0) { repsInput.value = set.reps != null ? set.reps : ''; return; }
+          set.reps = v;
+        }
         persistActiveSession();
       });
       repsEl.appendChild(repsInput);
       row.appendChild(repsEl);
+
+      var currentCircle = buildLiveSetCircle('current', 'Valider la série ' + (setIndex + 1), false);
+      currentCircle.addEventListener('click', function () { validateMuscuSet(sex, set, kgInput, repsInput); });
+      circleEl.appendChild(currentCircle);
     } else {
       var kgPreview = document.createElement('div');
       kgPreview.className = 'live-set-col-kg';
-      kgPreview.textContent = set.weightKg != null ? set.weightKg : '-';
+      kgPreview.textContent = set.weightKg != null ? formatKgFr(set.weightKg) : '-';
       row.appendChild(kgPreview);
 
       var repsPreview = document.createElement('div');
       repsPreview.className = 'live-set-col-reps';
-      var previewReps = set.targetReps != null ? set.targetReps : set.repsMin;
+      var previewReps = getMuscuDefaultReps(set);
       repsPreview.textContent = previewReps != null ? previewReps : '-';
       row.appendChild(repsPreview);
+
+      circleEl.appendChild(buildLiveSetCircle('upcoming', '', false));
     }
 
+    row.appendChild(circleEl);
     return row;
   }
 
@@ -11450,7 +11569,8 @@
     header.innerHTML = '<div class="live-set-col-n">Série</div>' +
       '<div class="live-set-col-prev">Précédent</div>' +
       '<div class="live-set-col-kg">Kg</div>' +
-      '<div class="live-set-col-reps">Reps</div>';
+      '<div class="live-set-col-reps">Reps</div>' +
+      '<div class="live-set-col-check" aria-hidden="true"></div>';
     table.appendChild(header);
 
     var lastSex = getLastLoggedSex(sex.exerciseId);
@@ -11561,38 +11681,25 @@
       if (loadCard) frag.appendChild(loadCard);
     }
 
+    /* lot 17 : "Valider la série" est remplacé par le cercle de la ligne ;
+       la suppression de la série en cours reste, à côté de l'ajout. */
+    var setActions = document.createElement('div');
+    setActions.className = 'live-validate-row';
+
     var addSetBtn = document.createElement('button');
     addSetBtn.type = 'button';
-    addSetBtn.className = 'btn-back';
-    addSetBtn.style.width = '100%';
+    addSetBtn.className = 'btn-back live-validate-btn';
     addSetBtn.textContent = '+ Ajouter une série';
     addSetBtn.addEventListener('click', function () {
+      cancelScheduledLiveRender();
       var base = sex.sets[sex.sets.length - 1];
       sex.sets.push(base ? cloneSessionSet(base) : createSessionSet(OvrykDB.getExerciseById(sex.exerciseId)));
       persistActiveSession();
       renderSeanceActiveView();
     });
-    frag.appendChild(addSetBtn);
-
+    setActions.appendChild(addSetBtn);
 
     if (currentSet) {
-      var validateRow = document.createElement('div');
-      validateRow.className = 'live-validate-row';
-
-      var validateBtn = document.createElement('button');
-      validateBtn.type = 'button';
-      validateBtn.className = 'btn-primary live-validate-btn';
-      validateBtn.textContent = 'Valider la série ' + (currentIndex + 1);
-      validateBtn.addEventListener('click', function () {
-        currentSet.done = true;
-        persistActiveSession();
-        startRestTimer(sex.exerciseName, sex.restSeconds != null ? sex.restSeconds : 90);
-
-        advanceAfterSetValidated(sex);
-        renderSeanceActiveView();
-      });
-      validateRow.appendChild(validateBtn);
-
       var delCurrentBtn = document.createElement('button');
       delCurrentBtn.type = 'button';
       delCurrentBtn.className = 'set-remove-btn live-validate-delete';
@@ -11601,15 +11708,15 @@
       delCurrentBtn.disabled = sex.sets.length <= 1;
       delCurrentBtn.addEventListener('click', function () {
         if (sex.sets.length <= 1) return;
+        cancelScheduledLiveRender();
         var idx = sex.sets.indexOf(currentSet);
         if (idx !== -1) sex.sets.splice(idx, 1);
         persistActiveSession();
         renderSeanceActiveView();
       });
-      validateRow.appendChild(delCurrentBtn);
-
-      frag.appendChild(validateRow);
+      setActions.appendChild(delCurrentBtn);
     }
+    frag.appendChild(setActions);
 
     return frag;
   }
