@@ -18,7 +18,7 @@ Taille : S = moins d'une heure de travail assisté, M = une demi journée, L = u
 | 11 | Séparateur de bloc | 13 | S | 05, 09 |
 | 12 | Historique et détail d'une séance (plus deux accès au détail d'un cycle, depuis l'Accueil et le panneau du jour) | 14, 15 | fait | 05 |
 | 13 | Charge de la semaine et décharge de la muscu | 28 | M | 08, 09 |
-| 14 | Réglages et matériel | 16, 17 | M | 01 |
+| 14 | Réglages et matériel (cadré le 2026-10-10, 5 livraisons, 3 décisions en attente dans LOT-14.md : arrondi et plus petit saut, repos par type, portée des réglages par défaut) | 16, 17 | M | 01 |
 | 15 | Import de données | 19, 8 | M | 14 |
 | 16 | Compte et sauvegarde en ligne | 18 | L | tous |
 | 17 | Séance sur un seul écran : tous les exercices en cartes repliables, cercle de validation à droite de chaque série, chargement selon le matériel (cadré et validé le 2026-10-10, décisions 1A, 2A, 3A ; livraisons 1 à 4 faites, plus quatre corrections hors livraison : reps fixes lues par repsActual, copie propre d'une série ajoutée, série en cours visible au dessus de la barre de repos, rappel Meilleur sur séances terminées ; livraison 5 en attente de ta séance test avec le nouvel écran) | 2, 3 adaptées (un exercice à la fois dans la maquette), 10, 11 | L | 05, 09, 10 |
