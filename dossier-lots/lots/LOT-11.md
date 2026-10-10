@@ -55,5 +55,5 @@ Copie ce texte dans Claude Code, à la racine du projet, après avoir exporté t
 
 ## Réalisé
 
-* buildLiveBlockSeparator rend, entre deux segments de la liste dont le bloc change : récapitulatif du bloc qui précède (bleu pour l'haltérophilie, orange pour la muscu), titre du bloc suivant, "Ce qui change" (charge, validation, repos du premier exercice du bloc suivant), pause conseillée de 3 min avec un bouton Lancer qui démarre la barre de repos (elle a son propre Passer). Le bouton "Commencer le bloc" de la maquette n'existe pas : les cartes ne sont pas verrouillées.
+* buildLiveBlockSeparator rend, entre deux segments de la liste dont le bloc change : récapitulatif du bloc qui précède (bleu pour l'haltérophilie, orange pour la muscu), titre du bloc suivant, (le bloc "Ce qui change" de la maquette est retiré à la demande de Ruben, sw v117) pause conseillée de 3 min avec un bouton Lancer qui démarre la barre de repos (elle a son propre Passer). Le bouton "Commencer le bloc" de la maquette n'existe pas : les cartes ne sont pas verrouillées.
 * Testé sur l'export de backups/ à 390 px : cycle puis muscu (1 séparateur), muscu seule (0), haltérophilie seule (0), cycle puis superset puis muscu (1, avant le groupe, aucun dedans), muscu puis superset (0), un seul exercice (0), muscu puis cycle (1), reprise après rechargement (même séparateur, sessions inchangées).
