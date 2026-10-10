@@ -14,7 +14,7 @@ Taille : S = moins d'une heure de travail assisté, M = une demi journée, L = u
 | 07 | Activation et tirage des cycles (inclut l'affichage Cycle 13-17 et verifier-cycles.js étendu à 17) | 24, 29, 25, 22 | fait | 06 |
 | 08 | Coordination des cycles | 30 | fait | 07 |
 | 09 | Muscu libre : éditeur de routine | 20, 21, 23, 7, 9 | fait | 04 |
-| 10 | Types d'exercice et fiche exercice | 12, 6 | M | 09 |
+| 10 | Types d'exercice et fiche exercice | 12, 6 | fait | 09 |
 | 11 | Séparateur de bloc | 13 | S | 05, 09 |
 | 12 | Historique et détail d'une séance | 14, 15 | M | 05 |
 | 13 | Charge de la semaine et décharge de la muscu | 28 | M | 08, 09 |
@@ -38,6 +38,10 @@ Taille : S = moins d'une heure de travail assisté, M = une demi journée, L = u
 ## Bugs hors lot
 
 * Corrigé le 2026-10-10 : l'activation d'un cycle au fil de l'eau (maybeAutoActivateForceCycle — déclenchée depuis le 1RM de l'onglet Exercices, la date de départ, et depuis la livraison 4 du lot 09 "Charges de départ") ne lançait jamais la coordination (R7) : decalage_semaines restait à 0, même si maxHeavyCyclesPerWeek cycles lourds étaient déjà actifs ailleurs. Seule la validation groupée de "Tirer mes cycles" (handleValidateCyclesDrawn) appelait coordinateAndApplyOffsets. maybeAutoActivateForceCycle appelle désormais coordinateAndApplyOffsets après chaque nouvelle activation, sauf si l'exercice a une date de départ saisie à la main (forceCycleStartDate), jamais écrasée par la coordination. Le message "Cycle X démarre..." (Charges de départ, et la fiche exercice du lot 10) reflète le décalage éventuel via buildCycleStartMessage.
+
+## Réglages sans interface
+
+* settings.restByType ({ technique: 150, force: 120, muscu: 90 }, lot 10, R10) : seul addExercisesToRoutine le lit pour l'instant (repos par défaut à l'ajout d'un exercice dans une routine). Pas d'écran de réglage dans ce lot — à exposer plus tard (lot 14, Réglages et matériel, est le candidat naturel).
 
 ## Idées non traitées
 

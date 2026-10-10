@@ -713,6 +713,9 @@
     font-weight: 600;
     font-size: 14px;
     color: var(--ink);
+    display: inline-block;
+    padding: 2px 0;
+    cursor: pointer;
   }
   .exercise-row-meta {
     display: block;
@@ -910,6 +913,7 @@
   .routine-starting-charge-hint { font-size: 11px; color: var(--steel); flex-basis: 100%; }
   .routine-starting-charge-field { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
   .routine-starting-charge-message { flex-basis: 100%; font-size: 11px; color: var(--accent-info); margin: 2px 0 0; }
+  .exercise-detail-orm-message { font-size: 11px; color: var(--accent-info); margin: 2px 12px 0; }
 
   /* liste de tentatives du test de 1RM (lot 06, livraison B) */
   .cycle-test-attempts { display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
@@ -3545,6 +3549,79 @@
     font-weight: 500;
     margin: 4px 0 0;
   }
+
+  /* lot 10 : écran "Type d'exercice" (maquette 12) — mêmes tokens que
+     new-routine-choice-card ci-dessus, sélection en bleu (R.4 : bleu =
+     cycles et haltérophilie, ce choix ne concerne que les mouvements). */
+  .exercise-type-card {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--space-3);
+    width: 100%;
+    text-align: left;
+    background: transparent;
+    border: 1px solid var(--border-card);
+    border-radius: var(--radius-card);
+    padding: var(--space-4);
+    margin-bottom: var(--space-3);
+  }
+  .exercise-type-card.is-selectable { cursor: pointer; }
+  .exercise-type-card.is-selected { border-color: var(--blue); background: var(--blue-fill); }
+  .exercise-type-card.is-locked { opacity: 0.55; }
+  .exercise-type-card-text { flex: 1; min-width: 0; }
+  .exercise-type-card-title {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 15px;
+    color: var(--ink);
+  }
+  .exercise-type-card-sub { font-size: 12px; color: var(--steel); margin: 4px 0 0; }
+  .exercise-type-card-meta { font-size: 11px; color: var(--steel); margin: 8px 0 0; }
+  .exercise-type-card-radio {
+    flex-shrink: 0;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    border: 1.5px solid var(--steel);
+    position: relative;
+    margin-top: 2px;
+  }
+  .exercise-type-card.is-selected .exercise-type-card-radio { border-color: var(--blue); background: var(--blue); }
+  .exercise-type-card.is-selected .exercise-type-card-radio::after {
+    content: '';
+    position: absolute;
+    left: 6px;
+    top: 3px;
+    width: 5px;
+    height: 9px;
+    border: solid var(--blue-fill);
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+  }
+  .exercise-type-note {
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--steel);
+    margin: 0 0 var(--space-4);
+  }
+  .exercise-type-result {
+    background: var(--blue-fill);
+    border-radius: var(--radius-card);
+    padding: var(--space-4);
+    margin-top: var(--space-2);
+  }
+  .exercise-type-result-label {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--blue);
+  }
+  .exercise-type-result-row { display: flex; align-items: baseline; justify-content: space-between; margin-top: 6px; gap: var(--space-2); }
+  .exercise-type-result-phase { font-size: 13px; color: var(--chalk); }
+  .exercise-type-result-value { font-family: var(--font-display); font-weight: 800; font-size: 26px; color: var(--chalk); white-space: nowrap; }
+  .exercise-type-result-note { font-size: 12px; color: var(--blue); margin-top: 8px; }
 </style>
 </head>
 <body>
@@ -3749,6 +3826,7 @@
           <h1 id="exercise-detail-name"></h1>
           <p id="exercise-detail-meta"></p>
         </div>
+        <div id="exercise-detail-fiche-extra"></div>
         <div class="exercise-detail-hero" id="exercise-detail-hero"></div>
         <span class="dash-section-eyebrow" id="exercise-detail-history-label">HISTORIQUE</span>
         <div id="exercise-detail-history"></div>
@@ -3996,6 +4074,15 @@
       <span class="fullscreen-page-action" aria-hidden="true"></span>
     </div>
     <div class="fullscreen-page-body" id="cycle-detail-body"></div>
+  </div>
+
+  <div id="exercise-type-page" class="fullscreen-page" hidden>
+    <div class="fullscreen-page-topbar">
+      <button type="button" id="exercise-type-cancel-btn" class="fullscreen-page-action cancel">Fermer</button>
+      <span class="fullscreen-page-title" id="exercise-type-title"></span>
+      <button type="button" id="exercise-type-save-btn" class="fullscreen-page-action confirm">Enregistrer</button>
+    </div>
+    <div class="fullscreen-page-body" id="exercise-type-body"></div>
   </div>
 
   <div id="coordination-page" class="fullscreen-page" hidden>
@@ -4541,6 +4628,16 @@
     return exercise && exercise.liftBaseMode === 'oly' ? 'oly' : 'force';
   }
 
+  /* lot 10 : 'technique', 'force' ou 'muscu' — toujours recalculé depuis
+     category + liftBaseMode, jamais lu depuis exercise.exerciseType. Ce
+     champ stocké n'est qu'une copie pour l'export (MODELE-DE-DONNEES.md) :
+     il peut être absent ou périmé sur une donnée ancienne, cette fonction
+     reste donc la seule source utilisée par le reste du code. */
+  function getExerciseType(exercise) {
+    if (!exercise || exercise.category !== 'Lifting') return 'muscu';
+    return getLiftBaseMode(exercise) === 'oly' ? 'technique' : 'force';
+  }
+
   function migrateExerciseCatalog() {
     var stored = OvrykDB.getExercises();
     var changed = false;
@@ -4987,6 +5084,21 @@
         this.saveExercises(list);
       }
     },
+    /* lot 10 : écran "Type d'exercice", pour un mouvement Lifting seulement
+       (technique/force). N'écrit jamais dans forceCycles — un cycle actif,
+       gelé ou en attente n'est ni bloqué ni touché par ce changement, qui ne
+       pilote que le mode de base (BASE_MODE_PRESCRIPTIONS), lu seulement
+       hors cycle. exerciseType est réécrit dans la foulée pour rester une
+       copie à jour (voir getExerciseType, jamais relu par le code). */
+    updateExerciseLiftBaseMode: function (id, mode) {
+      var list = this.getExercises();
+      var found = list.filter(function (e) { return e.id === id; })[0];
+      if (found) {
+        found.liftBaseMode = mode === 'oly' ? 'oly' : 'force';
+        found.exerciseType = getExerciseType(found);
+        this.saveExercises(list);
+      }
+    },
     updateExerciseLastGrip: function (id, grip) {
       var list = this.getExercises();
       var found = list.filter(function (e) { return e.id === id; })[0];
@@ -5382,6 +5494,10 @@
     if (settings.j2OffsetPoints == null) { settings.j2OffsetPoints = 10; settingsChanged = true; }
     if (settings.heavyThreshold == null) { settings.heavyThreshold = 85; settingsChanged = true; }
     if (settings.maxHeavyCyclesPerWeek == null) { settings.maxHeavyCyclesPerWeek = 2; settingsChanged = true; }
+    /* lot 10 (R10) : pas d'écran de réglage dans ce lot (noté dans PLAN.md,
+       section "Idées non traitées") — seul addExercisesToRoutine le lit
+       pour l'instant, à la place du 90 fixe précédent. */
+    if (!settings.restByType) { settings.restByType = { technique: 150, force: 120, muscu: 90 }; settingsChanged = true; }
     if (settingsChanged) OvrykDB.saveSettings(settings);
 
     var exercises = OvrykDB.getExercises();
@@ -5389,6 +5505,10 @@
     exercises.forEach(function (ex) {
       if (ex.progressionStep == null) { ex.progressionStep = settings.defaultProgressionStep; exChanged = true; }
       if (ex.autoProgression == null) { ex.autoProgression = true; exChanged = true; }
+      /* lot 10 : copie pour l'export seulement, jamais relue par le reste du
+         code (voir getExerciseType) — complète seulement un champ absent,
+         ne resynchronise jamais une valeur déjà présente même périmée. */
+      if (ex.exerciseType == null) { ex.exerciseType = getExerciseType(ex); exChanged = true; }
     });
     if (exChanged) OvrykDB.saveExercises(exercises);
 
@@ -6085,6 +6205,17 @@
     var nameEl = document.createElement('span');
     nameEl.className = 'exercise-row-name';
     nameEl.textContent = ex.name;
+    /* lot 10 : ouvre la fiche exercice (stopPropagation pour ne jamais
+       déclencher aussi le clic du cycle ou de la prise porté par info,
+       voir plus bas) — même mécanisme que buildProgressionExerciseRow
+       (setActiveView('progression') puis openExerciseDetail), origine
+       'exercices' pour que le retour revienne ici plutôt que sur Progrès. */
+    nameEl.addEventListener('click', function (e) {
+      e.stopPropagation();
+      exerciseDetailOrigin = 'exercices';
+      setActiveView('progression');
+      openExerciseDetail(ex.id);
+    });
     info.appendChild(nameEl);
 
     var metaEl = document.createElement('span');
@@ -7537,6 +7668,7 @@
       createdAt: new Date().toISOString()
     };
     if (newExercise.category === 'Lifting') newExercise.oneRepMax = null;
+    newExercise.exerciseType = getExerciseType(newExercise);
 
     OvrykDB.addExercise(newExercise);
 
@@ -9514,10 +9646,16 @@
     var addedRex = [];
     exerciseIds.forEach(function (exerciseId) {
       var exercise = OvrykDB.getExerciseById(exerciseId);
+      /* R10 : repos par défaut selon le type (technique/force/muscu) au lieu
+         d'un 90 fixe — une semaine de cycle impose ensuite sa propre durée
+         le cas échéant (buildSessionFromRoutine), ce réglage ne sert que
+         tant qu'aucun cycle ne pilote l'exercice. */
+      var restByType = OvrykDB.getSettings().restByType;
+      var defaultRest = (restByType && restByType[getExerciseType(exercise)] != null) ? restByType[getExerciseType(exercise)] : 90;
       var rex = {
         id: 'rex-' + OvrykDB.generateId(),
         exerciseId: exerciseId,
-        restSeconds: 90,
+        restSeconds: defaultRest,
         sets: createDefaultSets(exercise),
         groupId: null,
         groupType: null,
@@ -12610,6 +12748,240 @@
     return idxs.filter(function (v, i, arr) { return arr.indexOf(v) === i; });
   }
 
+  /* ============================================================
+     FICHE EXERCICE — ligne "Type d'exercice" + écran dédié (lot 10,
+     maquette 12), et ligne 1RM pour un Lifting sans cycle actif.
+  ============================================================ */
+  var EXERCISE_TYPE_LABELS = { technique: 'Mouvement technique', force: 'Force en pourcentage', muscu: 'Accessoire et muscu' };
+  var exerciseTypePageState = { exerciseId: null, pendingMode: null };
+
+  function buildExerciseTypeCard(opts) {
+    var card = document.createElement(opts.selectable ? 'button' : 'div');
+    if (opts.selectable) card.type = 'button';
+    card.className = 'exercise-type-card' +
+      (opts.selectable ? ' is-selectable' : '') +
+      (opts.selected ? ' is-selected' : '') +
+      (opts.locked ? ' is-locked' : '');
+
+    var text = document.createElement('div');
+    text.className = 'exercise-type-card-text';
+    text.innerHTML = '<div class="exercise-type-card-title">' + escapeHTML(opts.title) + '</div>' +
+      '<p class="exercise-type-card-sub">' + escapeHTML(opts.sub) + '</p>' +
+      '<p class="exercise-type-card-meta mono">' + escapeHTML(opts.meta) + '</p>';
+    card.appendChild(text);
+
+    var radio = document.createElement('span');
+    radio.className = 'exercise-type-card-radio';
+    radio.setAttribute('aria-hidden', 'true');
+    card.appendChild(radio);
+
+    if (opts.selectable) card.addEventListener('click', opts.onSelect);
+    return card;
+  }
+
+  /* reconstruit seulement le contenu de l'écran Type (jamais la fiche
+     entière) — appelée à l'ouverture et à chaque sélection d'une carte, le
+     choix n'étant écrit (updateExerciseLiftBaseMode) qu'au clic sur
+     Enregistrer, jamais avant. */
+  function renderExerciseTypePage() {
+    var exercise = OvrykDB.getExerciseById(exerciseTypePageState.exerciseId);
+    if (!exercise) return;
+    var body = document.getElementById('exercise-type-body');
+    body.innerHTML = '';
+
+    var note = document.createElement('p');
+    note.className = 'exercise-type-note';
+    note.textContent = 'Le type décide comment l\'app calcule la charge, ce que tu valides et la durée du repos. Un changement s\'applique à la prochaine séance en mode de base : une séance déjà en cours n\'est jamais modifiée.';
+    body.appendChild(note);
+
+    var settings = OvrykDB.getSettings();
+    var restByType = (settings && settings.restByType) || { technique: 150, force: 120, muscu: 90 };
+    var isLifting = exercise.category === 'Lifting';
+    var pendingMode = exerciseTypePageState.pendingMode;
+
+    if (isLifting) {
+      body.appendChild(buildExerciseTypeCard({
+        title: 'Mouvement technique',
+        sub: 'Snatch, Clean, Jerk',
+        meta: '% du 1RM · Réussi ou raté · Repos ' + formatRestPickerLabel(restByType.technique),
+        selectable: true,
+        selected: pendingMode === 'oly',
+        onSelect: function () { exerciseTypePageState.pendingMode = 'oly'; renderExerciseTypePage(); }
+      }));
+      body.appendChild(buildExerciseTypeCard({
+        title: 'Force en pourcentage',
+        sub: 'Squat de face, Squat arrière, tirages',
+        meta: '% du 1RM · Reps comptées · Repos ' + formatRestPickerLabel(restByType.force),
+        selectable: true,
+        selected: pendingMode === 'force',
+        onSelect: function () { exerciseTypePageState.pendingMode = 'force'; renderExerciseTypePage(); }
+      }));
+      body.appendChild(buildExerciseTypeCard({
+        title: 'Accessoire et muscu',
+        sub: 'Développé couché, tractions, gainage',
+        meta: 'Double progression · Reps comptées · Repos ' + formatRestPickerLabel(restByType.muscu),
+        selectable: false,
+        selected: false,
+        locked: true
+      }));
+      var lockedNote = document.createElement('p');
+      lockedNote.className = 'exercise-type-note';
+      lockedNote.textContent = 'Cet exercice est un mouvement : il pilote un cycle ou du travail technique, pas la double progression.';
+      body.appendChild(lockedNote);
+
+      var cycle = OvrykDB.getForceCycle(exercise.id);
+      var resultBox = document.createElement('div');
+      resultBox.className = 'exercise-type-result';
+      if (cycle) {
+        resultBox.innerHTML = '<span class="exercise-type-result-label">Résultat pour ce programme</span>' +
+          '<p class="exercise-type-result-note">Cycle ' + escapeHTML(displayCycleNumber(cycle.cycle_actif)) + ' en cours : il continue jusqu\'à sa fin, ce choix s\'appliquera ensuite.</p>';
+      } else if (exercise.oneRepMax == null) {
+        resultBox.innerHTML = '<span class="exercise-type-result-label">Résultat pour ce programme</span>' +
+          '<p class="exercise-type-result-note">Renseigne le 1RM sur la fiche pour voir le résultat.</p>';
+      } else {
+        var prescription = BASE_MODE_PRESCRIPTIONS[pendingMode];
+        var firstSet = prescription.sets[0];
+        var weight = computeWeightFromPercent(exercise.oneRepMax, firstSet.percent);
+        resultBox.innerHTML = '<span class="exercise-type-result-label">Résultat pour ce programme</span>' +
+          '<div class="exercise-type-result-row">' +
+          '<span class="exercise-type-result-phase">' + prescription.sets.length + ' x ' + firstSet.reps + ' à ' + firstSet.percent + ' % de ' + exercise.oneRepMax + ' kg</span>' +
+          '<span class="exercise-type-result-value">' + (weight != null ? (weight + ' kg') : '-') + '</span>' +
+          '</div>';
+      }
+      body.appendChild(resultBox);
+    } else {
+      body.appendChild(buildExerciseTypeCard({
+        title: 'Accessoire et muscu',
+        sub: 'Développé couché, tractions, gainage',
+        meta: 'Double progression · Reps comptées · Repos ' + formatRestPickerLabel(restByType.muscu),
+        selectable: false,
+        selected: true
+      }));
+      var muscuNote = document.createElement('p');
+      muscuNote.className = 'exercise-type-note';
+      muscuNote.textContent = 'Cet exercice utilise la double progression (R5) : charge et repos classiques, pas de cycle ni de pourcentage du 1RM.';
+      body.appendChild(muscuNote);
+    }
+
+    document.getElementById('exercise-type-save-btn').hidden = !isLifting;
+  }
+
+  function openExerciseTypePage(exerciseId) {
+    var exercise = OvrykDB.getExerciseById(exerciseId);
+    if (!exercise) return;
+    exerciseTypePageState.exerciseId = exerciseId;
+    exerciseTypePageState.pendingMode = getLiftBaseMode(exercise);
+    document.getElementById('exercise-type-title').textContent = exercise.name;
+    document.getElementById('exercise-type-page').hidden = false;
+    renderExerciseTypePage();
+  }
+
+  function closeExerciseTypePage() {
+    document.getElementById('exercise-type-page').hidden = true;
+    exerciseTypePageState.exerciseId = null;
+    exerciseTypePageState.pendingMode = null;
+  }
+
+  document.getElementById('exercise-type-cancel-btn').addEventListener('click', closeExerciseTypePage);
+  document.getElementById('exercise-type-save-btn').addEventListener('click', function () {
+    var exerciseId = exerciseTypePageState.exerciseId;
+    var exercise = OvrykDB.getExerciseById(exerciseId);
+    if (exercise && exercise.category === 'Lifting') {
+      /* n'écrit jamais dans forceCycles : un cycle actif, gelé ou en attente
+         n'est ni bloqué ni modifié par ce choix (voir updateExerciseLiftBaseMode). */
+      OvrykDB.updateExerciseLiftBaseMode(exerciseId, exerciseTypePageState.pendingMode);
+    }
+    closeExerciseTypePage();
+    renderExerciseDetailFicheExtra(exerciseId);
+  });
+
+  /* ligne 1RM de la fiche : même motif que openOneRepMaxEditor (onglet
+     Exercices), mais affiche en plus le même message qu'à l'activation
+     "Charges de départ" (buildCycleStartMessage) — jamais un rafraîchissement
+     complet de la fiche après la saisie, qui effacerait ce message aussitôt
+     affiché (voir buildOneRepMaxButton, remplacé en place par lui-même). */
+  function buildExerciseDetailOneRepMaxRow(exercise) {
+    var wrap = document.createElement('div');
+
+    var row = document.createElement('div');
+    row.className = 'rex-rest-row';
+    var label = document.createElement('span');
+    label.className = 'form-label';
+    label.textContent = '1RM';
+    row.appendChild(label);
+    wrap.appendChild(row);
+
+    function buildOneRepMaxButton(currentValue) {
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'exercise-row-orm';
+      btn.style.marginLeft = 'auto';
+      btn.innerHTML = (currentValue != null
+        ? '<span class="exercise-row-orm-value">' + currentValue + '<span class="exercise-row-orm-unit">kg</span></span>'
+        : '<span class="exercise-row-orm-value exercise-row-orm-empty">-</span>');
+      btn.addEventListener('click', function () {
+        var input = document.createElement('input');
+        input.type = 'number';
+        input.step = '0.5';
+        input.min = '0';
+        input.className = 'exercise-row-orm-input mono';
+        input.placeholder = 'kg';
+        input.style.marginLeft = 'auto';
+        input.value = currentValue != null ? currentValue : '';
+        btn.replaceWith(input);
+        input.focus();
+        input.select();
+
+        function commit() {
+          var existingMsg = wrap.querySelector('.exercise-detail-orm-message');
+          if (existingMsg) existingMsg.remove();
+
+          var val = input.value === '' ? null : parseFloat(input.value);
+          if (val !== null && (isNaN(val) || val < 0)) val = null;
+          OvrykDB.updateExerciseOneRepMax(exercise.id, val);
+          input.replaceWith(buildOneRepMaxButton(val));
+          if (val != null) {
+            maybeAutoActivateForceCycle(exercise.id);
+            var freshExercise = OvrykDB.getExerciseById(exercise.id);
+            var cycle = OvrykDB.getForceCycle(exercise.id);
+            var messageText = buildCycleStartMessage(freshExercise, cycle);
+            if (messageText) {
+              var msgEl = document.createElement('p');
+              msgEl.className = 'exercise-detail-orm-message';
+              msgEl.textContent = messageText;
+              wrap.appendChild(msgEl);
+            }
+          }
+        }
+        input.addEventListener('blur', commit);
+        input.addEventListener('keydown', function (e) { if (e.key === 'Enter') input.blur(); });
+      });
+      return btn;
+    }
+
+    row.appendChild(buildOneRepMaxButton(exercise.oneRepMax));
+    return wrap;
+  }
+
+  function renderExerciseDetailFicheExtra(exerciseId) {
+    var exercise = OvrykDB.getExerciseById(exerciseId);
+    var container = document.getElementById('exercise-detail-fiche-extra');
+    if (!exercise || !container) return;
+    container.innerHTML = '';
+
+    var typeBtn = document.createElement('button');
+    typeBtn.type = 'button';
+    typeBtn.className = 'rex-summary-row';
+    typeBtn.innerHTML = '<span class="rex-summary-text">Type d\'exercice · ' + escapeHTML(EXERCISE_TYPE_LABELS[getExerciseType(exercise)]) + '</span>' +
+      '<span class="rex-summary-chevron"><svg viewBox="0 0 24 24" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="9,6 15,12 9,18"/></svg></span>';
+    typeBtn.addEventListener('click', function () { openExerciseTypePage(exerciseId); });
+    container.appendChild(typeBtn);
+
+    if (exercise.category === 'Lifting' && !OvrykDB.getForceCycle(exerciseId)) {
+      container.appendChild(buildExerciseDetailOneRepMaxRow(exercise));
+    }
+  }
+
   function openExerciseDetail(exerciseId) {
     var exercise = OvrykDB.getExerciseById(exerciseId);
     if (!exercise) return;
@@ -12625,6 +12997,7 @@
     if (exercise.category !== 'Lifting' && detectStagnation(exerciseId).isStagnant) {
       metaEl.innerHTML += ' <span class="stagnation-tag">Stagnation</span>';
     }
+    renderExerciseDetailFicheExtra(exerciseId);
 
     var records = getExerciseSessionRecords(exerciseId);
     var maxWeights = records.map(function (r) { return r.maxWeight; });
@@ -12759,6 +13132,12 @@
     if (exerciseDetailOrigin === 'group' && currentGroupKey) {
       document.getElementById('progression-group-detail-view').hidden = false;
       renderGroupDetail();
+    } else if (exerciseDetailOrigin === 'exercices') {
+      /* lot 10 : la fiche est accessible depuis l'onglet Exercices — revient
+         sur cet onglet au lieu de Progrès, même principe que le cas
+         "group" ci-dessus (setActiveView gère déjà tout l'affichage et le
+         rafraîchissement de la vue Exercices). */
+      setActiveView('exercices');
     } else {
       document.getElementById('progression-groups-view').hidden = false;
       renderProgressionGroups();
