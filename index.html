@@ -1777,6 +1777,12 @@
   /* .settings-row impose display:flex : sans cette règle, une ligne masquée
      (partage, annulation, protection) resterait affichée. */
   .settings-group > .settings-row[hidden] { display: none; }
+  .restore-interrupted-banner { background: var(--orange-fill); border-radius: var(--radius-card); padding: var(--space-4); margin-bottom: var(--space-5); }
+  .restore-interrupted-banner[hidden] { display: none; }
+  .restore-interrupted-title { margin: 0 0 6px; font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--orange-soft); }
+  .restore-interrupted-text { margin: 0; font-size: 14px; line-height: 1.45; color: var(--ink); }
+  .restore-interrupted-actions { display: flex; gap: 10px; margin-top: var(--space-3); }
+  .restore-interrupted-actions > button { flex: 1; min-height: 48px; }
   .restore-table { background: var(--surface); border: 1px solid var(--border-card); border-radius: var(--radius-card); overflow: hidden; margin-bottom: var(--space-4); }
   .restore-row { display: grid; grid-template-columns: 1.3fr 1fr 1fr; gap: 8px; padding: 12px 14px; border-bottom: 1px solid var(--divider); align-items: baseline; }
   .restore-row:last-child { border-bottom: none; }
@@ -4228,6 +4234,17 @@
 
       <div class="dash-week-strip" id="dash-week-strip"></div>
 
+      <!-- lot 16, livraison 1 : restauration interrompue (marque
+           ovryk.restoreInProgress encore posée au lancement). Lecture seule
+           à l'affichage, rien n'est écrit sans un appui. -->
+      <div class="restore-interrupted-banner" id="restore-interrupted-banner" hidden>
+        <p class="restore-interrupted-title">Restauration interrompue</p>
+        <p class="restore-interrupted-text">Une restauration ne s'est pas terminée. Tes données peuvent être incomplètes. La copie faite juste avant est sur ce téléphone.</p>
+        <div class="restore-interrupted-actions">
+          <button type="button" class="week-load-alert-btn-outline" id="restore-interrupted-back-btn">Revenir à la copie d'avant</button>
+          <button type="button" class="week-load-alert-btn-plain" id="restore-interrupted-dismiss-btn">Ignorer</button>
+        </div>
+      </div>
       <button type="button" class="cycle-alert-banner" id="cycle-alert-banner" hidden>
         <svg class="cycle-alert-icon" viewBox="0 0 24 24">
           <circle cx="12" cy="12" r="9"/>
@@ -4546,7 +4563,7 @@
           <!-- affichée seulement s'il existe une copie faite avant une
                restauration (lue sans rien écrire). -->
           <button type="button" id="restore-undo-btn" class="settings-row is-button" hidden>
-            <span class="settings-row-label">Annuler la dernière restauration</span>
+            <span class="settings-row-label" id="restore-undo-label">Annuler la dernière restauration</span>
             <span class="settings-row-value" id="restore-undo-value"></span>
             <svg class="settings-row-chevron" viewBox="0 0 24 24" aria-hidden="true"><polyline points="9,6 15,12 9,18"/></svg>
           </button>
@@ -6417,6 +6434,7 @@
     if (target === 'dashboard') {
       dashboardSelectedDay = currentWeekdayNum();
       renderCycleAlertBanner();
+      renderRestoreInterruptedBanner();
       renderDashboardStagnation();
       renderDashboardHome();
     }
@@ -16461,8 +16479,13 @@
      * Une seule validation (validateBackupFile) pour tout ce qui entre, une
        seule garde (getBackupBlocker) pour tout ce qui sort.
      * Avant toute restauration, copie exacte de l'état actuel (les six clés
-       ovryk.*, séances comprises, valeurs brutes) dans IndexedDB : le
-       localStorage n'est pas doublé. L'annulation remet ces valeurs brutes.
+       ovryk.*, séances comprises, valeurs brutes) dans IndexedDB, relue et
+       comparée avant d'écrire quoi que ce soit : le localStorage n'est pas
+       doublé. L'annulation remet ces valeurs brutes.
+     * Marque ovryk.restoreInProgress posée juste avant le remplacement et
+       retirée juste avant le rechargement : si elle est encore là au
+       lancement, un bandeau propose de revenir à la copie (aucune écriture
+       automatique).
      * Rien n'est écrit à l'ouverture de Réglages : la lecture de la copie
        n'ouvre la base que si elle existe déjà (openRestoreDb sans création).
      ============================================================ */
@@ -16471,6 +16494,11 @@
   var RESTORE_DB_NAME = 'ovryk-restore';
   var RESTORE_STORE = 'points';
   var RESTORE_KEEP = 5;
+  var RESTORE_MARK_KEY = 'ovryk.restoreInProgress';
+  var BACKUP_KEY_LABELS = {
+    'ovryk.exercises': 'exercices', 'ovryk.routines': 'routines', 'ovryk.sessions': 'séances',
+    'ovryk.settings': 'réglages', 'ovryk.forceCycles': 'cycles de force', 'ovryk.meta': 'version de schéma'
+  };
 
   /* empreinte FNV-1a 32 bits du contenu (data), en hexadécimal : détecte
      un fichier tronqué ou modifié, pas une protection contre la fraude. */
@@ -16506,9 +16534,7 @@
   function isPlainObject(v) { return !!v && typeof v === 'object' && !Array.isArray(v); }
 
   /* structure attendue : trois listes, deux objets optionnels. Renvoie la
-     raison d'un refus, ou null. Un élément isolé mal formé n'est pas un
-     refus (voir countMalformedBackupItems) : il ne doit jamais empêcher de
-     sauvegarder ou de restaurer ses propres données. */
+     raison d'un refus, ou null. */
   function getBackupShapeError(data) {
     if (!isPlainObject(data)) return 'structure inattendue';
     var lists = [['exercises', 'exercices'], ['routines', 'routines'], ['sessions', 'séances']];
@@ -16522,24 +16548,67 @@
     return null;
   }
 
-  function countMalformedBackupItems(data) {
-    var n = 0;
-    data.exercises.forEach(function (e) { if (!isPlainObject(e) || !e.id) n++; });
-    data.routines.forEach(function (r) { if (!isPlainObject(r) || !r.id || !Array.isArray(r.exercises)) n++; });
-    data.sessions.forEach(function (s) { if (!isPlainObject(s) || !s.id || !Array.isArray(s.exercises)) n++; });
-    return n;
-  }
-
-  /* garde de sortie : jamais d'export ni d'instantané d'un état vide ou
-     manifestement corrompu. Renvoie un message, ou null. */
-  function getBackupBlocker(payload) {
-    var err = getBackupShapeError(payload.data);
-    if (err === 'vide') return 'rien à sauvegarder, cet appareil ne contient aucune donnée.';
-    if (err) return 'données de cet appareil illisibles (' + err + ').';
+  /* éléments qui font planter l'app au démarrage (vérifié le 2026-10-10 :
+     les 17 variantes testées plantent, plusieurs rendent Réglages et donc
+     l'annulation inaccessibles). Une app qui fonctionne ne peut pas les
+     contenir : les refuser ne bloque jamais un fichier produit par Ovryk.
+     Renvoie la raison du premier problème, ou null. */
+  function getBackupCrashError(data) {
+    var i, j, k;
+    for (i = 0; i < data.exercises.length; i++) {
+      var ex = data.exercises[i];
+      if (!isPlainObject(ex) || !ex.id) return 'exercice n° ' + (i + 1) + ' du catalogue vide ou sans identifiant';
+    }
+    for (i = 0; i < data.routines.length; i++) {
+      var r = data.routines[i];
+      if (!isPlainObject(r) || !r.id) return 'routine n° ' + (i + 1) + ' vide ou sans identifiant';
+      if (!Array.isArray(r.exercises)) return 'routine « ' + (r.name || r.id) + ' » sans liste d’exercices';
+      for (j = 0; j < r.exercises.length; j++) {
+        if (!isPlainObject(r.exercises[j]) || !Array.isArray(r.exercises[j].sets)) return 'routine « ' + (r.name || r.id) + ' », exercice n° ' + (j + 1) + ' sans séries';
+      }
+    }
+    for (i = 0; i < data.sessions.length; i++) {
+      var s = data.sessions[i];
+      if (!isPlainObject(s) || !s.id) return 'séance n° ' + (i + 1) + ' vide ou sans identifiant';
+      if (isNaN(Date.parse(s.date))) return 'séance n° ' + (i + 1) + ' sans date valide';
+      if (!Array.isArray(s.exercises)) return 'séance du ' + formatRestoreDay(s.date) + ' sans liste d’exercices';
+      for (j = 0; j < s.exercises.length; j++) {
+        var sex = s.exercises[j];
+        if (!isPlainObject(sex) || !Array.isArray(sex.sets)) return 'séance du ' + formatRestoreDay(s.date) + ', exercice n° ' + (j + 1) + ' vide ou sans séries';
+        for (k = 0; k < sex.sets.length; k++) {
+          if (!isPlainObject(sex.sets[k])) return 'séance du ' + formatRestoreDay(s.date) + ', exercice n° ' + (j + 1) + ', série n° ' + (k + 1) + ' vide';
+        }
+      }
+    }
+    var cycles = data.forceCycles || {};
+    var ids = Object.keys(cycles);
+    for (i = 0; i < ids.length; i++) {
+      var c = cycles[ids[i]];
+      if (!isPlainObject(c) || !FORCE_CYCLES[c.cycle_actif]) return 'cycle de force « ' + ids[i] + ' » vide ou inconnu';
+    }
     return null;
   }
 
-  /* fichier lu : { error } ou { data, fileSummary, exportedAt, malformed }.
+  /* garde de sortie : jamais d'export ni de partage d'un état vide ou
+     illisible. Une clé présente mais illisible serait lue comme vide par
+     OvrykDB (readJSON) et l'export sortirait incomplet sans le dire.
+     Renvoie un message, ou null. */
+  function getBackupBlocker(payload) {
+    var keys = Object.keys(BACKUP_KEY_LABELS);
+    for (var i = 0; i < keys.length; i++) {
+      var rawValue = localStorage.getItem(keys[i]);
+      if (rawValue === null) continue;
+      try { JSON.parse(rawValue); } catch (e) {
+        return 'les ' + BACKUP_KEY_LABELS[keys[i]] + ' de cet appareil sont illisibles. Rien n’a été exporté.';
+      }
+    }
+    var err = getBackupShapeError(payload.data);
+    if (err === 'vide') return 'rien à sauvegarder, cet appareil ne contient aucune donnée.';
+    if (err) return 'données de cet appareil illisibles (' + err + '). Rien n’a été exporté.';
+    return null;
+  }
+
+  /* fichier lu : { error } ou { data, fileSummary, exportedAt }.
      N'écrit rien. Ancien format brut (les listes à la racine) accepté comme
      l'import d'avant ce lot. */
   function validateBackupFile(parsed) {
@@ -16566,12 +16635,27 @@
         parsed.summary.checksum !== hashBackupString(JSON.stringify(data))) {
       return { error: 'fichier abîmé ou modifié (empreinte différente). Rien n’a été importé.' };
     }
+    var crash = getBackupCrashError(data);
+    if (crash) return { error: 'fichier abîmé : ' + crash + '. Il empêcherait l’app de démarrer. Rien n’a été importé.' };
     return {
       data: data,
       fileSummary: summarizeOvrykData(data),
-      exportedAt: typeof parsed.exportedAt === 'string' ? parsed.exportedAt : null,
-      malformed: countMalformedBackupItems(data)
+      exportedAt: typeof parsed.exportedAt === 'string' ? parsed.exportedAt : null
     };
+  }
+
+  /* séances terminées du téléphone absentes de l'autre état, PAR
+     IDENTIFIANT (même nombre mais séances différentes compris). */
+  function getMissingCompletedSessionIds(currentSessions, incomingSessions) {
+    var incomingIds = {};
+    (Array.isArray(incomingSessions) ? incomingSessions : []).forEach(function (s) { if (s && s.id) incomingIds[s.id] = true; });
+    return (Array.isArray(currentSessions) ? currentSessions : []).filter(function (s) {
+      return s && s.status === 'completed' && !incomingIds[s.id];
+    }).map(function (s) { return s.id; });
+  }
+
+  function parseRawSessions(raw) {
+    try { var v = JSON.parse(raw['ovryk.sessions']); return Array.isArray(v) ? v : []; } catch (e) { return []; }
   }
 
   /* ---- copie avant restauration (IndexedDB) ---- */
@@ -16596,48 +16680,98 @@
     return raw;
   }
 
+  function sameRawState(a, b) {
+    return Object.keys(DB_KEYS).every(function (k) {
+      var key = DB_KEYS[k];
+      var x = a[key] === undefined ? null : a[key];
+      var y = b[key] === undefined ? null : b[key];
+      return x === y;
+    });
+  }
+
+  /* nettoyage des vieilles copies, à part et après coup : une erreur ici
+     n'empêche jamais une restauration. */
+  function pruneRestorePoints(db) {
+    try {
+      var tx = db.transaction(RESTORE_STORE, 'readwrite');
+      var store = tx.objectStore(RESTORE_STORE);
+      var keysReq = store.getAllKeys();
+      keysReq.onsuccess = function () {
+        try {
+          var keys = keysReq.result.slice().sort(function (a, b) { return a - b; });
+          keys.slice(0, Math.max(0, keys.length - RESTORE_KEEP)).forEach(function (k) { store.delete(k); });
+        } catch (e) { /* nettoyage facultatif */ }
+      };
+      tx.oncomplete = tx.onerror = tx.onabort = function () { try { db.close(); } catch (e) { /* déjà fermée */ } };
+    } catch (e) {
+      try { db.close(); } catch (e2) { /* déjà fermée */ }
+    }
+  }
+
+  /* copie l'état actuel, la relit par son identifiant et la compare à
+     l'état courant ; cb(err, id). Aucune écriture dans localStorage. */
   function saveRestorePoint(reason, cb) {
+    var current = readRawOvrykState();
     var point = {
       savedAt: new Date().toISOString(),
       reason: reason,
       summary: summarizeOvrykData(collectAllOvrykData().data),
-      raw: readRawOvrykState()
+      raw: current
     };
     openRestoreDb(true, function (err, db) {
       if (err || !db) { cb(err || new Error('IndexedDB indisponible')); return; }
-      var tx;
-      try { tx = db.transaction(RESTORE_STORE, 'readwrite'); } catch (e) { db.close(); cb(e); return; }
-      var store = tx.objectStore(RESTORE_STORE);
-      store.add(point);
-      var keysReq = store.getAllKeys ? store.getAllKeys() : null;
-      if (keysReq) {
-        keysReq.onsuccess = function () {
-          var keys = keysReq.result.slice().sort(function (a, b) { return a - b; });
-          keys.slice(0, Math.max(0, keys.length - RESTORE_KEEP)).forEach(function (k) { store.delete(k); });
-        };
-      }
-      tx.oncomplete = function () { db.close(); cb(null); };
+      var tx, addReq;
+      try {
+        tx = db.transaction(RESTORE_STORE, 'readwrite');
+        addReq = tx.objectStore(RESTORE_STORE).add(point);
+      } catch (e) { db.close(); cb(e); return; }
       tx.onerror = function () { db.close(); cb(tx.error || new Error('écriture impossible')); };
       tx.onabort = function () { db.close(); cb(tx.error || new Error('écriture annulée')); };
+      tx.oncomplete = function () {
+        var id = addReq.result;
+        var rtx = db.transaction(RESTORE_STORE, 'readonly');
+        var getReq = rtx.objectStore(RESTORE_STORE).get(id);
+        getReq.onsuccess = function () {
+          var stored = getReq.result;
+          if (!stored || !stored.raw || !sameRawState(stored.raw, current) || !sameRawState(stored.raw, readRawOvrykState())) {
+            db.close();
+            cb(new Error('copie relue différente de l’état actuel'));
+            return;
+          }
+          pruneRestorePoints(db);
+          cb(null, id);
+        };
+        getReq.onerror = function () { db.close(); cb(getReq.error || new Error('relecture impossible')); };
+      };
     });
   }
 
-  function getLatestRestorePoint(cb) {
+  /* id absent = la plus récente. cb(point ou null). Lecture seule. */
+  function getRestorePoint(id, cb) {
     openRestoreDb(false, function (err, db) {
       if (err || !db) { cb(null); return; }
       if (!db.objectStoreNames.contains(RESTORE_STORE)) { db.close(); cb(null); return; }
-      var tx = db.transaction(RESTORE_STORE, 'readonly');
-      var req = tx.objectStore(RESTORE_STORE).openCursor(null, 'prev');
-      req.onsuccess = function () { var c = req.result; db.close(); cb(c ? c.value : null); };
+      var store = db.transaction(RESTORE_STORE, 'readonly').objectStore(RESTORE_STORE);
+      var req = id != null ? store.get(id) : store.openCursor(null, 'prev');
+      req.onsuccess = function () {
+        var v = id != null ? req.result : (req.result ? req.result.value : null);
+        db.close();
+        cb(v || null);
+      };
       req.onerror = function () { db.close(); cb(null); };
     });
   }
 
-  /* remet des valeurs brutes exactement (clé absente = supprimée). */
+  function getLatestRestorePoint(cb) { getRestorePoint(null, cb); }
+
+  /* remet des valeurs brutes exactement (clé absente = supprimée), les plus
+     petites d'abord : si l'espace manque, les grosses valeurs du nouvel état
+     cèdent la place avant d'écrire les grosses de l'ancien. */
   function writeRawOvrykState(raw) {
+    var keys = Object.keys(DB_KEYS).map(function (k) { return DB_KEYS[k]; });
+    keys.sort(function (a, b) { return (raw[a] ? raw[a].length : 0) - (raw[b] ? raw[b].length : 0); });
     try {
-      Object.keys(DB_KEYS).forEach(function (k) {
-        var key = DB_KEYS[k];
+      keys.forEach(function (key) {
         if (raw[key] === null || raw[key] === undefined) localStorage.removeItem(key);
         else localStorage.setItem(key, raw[key]);
       });
@@ -16661,6 +16795,10 @@
     return ok;
   }
 
+  function readRestoreMark() {
+    try { var m = JSON.parse(localStorage.getItem(RESTORE_MARK_KEY)); return isPlainObject(m) ? m : null; } catch (e) { return null; }
+  }
+
   /* ---- écran de restauration ---- */
   var restoreState = null;
 
@@ -16677,21 +16815,35 @@
     return isNaN(d.getTime()) ? '-' : formatDayMonthFr(d) + ' ' + d.getFullYear();
   }
 
+  /* 'file' : restaurer un fichier ; 'undo' : revenir à l'état d'avant la
+     dernière restauration ; 'redo' : la copie la plus récente a été faite
+     avant une annulation, y revenir rétablit l'état restauré. */
+  function restoreTargetLabel(st) {
+    return st.mode === 'file' ? 'la sauvegarde' : 'la copie';
+  }
+
+  function getRestoreLostIds(st) {
+    return getMissingCompletedSessionIds(OvrykDB.getSessions(), st.incomingSessions);
+  }
+
   function renderRestorePage() {
     var st = restoreState;
     var current = summarizeOvrykData(collectAllOvrykData().data);
     var incoming = st.summary;
-    document.getElementById('restore-title').textContent = st.mode === 'undo' ? 'Annuler la restauration' : 'Restaurer une sauvegarde';
-    document.getElementById('restore-sub').textContent = st.mode === 'undo'
-      ? 'Copie faite le ' + formatRestoreDate(st.sourceDate) + ', avant la dernière restauration'
-      : (st.fileName ? st.fileName + ', ' : '') + 'exportée le ' + formatRestoreDate(st.sourceDate);
+    var titles = { file: 'Restaurer une sauvegarde', undo: 'Annuler la restauration', redo: 'Rétablir la restauration' };
+    document.getElementById('restore-title').textContent = titles[st.mode];
+    document.getElementById('restore-sub').textContent = st.mode === 'file'
+      ? (st.fileName ? st.fileName + ', ' : '') + 'exportée le ' + formatRestoreDate(st.sourceDate)
+      : st.mode === 'undo'
+        ? 'Copie faite le ' + formatRestoreDate(st.sourceDate) + ', avant la dernière restauration'
+        : 'État restauré, copié le ' + formatRestoreDate(st.sourceDate) + ' juste avant ton annulation';
 
     var body = document.getElementById('restore-body');
     body.innerHTML = '';
     var table = document.createElement('div');
     table.className = 'restore-table';
     var rows = [
-      ['', 'Ce téléphone', st.mode === 'undo' ? 'Copie' : 'Sauvegarde'],
+      ['', 'Ce téléphone', st.mode === 'file' ? 'Sauvegarde' : 'Copie'],
       ['Séances terminées', current.sessionsCompleted, incoming.sessionsCompleted],
       ['Dernière séance', formatRestoreDay(current.lastSessionAt), formatRestoreDay(incoming.lastSessionAt)],
       ['Routines', current.routines, incoming.routines],
@@ -16708,23 +16860,34 @@
     });
     body.appendChild(table);
 
-    var lost = current.sessionsCompleted - incoming.sessionsCompleted;
     function note(text, isWarn) {
       var p = document.createElement('p');
       p.className = 'restore-note' + (isWarn ? ' is-warn' : '');
       p.textContent = text;
       body.appendChild(p);
     }
-    if (lost > 0) note('Attention : ' + (st.mode === 'undo' ? 'la copie' : 'la sauvegarde') + ' contient ' + lost + (lost > 1 ? ' séances terminées de moins' : ' séance terminée de moins') + ' que ce téléphone. Elles seront remplacées.', true);
+    var lost = getRestoreLostIds(st).length;
+    if (lost > 0) {
+      note('Attention : ' + lost + (lost > 1 ? ' séances terminées de ce téléphone ne sont pas' : ' séance terminée de ce téléphone n’est pas') +
+        ' dans ' + restoreTargetLabel(st) + (st.mode === 'file' ? '' : ' (par exemple faites depuis la restauration)') + '. ' +
+        (lost > 1 ? 'Elles seront remplacées.' : 'Elle sera remplacée.') + ' Elles restent dans la copie gardée sur ce téléphone.', true);
+    }
     var incomingInProgress = incoming.inProgressIds || [];
     if ((current.inProgressIds || []).some(function (id) { return incomingInProgress.indexOf(id) === -1; })) {
-      note('Une séance est en cours sur ce téléphone et n\u2019est pas dans ' + (st.mode === 'undo' ? 'la copie' : 'la sauvegarde') + ' : elle sera remplacée.', true);
+      note('Une séance est en cours sur ce téléphone et n’est pas dans ' + restoreTargetLabel(st) + ' : elle sera remplacée.', true);
     }
-    if (st.malformed > 0) note(st.malformed + (st.malformed > 1 ? ' éléments mal formés seront importés tels quels.' : ' élément mal formé sera importé tel quel.'), false);
-    note('Toutes les données de ce téléphone (exercices, routines, séances, réglages, cycles) seront remplacées. Une copie de l’état actuel est gardée sur ce téléphone : tu pourras annuler depuis Réglages.', false);
+    if (st.mode === 'redo') note('Tu as annulé une restauration : revenir à cette copie la rétablit.', false);
+    note('Toutes les données de ce téléphone (exercices, routines, séances, réglages, cycles) seront remplacées. Une copie de l’état actuel est gardée sur ce téléphone : tu pourras revenir en arrière depuis Réglages.', false);
 
-    document.getElementById('restore-confirm-btn').textContent = st.mode === 'undo' ? 'Revenir à cette copie' : 'Remplacer mes données';
-    document.getElementById('restore-confirm-btn').disabled = false;
+    var labels = { file: 'Remplacer mes données', undo: 'Revenir à cette copie', redo: 'Rétablir la restauration' };
+    document.getElementById('restore-confirm-btn').textContent = labels[st.mode];
+    setRestorePageLocked(false);
+  }
+
+  function setRestorePageLocked(locked) {
+    ['restore-confirm-btn', 'restore-cancel-btn', 'restore-back-btn'].forEach(function (id) {
+      document.getElementById(id).disabled = locked;
+    });
   }
 
   function openRestorePage(state) {
@@ -16735,46 +16898,74 @@
   }
 
   function closeRestorePage() {
+    if (document.getElementById('restore-back-btn').disabled) return;
     document.getElementById('restore-page').hidden = true;
     restoreState = null;
   }
 
-  /* deuxième confirmation, puis copie de l'état actuel, puis remplacement.
-     Si la copie échoue, rien n'est remplacé. Si une écriture échoue en
-     cours de remplacement, l'état d'avant est remis tel quel. */
+  /* écran bloqué pendant le rechargement : plus aucune action possible sur
+     l'état en mémoire d'avant la restauration. */
+  function lockRestorePageAndReload(text) {
+    setRestorePageLocked(true);
+    var body = document.getElementById('restore-body');
+    body.innerHTML = '';
+    var p = document.createElement('p');
+    p.className = 'restore-note';
+    p.textContent = text;
+    body.appendChild(p);
+    window.location.reload();
+  }
+
+  function failRestore(message) {
+    setRestorePageLocked(false);
+    closeRestorePage();
+    showDataIOStatus(message, true);
+    renderDataSafetyRows();
+    renderRestoreInterruptedBanner();
+  }
+
+  /* deuxième confirmation, puis copie relue de l'état actuel, puis marque,
+     puis remplacement. Copie impossible ou différente : rien n'est
+     remplacé. Écriture qui échoue : l'état d'avant est remis ; si ce retour
+     échoue aussi, la marque reste et le message renvoie vers la copie. */
   function confirmRestore() {
     var st = restoreState;
     if (!st) return;
-    var current = summarizeOvrykData(collectAllOvrykData().data);
-    var lost = current.sessionsCompleted - st.summary.sessionsCompleted;
+    var lost = getRestoreLostIds(st).length;
+    var verbs = { file: 'Remplacer', undo: 'Revenir', redo: 'Rétablir' };
     showConfirmModal(
-      (lost > 0 ? 'Dernière confirmation : ' + lost + (lost > 1 ? ' séances terminées' : ' séance terminée') + ' de ce téléphone ne sont pas dans ' + (st.mode === 'undo' ? 'la copie' : 'la sauvegarde') + '. ' : 'Dernière confirmation. ') +
-        'Remplacer toutes les données de ce téléphone ? Une copie de l’état actuel sera gardée pour pouvoir annuler.',
+      (lost > 0 ? 'Dernière confirmation : ' + lost + (lost > 1 ? ' séances terminées de ce téléphone ne sont pas' : ' séance terminée de ce téléphone n’est pas') + ' dans ' + restoreTargetLabel(st) + '. ' : 'Dernière confirmation. ') +
+        'Remplacer toutes les données de ce téléphone ? Une copie de l’état actuel sera gardée pour pouvoir revenir en arrière.',
       function () {
-        var btn = document.getElementById('restore-confirm-btn');
-        btn.disabled = true;
+        setRestorePageLocked(true);
         var before = readRawOvrykState();
-        saveRestorePoint(st.mode === 'undo' ? 'avant annulation' : 'avant restauration', function (err) {
+        saveRestorePoint(st.mode === 'file' ? 'avant restauration' : st.mode === 'undo' ? 'avant annulation' : 'avant rétablissement', function (err, pointId) {
           if (err) {
-            btn.disabled = false;
-            closeRestorePage();
-            showDataIOStatus('Restauration annulée : impossible de copier l’état actuel (' + (err.message || err) + '). Rien n’a été modifié.', true);
+            failRestore('Restauration annulée : impossible de copier l’état actuel (' + (err.message || err) + '). Rien n’a été modifié.');
             return;
           }
-          var ok = st.mode === 'undo' ? writeRawOvrykState(st.raw) : applyBackupData(st.data);
+          try {
+            localStorage.setItem(RESTORE_MARK_KEY, JSON.stringify({ pointId: pointId, startedAt: new Date().toISOString(), mode: st.mode }));
+          } catch (e) {
+            failRestore('Restauration annulée : stockage plein. Rien n’a été modifié.');
+            return;
+          }
+          var ok = st.mode === 'file' ? applyBackupData(st.data) : writeRawOvrykState(st.raw);
           if (!ok) {
-            writeRawOvrykState(before);
-            btn.disabled = false;
-            closeRestorePage();
-            showDataIOStatus('Restauration impossible (stockage plein ?). L’état d’avant a été remis.', true);
+            if (writeRawOvrykState(before)) {
+              localStorage.removeItem(RESTORE_MARK_KEY);
+              failRestore('Restauration impossible (stockage plein ?). L’état d’avant a été remis, rien n’a changé.');
+            } else {
+              failRestore('Restauration interrompue : utilise Annuler la dernière restauration pour revenir à la copie d’avant.');
+            }
             return;
           }
-          showDataIOStatus(st.mode === 'undo' ? 'Retour à la copie effectué. Rechargement…' : 'Restauration réussie. Rechargement…', false);
-          setTimeout(function () { window.location.reload(); }, 600);
+          localStorage.removeItem(RESTORE_MARK_KEY);
+          lockRestorePageAndReload(st.mode === 'file' ? 'Restauration réussie. Rechargement…' : 'C’est fait. Rechargement…');
         });
       },
       null,
-      st.mode === 'undo' ? 'Revenir' : 'Remplacer',
+      verbs[st.mode],
       'Annuler'
     );
   }
@@ -16784,6 +16975,8 @@
     var undoBtn = document.getElementById('restore-undo-btn');
     getLatestRestorePoint(function (point) {
       if (!point || !point.raw) { undoBtn.hidden = true; return; }
+      document.getElementById('restore-undo-label').textContent = point.reason === 'avant annulation'
+        ? 'Rétablir la restauration annulée' : 'Annuler la dernière restauration';
       document.getElementById('restore-undo-value').textContent = formatRestoreDay(point.savedAt);
       undoBtn.hidden = false;
     });
@@ -16833,11 +17026,47 @@
     });
   }
 
-  function openRestoreUndo() {
-    getLatestRestorePoint(function (point) {
-      if (!point || !point.raw) { renderDataSafetyRows(); return; }
-      openRestorePage({ mode: 'undo', raw: point.raw, summary: point.summary || summarizeOvrykData({}), sourceDate: point.savedAt, malformed: 0 });
+  /* id absent = la copie la plus récente (ligne de Réglages) ; id donné =
+     la copie liée à une restauration interrompue (bandeau). */
+  function openRestorePointPage(id) {
+    getRestorePoint(id, function (point) {
+      if (!point || !point.raw) {
+        renderDataSafetyRows();
+        renderRestoreInterruptedBanner();
+        showDataIOStatus('Copie introuvable sur ce téléphone.', true);
+        return;
+      }
+      openRestorePage({
+        mode: point.reason === 'avant annulation' ? 'redo' : 'undo',
+        raw: point.raw,
+        incomingSessions: parseRawSessions(point.raw),
+        summary: point.summary || summarizeOvrykData({}),
+        sourceDate: point.savedAt
+      });
     });
+  }
+
+  function openRestoreUndo() { openRestorePointPage(null); }
+
+  /* bandeau de l'Accueil : seulement si une restauration a été
+     interrompue (marque encore posée). Lecture seule. */
+  function renderRestoreInterruptedBanner() {
+    var banner = document.getElementById('restore-interrupted-banner');
+    if (!banner) return;
+    banner.hidden = !readRestoreMark();
+  }
+
+  function dismissRestoreInterrupted() {
+    showConfirmModal(
+      'Ignorer ce message ? Tes données restent telles qu’elles sont. La copie d’avant reste disponible dans Réglages.',
+      function () {
+        localStorage.removeItem(RESTORE_MARK_KEY);
+        renderRestoreInterruptedBanner();
+      },
+      null,
+      'Ignorer',
+      'Annuler'
+    );
   }
 
   document.getElementById('dashboard-export-btn').addEventListener('click', downloadOvrykExport);
@@ -16847,6 +17076,12 @@
   document.getElementById('restore-back-btn').addEventListener('click', closeRestorePage);
   document.getElementById('restore-cancel-btn').addEventListener('click', closeRestorePage);
   document.getElementById('restore-confirm-btn').addEventListener('click', confirmRestore);
+  document.getElementById('restore-interrupted-back-btn').addEventListener('click', function () {
+    var mark = readRestoreMark();
+    openRestorePointPage(mark && mark.pointId != null ? mark.pointId : null);
+  });
+  document.getElementById('restore-interrupted-dismiss-btn').addEventListener('click', dismissRestoreInterrupted);
+  renderRestoreInterruptedBanner();
 
   document.getElementById('dashboard-import-btn').addEventListener('click', function () {
     document.getElementById('dashboard-import-input').click();
@@ -16886,7 +17121,7 @@
         summary: checked.fileSummary,
         sourceDate: checked.exportedAt,
         fileName: file.name,
-        malformed: checked.malformed
+        incomingSessions: checked.data.sessions
       });
     };
     reader.onerror = function () {

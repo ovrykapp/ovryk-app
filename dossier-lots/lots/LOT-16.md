@@ -2,7 +2,7 @@
 
 Taille : L. Dépend de : tous. Lot à risque (export, import, sauvegardes, écriture dans des données existantes).
 
-Statut : plan révisé le 2026-10-10, décisions de Ruben prises le 2026-10-10 (voir "Décisions prises"). Livraison 1 faite (sw v124), livraisons 2 à 5 à faire.
+Statut : plan révisé le 2026-10-10, décisions de Ruben prises le 2026-10-10 (voir "Décisions prises"). Livraison 1 faite (sw v124), corrigée après audit (sw v125), livraisons 2 à 5 à faire.
 
 ## Écrans de la maquette
 
@@ -300,3 +300,21 @@ R11 (pas de compte obligatoire).
   * Aucune écriture à l'ouverture de Réglages (ni localStorage, ni création de base IndexedDB). Aucune migration, aucune nouvelle clé dans localStorage.
   * À savoir : restaurer un fichier remet aussi son lastExportAt, qui est celui d'avant l'export (la date d'export est notée après la préparation du fichier). Le rappel "dernière sauvegarde il y a N jours" peut donc réapparaître après une restauration.
 * Reste pour la livraison 2 : correction du service worker (même domaine seulement), configuration du projet (adresse et clé publique dans l'app), connexion par code e-mail (saisie de l'e-mail, du code, renouvellement du jeton, déconnexion) dans un écran "Sauvegarde en ligne" des Réglages, ovryk.cloud.auth, sans aucun envoi de données d'entraînement. Étapes manuelles de Ruben 1 à 5 et 7 de la section 9 au même moment.
+* Corrections après l'audit de la livraison 1 (sw v125), toujours sans réseau :
+  1. Import : refus, sans rien écrire, des fichiers qui feraient planter le démarrage (getBackupCrashError). 17 variantes testées sur v124, toutes plantaient au lancement, et 6 rendaient Réglages, donc l'annulation, inaccessibles. Cas refusés :
+     * exercice du catalogue vide ou sans identifiant ;
+     * routine vide, sans identifiant ou sans liste d'exercices, exercice de routine vide ou sans séries ;
+     * séance vide, sans identifiant, sans date valide ou sans liste d'exercices, exercice de séance vide ou sans séries, série vide ;
+     * valeur de forceCycles qui n'est pas un objet, ou cycle vide ou d'un type inconnu.
+     L'export réel du 2026-10-01 et un export de l'app (séance en cours, routine en création sans exercice, exercice personnalisé sans historique, cycle en attente de validation) restent acceptés. La mention "éléments mal formés importés tels quels" est supprimée.
+  2. Retour arrière : writeRawOvrykState réécrit les clés les plus petites d'abord et sa valeur est vérifiée. S'il échoue, le message dit "Restauration interrompue : utilise Annuler la dernière restauration", sans rechargement, et la marque reste posée.
+  3. Séances perdues comptées par identifiant (getMissingCompletedSessionIds), à l'écran et dans la deuxième confirmation, pour un fichier comme pour une annulation : une séance faite depuis la restauration est signalée, et "même nombre mais séances différentes" aussi.
+  4. Export et partage refusés si l'une des six clés ovryk.* est présente mais illisible (avant, l'export sortait sans les séances avec "Export téléchargé").
+  5. La copie est relue par son identifiant et comparée à l'état courant avant toute écriture ; en cas de différence, rien n'est remplacé.
+  6. Marque ovryk.restoreInProgress posée juste avant le remplacement, retirée juste avant le rechargement (et après un retour arrière réussi). Au lancement, si elle existe, bandeau "Restauration interrompue" sur l'Accueil : "Revenir à la copie d'avant" (même écran, même double confirmation) ou "Ignorer" (après confirmation). Aucune écriture automatique.
+  7. Le nettoyage des vieilles copies est fait à part, après coup, erreurs ignorées : il ne bloque plus une restauration.
+  8. Plus de délai de 600 ms : l'écran est bloqué et la page rechargée tout de suite.
+  9. Libellé : après une annulation, la ligne de Réglages et l'écran disent "Rétablir la restauration" (la copie la plus récente a été faite avant une annulation) ; après un rétablissement, de nouveau "Annuler".
+* Défauts restants de l'audit (faibles) :
+  * 10 : doublons. Le nom de fichier et lastExportAt sont calculés à la fois par downloadOvrykExport et par shareOvrykBackup, CURRENT_SCHEMA_VERSION répète le 2 de migrateSchema, et summary.sessionsTotal n'est pas affiché.
+  * 11 : non vérifié sous Safari, l'abandon de la création de la base IndexedDB quand on ouvre Réglages (vérifié seulement sous Chromium).
