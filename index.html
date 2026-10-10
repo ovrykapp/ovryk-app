@@ -9739,9 +9739,23 @@
     routineWeekdayDraft = null;
   }
 
+  /* objet routine lu au dernier affichage de l'éditeur, partagé par toutes
+     les lignes (kilos, reps, séries, retrait d'un exercice...) qui le
+     réécrivent tel quel avec OvrykDB.updateRoutine. Une écriture qui relit
+     la routine à part (jours, nom) doit donc aussi le mettre à jour via
+     syncEditorRoutine, sinon la prochaine écriture d'une ligne la ramène à
+     la valeur d'avant. */
+  var routineEditorLive = null;
+
+  function syncEditorRoutine(routineId, fields) {
+    if (!routineEditorLive || routineEditorLive.id !== routineId) return;
+    for (var k in fields) { if (fields.hasOwnProperty(k)) routineEditorLive[k] = fields[k]; }
+  }
+
   function renderRoutineEditor() {
     var routine = OvrykDB.getRoutineById(currentRoutineId);
-    if (!routine) { closeRoutineEditor(); return; }
+    if (!routine) { routineEditorLive = null; closeRoutineEditor(); return; }
+    routineEditorLive = routine;
 
     var nameInput = document.getElementById('routine-name-input');
     if (document.activeElement !== nameInput) nameInput.value = routine.name;
@@ -11033,8 +11047,10 @@
     var current = OvrykDB.getRoutineById(currentRoutineId);
     if (!current || !routineWeekdayDraft) { closeRoutineWeekdaySheet(); return; }
     OvrykDB.updateRoutineWeekdays(current.id, routineWeekdayDraft);
+    var saved = OvrykDB.getRoutineById(current.id);
+    syncEditorRoutine(current.id, { weekdays: saved.weekdays });
     closeRoutineWeekdaySheet();
-    renderRoutineWeekdayBtn(OvrykDB.getRoutineById(current.id));
+    renderRoutineWeekdayBtn(saved);
   });
   document.getElementById('routine-weekday-sheet-overlay').addEventListener('click', function (e) {
     if (e.target === this) closeRoutineWeekdaySheet();
@@ -11063,6 +11079,7 @@
     routine.name = e.target.value.trim() || 'Routine sans titre';
     e.target.value = routine.name;
     OvrykDB.updateRoutine(routine);
+    syncEditorRoutine(routine.id, { name: routine.name });
     updateRoutineSaveState(routine.name, routine.exercises.length);
   });
 
