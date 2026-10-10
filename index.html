@@ -609,33 +609,53 @@
     color: var(--graphite);
   }
 
-  /* correctif : le sélecteur de jours de l'éditeur de routine (LUN à DIM,
-     maquette 20) a besoin de ses 7 pastilles sur une seule ligne, largeur
-     égale, jamais sur deux lignes. .filter-chip-row reste en flex-wrap
-     partout ailleurs (listes de catégories à nombre variable) : ce
-     correctif ne cible que cet id, aucun autre .filter-chip-row n'est
-     touché. */
-  #routine-weekday-row {
-    display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    gap: 4px;
+  /* bouton pleine largeur qui remplace les 7 pastilles de jours de
+     l'éditeur de routine : affiche les jours choisis et ouvre la feuille
+     routine-weekday-sheet-overlay (plus bas). Repose sur .form-input pour
+     garder le même champ visuel que le nom de la routine juste au dessus. */
+  .routine-weekday-btn {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    text-align: left;
+    cursor: pointer;
   }
-  #routine-weekday-row .filter-chip {
+  .routine-weekday-btn-chevron { width: 16px; height: 16px; stroke: var(--steel); fill: none; flex-shrink: 0; }
+
+  /* liste de la feuille "Jours" : une ligne par jour, case à cocher à
+     gauche, zone de tap de 44 px minimum sur toute la largeur de la ligne
+     (pas seulement sur la case). */
+  .weekday-sheet-list { display: flex; flex-direction: column; margin-bottom: var(--space-4); }
+  .weekday-sheet-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 44px;
+    padding: 6px 2px;
+    background: none;
+    border: none;
+    width: 100%;
+    text-align: left;
+    cursor: pointer;
+    color: var(--ink);
+    font-family: var(--font-display);
+    font-size: 15px;
+    font-weight: 600;
+  }
+  .weekday-sheet-checkbox {
+    width: 22px;
+    height: 22px;
+    flex-shrink: 0;
+    border: 1px solid var(--border-outline);
+    border-radius: var(--radius-sm);
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 4px 2px;
-    min-height: 40px;
-    font-size: 12px;
-    text-align: center;
   }
-  /* sous 360 px, la police à 12 px laisse trop peu de marge dans chaque
-     colonne (7 pastilles égales, gouttière de page comprise) : repasse à
-     10 px pour garder une seule ligne sans débordement, la hauteur de 40 px
-     et l'état sélectionné ne changent pas. */
-  @media (max-width: 359px) {
-    #routine-weekday-row .filter-chip { font-size: 10px; }
-  }
+  .weekday-sheet-checkbox svg { width: 14px; height: 14px; stroke: var(--graphite); fill: none; stroke-width: 2.4; visibility: hidden; }
+  .weekday-sheet-row.active .weekday-sheet-checkbox { background: var(--rust); border-color: var(--rust); }
+  .weekday-sheet-row.active .weekday-sheet-checkbox svg { visibility: visible; }
 
   /* ---- exercise list ---- */
   .exercise-list { margin-top: var(--space-4); }
@@ -3993,7 +4013,10 @@
 
       <div class="form-row">
         <div class="form-label">Jours</div>
-        <div class="filter-chip-row" id="routine-weekday-row"></div>
+        <button type="button" id="routine-weekday-btn" class="form-input routine-weekday-btn">
+          <span id="routine-weekday-btn-label">Choisir les jours</span>
+          <svg class="routine-weekday-btn-chevron" viewBox="0 0 24 24" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="6,9 12,15 18,9"/></svg>
+        </button>
       </div>
 
       <div id="routine-exercise-list"></div>
@@ -4223,6 +4246,23 @@
 
       <button type="button" class="btn-primary" id="test-attempt-fail-confirm">Enregistrer le raté</button>
       <button type="button" class="fail-sheet-cancel" id="test-attempt-fail-cancel">Annuler</button>
+    </div>
+  </div>
+
+  <!-- feuille "Jours" de l'éditeur de routine : remplace les 7 pastilles.
+       Même style que fail-sheet-overlay (rest-picker-*). Rien n'est écrit
+       dans la routine tant que "Valider" n'a pas été appuyé : la case
+       cochée/décochée ne modifie qu'un brouillon en mémoire
+       (routineWeekdayDraft), relu dans la vraie routine au clic sur
+       Valider seulement. -->
+  <div class="rest-picker-overlay" id="routine-weekday-sheet-overlay" hidden>
+    <div class="rest-picker-sheet" role="dialog" aria-modal="true" aria-labelledby="routine-weekday-sheet-title">
+      <div class="rest-picker-handle" aria-hidden="true"></div>
+      <h2 class="rest-picker-title" id="routine-weekday-sheet-title">Jours</h2>
+
+      <div class="weekday-sheet-list" id="routine-weekday-sheet-list"></div>
+
+      <button type="button" class="btn-primary" id="routine-weekday-sheet-confirm">Valider</button>
     </div>
   </div>
 
@@ -7829,8 +7869,8 @@
   var MONTH_NAMES_FR = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin',
     'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
   /* 1 = lundi .. 7 = dimanche, comme routine.weekdays (MODELE-DE-DONNEES.md) —
-     partagé par les pastilles de l'éditeur (renderRoutineWeekdayRow) et le
-     libellé de chaque jour de la semaine (buildProgrammeDayRow) */
+     partagé par le bouton "Jours" de l'éditeur (renderRoutineWeekdayBtn) et
+     le libellé de chaque jour de la semaine (buildProgrammeDayRow) */
   var WEEKDAY_LABELS = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
   /* noms complets, pour la date d'en-tête de l'accueil (lot 03) — ex.
      "Samedi 3 octobre" */
@@ -8435,34 +8475,58 @@
     return link;
   }
 
-  /* sélection multiple, sauvegarde à chaque clic (OvrykDB.updateRoutine met
-     déjà à jour updatedAt tout seul) — pas de bouton Enregistrer dédié, même
-     logique que le reste de l'éditeur (nom, exercices). Le handler relit la
-     routine via OvrykDB.getRoutineById au moment du clic plutôt que de
-     réutiliser l'objet routine capturé à l'ouverture : updateRoutine
-     remplace l'objet entier dans le stockage, donc une copie figée
-     écraserait silencieusement un nom ou des exercices modifiés entre
-     temps par un autre champ de l'éditeur. */
-  function renderRoutineWeekdayRow(routine) {
-    var row = document.getElementById('routine-weekday-row');
-    row.innerHTML = '';
-    WEEKDAY_LABELS.forEach(function (label, idx) {
+  /* bouton "Jours" : simple affichage, aucune écriture à l'ouverture de
+     l'écran (règle 10). Le détail (feuille, brouillon, Valider) est plus
+     bas, juste avant le wiring de la feuille. */
+  function renderRoutineWeekdayBtn(routine) {
+    var label = document.getElementById('routine-weekday-btn-label');
+    var days = routine.weekdays || [];
+    label.textContent = days.length
+      ? days.slice().sort(function (a, b) { return a - b; }).map(function (d) { return WEEKDAY_LABELS[d - 1]; }).join(', ')
+      : 'Choisir les jours';
+  }
+
+  /* feuille "Jours" : la sélection ne vit que dans routineWeekdayDraft
+     tant que "Valider" n'a pas été appuyé, pour que rien ne soit écrit
+     dans la routine à chaque case cochée (contrairement aux anciennes
+     pastilles, qui écrivaient à chaque clic). Valider relit la routine via
+     OvrykDB.getRoutineById au moment du clic plutôt que de réutiliser
+     l'objet capturé à l'ouverture de la feuille : updateRoutine remplace
+     l'objet entier dans le stockage, donc une copie figée écraserait
+     silencieusement un nom ou des exercices modifiés entre temps par un
+     autre champ de l'éditeur. */
+  var routineWeekdayDraft = null;
+
+  function renderRoutineWeekdaySheetList() {
+    var list = document.getElementById('routine-weekday-sheet-list');
+    list.innerHTML = '';
+    WEEKDAY_NAMES_FR.forEach(function (name, idx) {
       var day = idx + 1;
-      var chip = document.createElement('button');
-      chip.type = 'button';
-      chip.className = 'filter-chip' + (routine.weekdays.indexOf(day) !== -1 ? ' active' : '');
-      chip.textContent = label;
-      chip.addEventListener('click', function () {
-        var current = OvrykDB.getRoutineById(currentRoutineId);
-        if (!current) return;
-        var pos = current.weekdays.indexOf(day);
-        if (pos === -1) current.weekdays.push(day); else current.weekdays.splice(pos, 1);
-        current.weekdays.sort(function (a, b) { return a - b; });
-        OvrykDB.updateRoutine(current);
-        renderRoutineWeekdayRow(current);
+      var row = document.createElement('button');
+      row.type = 'button';
+      row.className = 'weekday-sheet-row' + (routineWeekdayDraft.indexOf(day) !== -1 ? ' active' : '');
+      row.innerHTML = '<span class="weekday-sheet-checkbox"><svg viewBox="0 0 24 24"><polyline points="5,13 10,18 19,7"/></svg></span>' +
+        '<span>' + name + '</span>';
+      row.addEventListener('click', function () {
+        var pos = routineWeekdayDraft.indexOf(day);
+        if (pos === -1) routineWeekdayDraft.push(day); else routineWeekdayDraft.splice(pos, 1);
+        renderRoutineWeekdaySheetList();
       });
-      row.appendChild(chip);
+      list.appendChild(row);
     });
+  }
+
+  function openRoutineWeekdaySheet() {
+    var routine = OvrykDB.getRoutineById(currentRoutineId);
+    if (!routine) return;
+    routineWeekdayDraft = (routine.weekdays || []).slice();
+    renderRoutineWeekdaySheetList();
+    document.getElementById('routine-weekday-sheet-overlay').hidden = false;
+  }
+
+  function closeRoutineWeekdaySheet() {
+    document.getElementById('routine-weekday-sheet-overlay').hidden = true;
+    routineWeekdayDraft = null;
   }
 
   function renderRoutineEditor() {
@@ -8472,7 +8536,7 @@
     var nameInput = document.getElementById('routine-name-input');
     if (document.activeElement !== nameInput) nameInput.value = routine.name;
     updateRoutineSaveState(nameInput.value, routine.exercises.length);
-    renderRoutineWeekdayRow(routine);
+    renderRoutineWeekdayBtn(routine);
 
     var listEl = document.getElementById('routine-exercise-list');
     listEl.innerHTML = '';
@@ -9722,6 +9786,19 @@
   });
 
   document.getElementById('routine-exercise-settings-back-btn').addEventListener('click', closeRoutineExerciseSettingsPage);
+
+  document.getElementById('routine-weekday-btn').addEventListener('click', openRoutineWeekdaySheet);
+  document.getElementById('routine-weekday-sheet-confirm').addEventListener('click', function () {
+    var current = OvrykDB.getRoutineById(currentRoutineId);
+    if (!current || !routineWeekdayDraft) { closeRoutineWeekdaySheet(); return; }
+    current.weekdays = routineWeekdayDraft.slice().sort(function (a, b) { return a - b; });
+    OvrykDB.updateRoutine(current);
+    closeRoutineWeekdaySheet();
+    renderRoutineWeekdayBtn(current);
+  });
+  document.getElementById('routine-weekday-sheet-overlay').addEventListener('click', function (e) {
+    if (e.target === this) closeRoutineWeekdaySheet();
+  });
 
   document.getElementById('routine-cancel-btn').addEventListener('click', cancelRoutineEditor);
   document.getElementById('routine-save-btn').addEventListener('click', function () {
