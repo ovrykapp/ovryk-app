@@ -70,3 +70,6 @@ Taille : S = moins d'une heure de travail assisté, M = une demi journée, L = u
 * Après le lot 05 : tu peux t'entraîner avec le nouveau mode haltérophilie.
 * Après le lot 08 : le système de cycles est complet.
 * Après le lot 14 : plus rien à régler dans le code.
+
+* Corrigé le 2026-10-10 : cloneSetsFromPastSex recopiait result, repResults, failRep, failCause et repsDone d'une ancienne série (visible avec "Refaire cette séance" ou une séance relancée sur un mouvement d'haltérophilie sans cycle) ; ces champs repartent à null, comme dans cloneSessionSet. Les séances passées ne sont pas touchées. L'Historique ignore aussi une séance sans exercises ou un exercice null (getExerciseSessionRecords, historyExercises).
+* Noté le 2026-10-10, non corrigé : une séance sans tableau exercises fait encore planter computeWeeklySeriesCounts (onglet Progrès) et d'autres lecteurs de session.exercises. Données mal formées seulement, aucune séance réelle n'est concernée.

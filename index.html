@@ -10812,6 +10812,12 @@
       clone.id = 'sset-' + OvrykDB.generateId();
       clone.done = false;
       clone.rpe = null;
+      /* une série recopiée repart propre : ni résultat, ni raté, ni compteur
+         de la série d'origine (comme cloneSessionSet). Remise à null seulement
+         si le champ existe déjà : aucune clé ajoutée. */
+      ['result', 'repResults', 'failRep', 'failCause', 'repsDone'].forEach(function (key) {
+        if (clone.hasOwnProperty(key)) clone[key] = null;
+      });
       applyRangeProgression(clone, decision);
       /* série à reps fixes : le cercle écrit repsActual, qui ne doit pas
          devenir le préremplissage de la séance suivante (set.reps, la
@@ -13354,7 +13360,9 @@
   var historyDetailSessionId = null;
   var historyDetailShowAll = false;
 
-  function historyExercises(session) { return Array.isArray(session && session.exercises) ? session.exercises : []; }
+  function historyExercises(session) {
+    return Array.isArray(session && session.exercises) ? session.exercises.filter(function (sex) { return !!sex; }) : [];
+  }
   function historySets(sex) { return Array.isArray(sex && sex.sets) ? sex.sets : []; }
 
   function historySessionDate(session) {
@@ -13650,11 +13658,15 @@
     } else {
       btn.textContent = 'Refaire cette séance';
       btn.disabled = !!active;
+      var redoNote = document.createElement('p');
+      redoNote.className = 'history-detail-note';
+      redoNote.textContent = 'La séance repart de la dernière séance terminée de cette routine, pas forcément de celle affichée ici.';
       btn.addEventListener('click', function () {
         launchRoutineSession(routine, function () { closeHistoryPage(); setActiveView('seance'); });
       });
     }
     footer.appendChild(btn);
+    if (typeof redoNote !== 'undefined') footer.appendChild(redoNote);
     if (active && active.routineId !== routine.id) {
       var hint = document.createElement('p');
       hint.className = 'history-detail-note';
@@ -14242,8 +14254,9 @@
     var records = [];
 
     sessions.forEach(function (session) {
-      session.exercises.forEach(function (sex) {
-        if (sex.exerciseId !== exerciseId) return;
+      /* lecture tolérante : séance sans exercises ou exercice null ignoré */
+      (Array.isArray(session.exercises) ? session.exercises : []).forEach(function (sex) {
+        if (!sex || sex.exerciseId !== exerciseId || !Array.isArray(sex.sets)) return;
         var resolvedSets = resolveDoneSets(sex);
         if (resolvedSets.length === 0) return;
 
