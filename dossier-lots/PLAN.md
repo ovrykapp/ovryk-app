@@ -21,7 +21,7 @@ Taille : S = moins d'une heure de travail assisté, M = une demi journée, L = u
 | 14 | Réglages et matériel | 16, 17 | M | 01 |
 | 15 | Import de données | 19, 8 | M | 14 |
 | 16 | Compte et sauvegarde en ligne | 18 | L | tous |
-| 17 | À définir : séance sur un seul écran, cercle de validation par série | aucun (absent de la maquette 02/03, qui montre un exercice à la fois avec un bouton "Valider la série" plein largeur) | à définir | 05, 09 |
+| 17 | Séance sur un seul écran : tous les exercices en cartes repliables, cercle de validation à droite de chaque série, chargement selon le matériel (cadré le 2026-10-10, 3 décisions en attente dans LOT-17.md) | 2, 3 adaptées (un exercice à la fois dans la maquette), 10, 11 | L | 05, 09, 10 |
 
 ## Ordre conseillé
 
