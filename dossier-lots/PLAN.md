@@ -21,7 +21,7 @@ Taille : S = moins d'une heure de travail assisté, M = une demi journée, L = u
 | 14 | Réglages et matériel | 16, 17 | M | 01 |
 | 15 | Import de données | 19, 8 | M | 14 |
 | 16 | Compte et sauvegarde en ligne | 18 | L | tous |
-| 17 | Séance sur un seul écran : tous les exercices en cartes repliables, cercle de validation à droite de chaque série, chargement selon le matériel (cadré le 2026-10-10, 3 décisions en attente dans LOT-17.md) | 2, 3 adaptées (un exercice à la fois dans la maquette), 10, 11 | L | 05, 09, 10 |
+| 17 | Séance sur un seul écran : tous les exercices en cartes repliables, cercle de validation à droite de chaque série, chargement selon le matériel (cadré et validé le 2026-10-10, décisions 1A, 2A, 3A ; livraisons 1 à 4 faites, livraison 5 en attente de confirmation après une vraie séance) | 2, 3 adaptées (un exercice à la fois dans la maquette), 10, 11 | L | 05, 09, 10 |
 
 ## Ordre conseillé
 
@@ -40,6 +40,9 @@ Taille : S = moins d'une heure de travail assisté, M = une demi journée, L = u
 
 * Corrigé le 2026-10-10 : l'activation d'un cycle au fil de l'eau (maybeAutoActivateForceCycle — déclenchée depuis le 1RM de l'onglet Exercices, la date de départ, et depuis la livraison 4 du lot 09 "Charges de départ") ne lançait jamais la coordination (R7) : decalage_semaines restait à 0, même si maxHeavyCyclesPerWeek cycles lourds étaient déjà actifs ailleurs. Seule la validation groupée de "Tirer mes cycles" (handleValidateCyclesDrawn) appelait coordinateAndApplyOffsets. maybeAutoActivateForceCycle appelle désormais coordinateAndApplyOffsets après chaque nouvelle activation, sauf si l'exercice a une date de départ saisie à la main (forceCycleStartDate), jamais écrasée par la coordination. Le message "Cycle X démarre..." (Charges de départ, et la fiche exercice du lot 10) reflète le décalage éventuel via buildCycleStartMessage.
 
+* Noté le 2026-10-10 (lot 17), non corrigé : ensurePlateSet écrit le jeu de disques par défaut dans les réglages quand il manque, y compris depuis un affichage (ancienne carte de chargement, calculateur de disques). La nouvelle carte du lot 17 lit sans écrire (getPlateSetForDisplay). Sans risque pour les données (n'écrase rien d'existant), mais contraire à "aucune écriture à l'ouverture d'un écran".
+* Noté le 2026-10-10 (lot 17), à vérifier : le rappel "Meilleur" d'une carte d'haltérophilie a changé en pleine séance (5x85 kg devenu 3x90 kg après une série validée) : getBestRecordForExercise semble lire la séance en cours. Comportement antérieur au lot 17.
+
 ## Réglages sans interface
 
 * settings.restByType ({ technique: 150, force: 120, muscu: 90 }, lot 10, R10) : seul addExercisesToRoutine le lit pour l'instant (repos par défaut à l'ajout d'un exercice dans une routine). Pas d'écran de réglage dans ce lot — à exposer plus tard (lot 14, Réglages et matériel, est le candidat naturel).
@@ -48,6 +51,8 @@ Taille : S = moins d'une heure de travail assisté, M = une demi journée, L = u
 
 * Accès au détail d'un cycle (openCycleDetailPage) depuis l'Accueil (aucune carte "cycles en cours" n'y existe aujourd'hui), depuis le panneau du jour du calendrier (Programme/Accueil, buildProgrammeDayPanelCard ne montre que nom et nombre d'exercices), et depuis la séance en cours (buildHalteroLiveBody n'a aucun lien vers la vue complète du cycle). Fait pour "Tes N cycles" et Coordination (point E, 2026-10-09) ; ces trois-là restent à faire si souhaité.
 * Retrait possible des flèches monter/descendre dans l'éditeur de routine, devenues redondantes depuis le glisser-déposer (lot 09, livraison 3). Noté le 2026-10-10, pas encore retiré : à confirmer avant de supprimer une fonction existante (règle 9).
+
+* Exercice à un seul haltère (ex. "Rowing haltère unilatéral") : la carte de chargement affiche "2 haltères de X kg". Un drapeau unilatéral par exercice serait nécessaire (lot 17, décision 3A : weightKg reste le poids d'un haltère). Noté le 2026-10-10.
 
 ## Points de livraison utiles
 

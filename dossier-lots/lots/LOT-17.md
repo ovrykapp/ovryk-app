@@ -2,7 +2,25 @@
 
 Taille : L. Dépend de : 05, 09, 10. Lot à risque (séance en cours, R6, R12, test de 1RM) : un seul plan pour tout le lot, approbation, puis toutes les livraisons à la suite.
 
-Cadrage rédigé le 2026-10-10. Trois décisions restent à prendre avant le plan (fin de ce fichier).
+Cadrage rédigé et validé le 2026-10-10. Décisions prises : 1A, 2A, 3A (fin de ce fichier). L'ancien écran un exercice à la fois est retiré sans option, à la livraison 5 seulement.
+
+## Avancement
+
+* Livraison 1, chargement selon le matériel : faite (commit 79f7ca1, sw v101).
+* Livraison 2, cartes repliables et état déplié : faite (32798c0, sw v102).
+* Livraison 3, muscu, cercle et saisie dans la ligne : faite (b5cc49a, sw v103).
+* Livraison 4, haltérophilie, cercle, bouton Raté, dé-validation : faite (ef62c63, sw v104).
+* Livraison 5 : en attente. Ruben fait d'abord une vraie séance avec le nouvel écran, puis confirme.
+
+Précisions de Ruben intégrées (2026-10-10) :
+
+* Le cercle valide avec les valeurs préremplies (poids prescrit, reps cibles) sans retaper ; une valeur modifiée avant le tap est celle qui est écrite. Conséquence : une série muscu en plage validée sans retaper prend les reps cibles affichées (targetReps, sinon repsMin) dans repsActual. Avant, "Valider la série" laissait repsActual vide et R5 ignorait la série.
+* Une carte repliée se rouvre au tap, jamais deux cartes dépliées.
+* Dé-valider ne relance ni le repos ni l'avance d'exercice, et ne fausse ni R5 (la série dé-validée a done = false, donc exclue) ni la fin d'exercice (recalculée à chaque rendu).
+* Une série validée non modifiée écrit les mêmes champs que les anciens boutons. Vérifié sur l'export de backups/ : mêmes clés de série et d'exercice avant et après.
+* Une séance en cours au moment de la mise à jour s'ouvre sans migration (testé avec la séance UPPER B en cours de l'export, et en rechargeant la page en pleine séance).
+
+Reste pour la livraison 5 : test de 1RM (formulaire de tentatives dans la carte, à la place du tableau), avis R12 dans l'en-tête de la carte, supersets et circuits encadrés, emplacement du séparateur du lot 11, retrait du code de l'ancien écran (buildLiveSessionExercise, buildLiveSessionHeader, buildLiveSessionNextHint, buildLiveAdvanceBanner, goToLiveExercise, liveAdvanceTimeoutId, styles .live-session-top-header et .live-session-next-row). À voir aussi : la barre de repos, collée en bas, cache la série suivante (il faut défiler) ; le compteur "Série X sur N" de la carte reste orange sur une carte de cycle.
 
 ## Écrans de la maquette
 
@@ -147,7 +165,7 @@ R5, R6, R10, R12. R3 pour le test de 1RM (affichage seulement). R8 plus tard (lo
 * La décharge de la muscu (lot 13) et le poids de barre configurable (lot 14).
 * Réordonner les exercices pendant la séance.
 
-## Décisions à prendre par Ruben
+## Décisions de Ruben (prises le 2026-10-10 : 1A, 2A, 3A)
 
 1. Haltérophilie : comment déclarer un raté, puisque le cercle valide une série réussie ?
    A. Un petit bouton "Raté" à gauche du cercle, sur la série en cours (recommandé : visible, aucun geste caché).
