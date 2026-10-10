@@ -3968,6 +3968,76 @@
   .dash-session-ex-row.is-link:last-child { border-bottom: none; }
   .dash-next-test[role="button"] { cursor: pointer; }
   .dash-next-test-row .dash-next-test-chevron { align-self: center; stroke: var(--blue); }
+  /* lot 14, livraison 1 : Réglages en sections (maquette 16). Variables
+     seulement (règle 4). Les anciennes classes .data-io-block et
+     .data-io-title restent définies, plus utilisées dans cette vue. */
+  .settings-section { margin-bottom: var(--space-5); }
+  .settings-eyebrow {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--steel);
+    margin: 0 2px 8px;
+  }
+  .settings-group {
+    background: var(--surface);
+    border: 1px solid var(--border-card);
+    border-radius: var(--radius-card);
+    overflow: hidden;
+  }
+  .settings-row, .settings-group .profile-toggle-row, .settings-group .profile-stepper-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    width: 100%;
+    min-height: 52px;
+    margin: 0;
+    padding: 8px 16px;
+    border-bottom: 1px solid var(--divider);
+  }
+  .settings-row {
+    background: none;
+    border-top: none;
+    border-left: none;
+    border-right: none;
+    color: var(--ink);
+    font-family: var(--font-display);
+    text-align: left;
+  }
+  .settings-row.is-button { cursor: pointer; }
+  .settings-group > :last-child, .settings-group > :last-child > :last-child { border-bottom: none; }
+  .settings-row-label, .settings-group .profile-row-label {
+    flex: 1;
+    min-width: 0;
+    font-family: var(--font-display);
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--ink);
+  }
+  .settings-row-value { font-size: 14px; color: var(--steel); white-space: nowrap; }
+  .settings-row-chevron {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    stroke: var(--steel);
+    fill: none;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    transition: transform 0.15s ease;
+  }
+  .settings-row.is-open .settings-row-chevron { transform: rotate(90deg); }
+  .settings-row.is-danger .settings-row-label { color: var(--rust); }
+  #profile-goals-toggle { border-bottom: none; }
+  .settings-row-body { border-top: 1px solid var(--divider); }
+  .settings-row-body[hidden] { display: none; }
+  .settings-note { margin: 8px 2px 0; font-size: 12px; line-height: 1.5; color: var(--steel); max-width: 46ch; }
+  .settings-note[hidden] { display: none; }
+  .settings-section > .backup-reminder { margin: 0 2px var(--space-3); }
 </style>
 </head>
 <body>
@@ -4248,37 +4318,55 @@
         <p>Réglages et sauvegarde de tes données.</p>
       </div>
 
-      <div class="data-io-block" id="profile-goals-card">
-        <div class="data-io-title">Objectifs hebdomadaires</div>
-        <div id="profile-goals-list"></div>
+      <div class="settings-section" id="profile-goals-card">
+        <span class="settings-eyebrow">Objectifs</span>
+        <div class="settings-group">
+          <button type="button" id="profile-goals-toggle" class="settings-row is-button" aria-expanded="false" aria-controls="profile-goals-list">
+            <span class="settings-row-label">Objectifs hebdomadaires</span>
+            <span class="settings-row-value" id="profile-goals-summary"></span>
+            <svg class="settings-row-chevron" viewBox="0 0 24 24" aria-hidden="true"><polyline points="9,6 15,12 9,18"/></svg>
+          </button>
+          <div class="settings-row-body" id="profile-goals-list" hidden></div>
+        </div>
       </div>
 
-      <div class="data-io-block">
-        <div class="data-io-title">Notifications</div>
-        <p class="data-io-desc">Rappels pour ne pas manquer une séance.</p>
-        <div id="profile-notifications-list"></div>
-        <p class="data-io-desc" id="profile-notifications-note" hidden></p>
+      <div class="settings-section">
+        <span class="settings-eyebrow">Général</span>
+        <div class="settings-group">
+          <div id="profile-notifications-list"></div>
+        </div>
+        <p class="settings-note" id="profile-notifications-note" hidden></p>
       </div>
 
-      <div class="data-io-block">
-        <div class="data-io-title">Sauvegarde</div>
+      <div class="settings-section">
+        <span class="settings-eyebrow">Données</span>
         <p class="backup-reminder mono" id="backup-reminder" hidden></p>
         <p class="backup-reminder mono" id="storage-warning" hidden></p>
-        <p class="data-io-desc">Exporte toutes tes données (exercices, routines, séances, réglages, cycles de force) dans un fichier JSON, ou restaure une sauvegarde précédente.</p>
-        <div class="data-io-actions">
-          <button type="button" id="dashboard-export-btn" class="btn-back">Exporter (.json)</button>
-          <button type="button" id="dashboard-import-btn" class="btn-back">Importer (.json)</button>
+        <div class="settings-group">
+          <button type="button" id="dashboard-export-btn" class="settings-row is-button">
+            <span class="settings-row-label">Exporter mes données</span>
+            <span class="settings-row-value">.json</span>
+            <svg class="settings-row-chevron" viewBox="0 0 24 24" aria-hidden="true"><polyline points="9,6 15,12 9,18"/></svg>
+          </button>
+          <button type="button" id="dashboard-import-btn" class="settings-row is-button">
+            <span class="settings-row-label">Importer une sauvegarde</span>
+            <span class="settings-row-value">.json</span>
+            <svg class="settings-row-chevron" viewBox="0 0 24 24" aria-hidden="true"><polyline points="9,6 15,12 9,18"/></svg>
+          </button>
         </div>
         <input type="file" id="dashboard-import-input" accept="application/json,.json" hidden>
         <div class="data-io-status mono" id="dashboard-io-status"></div>
+        <p class="settings-note">Exporte toutes tes données (exercices, routines, séances, réglages, cycles de force) dans un fichier JSON, ou restaure une sauvegarde précédente.</p>
       </div>
 
-      <div class="data-io-block">
-        <div class="data-io-title">Réinitialisation</div>
-        <p class="data-io-desc">Supprime définitivement toutes les données de l'app (exercices, routines, séances, réglages, cycles de force) et repart de zéro. Pense à exporter une sauvegarde avant si besoin.</p>
-        <div class="data-io-actions">
-          <button type="button" id="reset-app-btn" class="routine-action-btn danger">Réinitialiser l'app</button>
+      <div class="settings-section">
+        <span class="settings-eyebrow">Réinitialisation</span>
+        <div class="settings-group">
+          <button type="button" id="reset-app-btn" class="settings-row is-button is-danger">
+            <span class="settings-row-label">Réinitialiser l'app</span>
+          </button>
         </div>
+        <p class="settings-note">Supprime définitivement toutes les données de l'app (exercices, routines, séances, réglages, cycles de force) et repart de zéro. Pense à exporter une sauvegarde avant si besoin.</p>
       </div>
     </section>
 
@@ -12824,7 +12912,7 @@
        (app backgrounded / screen locked) — when foreground, the bar hitting
        0:00 plus the sound/vibration already cover it */
     if (document.visibilityState === 'visible') return;
-    var prefs = ensureNotificationPrefs();
+    var prefs = getNotificationPrefs();
     if (!prefs.repos) return;
     if (!('Notification' in window) || Notification.permission !== 'granted') return;
     if (!('serviceWorker' in navigator)) return;
@@ -12859,7 +12947,7 @@
     stopRestTimer();
     if (!seconds || seconds <= 0) return;
     ensureRestTimerAudio();
-    var prefs = ensureNotificationPrefs();
+    var prefs = getNotificationPrefs();
     if (prefs.repos && 'Notification' in window && Notification.permission === 'default') {
       /* called from the checkmark tap, so this is still inside a user
          gesture — iOS requires that for the permission prompt to appear */
@@ -13466,18 +13554,20 @@
 
   function round05(n) { return Math.round(n * 2) / 2; }
 
-  function ensureMuscleGroupTargets() {
-    var settings = OvrykDB.getSettings();
-    var changed = false;
-    if (!settings.muscleGroupTargets) { settings.muscleGroupTargets = {}; changed = true; }
+  /* lot 14, livraison 1 : lecture seule. Ancien ensureMuscleGroupTargets
+     écrivait les valeurs par défaut dans les réglages dès qu'un objectif
+     manquait, à l'ouverture de Réglages et de Progrès. La valeur lue est
+     la même (stockée si elle existe, sinon DEFAULT_TARGETS, un 0 stocké
+     est gardé) ; l'écriture n'a plus lieu qu'au premier changement d'un
+     objectif (changeMuscleGroupTarget), qui écrit alors l'objet complet,
+     exactement l'état que l'ancien code produisait. */
+  function getMuscleGroupTargets() {
+    var stored = OvrykDB.getSettings().muscleGroupTargets || {};
+    var targets = {};
     PROGRESSION_GROUPS.forEach(function (g) {
-      if (settings.muscleGroupTargets[g.key] == null) {
-        settings.muscleGroupTargets[g.key] = DEFAULT_TARGETS[g.key];
-        changed = true;
-      }
+      targets[g.key] = stored[g.key] != null ? stored[g.key] : DEFAULT_TARGETS[g.key];
     });
-    if (changed) OvrykDB.saveSettings(settings);
-    return settings.muscleGroupTargets;
+    return targets;
   }
 
   /* ============================================================
@@ -13522,23 +13612,50 @@
     return row;
   }
 
+  /* écrit l'objet complet des objectifs (valeurs lues, dont les valeurs
+     par défaut) avec le seul groupe modifié : même état qu'avant la
+     livraison 1, mais seulement quand on change un objectif. */
+  function changeMuscleGroupTarget(groupKey, delta) {
+    var targets = getMuscleGroupTargets();
+    var v = (targets[groupKey] || 0) + delta;
+    targets[groupKey] = v < 0 ? 0 : v;
+    var settings = OvrykDB.getSettings();
+    settings.muscleGroupTargets = targets;
+    OvrykDB.saveSettings(settings);
+  }
+
+  /* "Objectifs hebdomadaires" : ligne repliée par défaut, qui déplie les
+     9 compteurs. État en mémoire seulement (jamais enregistré). */
+  var profileGoalsExpanded = false;
+
+  function setProfileGoalsExpanded(expanded) {
+    profileGoalsExpanded = !!expanded;
+    renderProfileGoalsCard();
+  }
+
   function renderProfileGoalsCard() {
-    var targets = ensureMuscleGroupTargets();
+    var targets = getMuscleGroupTargets();
     var list = document.getElementById('profile-goals-list');
+    var toggle = document.getElementById('profile-goals-toggle');
+    var total = PROGRESSION_GROUPS.reduce(function (sum, g) { return sum + (targets[g.key] || 0); }, 0);
+    document.getElementById('profile-goals-summary').textContent = total + (total > 1 ? ' séries' : ' série');
+    toggle.setAttribute('aria-expanded', profileGoalsExpanded ? 'true' : 'false');
+    toggle.classList.toggle('is-open', profileGoalsExpanded);
+    list.hidden = !profileGoalsExpanded;
     list.innerHTML = '';
+    if (!profileGoalsExpanded) return;
     PROGRESSION_GROUPS.forEach(function (g) {
       list.appendChild(buildStepperRow(g.label, targets[g.key], function (delta) {
-        var settings = OvrykDB.getSettings();
-        settings.muscleGroupTargets = settings.muscleGroupTargets || {};
-        var v = (settings.muscleGroupTargets[g.key] || 0) + delta;
-        if (v < 0) v = 0;
-        settings.muscleGroupTargets[g.key] = v;
-        OvrykDB.saveSettings(settings);
+        changeMuscleGroupTarget(g.key, delta);
         renderProfileGoalsCard();
         renderProgressionGroups();
       }));
     });
   }
+
+  document.getElementById('profile-goals-toggle').addEventListener('click', function () {
+    setProfileGoalsExpanded(!profileGoalsExpanded);
+  });
 
   var NOTIFICATION_TYPES = [
     { key: 'seance', label: 'Rappel de séance' },
@@ -13547,14 +13664,27 @@
   ];
   var DEFAULT_NOTIFICATION_PREFS = { seance: true, repos: true, resume: false };
 
-  function ensureNotificationPrefs() {
+  /* lot 14, livraison 1 : lecture seule. Ancien ensureNotificationPrefs
+     écrivait les valeurs par défaut quand settings.notificationPrefs
+     manquait, à l'ouverture de Réglages et au premier repos. La valeur lue
+     est la même (l'objet stocké tel quel s'il existe, sinon une copie des
+     valeurs par défaut) ; l'écriture n'a plus lieu qu'au premier changement
+     d'un interrupteur (setNotificationPref), qui écrit alors l'objet
+     complet, exactement l'état que l'ancien code produisait. */
+  function getNotificationPrefs() {
+    var stored = OvrykDB.getSettings().notificationPrefs;
+    if (stored) return stored;
+    var copy = {};
+    for (var k in DEFAULT_NOTIFICATION_PREFS) copy[k] = DEFAULT_NOTIFICATION_PREFS[k];
+    return copy;
+  }
+
+  function setNotificationPref(key, on) {
+    var prefs = getNotificationPrefs();
+    prefs[key] = on;
     var settings = OvrykDB.getSettings();
-    if (!settings.notificationPrefs) {
-      settings.notificationPrefs = {};
-      for (var k in DEFAULT_NOTIFICATION_PREFS) settings.notificationPrefs[k] = DEFAULT_NOTIFICATION_PREFS[k];
-      OvrykDB.saveSettings(settings);
-    }
-    return settings.notificationPrefs;
+    settings.notificationPrefs = prefs;
+    OvrykDB.saveSettings(settings);
   }
 
   function buildToggleRow(label, on, onToggle) {
@@ -13579,16 +13709,13 @@
   }
 
   function renderProfileNotificationsCard() {
-    var prefs = ensureNotificationPrefs();
+    var prefs = getNotificationPrefs();
     var list = document.getElementById('profile-notifications-list');
     list.innerHTML = '';
     NOTIFICATION_TYPES.forEach(function (type) {
       list.appendChild(buildToggleRow(type.label, !!prefs[type.key], function () {
-        var settings = OvrykDB.getSettings();
-        settings.notificationPrefs = settings.notificationPrefs || {};
-        var turningOn = !settings.notificationPrefs[type.key];
-        settings.notificationPrefs[type.key] = turningOn;
-        OvrykDB.saveSettings(settings);
+        var turningOn = !getNotificationPrefs()[type.key];
+        setNotificationPref(type.key, turningOn);
         if (type.key === 'repos' && turningOn && 'Notification' in window && Notification.permission === 'default') {
           Notification.requestPermission().then(renderProfileNotificationsCard);
         } else {
@@ -13638,7 +13765,7 @@
   /* ---- targets panel ---- */
   /* ---- main groups view ---- */
   function renderProgressionGroups() {
-    var targets = ensureMuscleGroupTargets();
+    var targets = getMuscleGroupTargets();
     var counts = computeWeeklySeriesCounts();
     var weeks = getWeekWindow();
     var currentWk = weekKeyOf(new Date());
@@ -14373,6 +14500,7 @@
   /* ---- wiring ---- */
   document.getElementById('progression-targets-toggle').addEventListener('click', function () {
     setActiveView('profil');
+    setProfileGoalsExpanded(true);
     var card = document.getElementById('profile-goals-card');
     if (card) card.scrollIntoView({ behavior: 'smooth', block: 'start' });
   });
