@@ -5849,6 +5849,20 @@
       list[index] = routine;
       this.saveRoutines(list);
     },
+    /* jours seulement : routine.updatedAt n'est jamais touché. Changer de
+       jour n'est pas une modification de contenu : avec updateRoutine, la
+       séance suivante verrait la routine "modifiée depuis la dernière
+       séance" (buildSessionFromRoutine, routineEditedSinceLastSession) et
+       ne reprendrait plus la progression. Seul appelé par la feuille "Jours"
+       de l'éditeur et par "Déplacer une séance" (lot 13). */
+    updateRoutineWeekdays: function (id, weekdays) {
+      var list = this.getRoutines();
+      var target = list.filter(function (r) { return r.id === id; })[0];
+      if (!target) return false;
+      target.weekdays = weekdays.slice().sort(function (a, b) { return a - b; });
+      this.saveRoutines(list);
+      return true;
+    },
     deleteRoutine: function (id) {
       this.saveRoutines(this.getRoutines().filter(function (r) { return r.id !== id; }));
     },
@@ -7829,9 +7843,10 @@
   }
 
   /* n'écrit que sur confirmation, et seulement routine.weekdays : relu au
-     moment de la confirmation, sans OvrykDB.updateRoutine qui avancerait
-     updatedAt (la séance suivante de la routine ne reprendrait plus la
-     dernière séance, R5). Aucune séance enregistrée ni en cours n'est lue
+     moment de la confirmation, par OvrykDB.updateRoutineWeekdays (même
+     écriture que la feuille "Jours" de l'éditeur) qui n'avance pas
+     updatedAt (sinon la séance suivante de la routine ne reprendrait plus
+     la dernière séance, R5). Aucune séance enregistrée ni en cours n'est lue
      pour écriture. */
   function confirmWeekMove() {
     var st = weekMoveState;
@@ -7850,13 +7865,11 @@
         WEEKDAY_NAMES_FR[targetDay - 1].toLowerCase() + ' ? Jours de la routine : ' + formatWeekdayList(before) +
         ' deviennent ' + formatWeekdayList(after) + '. Aucune séance enregistrée ou en cours n\u2019est modifiée.',
       function () {
-        var routines = OvrykDB.getRoutines();
-        var target = routines.filter(function (r) { return r.id === side.routineId; })[0];
+        var target = OvrykDB.getRoutineById(side.routineId);
         if (!target || !Array.isArray(target.weekdays) || target.weekdays.indexOf(side.day) === -1) return;
         var next = target.weekdays.filter(function (d) { return d !== side.day; });
         if (next.indexOf(targetDay) === -1) next.push(targetDay);
-        target.weekdays = next.sort(function (a, b) { return a - b; });
-        OvrykDB.saveRoutines(routines);
+        OvrykDB.updateRoutineWeekdays(target.id, next);
         renderWeekLoadPage();
         renderProgrammeWeek();
       },
@@ -11019,10 +11032,9 @@
   document.getElementById('routine-weekday-sheet-confirm').addEventListener('click', function () {
     var current = OvrykDB.getRoutineById(currentRoutineId);
     if (!current || !routineWeekdayDraft) { closeRoutineWeekdaySheet(); return; }
-    current.weekdays = routineWeekdayDraft.slice().sort(function (a, b) { return a - b; });
-    OvrykDB.updateRoutine(current);
+    OvrykDB.updateRoutineWeekdays(current.id, routineWeekdayDraft);
     closeRoutineWeekdaySheet();
-    renderRoutineWeekdayBtn(current);
+    renderRoutineWeekdayBtn(OvrykDB.getRoutineById(current.id));
   });
   document.getElementById('routine-weekday-sheet-overlay').addEventListener('click', function (e) {
     if (e.target === this) closeRoutineWeekdaySheet();
