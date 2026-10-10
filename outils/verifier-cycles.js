@@ -14,6 +14,9 @@ ALL_CYCLE_IDS.forEach(function (id) {
   semaines.forEach(function (w, i) {
     if (w.week !== i + 1) problemes.push('numéro de semaine incohérent en position ' + (i + 1));
     if (!w.sets.length) problemes.push('semaine ' + w.week + ' sans série');
+    /* lot 13 : drapeau deload posé si et seulement si la phase commence par "Allégée" */
+    if (/^Allégée/.test(w.phase) !== !!w.deload) problemes.push('semaine ' + w.week + ' : drapeau deload incohérent avec la phase');
+    if (w.deload && w.isTestWeek) problemes.push('semaine ' + w.week + ' : allégée et test à la fois');
     w.sets.forEach(function (s) {
       if (!(s.reps > 0)) problemes.push('semaine ' + w.week + ' : reps invalides');
       if (!(s.percent > 0 && s.percent <= 100)) problemes.push('semaine ' + w.week + ' : pourcentage invalide ' + s.percent);

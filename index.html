@@ -1638,6 +1638,7 @@
   }
   .coordination-legend-swatch.is-volume { background: var(--blue-fill); border: 1px solid var(--blue); }
   .coordination-legend-swatch.is-peak { background: var(--orange-fill); border: 1px solid var(--orange-soft); }
+  .coordination-legend-swatch.is-allegee { background: transparent; border: 1px dashed var(--blue); }
 
   .coordination-rule-note {
     background: var(--field);
@@ -4063,6 +4064,96 @@
   .bar-preview-sub { margin-top: 4px; font-size: 13px; color: var(--steel); overflow-wrap: anywhere; }
   .bar-preview-visual { flex-shrink: 0; }
   .bar-jump-text { margin: 0; font-size: 13px; line-height: 1.4; color: var(--ink); }
+
+  /* lot 13 (maquette 28) : charge de la semaine. Couleurs par variables
+     seulement (règle 4) : bleu = haltérophilie, orange = muscu et alerte. */
+  .week-load-entry {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    text-align: left;
+    background: var(--surface);
+    border: 1px solid var(--border-card);
+    border-radius: var(--radius-card);
+    padding: var(--space-4);
+    margin-bottom: var(--space-5);
+    color: var(--ink);
+    cursor: pointer;
+  }
+  .week-load-entry[hidden] { display: none; }
+  .week-load-entry.is-alert { background: var(--orange-fill); border-color: transparent; }
+  .week-load-entry-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+  .week-load-entry-eyebrow {
+    font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--steel);
+  }
+  .week-load-entry.is-alert .week-load-entry-eyebrow { color: var(--orange-soft); }
+  .week-load-entry-sub { font-size: 14px; line-height: 1.4; color: var(--ink); }
+  .week-load-alert {
+    background: var(--orange-fill);
+    border-radius: var(--radius-card);
+    padding: var(--space-4);
+    margin-bottom: var(--space-5);
+  }
+  .week-load-alert-eyebrow {
+    display: block; font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--orange-soft); margin-bottom: 8px;
+  }
+  .week-load-alert-text { margin: 0 0 var(--space-3); font-size: 15px; line-height: 1.45; color: var(--ink); }
+  .week-load-alert-text:last-child { margin-bottom: 0; }
+  .week-load-alert-actions { display: flex; gap: 10px; margin-top: var(--space-3); }
+  .week-load-alert-actions > button { flex: 1; min-height: 48px; }
+  .week-load-alert-btn-outline {
+    background: transparent; border: 1px solid var(--orange-soft); color: var(--orange-soft);
+    border-radius: var(--radius); font-weight: 700; font-size: 14px; cursor: pointer;
+  }
+  .week-load-alert-btn-plain {
+    background: var(--field); border: none; color: var(--ink);
+    border-radius: var(--radius); font-weight: 700; font-size: 14px; cursor: pointer;
+  }
+  .week-load-alert-more {
+    background: none; border: none; padding: 0; color: var(--orange-soft);
+    font-size: 13px; font-weight: 700; cursor: pointer;
+  }
+  .week-load-section-title {
+    display: flex; justify-content: space-between; align-items: baseline; gap: 8px;
+    font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--steel); margin: 0 0 var(--space-3);
+  }
+  .week-load-section-title .week-load-section-aside { font-weight: 500; letter-spacing: 0; text-transform: none; font-size: 12px; }
+  .week-load-days { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; align-items: end; height: 120px; }
+  .week-load-day-col { display: flex; flex-direction: column; justify-content: flex-end; height: 100%; gap: 2px; }
+  .week-load-day-seg { border-radius: 6px; min-height: 0; }
+  .week-load-day-seg.is-haltero { background: var(--blue); }
+  .week-load-day-seg.is-muscu { background: var(--rust); }
+  .week-load-day-seg.is-planned { background: transparent; border: 1.5px dashed currentColor; }
+  .week-load-day-seg.is-planned.is-haltero { color: var(--blue); }
+  .week-load-day-seg.is-planned.is-muscu { color: var(--rust); }
+  .week-load-day-seg.is-empty { height: 4px; background: var(--field); }
+  .week-load-day-labels { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; margin-top: 8px; }
+  .week-load-day-label { text-align: center; font-size: 12px; font-weight: 700; color: var(--steel); }
+  .week-load-day-label.is-today { color: var(--ink); }
+  .week-load-day-count { display: block; font-weight: 500; font-size: 11px; color: var(--steel); }
+  .week-load-legend { display: flex; flex-wrap: wrap; gap: 14px; margin: var(--space-3) 0 var(--space-5); font-size: 12px; color: var(--steel); }
+  .week-load-legend-item { display: inline-flex; align-items: center; gap: 6px; }
+  .week-load-legend-swatch { width: 12px; height: 12px; border-radius: 3px; }
+  .week-load-legend-swatch.is-haltero { background: var(--blue); }
+  .week-load-legend-swatch.is-muscu { background: var(--rust); }
+  .week-load-legend-swatch.is-planned { background: transparent; border: 1.5px dashed var(--steel); }
+  .week-load-group-row { display: grid; grid-template-columns: 96px 1fr auto; align-items: center; gap: 10px; padding: 7px 0; }
+  .week-load-group-label { font-size: 14px; color: var(--ink); line-height: 1.25; }
+  .week-load-group-track { height: 10px; border-radius: var(--radius-pill); background: var(--field); overflow: hidden; }
+  .week-load-group-fill { height: 100%; border-radius: var(--radius-pill); background: var(--blue); }
+  .week-load-group-fill.is-high { background: var(--rust); }
+  .week-load-group-value { font-size: 14px; font-weight: 700; color: var(--ink); text-align: right; white-space: nowrap; }
+  .week-load-group-value .week-load-high-tag { margin-left: 4px; font-size: 12px; color: var(--rust); }
+  .week-load-group-value .week-load-target { font-weight: 500; color: var(--steel); }
+  .week-load-more-btn {
+    background: none; border: none; padding: 8px 0; color: var(--steel);
+    font-size: 13px; font-weight: 700; cursor: pointer;
+  }
+  .week-load-empty { font-size: 14px; color: var(--steel); margin: 0 0 var(--space-3); }
+  .week-load-note { font-size: 12px; line-height: 1.5; color: var(--steel); margin: var(--space-4) 0 var(--space-5); }
 </style>
 </head>
 <body>
@@ -4176,6 +4267,14 @@
         <span class="dash-section-eyebrow">MES SÉANCES</span>
         <div id="routine-list"></div>
       </div>
+
+      <button type="button" class="week-load-entry" id="programme-week-load-btn" hidden>
+        <span class="week-load-entry-text">
+          <span class="week-load-entry-eyebrow" id="programme-week-load-eyebrow">Charge de la semaine</span>
+          <span class="week-load-entry-sub" id="programme-week-load-sub"></span>
+        </span>
+        <svg class="settings-row-chevron" viewBox="0 0 24 24" aria-hidden="true"><polyline points="9,6 15,12 9,18"/></svg>
+      </button>
 
       <div id="programme-empty-state" hidden></div>
     </section>
@@ -4608,6 +4707,21 @@
     <div class="history-detail-footer">
       <button type="button" id="bar-plates-save-btn" class="btn-primary" disabled>Enregistrer</button>
     </div>
+  </div>
+
+  <!-- lot 13 (maquette 28, R9) : charge de la semaine civile en cours.
+       Calculée à chaque ouverture (renderWeekLoadPage), rien n'est stocké. -->
+  <div id="week-load-page" class="fullscreen-page" hidden>
+    <div class="history-topbar">
+      <button type="button" id="week-load-back-btn" class="view-header-back" aria-label="Retour au programme">
+        <svg viewBox="0 0 24 24" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="15,6 9,12 15,18"/></svg>
+      </button>
+      <div class="history-title-wrap">
+        <h1 class="history-title is-detail">Charge de la semaine</h1>
+        <p class="history-subtitle" id="week-load-sub"></p>
+      </div>
+    </div>
+    <div class="fullscreen-page-body history-body" id="week-load-body"></div>
   </div>
 
   <div id="history-detail-page" class="fullscreen-page" hidden>
@@ -5341,7 +5455,10 @@
       sets: sets,
       restSeconds: o.rest || restFor(sets),
       timed: !!o.timed,
-      isTestWeek: !!o.test
+      isTestWeek: !!o.test,
+      /* lot 13 (R1, R8) : semaine allégée, posée sur les semaines dont la
+         phase commence par "Allégée" (contrôlé par verifier-cycles.js). */
+      deload: !!o.deload
     };
   }
   function mkTest(n) {
@@ -5393,14 +5510,14 @@
       mkWeek(4, '1 puis 3×5', [{ reps: 1, percent: 85 }].concat(repeatSet(5, 75, 3))),
       mkWeek(5, '1 puis 4×4', [{ reps: 1, percent: 90 }].concat(repeatSet(4, 80, 4))),
       mkWeek(6, '1 puis 6×3', [{ reps: 1, percent: 95 }].concat(repeatSet(3, 85, 6))),
-      mkWeek(7, 'Allégée 10-8-6-4-2', pairs([10, 8, 6, 4, 2], [60, 65, 72, 78, 85]), { rest: 90 }),
+      mkWeek(7, 'Allégée 10-8-6-4-2', pairs([10, 8, 6, 4, 2], [60, 65, 72, 78, 85]), { rest: 90, deload: true }),
       mkTest(8)
     ],
     '6': [
       mkWeek(1, '6×5', repeatSet(5, 60, 6)),
       mkWeek(2, '8×3', repeatSet(3, 65, 8)),
       mkWeek(3, '5 complexes (3+1)', repeatSet(4, 70, 5)),
-      mkWeek(4, 'Allégée 3×3', repeatSet(3, 65, 3), { rest: 90 }),
+      mkWeek(4, 'Allégée 3×3', repeatSet(3, 65, 3), { rest: 90, deload: true }),
       mkWeek(5, '2 vagues 3-2-1', wave([[3, 72], [2, 77], [1, 82]]).concat(wave([[3, 77], [2, 82], [1, 84]]))),
       mkWeek(6, '3 vagues 3-2-1', wave([[3, 70], [2, 75], [1, 80]]).concat(wave([[3, 75], [2, 80], [1, 80]]), wave([[3, 80], [2, 85], [1, 90]]))),
       mkWeek(7, '3×1', pairs([1, 1, 1], [87, 90, 92])),
@@ -5410,7 +5527,7 @@
       mkWeek(1, '6×2', repeatSet(2, 65, 6)),
       mkWeek(2, '7×2', repeatSet(2, 68, 7)),
       mkWeek(3, '5×2', repeatSet(2, 72, 5)),
-      mkWeek(4, 'Allégée 4×2', repeatSet(2, 65, 4), { rest: 90 }),
+      mkWeek(4, 'Allégée 4×2', repeatSet(2, 65, 4), { rest: 90, deload: true }),
       mkWeek(5, '2 vagues 3-2-1', wave([[3, 72], [2, 77], [1, 82]]).concat(wave([[3, 77], [2, 82], [1, 84]]))),
       mkWeek(6, '3 vagues et pic', wave([[3, 72], [2, 77], [1, 82]]).concat(wave([[3, 77], [2, 82], [1, 84]]), wave([[2, 82], [1, 87], [1, 92]]))),
       mkWeek(7, '4×1', pairs([1, 1, 1, 1], [85, 88, 90, 92])),
@@ -5421,7 +5538,7 @@
       mkWeek(1, '3×5 paliers', pairs([5, 5, 5], [50, 55, 60])),
       mkWeek(2, '5×4 paliers', pairs([4, 4, 4, 4, 4], [60, 65, 65, 70, 70])),
       mkWeek(3, '5×3', repeatSet(3, 70, 5)),
-      mkWeek(4, "Allégée EMOM 6'", repeatSet(2, 60, 6), { timed: true, rest: 60 }),
+      mkWeek(4, "Allégée EMOM 6'", repeatSet(2, 60, 6), { timed: true, rest: 60, deload: true }),
       mkWeek(5, '4×2', repeatSet(2, 78, 4)),
       mkWeek(6, '5×1', pairs([1, 1, 1, 1, 1], [80, 85, 88, 90, 92])),
       mkTestSeparate(7)
@@ -5430,7 +5547,7 @@
       mkWeek(1, '10-8-6-4', pairs([10, 8, 6, 4], [55, 60, 65, 70])),
       mkWeek(2, '6×5', repeatSet(5, 60, 6)),
       mkWeek(3, '5×5', repeatSet(5, 65, 5)),
-      mkWeek(4, 'Allégée 10×3 (30")', repeatSet(3, 50, 5).concat(repeatSet(3, 60, 5)), { timed: true, rest: 30 }),
+      mkWeek(4, 'Allégée 10×3 (30")', repeatSet(3, 50, 5).concat(repeatSet(3, 60, 5)), { timed: true, rest: 30, deload: true }),
       mkWeek(5, '5×3', repeatSet(3, 75, 5)),
       mkWeek(6, '3 vagues', wave([[2, 75], [2, 80], [1, 85]]).concat(wave([[2, 80], [2, 85], [1, 90]]), wave([[1, 85], [1, 90], [1, 95], [1, 100]]))),
       mkTestSeparate(7)
@@ -5439,7 +5556,7 @@
       mkWeek(1, '10×2', repeatSet(2, 55, 10)),
       mkWeek(2, '6×3', repeatSet(3, 60, 6)),
       mkWeek(3, '5×2', repeatSet(2, 65, 5)),
-      mkWeek(4, 'Allégée 10×3', repeatSet(3, 50, 10), { rest: 60 }),
+      mkWeek(4, 'Allégée 10×3', repeatSet(3, 50, 10), { rest: 60, deload: true }),
       mkWeek(5, '4×3, 4×2, 4×1', repeatSet(3, 65, 4).concat(repeatSet(2, 70, 4), repeatSet(1, 75, 4))),
       mkWeek(6, '2×3, 3×2, 4×1', repeatSet(3, 70, 2).concat(repeatSet(2, 75, 3), repeatSet(1, 80, 4))),
       mkTestSeparate(7)
@@ -5448,7 +5565,7 @@
       mkWeek(1, '10×5', repeatSet(5, 55, 10)),
       mkWeek(2, '10×3', repeatSet(3, 60, 10)),
       mkWeek(3, '5×4', repeatSet(4, 70, 5)),
-      mkWeek(4, 'Allégée 6×3', repeatSet(3, 62, 6), { rest: 90 }),
+      mkWeek(4, 'Allégée 6×3', repeatSet(3, 62, 6), { rest: 90, deload: true }),
       mkWeek(5, '7×3', repeatSet(3, 75, 7)),
       mkWeek(6, '3×3, 3×2, 4×1', repeatSet(3, 80, 3).concat(repeatSet(2, 85, 3), repeatSet(1, 90, 4))),
       mkTestSeparate(7)
@@ -5457,7 +5574,7 @@
       mkWeek(1, '6×4', repeatSet(4, 60, 6)),
       mkWeek(2, '15×3', repeatSet(3, 55, 15)),
       mkWeek(3, '6×2', repeatSet(2, 75, 6)),
-      mkWeek(4, 'Allégée 20×3', repeatSet(3, 50, 20), { rest: 45 }),
+      mkWeek(4, 'Allégée 20×3', repeatSet(3, 50, 20), { rest: 45, deload: true }),
       mkWeek(5, "EMOM 12'", repeatSet(2, 80, 12), { timed: true, rest: 60 }),
       mkWeek(6, '5×1', pairs([1, 1, 1, 1, 1], [85, 88, 90, 92, 95])),
       mkTestSeparate(7)
@@ -5466,7 +5583,7 @@
       mkWeek(1, '5×5', repeatSet(5, 65, 5)),
       mkWeek(2, '5×3', repeatSet(3, 72, 5)),
       mkWeek(3, '7×2', repeatSet(2, 75, 7)),
-      mkWeek(4, 'Allégée 3×3', repeatSet(3, 65, 3), { rest: 90 }),
+      mkWeek(4, 'Allégée 3×3', repeatSet(3, 65, 3), { rest: 90, deload: true }),
       mkWeek(5, '5×2', repeatSet(2, 82, 5)),
       mkWeek(6, '3 puis 3×1', [{ reps: 3, percent: 85 }].concat(repeatSet(1, 90, 3))),
       mkTestSeparate(7)
@@ -5475,7 +5592,7 @@
       mkWeek(1, '8×2', repeatSet(2, 60, 8)),
       mkWeek(2, '6×2', repeatSet(2, 65, 6)),
       mkWeek(3, '5×2', repeatSet(2, 70, 5)),
-      mkWeek(4, 'Allégée 4×2', repeatSet(2, 60, 4), { rest: 90 }),
+      mkWeek(4, 'Allégée 4×2', repeatSet(2, 60, 4), { rest: 90, deload: true }),
       mkWeek(5, '4×2', repeatSet(2, 75, 4)),
       mkWeek(6, '5×1', pairs([1, 1, 1, 1, 1], [80, 85, 88, 90, 90])),
       mkTestSeparate(7)
@@ -5485,7 +5602,7 @@
       mkWeek(1, '3 vagues 3-2-1', wave([[3, 50], [2, 55], [1, 60]]).concat(wave([[3, 55], [2, 60], [1, 60]]), wave([[3, 60], [2, 65], [1, 70]]))),
       mkWeek(2, '6×1', repeatSet(1, 70, 6)),
       mkWeek(3, '4×2', repeatSet(2, 75, 4)),
-      mkWeek(4, 'Allégée 5×2', repeatSet(2, 60, 5), { rest: 90 }),
+      mkWeek(4, 'Allégée 5×2', repeatSet(2, 60, 5), { rest: 90, deload: true }),
       mkWeek(5, '2 vagues', wave([[2, 75], [2, 80], [1, 85]]).concat(wave([[2, 80], [2, 85], [1, 90]]))),
       mkWeek(6, 'Test 1RM', pairs([1, 1, 1, 1], [85, 90, 95, 100]), { rest: 180, test: true })
     ]
@@ -5511,7 +5628,8 @@
       sets: override,
       restSeconds: template.restSeconds,
       timed: template.timed,
-      isTestWeek: template.isTestWeek
+      isTestWeek: template.isTestWeek,
+      deload: template.deload
     };
   }
 
@@ -7412,6 +7530,355 @@
   document.getElementById('cycle-detail-back-btn').addEventListener('click', closeCycleDetailPage);
 
   /* ============================================================
+     CHARGE DE LA SEMAINE (lot 13, maquette 28, R9) — semaine civile en
+     cours, lundi à dimanche. Tout est recalculé à chaque ouverture, rien
+     n'est stocké. Fonctionne sans aucun cycle (programme de muscu seule) :
+     seule la répartition haltérophilie et muscu des séries par jour lit la
+     catégorie Lifting, jamais un cycle.
+     * Jour passé, ou aujourd'hui si une séance existe déjà ce jour : séries
+       validées (done) des séances de ce jour, terminées ou en cours.
+     * Jour à venir, ou aujourd'hui sans séance : séries prévues des
+       routines placées ce jour (routine.weekdays), même nombre de séries
+       que la séance construite (cycle, mode de base ou routine). Une
+       routine déjà faite plus tôt dans la semaine reste comptée sur son
+       jour prévu (limite connue, repère seulement).
+     * Séries par groupe musculaire : computeWeeklySeriesCounts, validé
+       seulement, comme l'onglet Progrès. */
+  var WEEK_LOAD_HIGH_RATIO = 1.3;
+  var WEEK_LOAD_OVERLAP_MIN_SETS = 3;
+  var WEEK_LOAD_OVERLAP_MAX_DAYS = 2;
+
+  /* zones sollicitées par exercice (R9), table modifiable. Un exercice est
+     rattaché à une zone par sa catégorie entière (categories), par un
+     morceau de son nom sans accents dans n'importe quelle catégorie
+     (patterns), ou par un morceau de nom réservé aux mouvements
+     d'haltérophilie (liftingPatterns : "pull" ou "press" ailleurs
+     désigneraient un tirage vertical ou une presse à cuisses). */
+  var MUSCLE_ZONES = [
+    { key: 'bas_du_dos', label: 'le bas du dos',
+      categories: [],
+      patterns: ['souleve de terre', 'roumain', 'rowing barre', 'rowing t-bar', 'extension lombaire', 'extension au banc a lombaires', 'good morning', 'reverse hyper'],
+      liftingPatterns: ['deadlift', 'clean', 'snatch', 'pull', 'tirage', 'epaule', 'arrache'] },
+    { key: 'jambes', label: 'les jambes',
+      categories: ['Jambes'],
+      patterns: [],
+      liftingPatterns: ['squat', 'deadlift', 'clean', 'snatch', 'epaule', 'arrache'] },
+    { key: 'epaules', label: 'les épaules',
+      categories: ['Épaules'],
+      patterns: ['developpe militaire'],
+      liftingPatterns: ['press', 'jerk', 'snatch', 'arrache', 'overhead'] }
+  ];
+
+  function getExerciseZones(exerciseId, fallbackName, fallbackCategory) {
+    var exercise = OvrykDB.getExerciseById(exerciseId);
+    var name = normalizeSearch((exercise && exercise.name) || fallbackName || '');
+    var category = (exercise && exercise.category) || fallbackCategory || '';
+    return MUSCLE_ZONES.filter(function (zone) {
+      if (zone.categories.indexOf(category) !== -1) return true;
+      var hit = function (p) { return name.indexOf(p) !== -1; };
+      if (zone.patterns.some(hit)) return true;
+      return category === 'Lifting' && zone.liftingPatterns.some(hit);
+    }).map(function (zone) { return zone.key; });
+  }
+
+  function weekdayNumOf(date) {
+    var d = new Date(date).getDay();
+    return d === 0 ? 7 : d;
+  }
+
+  /* nombre de séries que buildSessionFromRoutine donnerait aujourd'hui à
+     cet exercice de routine, sans rien construire ni écrire. */
+  function getPlannedSetCount(rex) {
+    var exercise = OvrykDB.getExerciseById(rex.exerciseId);
+    var cycle = OvrykDB.getForceCycle(rex.exerciseId);
+    var cyclePending = !!(cycle && cycle.en_attente_de_validation);
+    var beforeStart = isBeforeForceCycleStart(exercise);
+    if (cycle && !cyclePending && !beforeStart) return getCycleWeek(cycle).sets.length;
+    if (cyclePending || beforeStart) {
+      var base = getBaseModePrescription(exercise);
+      return base ? base.sets.length : 0;
+    }
+    return Array.isArray(rex.sets) ? rex.sets.length : 0;
+  }
+
+  /* une entrée par séance de la semaine, réalisée ou prévue :
+     { day (1 à 7), planned, label, items: [{ exerciseId, name, isHaltero, sets }] } */
+  function collectWeekLoadEntries(refDate) {
+    var weekStart = startOfWeek(refDate);
+    var weekEnd = addDays(weekStart, 7);
+    var todayNum = weekdayNumOf(refDate);
+    var entries = [];
+    var daysWithSession = {};
+
+    OvrykDB.getSessions().forEach(function (s) {
+      if (!s || !Array.isArray(s.exercises)) return;
+      var d = new Date(s.date);
+      if (d < weekStart || d >= weekEnd) return;
+      var day = weekdayNumOf(d);
+      daysWithSession[day] = true;
+      var items = [];
+      s.exercises.forEach(function (sex) {
+        if (!sex || !Array.isArray(sex.sets)) return;
+        var n = sex.sets.filter(function (set) { return set && set.done; }).length;
+        if (!n) return;
+        items.push({ exerciseId: sex.exerciseId, name: sex.exerciseName || 'Exercice', category: sex.category || '', isHaltero: sex.category === 'Lifting', sets: n });
+      });
+      if (items.length) entries.push({ day: day, planned: false, label: s.routineName || 'Séance libre', items: items });
+    });
+
+    var routines = OvrykDB.getRoutines();
+    for (var day = todayNum; day <= 7; day++) {
+      if (day === todayNum && daysWithSession[day]) continue;
+      routines.forEach(function (r) {
+        if (!r.weekdays || r.weekdays.indexOf(day) === -1 || !Array.isArray(r.exercises)) return;
+        var items = [];
+        r.exercises.forEach(function (rex) {
+          var exercise = OvrykDB.getExerciseById(rex.exerciseId);
+          var n = getPlannedSetCount(rex);
+          if (!n) return;
+          items.push({ exerciseId: rex.exerciseId, name: exercise ? exercise.name : 'Exercice', category: exercise ? exercise.category : '', isHaltero: !!(exercise && exercise.category === 'Lifting'), sets: n });
+        });
+        if (items.length) entries.push({ day: day, planned: true, label: r.name || 'Sans titre', items: items });
+      });
+    }
+    return entries;
+  }
+
+  /* R9 : une même zone sollicitée par au moins 3 séries dans deux séances
+     de jours différents, à 2 jours calendaires d'écart ou moins (décision
+     du 2026-10-10 : mardi et jeudi déclenchent, lundi et jeudi non).
+     Limité à la semaine civile en cours. Clé stable d'une alerte : zone,
+     jour de la première séance, jour de la seconde. */
+  function computeWeekOverlaps(entries) {
+    var withZones = entries.map(function (entry) {
+      var zones = {};
+      entry.items.forEach(function (item) {
+        getExerciseZones(item.exerciseId, item.name, item.category).forEach(function (z) {
+          zones[z] = zones[z] || { sets: 0, topName: null, topSets: 0 };
+          zones[z].sets += item.sets;
+          if (item.sets > zones[z].topSets) { zones[z].topSets = item.sets; zones[z].topName = item.name; }
+        });
+      });
+      return { entry: entry, zones: zones };
+    }).sort(function (a, b) { return a.entry.day - b.entry.day; });
+
+    var alerts = [];
+    var seen = {};
+    for (var i = 0; i < withZones.length; i++) {
+      for (var j = i + 1; j < withZones.length; j++) {
+        var a = withZones[i], b = withZones[j];
+        var gap = b.entry.day - a.entry.day;
+        if (gap < 1 || gap > WEEK_LOAD_OVERLAP_MAX_DAYS) continue;
+        MUSCLE_ZONES.forEach(function (zone) {
+          var za = a.zones[zone.key], zb = b.zones[zone.key];
+          if (!za || !zb || za.sets < WEEK_LOAD_OVERLAP_MIN_SETS || zb.sets < WEEK_LOAD_OVERLAP_MIN_SETS) return;
+          var key = zone.key + '|' + a.entry.day + '|' + b.entry.day;
+          if (seen[key]) return;
+          seen[key] = true;
+          alerts.push({ key: key, zone: zone, gap: gap, a: a.entry, b: b.entry, nameA: za.topName, nameB: zb.topName });
+        });
+      }
+    }
+    return alerts;
+  }
+
+  function formatOverlapText(alert) {
+    function side(name, entry) {
+      return name + ' (' + WEEKDAY_NAMES_FR[entry.day - 1].toLowerCase() + (entry.planned ? ', prévu' : '') + ')';
+    }
+    return side(alert.nameA, alert.a) + ' et ' + side(alert.nameB, alert.b) +
+      ' sollicitent tous les deux ' + alert.zone.label + ', à ' + alert.gap +
+      (alert.gap > 1 ? ' jours' : ' jour') + ' d’écart.';
+  }
+
+  function getWeekLoadSummary(refDate) {
+    var entries = collectWeekLoadEntries(refDate);
+    return { entries: entries, alerts: computeWeekOverlaps(entries) };
+  }
+
+  var weekLoadAlertsExpanded = false;
+  var weekLoadGroupsExpanded = false;
+
+  function buildWeekLoadAlertCard(alerts) {
+    var card = document.createElement('div');
+    card.className = 'week-load-alert';
+    var eyebrow = document.createElement('span');
+    eyebrow.className = 'week-load-alert-eyebrow';
+    eyebrow.textContent = 'À surveiller';
+    card.appendChild(eyebrow);
+    var shown = weekLoadAlertsExpanded ? alerts : alerts.slice(0, 1);
+    shown.forEach(function (alert) {
+      var p = document.createElement('p');
+      p.className = 'week-load-alert-text';
+      p.textContent = formatOverlapText(alert);
+      card.appendChild(p);
+    });
+    if (alerts.length > 1 && !weekLoadAlertsExpanded) {
+      var more = document.createElement('button');
+      more.type = 'button';
+      more.className = 'week-load-alert-more';
+      more.textContent = alerts.length === 2 ? '1 autre' : (alerts.length - 1) + ' autres';
+      more.addEventListener('click', function () { weekLoadAlertsExpanded = true; renderWeekLoadPage(); });
+      card.appendChild(more);
+    }
+    return card;
+  }
+
+  function buildWeekLoadDays(entries, refDate) {
+    var frag = document.createDocumentFragment();
+    var perDay = [];
+    for (var d = 1; d <= 7; d++) perDay.push({ haltero: 0, muscu: 0, planned: false });
+    entries.forEach(function (entry) {
+      var bucket = perDay[entry.day - 1];
+      if (entry.planned) bucket.planned = true;
+      entry.items.forEach(function (item) {
+        if (item.isHaltero) bucket.haltero += item.sets; else bucket.muscu += item.sets;
+      });
+    });
+    var max = perDay.reduce(function (m, b) { return Math.max(m, b.haltero + b.muscu); }, 0);
+
+    var title = document.createElement('div');
+    title.className = 'week-load-section-title';
+    title.textContent = 'Séries par jour';
+    frag.appendChild(title);
+
+    var chart = document.createElement('div');
+    chart.className = 'week-load-days';
+    var labels = document.createElement('div');
+    labels.className = 'week-load-day-labels';
+    var todayNum = weekdayNumOf(refDate);
+    var anyPlanned = false;
+    perDay.forEach(function (b, idx) {
+      var col = document.createElement('div');
+      col.className = 'week-load-day-col';
+      var total = b.haltero + b.muscu;
+      if (total === 0) {
+        var empty = document.createElement('div');
+        empty.className = 'week-load-day-seg is-empty';
+        col.appendChild(empty);
+      } else {
+        if (b.planned) anyPlanned = true;
+        [['muscu', b.muscu], ['haltero', b.haltero]].forEach(function (pair) {
+          if (!pair[1]) return;
+          var seg = document.createElement('div');
+          seg.className = 'week-load-day-seg is-' + pair[0] + (b.planned ? ' is-planned' : '');
+          seg.style.height = Math.max(6, Math.round((pair[1] / max) * 100)) + '%';
+          col.appendChild(seg);
+        });
+      }
+      chart.appendChild(col);
+      var label = document.createElement('div');
+      label.className = 'week-load-day-label' + (idx + 1 === todayNum ? ' is-today' : '');
+      label.innerHTML = WEEKDAY_LABELS[idx].charAt(0) + '<span class="week-load-day-count">' + (total || '') + '</span>';
+      labels.appendChild(label);
+    });
+    frag.appendChild(chart);
+    frag.appendChild(labels);
+
+    var legend = document.createElement('div');
+    legend.className = 'week-load-legend';
+    legend.innerHTML =
+      '<span class="week-load-legend-item"><span class="week-load-legend-swatch is-haltero"></span>Haltéro</span>' +
+      '<span class="week-load-legend-item"><span class="week-load-legend-swatch is-muscu"></span>Muscu</span>' +
+      (anyPlanned ? '<span class="week-load-legend-item"><span class="week-load-legend-swatch is-planned"></span>Prévu</span>' : '');
+    frag.appendChild(legend);
+    return frag;
+  }
+
+  function buildWeekLoadGroups(refDate) {
+    var frag = document.createDocumentFragment();
+    var counts = computeWeeklySeriesCounts();
+    var wk = weekKeyOf(refDate);
+    var targets = getMuscleGroupTargets();
+    var rows = PROGRESSION_GROUPS.map(function (g) {
+      var value = (counts[g.key] && counts[g.key][wk]) || 0;
+      var target = targets[g.key] || 0;
+      return { label: g.label, value: value, target: target, high: target > 0 && value > target * WEEK_LOAD_HIGH_RATIO };
+    });
+    var scale = rows.reduce(function (m, r) { return Math.max(m, r.value, r.target * WEEK_LOAD_HIGH_RATIO); }, 1);
+
+    var title = document.createElement('div');
+    title.className = 'week-load-section-title';
+    title.innerHTML = '<span>Séries par groupe musculaire</span><span class="week-load-section-aside">Validées, sur objectif</span>';
+    frag.appendChild(title);
+
+    var active = rows.filter(function (r) { return r.value > 0; });
+    if (active.length === 0) {
+      var empty = document.createElement('p');
+      empty.className = 'week-load-empty';
+      empty.textContent = 'Aucune série validée cette semaine.';
+      frag.appendChild(empty);
+    }
+    var shown = weekLoadGroupsExpanded ? rows : active;
+    shown.forEach(function (r) {
+      var row = document.createElement('div');
+      row.className = 'week-load-group-row';
+      row.innerHTML = '<span class="week-load-group-label">' + escapeHTML(r.label) + '</span>' +
+        '<span class="week-load-group-track"><span class="week-load-group-fill' + (r.high ? ' is-high' : '') + '" style="width:' + Math.round((r.value / scale) * 100) + '%; display:block"></span></span>' +
+        '<span class="week-load-group-value">' + r.value + '<span class="week-load-target"> / ' + r.target + '</span>' +
+        (r.high ? '<span class="week-load-high-tag">Élevé</span>' : '') + '</span>';
+      frag.appendChild(row);
+    });
+    if (!weekLoadGroupsExpanded && active.length < rows.length) {
+      var more = document.createElement('button');
+      more.type = 'button';
+      more.className = 'week-load-more-btn';
+      more.textContent = 'Afficher tous les groupes';
+      more.addEventListener('click', function () { weekLoadGroupsExpanded = true; renderWeekLoadPage(); });
+      frag.appendChild(more);
+    }
+
+    var note = document.createElement('p');
+    note.className = 'week-load-note';
+    note.textContent = 'Un groupe est signalé Élevé au dessus de 1,3 fois son objectif hebdomadaire (Réglages, Objectifs). ' +
+      'Ce seuil est un repère, à ajuster selon ton niveau. Les mouvements d’haltérophilie ne comptent dans aucun groupe.';
+    frag.appendChild(note);
+    return frag;
+  }
+
+  function renderWeekLoadPage() {
+    var refDate = new Date();
+    var summary = getWeekLoadSummary(refDate);
+    document.getElementById('week-load-sub').textContent = 'Semaine du ' + formatDayMonthFr(startOfWeek(refDate));
+    var body = document.getElementById('week-load-body');
+    body.innerHTML = '';
+    if (summary.alerts.length) body.appendChild(buildWeekLoadAlertCard(summary.alerts));
+    body.appendChild(buildWeekLoadDays(summary.entries, refDate));
+    body.appendChild(buildWeekLoadGroups(refDate));
+  }
+
+  function openWeekLoadPage() {
+    weekLoadAlertsExpanded = false;
+    weekLoadGroupsExpanded = false;
+    renderWeekLoadPage();
+    document.getElementById('week-load-page').hidden = false;
+    document.getElementById('week-load-body').scrollTop = 0;
+  }
+
+  function closeWeekLoadPage() {
+    document.getElementById('week-load-page').hidden = true;
+  }
+
+  /* accès depuis le Programme : lecture seule, recalculé à chaque rendu
+     de l'écran Programme. */
+  function renderProgrammeWeekLoadEntry() {
+    var btn = document.getElementById('programme-week-load-btn');
+    var summary = getWeekLoadSummary(new Date());
+    var total = summary.entries.reduce(function (sum, entry) {
+      return sum + entry.items.reduce(function (t, item) { return t + item.sets; }, 0);
+    }, 0);
+    document.getElementById('programme-week-load-eyebrow').textContent = 'Charge de la semaine';
+    document.getElementById('programme-week-load-sub').textContent = total
+      ? total + ' séries, validées et prévues'
+      : 'Aucune série cette semaine';
+    btn.classList.remove('is-alert');
+    btn.hidden = false;
+  }
+
+  document.getElementById('programme-week-load-btn').addEventListener('click', openWeekLoadPage);
+  document.getElementById('week-load-back-btn').addEventListener('click', closeWeekLoadPage);
+
+  /* ============================================================
      ÉCRAN COORDINATION (lot 08, livraison 3, maquette 30) — un cycle
      gelé se projette depuis sa date de départ (forceCycleStartDate), un
      cycle déjà en cours depuis sa semaine_actuelle (projectCycleWeeksForCoordination,
@@ -7460,12 +7927,13 @@
         var week = cellsByWeek[col];
         var cls = 'is-empty', label = '';
         if (week) {
-          /* "Allégée" (lot 13) : le drapeau n'existe sur aucune semaine
-             aujourd'hui — cette branche reste invisible tant que ce lot
-             n'est pas fait, volontairement (point 3 de la livraison 3). */
-          if (week.deload) { cls = 'is-allegee'; label = 'A'; }
-          else if (week.isTestWeek) { cls = 'is-peak'; label = 'T'; }
+          /* lot 13 : Test, puis Pic, puis Allégée. Une semaine allégée
+             lourde (cycle 2, semaine 7, 85 %) reste comptée lourde par R7
+             (isHeavyWeek inchangé) : l'étiquette Pic reste cohérente avec
+             ce décompte. */
+          if (week.isTestWeek) { cls = 'is-peak'; label = 'T'; }
           else if (isHeavyWeek(week)) { cls = 'is-peak'; label = 'P'; }
+          else if (week.deload) { cls = 'is-allegee'; label = 'A'; }
           else { cls = 'is-volume'; }
         }
         html += '<td><div class="coordination-cell-box ' + cls + '">' + label + '</div></td>';
@@ -7588,12 +8056,11 @@
 
     var legend = document.createElement('div');
     legend.className = 'coordination-legend';
-    /* "Allégée" absente volontairement (point 3) : aucune semaine n'a
-       aujourd'hui de drapeau deload (lot 13), ce serait une entrée de
-       légende sans jamais aucune case correspondante. */
+    /* lot 13 : les semaines allégées portent le drapeau deload. */
     legend.innerHTML =
       '<span class="coordination-legend-item"><span class="coordination-legend-swatch is-volume"></span>Volume</span>' +
-      '<span class="coordination-legend-item"><span class="coordination-legend-swatch is-peak"></span>Pic (P) ou test (T)</span>';
+      '<span class="coordination-legend-item"><span class="coordination-legend-swatch is-peak"></span>Pic (P) ou test (T)</span>' +
+      '<span class="coordination-legend-item"><span class="coordination-legend-swatch is-allegee"></span>Allégée (A)</span>';
     body.appendChild(legend);
 
     var rule = document.createElement('div');
@@ -8632,6 +9099,7 @@
       document.getElementById('programme-day-panel').hidden = true;
       document.getElementById('programme-cycles-card').hidden = true;
       document.getElementById('programme-no-day-section').hidden = true;
+      document.getElementById('programme-week-load-btn').hidden = true;
       emptyState.hidden = false;
       emptyState.innerHTML = '<div class="empty-state"><span class="empty-tag">Vide</span>' +
         '<h2>Aucune routine créée</h2>' +
@@ -8644,6 +9112,7 @@
     renderProgrammeDayPanel();
     renderProgrammeCyclesCard();
     renderRoutineList();
+    renderProgrammeWeekLoadEntry();
   }
 
   /* ---- editor ---- */

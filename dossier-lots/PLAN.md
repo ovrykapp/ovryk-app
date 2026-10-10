@@ -15,9 +15,9 @@ Taille : S = moins d'une heure de travail assisté, M = une demi journée, L = u
 | 08 | Coordination des cycles | 30 | fait | 07 |
 | 09 | Muscu libre : éditeur de routine | 20, 21, 23, 7, 9 | fait | 04 |
 | 10 | Types d'exercice et fiche exercice | 12, 6 | fait | 09 |
-| 11 | Séparateur de bloc (élément de la liste de séance du lot 17, fait le 2026-10-10, sw v116 : buildLiveBlockSeparator) | 13 | fait | 05, 09, 17 |
+| 11 | Séparateur de bloc (élément de la liste de séance du lot 17, fait le 2026-10-10, sw v116 : buildLiveBlockSeparator) | 13 | Charge de la semaine et décharge de la muscu (plan validé le 2026-10-10, décisions : progression figée après une séance allégée, chevauchement à 2 jours calendaires ou moins, réglage settings.deloadMuscuMode à trois valeurs 'off', 'auto', 'manual', absent = 'off', affiché seulement avec un cycle d'haltérophilie actif ; interrupteur par exercice retiré. Livraison 1 faite (sw v118) : drapeau deload, grille de coordination, écran Charge de la semaine en lecture seule ; livraison 2 : actions de l'alerte et bandeau du Programme ; livraison 3 en attente : réglage à trois valeurs, bouton manuel, allègement) | 28 | M | 08, 09 |
 | 12 | Historique et détail d'une séance (plus deux accès au détail d'un cycle, depuis l'Accueil et le panneau du jour) | 14, 15 | fait | 05 |
-| 13 | Charge de la semaine et décharge de la muscu | 28 | M | 08, 09 |
+| 13 | Charge de la semaine et décharge de la muscu (plan détaillé écrit le 2026-10-10 dans LOT-13.md, en attente de validation : 4 livraisons, lecture seule, actions de l'alerte, réglage deloadMuscu avec allègement, interrupteur par exercice ; 3 décisions à prendre) | 28 | M | 08, 09 |
 | 14 | Réglages et matériel (cadré le 2026-10-10, décisions 1A, 2A, 3A ; livraisons 1 Réglages restructuré et 3 Barre et disques faites ; livraisons 2 palier et plage par défaut, 4 plus petit saut appliqué à la progression, 5 repos par type en attente) | 16, 17 | M | 01 |
 | 15 | Import de données | 19, 8 | M | 14 |
 | 16 | Compte et sauvegarde en ligne | 18 | L | tous |

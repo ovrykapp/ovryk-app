@@ -56,7 +56,7 @@ Chaque règle porte un numéro, que les lots citent. Les valeurs entre parenthè
 
 ## R8. Décharge de la muscu
 
-* Une séance est allégée quand au moins un cycle actif est dans une semaine allégée (drapeau deload) et que le réglage deloadMuscu est actif.
+* Une séance est allégée quand au moins un cycle actif est dans une semaine allégée (drapeau deload) et que le réglage deloadMuscuMode vaut 'auto', ou quand l'utilisateur appuie sur "Alléger cette séance" en mode 'manual'. En mode 'off' (valeur par défaut, champ absent), rien n'est allégé (décision du 2026-10-10, lot 13).
 * Les exercices de muscu perdent un tiers de leurs séries, arrondi à l'entier le plus proche, avec un minimum de 2 séries. La charge ne change pas.
 * L'allègement est affiché dans la séance et peut être ignoré en un geste.
 

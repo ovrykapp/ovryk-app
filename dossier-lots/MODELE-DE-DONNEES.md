@@ -15,7 +15,7 @@ Ajouter une clé ovryk.meta avec { schemaVersion: 2 }. Écrire une fonction migr
 * exerciseType : 'technique', 'force' ou 'muscu'. Défaut calculé : Lifting avec liftBaseMode 'oly' donne 'technique', Lifting avec liftBaseMode 'force' donne 'force', toute autre catégorie donne 'muscu'. Lot 10.
 * progressionStep : pas de montée en kg pour la double progression. Défaut : valeur des réglages (2,5). Lot 04.
 * autoProgression : booléen, défaut true. Lot 04.
-* deloadMuscu : booléen, défaut true, utile pour les exercices de muscu. Lot 13 (reporté depuis le lot 09 : LOT-09.md le listait aussi, mais aucune fonction ne le lit avant R8/lot 13 ; un interrupteur sans effet n'a pas été construit).
+* deloadMuscu : retiré du plan le 2026-10-10 (lot 13), jamais créé. Il n'y a pas d'interrupteur de décharge par exercice : la décharge se règle pour toute la muscu (settings.deloadMuscuMode).
 
 ### Série de séance
 * result : 'ok', 'fail' ou null (haltérophilie). Lot 05.
@@ -28,7 +28,10 @@ Ajouter une clé ovryk.meta avec { schemaVersion: 2 }. Écrire une fonction migr
 
 ### Exercice de séance
 * block : 'cycle' (mouvement piloté par un cycle) ou 'muscu'. Calculé à la construction de la séance. Lot 11.
-* deload : booléen, true si la séance est allégée. Lot 13.
+* deload : booléen, true si l'exercice est allégé (R8). Absent sur un exercice non allégé et sur toute séance antérieure. Lot 13, livraison 3.
+* deloadRemovedSets : séries retirées par l'allègement, intactes, pour "Ignorer" et pour que la séance suivante reparte du nombre de séries d'origine. Lot 13, livraison 3.
+* deloadSource : { exerciseId, cycleId, weekNumber } du cycle allégé (mode auto) ou 'manual' (bouton "Alléger cette séance"). Lot 13, livraison 3.
+* deloadIgnored : true après "Ignorer". Lot 13, livraison 3.
 
 ### Cycle de force
 Garder les champs existants et ajouter :
@@ -43,7 +46,8 @@ Ajouter, avec les valeurs par défaut suivantes :
 * defaultRepRange : { min: 8, max: 10 }
 * restByType : { technique: 150, force: 120, muscu: 90 } en secondes
 * barWeightKg : 20
-* deloadMuscu : true
+* deloadMuscuMode : 'off', 'auto' ou 'manual' (lot 13, livraison 3, décision du 2026-10-10). Absent = 'off', y compris pour les données existantes : migrateSchema ne l'écrit pas. Remplace le booléen deloadMuscu, jamais créé. Affiché dans Réglages seulement s'il existe au moins un cycle d'haltérophilie actif ; sinon masqué, valeur enregistrée conservée.
+* chargeAlertesMasquees : { lundiDeLaSemaine: [clés d'alerte] }, alertes de chevauchement masquées par "Je garde" (lot 13, livraison 2). Absent = aucune alerte masquée. Écrit seulement au clic sur "Je garde".
 * heavyThreshold : 85 (pourcentage à partir duquel une semaine est lourde)
 * maxHeavyCyclesPerWeek : 2
 * j2OffsetPoints : 10 (baisse de la deuxième séance de la semaine, R12)
