@@ -47,3 +47,6 @@ next-env.d.ts
 ovryk-export-*.json
 backups/
 dossier-lots/*.json
+
+# documents et captures personnels (PDF de cycles, photos) : jamais dans le dépôt public
+CYCLE/
