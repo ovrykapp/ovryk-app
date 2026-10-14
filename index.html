@@ -1791,6 +1791,8 @@
   .cloud-actions { display: flex; gap: 10px; }
   .cloud-actions > button { flex: 1; min-height: 48px; }
   .cloud-message.is-error { color: var(--rust); font-weight: 700; }
+  .cloud-connected .cloud-upload-btn { margin: 0 0 8px; }
+  .cloud-last-upload { margin: 0 0 var(--space-3); font-size: 12px; color: var(--steel); }
   .restore-interrupted-error { margin: 8px 0 0; font-size: 13px; line-height: 1.45; color: var(--rust); font-weight: 700; }
   .restore-interrupted-error[hidden], .restore-interrupted-actions > button[hidden] { display: none; }
   .restore-interrupted-actions > button { flex: 1; min-height: 48px; }
@@ -4550,6 +4552,8 @@
           </form>
           <div id="cloud-connected" class="cloud-connected" hidden>
             <p class="cloud-connected-text">Connecté : <span id="cloud-email-value"></span></p>
+            <button type="button" id="cloud-upload-btn" class="btn-primary cloud-upload-btn">Envoyer une sauvegarde maintenant</button>
+            <p class="cloud-last-upload" id="cloud-last-upload"></p>
             <div class="cloud-actions">
               <button type="button" id="cloud-verify-btn" class="week-load-alert-btn-plain">Vérifier la connexion</button>
               <button type="button" id="cloud-signout-btn" class="week-load-alert-btn-outline">Se déconnecter</button>
@@ -17268,7 +17272,7 @@
   /* un seul point d'appel réseau. cb({ ok, status, data, code, kind }) où
      kind vaut 'offline', 'network', 'timeout', 'unavailable' (5xx),
      'unreadable' (réponse non JSON) ou 'refused' (4xx lisible). */
-  function cloudRequest(method, path, body, accessToken, cb) {
+  function cloudRequest(method, path, body, accessToken, cb, extraHeaders, timeoutMs) {
     if (typeof fetch !== 'function') { cb({ ok: false, kind: 'network' }); return; }
     var done = false;
     var controller = window.AbortController ? new AbortController() : null;
@@ -17277,10 +17281,11 @@
       done = true;
       if (controller) controller.abort();
       cb({ ok: false, kind: 'timeout' });
-    }, CLOUD_TIMEOUT_MS);
+    }, timeoutMs || CLOUD_TIMEOUT_MS);
     var headers = { 'apikey': CLOUD_PUBLISHABLE_KEY };
     if (body) headers['Content-Type'] = 'application/json';
     if (accessToken) headers['Authorization'] = 'Bearer ' + accessToken;
+    if (extraHeaders) { for (var h in extraHeaders) { if (extraHeaders.hasOwnProperty(h)) headers[h] = extraHeaders[h]; } }
     var options = { method: method, headers: headers, cache: 'no-store', credentials: 'omit' };
     if (body) options.body = JSON.stringify(body);
     if (controller) options.signal = controller.signal;
@@ -17400,7 +17405,7 @@
 
   function setCloudBusy(busy) {
     cloudBusy = busy;
-    ['cloud-signin-btn', 'cloud-verify-btn', 'cloud-signout-btn'].forEach(function (id) {
+    ['cloud-signin-btn', 'cloud-verify-btn', 'cloud-signout-btn', 'cloud-upload-btn'].forEach(function (id) {
       document.getElementById(id).disabled = busy;
     });
   }
@@ -17412,6 +17417,11 @@
     document.getElementById('cloud-signin-form').hidden = !!session;
     document.getElementById('cloud-connected').hidden = !session;
     document.getElementById('cloud-email-value').textContent = session && session.user && session.user.email ? session.user.email : 'compte enregistré';
+    /* lot 16, livraison 3 : dernier envoi vérifié, lu sans rien écrire */
+    var last = readLastUpload();
+    document.getElementById('cloud-last-upload').textContent = last
+      ? 'Dernier envoi réussi : ' + formatRestoreDate(last.at) + (typeof last.sessionsCompleted === 'number' ? ' (' + last.sessionsCompleted + (last.sessionsCompleted > 1 ? ' séances)' : ' séance)') : '')
+      : 'Aucun envoi depuis cet appareil.';
   }
 
   function cloudSignIn() {
@@ -17491,6 +17501,149 @@
   document.getElementById('cloud-signin-form').addEventListener('submit', function (e) { e.preventDefault(); cloudSignIn(); });
   document.getElementById('cloud-verify-btn').addEventListener('click', cloudVerify);
   document.getElementById('cloud-signout-btn').addEventListener('click', cloudSignOut);
+
+  /* ============================================================
+     SAUVEGARDE EN LIGNE (lot 16, livraison 3) : envoi manuel d'une
+     sauvegarde dans la table backups (dossier-lots/supabase/backups.sql),
+     par l'API REST de Supabase (PostgREST), sans bibliothèque.
+     * payload = le contenu exact d'un fichier d'export (même enveloppe
+       collectAllOvrykData, même empreinte summary.checksum), en JSON
+       compact : lisible tel quel par validateBackupFile.
+     * Mêmes contrôles que l'export (getBackupBlocker), taille mesurée en
+       octets UTF-8, limite identique à la contrainte backups_payload_size.
+     * Identifiant créé sur le téléphone : un renvoi après renouvellement de
+       session ne peut pas créer de doublon (23505), et la relecture vise
+       exactement la ligne envoyée.
+     * "Sauvegarde envoyée" seulement si la relecture (empreinte et
+       sessions_count, jamais le payload) correspond. Le dernier envoi
+       réussi est mémorisé dans ovryk.cloud.lastUpload, hors des six clés
+       de données : jamais exporté, jamais restauré.
+     ============================================================ */
+  var CLOUD_LAST_UPLOAD_KEY = 'ovryk.cloud.lastUpload';
+  var CLOUD_BACKUP_MAX_BYTES = 2097152;
+  var CLOUD_UPLOAD_TIMEOUT_MS = 60000;
+
+  function utf8ByteLength(str) {
+    if (window.TextEncoder) return new TextEncoder().encode(str).length;
+    return unescape(encodeURIComponent(str)).length;
+  }
+
+  function newBackupUuid() {
+    if (window.crypto && typeof window.crypto.randomUUID === 'function') return window.crypto.randomUUID();
+    var b = new Uint8Array(16);
+    window.crypto.getRandomValues(b);
+    b[6] = (b[6] & 0x0f) | 0x40;
+    b[8] = (b[8] & 0x3f) | 0x80;
+    var h = [];
+    for (var i = 0; i < 16; i++) h.push(('0' + b[i].toString(16)).slice(-2));
+    return h.slice(0, 4).join('') + '-' + h.slice(4, 6).join('') + '-' + h.slice(6, 8).join('') + '-' +
+      h.slice(8, 10).join('') + '-' + h.slice(10).join('');
+  }
+
+  function formatMegabytes(bytes) {
+    return (Math.round((bytes / 1048576) * 10) / 10).toString().replace('.', ',');
+  }
+
+  /* ligne à envoyer, ou { error } sans aucun appel réseau. */
+  function buildCloudBackupRow() {
+    var envelope = collectAllOvrykData();
+    var blocker = getBackupBlocker(envelope);
+    if (blocker) return { error: 'Envoi impossible : ' + blocker };
+    var text = JSON.stringify(envelope);
+    var bytes = utf8ByteLength(text);
+    if (bytes > CLOUD_BACKUP_MAX_BYTES) {
+      return { error: 'Sauvegarde trop volumineuse (' + formatMegabytes(bytes) + ' Mo, limite ' + formatMegabytes(CLOUD_BACKUP_MAX_BYTES) + ' Mo). Rien n’a été envoyé.' };
+    }
+    var summary = envelope.summary;
+    return {
+      bytes: bytes,
+      row: {
+        id: newBackupUuid(),
+        schema_version: typeof summary.schemaVersion === 'number' && summary.schemaVersion > 0 ? summary.schemaVersion : null,
+        sessions_count: summary.sessionsCompleted,
+        summary: summary,
+        fingerprint: summary.checksum,
+        payload: text
+      }
+    };
+  }
+
+  function readLastUpload() {
+    try {
+      var v = JSON.parse(localStorage.getItem(CLOUD_LAST_UPLOAD_KEY));
+      return isPlainObject(v) && typeof v.at === 'string' ? v : null;
+    } catch (e) { return null; }
+  }
+
+  /* message honnête pour un envoi en échec. Hors ligne détecté avant
+     l'envoi : rien n'est parti. Réseau ou délai pendant l'envoi : la
+     requête a pu arriver, on ne l'affirme ni ne le nie. */
+  function cloudBackupErrorMessage(r) {
+    if (r.kind === 'offline') return 'Pas de connexion internet. Rien n’a été envoyé.';
+    if (r.kind === 'network' || r.kind === 'timeout') {
+      return cloudErrorMessage(r, 'upload') + ' L’envoi n’a pas pu être confirmé : renvoie une sauvegarde pour en être sûr.';
+    }
+    if (r.kind === 'unavailable' || r.kind === 'unreadable') return cloudErrorMessage(r, 'upload');
+    var raw = isPlainObject(r.data) ? JSON.stringify(r.data) : '';
+    if (r.status === 404 || r.code === 'PGRST205' || r.code === '42P01') {
+      return 'La table de sauvegarde n’existe pas encore sur Supabase : le script SQL n’a pas été exécuté. Rien n’a été envoyé.';
+    }
+    if (r.status === 413 || (r.code === '23514' && raw.indexOf('backups_payload_size') !== -1)) {
+      return 'Sauvegarde trop volumineuse pour le serveur. Rien n’a été envoyé.';
+    }
+    if (r.status === 401) return 'Le serveur a refusé ta session. Reconnecte-toi, puis renvoie la sauvegarde.';
+    if (r.status === 403 || r.code === '42501') return 'Le serveur a refusé l’envoi (droits). Vérifie le script SQL. Rien n’a été envoyé.';
+    if (r.code === '23514') return 'Le serveur a refusé la sauvegarde (une règle de la table n’est pas respectée). Rien n’a été envoyé.';
+    return 'Le serveur a refusé l’envoi (' + (r.code || ('erreur ' + r.status)) + '). Rien n’a été envoyé.';
+  }
+
+  function cloudUploadBackup() {
+    if (cloudBusy) return;
+    var built = buildCloudBackupRow();
+    if (built.error) { setCloudMessage(built.error, true); return; }
+    var row = built.row;
+    setCloudBusy(true);
+    setCloudMessage('Envoi en cours…', false);
+    function finish(text, isError) { setCloudBusy(false); renderCloudSection(); setCloudMessage(text, isError); }
+    function refreshFailed(err) {
+      if (err.kind === 'revoked') { finish('Ta session n’est plus valable. Reconnecte-toi, puis renvoie la sauvegarde.', true); return; }
+      if (err.kind === 'nosession') { finish('Tu n’es plus connecté. Rien n’a été envoyé.', true); return; }
+      finish(cloudErrorMessage(err, 'refresh') + ' Ta session est conservée. Rien n’a été envoyé.', true);
+    }
+    function verify(session) {
+      cloudRequest('GET', '/rest/v1/backups?id=eq.' + row.id + '&select=fingerprint,sessions_count', null, session.access_token, function (r) {
+        if (!r.ok) {
+          finish('Envoi fait mais non vérifié (' + cloudBackupErrorMessage(r) + ') Ne considère pas cette sauvegarde comme sûre.', true);
+          return;
+        }
+        var got = Array.isArray(r.data) && r.data.length === 1 && isPlainObject(r.data[0]) ? r.data[0] : null;
+        if (!got || got.fingerprint !== row.fingerprint || got.sessions_count !== row.sessions_count) {
+          finish('L’envoi n’a pas pu être vérifié (sauvegarde relue absente ou différente). Ne considère pas cette sauvegarde comme sûre.', true);
+          return;
+        }
+        try {
+          localStorage.setItem(CLOUD_LAST_UPLOAD_KEY, JSON.stringify({ at: new Date().toISOString(), id: row.id, fingerprint: row.fingerprint, sessionsCompleted: row.sessions_count }));
+        } catch (e) { /* l'envoi reste vérifié, seul l'affichage du dernier envoi manquera */ }
+        finish('Sauvegarde envoyée et vérifiée (' + row.sessions_count + (row.sessions_count > 1 ? ' séances).' : ' séance).'), false);
+      });
+    }
+    function send(session, retried) {
+      cloudRequest('POST', '/rest/v1/backups', row, session.access_token, function (r) {
+        if (r.ok) { verify(session); return; }
+        /* même identifiant déjà présent : un envoi précédent a abouti, on vérifie */
+        if (r.kind === 'refused' && r.code === '23505') { verify(session); return; }
+        if (r.kind === 'refused' && r.status === 401 && !retried) {
+          getFreshAccessToken(true, function (err, fresh) { if (err) { refreshFailed(err); return; } send(fresh, true); });
+          return;
+        }
+        finish(cloudBackupErrorMessage(r), true);
+      }, { 'Prefer': 'return=minimal' }, CLOUD_UPLOAD_TIMEOUT_MS);
+    }
+    getFreshAccessToken(false, function (err, session) { if (err) { refreshFailed(err); return; } send(session, false); });
+  }
+
+  document.getElementById('cloud-upload-btn').addEventListener('click', cloudUploadBackup);
+
 
   document.getElementById('dashboard-export-btn').addEventListener('click', downloadOvrykExport);
   document.getElementById('dashboard-share-btn').addEventListener('click', shareOvrykBackup);
@@ -17596,6 +17749,7 @@
     /* lot 16, livraison 2 : déconnexion locale (clé exacte, sans appel
        réseau). */
     localStorage.removeItem(CLOUD_AUTH_KEY);
+    localStorage.removeItem(CLOUD_LAST_UPLOAD_KEY);
     var dailyKeys = [];
     for (var i = 0; i < localStorage.length; i++) {
       var key = localStorage.key(i);

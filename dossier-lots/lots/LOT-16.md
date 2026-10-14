@@ -2,7 +2,7 @@
 
 Taille : L. Dépend de : tous. Lot à risque (export, import, sauvegardes, écriture dans des données existantes).
 
-Statut : plan révisé le 2026-10-10, décisions de Ruben prises le 2026-10-10 (voir "Décisions prises"). Livraison 1 faite (sw v124), corrigée après quatre audits (sw v125 à v128). Livraison 2 (connexion) faite (sw v129), livraisons 3 à 5 à faire.
+Statut : plan révisé le 2026-10-10, décisions de Ruben prises le 2026-10-10 (voir "Décisions prises"). Livraison 1 faite (sw v124), corrigée après quatre audits (sw v125 à v128). Livraison 2 (connexion) faite (sw v129). Livraison 3 (table backups et envoi manuel) codée (sw v130), script SQL à exécuter par Ruben ; livraisons 4 et 5 à faire.
 
 ## Écrans de la maquette
 
@@ -367,3 +367,57 @@ R11 (pas de compte obligatoire).
   * CSP : index.html n'en déclare aucune, rien à modifier.
   * Sources officielles : https://raw.githubusercontent.com/supabase/auth/master/openapi.yaml (points d'appel, corps, schéma d'erreur, scope de logout), https://supabase.com/docs/guides/auth/debugging/error-codes (codes d'erreur), https://supabase.com/docs/guides/api/api-keys (en-tête apikey pour la clé publishable).
   * Non vérifié : appel au vrai projet (aucun test avec le vrai compte), CORS depuis ovrykapp.github.io, réponse exacte d'un projet en pause, Safari et iPhone (trousseau, remplissage automatique, hors ligne réel).
+* Livraison 3 codée le 2026-10-14 (sw v130) : table Supabase backups et envoi manuel d'une sauvegarde.
+  * Scripts, dans dossier-lots/supabase/ :
+    * backups.sql : table, RLS activé et non forcé, deux politiques SELECT et INSERT pour authenticated, droits explicites, rotation, `notify pgrst` ;
+    * backups-annulation.sql : supprime la table et toutes les sauvegardes en ligne ;
+    * backups-verification.sql : contrôles à lancer à la main, dont un test de rotation sans trace.
+    Aucun ne contient de clé ni de mot de passe.
+  * RLS est activé mais pas forcé (décision du 2026-10-14) : anon et authenticated sont soumis aux politiques, le propriétaire de la table (postgres), donc la rotation, ne l'est pas. Aucune politique UPDATE ni DELETE. Aucun droit pour anon ni public. authenticated : SELECT, et INSERT limité aux colonnes id, schema_version, sessions_count, summary, fingerprint, payload (ni user_id, rempli par auth.uid(), ni created_at).
+  * Rotation (déclencheur après INSERT, fonction SECURITY DEFINER, search_path vide, droits d'exécution retirés) : pour le compte de la ligne ajoutée, garde les 30 plus récentes et la plus complète (plus grand sessions_count, à égalité la plus récente). Ne supprime jamais la ligne ajoutée ni la plus complète : il reste toujours au moins une sauvegarde.
+  * **À savoir** : une sauvegarde au sessions_count absurde (par exemple modifiée à la main) serait gardée pour toujours par la rotation, comme "la plus complète". Elle se supprime alors à la main, dans le tableau de bord Supabase (Table Editor, table backups).
+  * Taille : 2 Mo au plus par sauvegarde (contrainte backups_payload_size, en octets), même limite dans l'app (CLOUD_BACKUP_MAX_BYTES), mesurée en octets UTF-8. Environ 380 séances à 5 Ko ; se relève par un ALTER le jour où le message "trop volumineuse" apparaît.
+  * L'empreinte (summary.checksum, hashBackupString) est toujours sur 8 caractères hexadécimaux minuscules avec zéros initiaux : conforme à la contrainte ^[0-9a-f]{8}$, vérifié sur 3 millions d'entrées dont 51 commençant par quatre zéros. Contrainte et code inchangés.
+  * App :
+    * bouton "Envoyer une sauvegarde maintenant" et ligne "Dernier envoi réussi" (ou "Aucun envoi depuis cet appareil"), visibles seulement une fois connecté ;
+    * fonctions buildCloudBackupRow, cloudUploadBackup, cloudBackupErrorMessage, readLastUpload, utf8ByteLength, newBackupUuid ;
+    * cloudRequest reçoit des en-têtes et un délai facultatifs (60 s pour l'envoi), sans changement pour les appels existants.
+  * Contenu envoyé :
+    * payload = le contenu exact d'un fichier d'export (même enveloppe collectAllOvrykData, même empreinte), en JSON compact, accepté tel quel par validateBackupFile ;
+    * mêmes contrôles que l'export (getBackupBlocker) ;
+    * jamais ovryk.cloud.auth, ovryk.cloud.lastUpload ni aucun jeton.
+  * Appels :
+    * envoi : `POST /rest/v1/backups`, en-têtes apikey, Authorization Bearer et `Prefer: return=minimal`, avec un identifiant uuid créé sur le téléphone ;
+    * un 401 entraîne un seul renouvellement, puis un renvoi avec le même identifiant ; un doublon (23505) mène directement à la relecture ;
+    * relecture légère : `GET /rest/v1/backups?id=eq.<id>&select=fingerprint,sessions_count`, sans le payload ;
+    * "Sauvegarde envoyée et vérifiée" seulement si l'empreinte ET sessions_count relus correspondent.
+  * Messages :
+    * hors ligne (rien envoyé) ;
+    * réseau ou délai (envoi non confirmé, à renvoyer) ;
+    * session refusée (reconnexion) ;
+    * table absente (script SQL non exécuté) ;
+    * droits refusés ;
+    * trop volumineuse (localement, ou 413, ou contrainte backups_payload_size) ;
+    * autre règle de la table ;
+    * serveur indisponible ;
+    * envoi non vérifié.
+  * Dernier envoi réussi mémorisé dans ovryk.cloud.lastUpload ({ at, id, fingerprint, sessionsCompleted }), hors des six clés de données : jamais exporté, jamais restauré, gardé à la déconnexion, effacé (clé exacte) par "Réinitialiser l'app" (décision 2 A).
+  * Aucun appel au lancement ni à l'ouverture de Réglages, un seul envoi à la fois, aucune écriture dans les données de l'app.
+  * sw.js : *.supabase.co toujours hors cache (inchangé), version v130.
+  * Test du SQL sur un PostgreSQL local : **non fait**. Aucun PostgreSQL n'est disponible sur le Mac (ni installé, ni Postgres.app, ni Docker, ni paquet Node ou Python), et l'installation demanderait le réseau. Le SQL n'a été vérifié qu'à la relecture ; backups-verification.sql couvre les règles d'accès, les droits (dont l'absence d'UPDATE et de DELETE pour authenticated et de tout droit pour anon) et la rotation (section 7).
+  * Mise en service :
+    1. Ruben exécute backups.sql puis backups-verification.sql et transmet les résultats.
+    2. Test réel sans connexion (ci-dessous).
+    3. Audit puis push du code.
+    4. Premier vrai envoi depuis l'iPhone.
+    Si le code est en ligne avant le script, le bouton affiche "La table de sauvegarde n'existe pas encore sur Supabase" : rien n'est écrit ni marqué comme envoyé.
+  * Test réel sans connexion, à lancer seulement quand Ruben le décide. Il lit l'adresse et la clé publique depuis index.html, sans les retaper, et n'utilise aucun jeton ni mot de passe :
+    ```
+    cd "/Users/rubenzerbib/Desktop/Ovryk app"
+    URL=$(sed -n "s/.*var CLOUD_URL = '\([^']*\)'.*/\1/p" index.html)
+    KEY=$(sed -n "s/.*var CLOUD_PUBLISHABLE_KEY = '\([^']*\)'.*/\1/p" index.html)
+    curl -s -i "$URL/rest/v1/backups?select=id&limit=1" -H "apikey: $KEY"
+    curl -s -i -X POST "$URL/rest/v1/backups" -H "apikey: $KEY" -H "Content-Type: application/json" -H "Prefer: return=minimal" -d '{"sessions_count":0,"summary":{},"fingerprint":"00000000","payload":"{}"}'
+    ```
+    * Réponse correcte, c'est-à-dire un refus, pour les deux : 401 avec `"code":"42501"` (permission denied for table backups), ou 404 avec `"code":"PGRST205"` pour la première.
+    * Échec de sécurité, à signaler : 200 (même avec `[]`) pour la première, 201 pour la seconde.
