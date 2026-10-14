@@ -17615,14 +17615,11 @@
     return 'Le serveur a refusé l’envoi (' + (r.code || ('erreur ' + r.status)) + '). Rien n’a été envoyé.';
   }
 
-  function cloudUploadBackup() {
-    if (cloudBusy) return;
-    var built = buildCloudBackupRow();
-    if (built.error) { setCloudMessage(built.error, true); return; }
-    var row = built.row;
-    setCloudBusy(true);
-    setCloudMessage('Envoi en cours…', false);
-    function finish(text, isError) { setCloudBusy(false); renderCloudSection(); setCloudMessage(text, isError); }
+  /* cœur de l'envoi, partagé par le bouton et (livraison 5) l'envoi
+     automatique. L'appelant a vérifié cloudBusy, construit la ligne et posé
+     le verrou ; finish(text, isError) est appelé une seule fois, verrou
+     encore posé. */
+  function runCloudUpload(row, finish) {
     function refreshFailed(err) {
       if (err.kind === 'revoked') { finish('Ta session n’est plus valable. Reconnecte-toi, puis renvoie la sauvegarde.', true); return; }
       if (err.kind === 'nosession') { finish('Tu n’es plus connecté. Rien n’a été envoyé.', true); return; }
@@ -17658,6 +17655,15 @@
       }, { 'Prefer': 'return=minimal' }, CLOUD_UPLOAD_TIMEOUT_MS);
     }
     getFreshAccessToken(false, function (err, session) { if (err) { refreshFailed(err); return; } send(session, false); });
+  }
+
+  function cloudUploadBackup() {
+    if (cloudBusy) return;
+    var built = buildCloudBackupRow();
+    if (built.error) { setCloudMessage(built.error, true); return; }
+    setCloudBusy(true);
+    setCloudMessage('Envoi en cours…', false);
+    runCloudUpload(built.row, function (text, isError) { setCloudBusy(false); renderCloudSection(); setCloudMessage(text, isError); });
   }
 
   document.getElementById('cloud-upload-btn').addEventListener('click', cloudUploadBackup);
