@@ -4227,6 +4227,14 @@
   }
   .week-load-empty { font-size: 14px; color: var(--steel); margin: 0 0 var(--space-3); }
   .week-load-note { font-size: 12px; line-height: 1.5; color: var(--steel); margin: var(--space-4) 0 var(--space-5); }
+  /* lot 16, livraison 5 : envoi automatique, état du dernier essai, ligne
+     discrète de l'Accueil (visible seulement en cas de problème) */
+  .cloud-group .profile-toggle-row { min-height: 44px; padding: 0; margin: 0 0 var(--space-3); }
+  .cloud-status-line { margin: 0 0 var(--space-3); font-size: 12px; line-height: 1.45; color: var(--steel); }
+  .cloud-status-line[hidden] { display: none; }
+  .cloud-status-line.is-error { color: var(--rust); font-weight: 700; }
+  .cloud-home-line { display: block; width: 100%; margin: 0 0 var(--space-4); padding: 4px 2px; background: none; border: none; text-align: left; font: inherit; font-size: 13px; line-height: 1.4; color: var(--rust); cursor: pointer; }
+  .cloud-home-line[hidden] { display: none; }
 </style>
 </head>
 <body>
@@ -4278,6 +4286,9 @@
         </svg>
         <span class="cycle-alert-text" id="cycle-alert-text"></span>
       </button>
+      <!-- lot 16, livraison 5 : une seule ligne, visible seulement en cas de
+           problème de sauvegarde en ligne. Lecture seule. -->
+      <button type="button" class="cloud-home-line" id="cloud-home-line" hidden></button>
 
       <div class="dash-hero" id="dash-hero" hidden>
         <span class="dash-hero-eyebrow">Commence ici</span>
@@ -4553,6 +4564,7 @@
            appel réseau sans un appui sur un bouton de cette section. -->
       <div class="settings-section" id="cloud-section">
         <span class="settings-eyebrow">Sauvegarde en ligne</span>
+        <p class="backup-reminder mono" id="cloud-reminder" hidden></p>
         <div class="settings-group cloud-group">
           <form id="cloud-signin-form" class="cloud-form" novalidate>
             <label class="form-label" for="cloud-email">E-mail</label>
@@ -4565,6 +4577,9 @@
             <p class="cloud-connected-text">Connecté : <span id="cloud-email-value"></span></p>
             <button type="button" id="cloud-upload-btn" class="btn-primary cloud-upload-btn">Envoyer une sauvegarde maintenant</button>
             <p class="cloud-last-upload" id="cloud-last-upload"></p>
+            <div id="cloud-auto-row"></div>
+            <p class="cloud-status-line" id="cloud-last-attempt" hidden></p>
+            <p class="cloud-status-line is-error" id="cloud-pending" hidden></p>
             <button type="button" id="cloud-list-btn" class="week-load-alert-btn-outline cloud-list-btn">Restaurer depuis une sauvegarde en ligne</button>
             <div class="cloud-backup-list" id="cloud-backup-list" hidden></div>
             <div class="cloud-actions">
@@ -6487,6 +6502,7 @@
       dashboardSelectedDay = currentWeekdayNum();
       renderCycleAlertBanner();
       renderRestoreInterruptedBanner();
+      renderCloudHomeLine();
       renderDashboardStagnation();
       renderDashboardHome();
     }
@@ -14133,8 +14149,16 @@
       if (priorThisWeek.length === 0) OvrykDB.advanceForceCycleWeek(sex.exerciseId);
     });
 
+    var finishedId = activeSession.id;
     activeSession = null;
     showSeanceStart();
+
+    /* lot 16, livraison 5 : envoi en ligne éventuel, après tout le reste
+       (séance enregistrée, cycles avancés, écran affiché), hors de cette
+       fonction : rien de la fin de séance n'attend l'envoi ni n'en dépend. */
+    setTimeout(function () {
+      try { maybeAutoCloudUpload(finishedId); } catch (e) { /* jamais bloquant pour la séance */ }
+    }, 0);
   }
 
   document.getElementById('seance-cancel-btn').addEventListener('click', cancelActiveSession);
@@ -17440,6 +17464,8 @@
     document.getElementById('cloud-last-upload').textContent = last
       ? 'Dernier envoi réussi : ' + formatRestoreDate(last.at) + (typeof last.sessionsCompleted === 'number' ? ' (' + last.sessionsCompleted + (last.sessionsCompleted > 1 ? ' séances)' : ' séance)') : '')
       : 'Aucun envoi depuis cet appareil.';
+    /* lot 16, livraison 5 : option, dernier essai, à renvoyer, rappel */
+    renderCloudAutoStatus(session);
   }
 
   function cloudSignIn() {
@@ -17615,31 +17641,37 @@
     return 'Le serveur a refusé l’envoi (' + (r.code || ('erreur ' + r.status)) + '). Rien n’a été envoyé.';
   }
 
-  /* cœur de l'envoi, partagé par le bouton et (livraison 5) l'envoi
-     automatique. L'appelant a vérifié cloudBusy, construit la ligne et posé
-     le verrou ; finish(text, isError) est appelé une seule fois, verrou
-     encore posé. */
+  /* cœur de l'envoi, partagé par le bouton et l'envoi automatique
+     (livraison 5). L'appelant a vérifié cloudBusy, construit la ligne et
+     posé le verrou ; finish(text, isError, outcome) est appelé une seule
+     fois, verrou encore posé. outcome : 'ok' (relecture conforme),
+     'unverified' (l'envoi a pu arriver sans être confirmé) ou 'failed'. */
   function runCloudUpload(row, finish) {
     function refreshFailed(err) {
-      if (err.kind === 'revoked') { finish('Ta session n’est plus valable. Reconnecte-toi, puis renvoie la sauvegarde.', true); return; }
-      if (err.kind === 'nosession') { finish('Tu n’es plus connecté. Rien n’a été envoyé.', true); return; }
-      finish(cloudErrorMessage(err, 'refresh') + ' Ta session est conservée. Rien n’a été envoyé.', true);
+      if (err.kind === 'revoked') { finish('Ta session n’est plus valable. Reconnecte-toi, puis renvoie la sauvegarde.', true, 'failed'); return; }
+      if (err.kind === 'nosession') { finish('Tu n’es plus connecté. Rien n’a été envoyé.', true, 'failed'); return; }
+      finish(cloudErrorMessage(err, 'refresh') + ' Ta session est conservée. Rien n’a été envoyé.', true, 'failed');
     }
     function verify(session) {
       cloudRequest('GET', '/rest/v1/backups?id=eq.' + row.id + '&select=fingerprint,sessions_count', null, session.access_token, function (r) {
         if (!r.ok) {
-          finish('Envoi fait mais non vérifié (' + cloudBackupErrorMessage(r) + ') Ne considère pas cette sauvegarde comme sûre.', true);
+          finish('Envoi fait mais non vérifié (' + cloudBackupErrorMessage(r) + ') Ne considère pas cette sauvegarde comme sûre.', true, 'unverified');
           return;
         }
         var got = Array.isArray(r.data) && r.data.length === 1 && isPlainObject(r.data[0]) ? r.data[0] : null;
         if (!got || got.fingerprint !== row.fingerprint || got.sessions_count !== row.sessions_count) {
-          finish('L’envoi n’a pas pu être vérifié (sauvegarde relue absente ou différente). Ne considère pas cette sauvegarde comme sûre.', true);
+          finish('L’envoi n’a pas pu être vérifié (sauvegarde relue absente ou différente). Ne considère pas cette sauvegarde comme sûre.', true, 'unverified');
           return;
         }
+        /* lot 16, livraison 5 : userId (champ optionnel) du compte dont le
+           jeton a servi, pour ne comparer qu'à un envoi du même compte. */
         try {
-          localStorage.setItem(CLOUD_LAST_UPLOAD_KEY, JSON.stringify({ at: new Date().toISOString(), id: row.id, fingerprint: row.fingerprint, sessionsCompleted: row.sessions_count }));
+          localStorage.setItem(CLOUD_LAST_UPLOAD_KEY, JSON.stringify({
+            at: new Date().toISOString(), id: row.id, fingerprint: row.fingerprint, sessionsCompleted: row.sessions_count,
+            userId: session.user && typeof session.user.id === 'string' ? session.user.id : null
+          }));
         } catch (e) { /* l'envoi reste vérifié, seul l'affichage du dernier envoi manquera */ }
-        finish('Sauvegarde envoyée et vérifiée (' + row.sessions_count + (row.sessions_count > 1 ? ' séances).' : ' séance).'), false);
+        finish('Sauvegarde envoyée et vérifiée (' + row.sessions_count + (row.sessions_count > 1 ? ' séances).' : ' séance).'), false, 'ok');
       });
     }
     function send(session, retried) {
@@ -17651,20 +17683,257 @@
           getFreshAccessToken(true, function (err, fresh) { if (err) { refreshFailed(err); return; } send(fresh, true); });
           return;
         }
-        finish(cloudBackupErrorMessage(r), true);
+        finish(cloudBackupErrorMessage(r), true, r.kind === 'network' || r.kind === 'timeout' ? 'unverified' : 'failed');
       }, { 'Prefer': 'return=minimal' }, CLOUD_UPLOAD_TIMEOUT_MS);
     }
     getFreshAccessToken(false, function (err, session) { if (err) { refreshFailed(err); return; } send(session, false); });
   }
 
+  /* ============================================================
+     ENVOI AUTOMATIQUE APRÈS UNE SÉANCE (lot 16, livraison 5).
+     * Option dans ovryk.cloud.prefs (absente = désactivée), écrite au seul
+       appui sur l'interrupteur.
+     * Déclenché par finishActiveSession seulement, après l'enregistrement
+       de la séance et l'avancée des cycles, dans un setTimeout : rien de la
+       fin de séance n'attend l'envoi ni n'en dépend.
+     * Même cœur que le bouton (runCloudUpload), même verrou (cloudBusy).
+     * Pas d'envoi si : verrou pris, envoi automatique il y a moins de 2
+       minutes, garde-fou (moins de séances terminées que le dernier envoi
+       vérifié du même compte), ou état vide ou illisible. Le cas est noté ;
+       l'envoi manuel reste possible et rattrape.
+     * Dernier essai (automatique ou manuel) dans ovryk.cloud.lastAttempt :
+       le texte du message seulement, jamais de jeton ni de données.
+     * Clés ovryk.cloud.* hors DB_KEYS : jamais exportées, restaurées ni
+       copiées. Aucun appel ni écriture au lancement : tout l'affichage est
+       en lecture seule.
+     ============================================================ */
+  var CLOUD_PREFS_KEY = 'ovryk.cloud.prefs';
+  var CLOUD_LAST_ATTEMPT_KEY = 'ovryk.cloud.lastAttempt';
+  var CLOUD_AUTO_MIN_GAP_MS = 120000;
+  var CLOUD_REMINDER_DAYS = 7;
+  var cloudAutoHandledIds = {};
+  var cloudLastAutoAt = 0;
+  var cloudAttemptInFlight = false;
+
+  function readCloudPrefs() {
+    try { var v = JSON.parse(localStorage.getItem(CLOUD_PREFS_KEY)); return isPlainObject(v) ? v : {}; } catch (e) { return {}; }
+  }
+
+  function isAutoUploadOn() { return readCloudPrefs().autoUpload === true; }
+
+  function setAutoUpload(on) {
+    var prefs = readCloudPrefs();
+    prefs.autoUpload = !!on;
+    try { localStorage.setItem(CLOUD_PREFS_KEY, JSON.stringify(prefs)); return true; } catch (e) { return false; }
+  }
+
+  function readLastAttempt() {
+    try {
+      var v = JSON.parse(localStorage.getItem(CLOUD_LAST_ATTEMPT_KEY));
+      return isPlainObject(v) && typeof v.at === 'string' && typeof v.outcome === 'string' ? v : null;
+    } catch (e) { return null; }
+  }
+
+  function writeLastAttempt(origin, outcome, reason, sessionId, sessionsCompleted) {
+    var session = readCloudSession();
+    try {
+      localStorage.setItem(CLOUD_LAST_ATTEMPT_KEY, JSON.stringify({
+        at: new Date().toISOString(),
+        origin: origin,
+        outcome: outcome,
+        reason: reason || '',
+        sessionId: sessionId || null,
+        sessionsCompleted: typeof sessionsCompleted === 'number' ? sessionsCompleted : null,
+        userId: session && session.user && typeof session.user.id === 'string' ? session.user.id : null
+      }));
+    } catch (e) { /* seul l'affichage du dernier essai manquera */ }
+  }
+
+  function countLocalCompletedSessions() {
+    return summarizeOvrykData({ sessions: OvrykDB.getSessions() }).sessionsCompleted;
+  }
+
+  function cloudSessionsLabel(n) {
+    return n + (n > 1 ? ' séances terminées' : ' séance terminée');
+  }
+
+  /* dernier envoi vérifié qui concerne le compte connecté : celui d'un
+     autre compte est ignoré ; sans userId (envoi d'avant la livraison 5)
+     ou sans session, il compte, par prudence. */
+  function relevantLastUpload() {
+    var last = readLastUpload();
+    if (!last) return null;
+    var session = readCloudSession();
+    var uid = session && session.user && typeof session.user.id === 'string' ? session.user.id : null;
+    if (uid && typeof last.userId === 'string' && last.userId !== uid) return null;
+    return last;
+  }
+
+  /* état calculé en lecture seule, pour Réglages et l'Accueil. */
+  function getCloudBackupStatus() {
+    var local = countLocalCompletedSessions();
+    var last = relevantLastUpload();
+    var lastCount = last && typeof last.sessionsCompleted === 'number' ? last.sessionsCompleted : null;
+    var pending = lastCount !== null ? Math.max(0, local - lastCount) : 0;
+    var attempt = readLastAttempt();
+    var interrupted = !!attempt && attempt.outcome === 'in_progress' && !cloudAttemptInFlight;
+    var attemptProblem = !!attempt && (attempt.outcome === 'failed' || attempt.outcome === 'unverified' || interrupted);
+    var guard = isAutoUploadOn() && !!readCloudSession() && lastCount !== null && local < lastCount;
+    var ageMs = last ? Date.now() - Date.parse(last.at) : NaN;
+    var stale = !isNaN(ageMs) && ageMs > CLOUD_REMINDER_DAYS * 86400000 && pending > 0;
+    return {
+      local: local, lastCount: lastCount, pending: pending, attempt: attempt, interrupted: interrupted,
+      attemptProblem: attemptProblem, guard: guard, stale: stale, ageDays: isNaN(ageMs) ? 0 : Math.floor(ageMs / 86400000)
+    };
+  }
+
+  function cloudGuardMessage(local, lastCount) {
+    return 'Envoi automatique suspendu : ce téléphone a ' + cloudSessionsLabel(local) + ', la dernière sauvegarde envoyée en avait ' + lastCount +
+      '. Si c’est voulu (restauration, séance supprimée), envoie une sauvegarde à la main : l’envoi automatique reprendra.';
+  }
+
+  /* un essai, manuel ou automatique : marque "en cours", envoi, résultat.
+     after(text, isError) une fois le verrou rendu. */
+  function startCloudAttempt(origin, row, sessionId, local, after) {
+    setCloudBusy(true);
+    cloudAttemptInFlight = true;
+    writeLastAttempt(origin, 'in_progress', '', sessionId, local);
+    var settled = false;
+    function finish(text, isError, outcome) {
+      if (settled) return;
+      settled = true;
+      cloudAttemptInFlight = false;
+      writeLastAttempt(origin, outcome || 'failed', text, sessionId, local);
+      setCloudBusy(false);
+      renderCloudSection();
+      renderCloudHomeLine();
+      after(text, isError);
+    }
+    try {
+      runCloudUpload(row, finish);
+    } catch (e) {
+      finish('Envoi impossible (erreur inattendue). Rien n’a été confirmé.', true, 'failed');
+    }
+  }
+
   function cloudUploadBackup() {
     if (cloudBusy) return;
+    var local = countLocalCompletedSessions();
     var built = buildCloudBackupRow();
-    if (built.error) { setCloudMessage(built.error, true); return; }
-    setCloudBusy(true);
+    if (built.error) {
+      writeLastAttempt('manual', 'failed', built.error, null, local);
+      renderCloudSection();
+      setCloudMessage(built.error, true);
+      return;
+    }
     setCloudMessage('Envoi en cours…', false);
-    runCloudUpload(built.row, function (text, isError) { setCloudBusy(false); renderCloudSection(); setCloudMessage(text, isError); });
+    startCloudAttempt('manual', built.row, null, local, function (text, isError) { setCloudMessage(text, isError); });
   }
+
+  /* appelée par finishActiveSession seulement (setTimeout, try). */
+  function maybeAutoCloudUpload(sessionId) {
+    if (!isAutoUploadOn() || !readCloudSession()) return;
+    if (sessionId && cloudAutoHandledIds[sessionId]) return;
+    if (sessionId) cloudAutoHandledIds[sessionId] = true;
+    var local = countLocalCompletedSessions();
+    function skip(outcome, reason) {
+      writeLastAttempt('auto', outcome, reason, sessionId, local);
+      renderCloudSection();
+      renderCloudHomeLine();
+    }
+    if (cloudBusy) { skip('skipped', 'Non envoyé (une autre opération en ligne était en cours). À renvoyer.'); return; }
+    var prev = readLastAttempt();
+    var prevAutoAt = prev && prev.origin === 'auto' && prev.outcome !== 'skipped' ? Date.parse(prev.at) : 0;
+    var lastAutoAt = Math.max(cloudLastAutoAt, isNaN(prevAutoAt) ? 0 : prevAutoAt);
+    if (Date.now() - lastAutoAt < CLOUD_AUTO_MIN_GAP_MS) {
+      skip('skipped', 'Non envoyé (envoi automatique il y a moins de 2 minutes). À renvoyer.');
+      return;
+    }
+    var status = getCloudBackupStatus();
+    if (status.guard) { skip('skipped', cloudGuardMessage(status.local, status.lastCount)); return; }
+    var built = buildCloudBackupRow();
+    if (built.error) { skip('failed', built.error); return; }
+    cloudLastAutoAt = Date.now();
+    setCloudMessage('Envoi automatique en cours…', false);
+    startCloudAttempt('auto', built.row, sessionId, local, function () { setCloudMessage('', false); });
+  }
+
+  /* Réglages, lecture seule : interrupteur (connecté), dernier essai,
+     à renvoyer ou garde-fou, rappel de plus de 7 jours (connecté ou non). */
+  function renderCloudAutoStatus(session) {
+    var st = getCloudBackupStatus();
+
+    var autoRow = document.getElementById('cloud-auto-row');
+    autoRow.innerHTML = '';
+    if (session) {
+      autoRow.appendChild(buildToggleRow('Envoi automatique après chaque séance', isAutoUploadOn(), function () {
+        setAutoUpload(!isAutoUploadOn());
+        renderCloudSection();
+        renderCloudHomeLine();
+      }));
+    }
+
+    var attemptEl = document.getElementById('cloud-last-attempt');
+    var a = st.attempt;
+    if (a) {
+      var head = 'Dernier essai (' + (a.origin === 'auto' ? 'automatique' : 'manuel') + ', ' + formatRestoreDate(a.at) + ') : ';
+      var text;
+      if (a.outcome === 'in_progress') {
+        text = cloudAttemptInFlight ? 'Dernier essai : envoi en cours…'
+          : head + 'envoi interrompu (appli fermée ou mise en veille), non confirmé. À renvoyer.';
+      } else if (a.outcome === 'ok') {
+        text = head + 'réussi et vérifié.';
+      } else {
+        text = head + a.reason;
+      }
+      attemptEl.textContent = text;
+      attemptEl.classList.toggle('is-error', st.attemptProblem);
+      attemptEl.hidden = false;
+    } else {
+      attemptEl.hidden = true;
+    }
+
+    var pendingEl = document.getElementById('cloud-pending');
+    var pendingText = '';
+    if (st.guard) pendingText = cloudGuardMessage(st.local, st.lastCount);
+    else if (st.pending > 0) pendingText = 'À renvoyer : ' + cloudSessionsLabel(st.pending) + ' pas encore en ligne.';
+    else if (st.attemptProblem) pendingText = 'À renvoyer : le dernier essai n’a pas abouti.';
+    pendingEl.textContent = pendingText;
+    pendingEl.hidden = !pendingText;
+
+    var reminder = document.getElementById('cloud-reminder');
+    if (st.stale) {
+      reminder.textContent = 'Dernière sauvegarde en ligne réussie il y a ' + st.ageDays + ' jours : ' + cloudSessionsLabel(st.pending) +
+        (st.pending > 1 ? ' ne sont pas encore en ligne.' : ' n’est pas encore en ligne.');
+      reminder.hidden = false;
+    } else {
+      reminder.hidden = true;
+    }
+  }
+
+  /* Accueil, lecture seule : une ligne, seulement en cas de problème. */
+  function renderCloudHomeLine() {
+    var el = document.getElementById('cloud-home-line');
+    if (!el) return;
+    var st = getCloudBackupStatus();
+    var text = '';
+    if (st.guard) text = 'Sauvegarde en ligne : envoi automatique suspendu. Voir Réglages.';
+    else if (st.attemptProblem) {
+      text = st.interrupted ? 'Sauvegarde en ligne : dernier envoi interrompu, non confirmé. Voir Réglages.'
+        : st.attempt.outcome === 'unverified' ? 'Sauvegarde en ligne : dernier envoi non confirmé. Voir Réglages.'
+        : 'Sauvegarde en ligne : dernier envoi échoué. Voir Réglages.';
+    } else if (st.stale) {
+      text = 'Sauvegarde en ligne : ' + cloudSessionsLabel(st.pending) + ' pas encore en ligne depuis plus de 7 jours. Voir Réglages.';
+    }
+    el.textContent = text;
+    el.hidden = !text;
+  }
+
+  document.getElementById('cloud-home-line').addEventListener('click', function () {
+    setActiveView('profil');
+    var section = document.getElementById('cloud-section');
+    if (section && section.scrollIntoView) section.scrollIntoView({ block: 'start' });
+  });
 
   document.getElementById('cloud-upload-btn').addEventListener('click', cloudUploadBackup);
 
@@ -17950,6 +18219,9 @@
        réseau). */
     localStorage.removeItem(CLOUD_AUTH_KEY);
     localStorage.removeItem(CLOUD_LAST_UPLOAD_KEY);
+    /* lot 16, livraison 5 */
+    localStorage.removeItem(CLOUD_PREFS_KEY);
+    localStorage.removeItem(CLOUD_LAST_ATTEMPT_KEY);
     var dailyKeys = [];
     for (var i = 0; i < localStorage.length; i++) {
       var key = localStorage.key(i);

@@ -2,7 +2,7 @@
 
 Taille : L. Dépend de : tous. Lot à risque (export, import, sauvegardes, écriture dans des données existantes).
 
-Statut : plan révisé le 2026-10-10, décisions de Ruben prises le 2026-10-10 (voir "Décisions prises"). Livraison 1 faite (sw v124), corrigée après quatre audits (sw v125 à v128). Livraison 2 (connexion) faite (sw v129). Livraison 3 (table backups et envoi manuel) faite (sw v130), script SQL à exécuter par Ruben. Livraison 4 (restauration depuis la sauvegarde en ligne) codée (sw v131 et v132), en attente d'audit ; livraison 5 à faire.
+Statut : plan révisé le 2026-10-10, décisions de Ruben prises le 2026-10-10 (voir "Décisions prises"). Livraison 1 faite (sw v124), corrigée après quatre audits (sw v125 à v128). Livraison 2 (connexion) faite (sw v129). Livraison 3 (table backups et envoi manuel) faite (sw v130), script SQL à exécuter par Ruben. Livraison 4 (restauration depuis la sauvegarde en ligne) faite (sw v131 et v132, auditée, poussée avec le tag v132-stable). Livraison 5 (envoi automatique après chaque séance) codée (sw v133 et v134), en attente d'audit.
 
 ## Écrans de la maquette
 
@@ -441,6 +441,20 @@ R11 (pas de compte obligatoire).
     * Session : renouvellement si besoin, un seul rejeu après un 401. Session révoquée : effacée, liste retirée. À la déconnexion, la liste est vidée : celle d'un compte n'est jamais montrée pour un autre.
     * Aucune écriture locale avant la deuxième confirmation, aucune écriture côté serveur, aucun changement SQL ni droit ajouté.
   * Tests automatiques : test_restore_cloud.py, 47 sur 47, avec Supabase simulé et des données fabriquées dans le test (aucun vrai export, aucune vraie clé de session).
+* Livraison 5 codée le 2026-10-14 (sw v133 puis v134) : envoi automatique de la sauvegarde en ligne après chaque séance. Plan approuvé le 2026-10-14 avec les arbitrages de Ruben.
+  * Commit A (sw v133) : découpage pur. Le cœur de l'envoi passe dans runCloudUpload(row, finish), partagé par le bouton et l'envoi automatique, sans changement de comportement. Suites de la livraison 3 et 4 relancées, au vert.
+  * Commit B (sw v134) : envoi automatique et affichage.
+    * Option "Envoi automatique après chaque séance" dans Réglages (visible une fois connecté), désactivée par défaut, dans ovryk.cloud.prefs, écrite au seul appui.
+    * Déclenchement : à la fin de finishActiveSession, après l'enregistrement de la séance, l'export fichier (inchangé, question 8), l'avancée des cycles et l'affichage de l'écran de départ, dans un setTimeout avec try : rien de la fin de séance n'attend l'envoi ni n'en dépend. Même cœur et même verrou que le bouton.
+    * Pas d'envoi automatique (essai noté "non envoyé") si : verrou pris, envoi automatique il y a moins de 2 minutes, garde-fou (séances terminées du téléphone inférieures à celles du dernier envoi vérifié du même compte ; un lastUpload sans userId compte par prudence), ou état vide ou illisible (getBackupBlocker). L'envoi manuel reste possible et lève le garde-fou.
+    * ovryk.cloud.lastAttempt : dernier essai, automatique ou manuel (en cours, réussi, échec, non confirmé, non envoyé), avec le texte du message seulement. "En cours" est écrit avant l'envoi : une appli tuée en plein envoi s'affiche "interrompu, non confirmé".
+    * ovryk.cloud.lastUpload reçoit le champ optionnel userId (compte dont le jeton a servi).
+    * Réglages, lecture seule : dernier envoi réussi, dernier essai, "À renvoyer : N séances terminées pas encore en ligne" (par nombre de séances) ou le message du garde-fou, rappel si le dernier envoi réussi a plus de 7 jours et qu'il reste des séances à renvoyer (connecté ou non ; rien si aucun envoi n'a jamais réussi).
+    * Accueil : une seule ligne discrète sous les bandeaux, visible seulement en cas de problème (dernier essai échoué, non confirmé ou interrompu, garde-fou actif, ou plus de 7 jours avec des séances à renvoyer). Un appui ouvre Réglages.
+    * Réinitialiser l'app efface aussi ovryk.cloud.prefs et ovryk.cloud.lastAttempt. Toutes les clés ovryk.cloud.* restent hors DB_KEYS : jamais exportées, restaurées ni copiées.
+    * Aucun appel ni écriture au lancement, aucun changement SQL ni droit ajouté, rotation à 30 inchangée.
+    * Écart voulu avec la section 10 : pas de nouvel essai au retour du réseau (événement "online"), pas de message après la séance. Le prochain envoi, automatique ou manuel, rattrape.
+  * Tests automatiques : dossier-lots/tests/test_auto_upload.py, Supabase simulé, données fabriquées.
 
 ## Lot de nettoyage : points non bloquants de l'audit de la livraison 4 (2026-10-14)
 
