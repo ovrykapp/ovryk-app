@@ -17659,6 +17659,25 @@
   document.getElementById('restore-interrupted-dismiss-btn').addEventListener('click', dismissRestoreInterrupted);
   renderRestoreInterruptedBanner();
 
+  /* lot 16 : point d'entrée unique de la restauration d'une sauvegarde lue
+     (fichier importé ; sauvegarde en ligne, livraison 4). Validation
+     complète, puis écran de résumé avant et après. Rien n'est écrit avant
+     les deux confirmations. Renvoie la raison du refus, ou null si l'écran
+     de restauration est ouvert. */
+  function openRestoreFromParsed(parsed, sourceName) {
+    var checked = validateBackupFile(parsed);
+    if (checked.error) return checked.error;
+    openRestorePage({
+      mode: 'file',
+      data: checked.data,
+      summary: checked.fileSummary,
+      sourceDate: checked.exportedAt,
+      fileName: sourceName,
+      incomingSessions: checked.data.sessions
+    });
+    return null;
+  }
+
   document.getElementById('dashboard-import-btn').addEventListener('click', function () {
     document.getElementById('dashboard-import-input').click();
   });
@@ -17683,22 +17702,9 @@
         return;
       }
 
-      /* lot 16, livraison 1 : validation complète, puis écran de résumé
-         avant et après. Rien n'est écrit avant les deux confirmations. */
-      var checked = validateBackupFile(parsed);
       e.target.value = '';
-      if (checked.error) {
-        showDataIOStatus('Import refusé : ' + checked.error, true);
-        return;
-      }
-      openRestorePage({
-        mode: 'file',
-        data: checked.data,
-        summary: checked.fileSummary,
-        sourceDate: checked.exportedAt,
-        fileName: file.name,
-        incomingSessions: checked.data.sessions
-      });
+      var refusal = openRestoreFromParsed(parsed, file.name);
+      if (refusal) showDataIOStatus('Import refusé : ' + refusal, true);
     };
     reader.onerror = function () {
       showDataIOStatus('Erreur de lecture du fichier.', true);
