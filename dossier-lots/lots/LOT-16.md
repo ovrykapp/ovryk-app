@@ -2,7 +2,7 @@
 
 Taille : L. Dépend de : tous. Lot à risque (export, import, sauvegardes, écriture dans des données existantes).
 
-Statut : plan révisé le 2026-10-10, décisions de Ruben prises le 2026-10-10 (voir "Décisions prises"). Livraison 1 faite (sw v124), corrigée après quatre audits (sw v125 à v128), livraisons 2 à 5 à faire.
+Statut : plan révisé le 2026-10-10, décisions de Ruben prises le 2026-10-10 (voir "Décisions prises"). Livraison 1 faite (sw v124), corrigée après quatre audits (sw v125 à v128). Livraison 2 (connexion) faite (sw v129), livraisons 3 à 5 à faire.
 
 ## Écrans de la maquette
 
@@ -213,7 +213,7 @@ Hors de ce lot : synchronisation entre plusieurs appareils, connexion Google ou 
 ## Décisions prises (2026-10-10)
 
 * Service : Supabase, offre gratuite (question 1, A).
-* Connexion : code à 6 chiffres reçu par e-mail (question 2, A).
+* Connexion : code à 6 chiffres reçu par e-mail (question 2, A). **Remplacée le 2026-10-14 : e-mail et mot de passe** (compte unique créé à la main, inscriptions publiques désactivées), voir "Avancement", livraison 2.
 * Adresse du projet et clé publique : directement dans l'app (question 3, A).
 * Restauration : remplacer, avec copie de l'état actuel avant et annulation (question 4, A).
 * Quand : après chaque séance terminée, plus un bouton manuel (question 5, A).
@@ -339,3 +339,31 @@ R11 (pas de compte obligatoire).
   * 9 : BACKUP_KEY_LABELS répète la liste de DB_KEYS (une nouvelle clé ne serait pas contrôlée à l'export).
   * 10 : doublons. Le nom de fichier et lastExportAt sont calculés à la fois par downloadOvrykExport et par shareOvrykBackup, CURRENT_SCHEMA_VERSION répète le 2 de migrateSchema, et summary.sessionsTotal n'est pas affiché.
   * 11 : non vérifié sous Safari, l'abandon de la création de la base IndexedDB quand on ouvre Réglages.
+* Livraison 2 faite le 2026-10-14 (sw v129) : connexion par **e-mail et mot de passe** (décision de Ruben, remplace le code reçu par e-mail).
+  * Réglages, section "Sauvegarde en ligne" :
+    * déconnecté : formulaire e-mail (`type=email`, `autocomplete=username`) et mot de passe (`autocomplete=current-password`), bouton "Se connecter", aucun bouton d'inscription ;
+    * connecté : "Connecté : adresse" (en textContent), "Vérifier la connexion", "Se déconnecter".
+  * Fonctions : cloudRequest (seul point d'appel réseau, fetch, délai 15 s, `cache: no-store`, `credentials: omit`), cloudErrorMessage, readCloudSession, writeCloudSession, clearCloudSession, getFreshAccessToken (un seul renouvellement à la fois), cloudSignIn, cloudVerify, cloudSignOut, renderCloudSection. Configuration : CLOUD_URL et CLOUD_PUBLISHABLE_KEY, seules valeurs publiques présentes.
+  * Appels, vérifiés dans la spécification officielle de l'API Auth (supabase/auth, openapi.yaml) :
+    * connexion : `POST /auth/v1/token?grant_type=password`, corps `{email, password}` ;
+    * renouvellement : `POST /auth/v1/token?grant_type=refresh_token`, corps `{refresh_token}` (jeton à usage unique) ;
+    * vérification, lecture seule : `GET /auth/v1/user` ;
+    * déconnexion de cet appareil seulement : `POST /auth/v1/logout?scope=local`, réponse 204 ;
+    * en-têtes : `apikey: <clé publishable>` (la clé publishable va dans `apikey`, jamais dans Authorization, d'après la page "Understanding API keys"), plus `Authorization: Bearer <jeton d'accès>` pour /user et /logout ;
+    * erreurs : code lu dans `error_code` (champ `code` = statut HTTP selon la spécification).
+  * Aucun appel au lancement, à l'ouverture de Réglages ni par minuterie (décision 1 A : renouvellement seulement avant une action en ligne ou via "Vérifier la connexion").
+  * Mot de passe jamais stocké ni journalisé, champ vidé après chaque tentative. Seule la session { access_token, refresh_token, expires_at, user { id, email }, savedAt } est gardée dans la clé exacte ovryk.cloud.auth, hors des six clés de données : absente de l'export, de la restauration et des copies.
+  * Messages :
+    * hors ligne : "Pas de connexion internet." ;
+    * réseau injoignable, délai dépassé ;
+    * 5xx ou réponse illisible : "Service de sauvegarde indisponible… projet peut-être en pause" ;
+    * "E-mail ou mot de passe incorrect." seulement pour `invalid_credentials` à la connexion ;
+    * 429 ou `over_request_rate_limit` : trop d'essais ;
+    * toute autre réponse refusée : message neutre avec le code.
+  * Renouvellement : la session n'est effacée que sur un refus définitif (`refresh_token_not_found`, `refresh_token_already_used`, `session_not_found`, `session_expired`, `user_not_found`, `user_banned`, ou `invalid_grant` sans code). Réseau coupé, délai, 5xx, réponse illisible ou autre refus : session conservée à l'identique, message honnête.
+  * Déconnexion (décision 3 A) : révocation scope=local puis effacement local dans tous les cas ; hors ligne, message précisant que la session peut rester valable côté serveur.
+  * "Réinitialiser l'app" (décision 2 A) efface aussi la clé exacte ovryk.cloud.auth, sans appel réseau, et le texte de confirmation le mentionne.
+  * sw.js : toute requête vers un domaine `*.supabase.co`, quelle que soit la méthode, part directement au réseau, jamais en cache. Les polices Google restent mises en cache.
+  * CSP : index.html n'en déclare aucune, rien à modifier.
+  * Sources officielles : https://raw.githubusercontent.com/supabase/auth/master/openapi.yaml (points d'appel, corps, schéma d'erreur, scope de logout), https://supabase.com/docs/guides/auth/debugging/error-codes (codes d'erreur), https://supabase.com/docs/guides/api/api-keys (en-tête apikey pour la clé publishable).
+  * Non vérifié : appel au vrai projet (aucun test avec le vrai compte), CORS depuis ovrykapp.github.io, réponse exacte d'un projet en pause, Safari et iPhone (trousseau, remplissage automatique, hors ligne réel).

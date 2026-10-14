@@ -69,7 +69,7 @@ Les cycles 'A' à 'E' continuent de fonctionner : ils restent définis dans FORC
 Proposition du plan du 2026-10-10 (LOT-16.md), à confirmer après les décisions de Ruben :
 
 * ovryk.cloud (nouvelle clé, optionnelle) : { enabled, lastSuccess: { at, sessionsCount, snapshotId }, lastError: { at, reason } }. Absente = sauvegarde en ligne désactivée. Jamais exportée ni mise dans un instantané.
-* ovryk.cloud.auth (nouvelle clé, optionnelle) : jetons de connexion. Jamais exportée, jamais dans un instantané, effacée par "Se déconnecter".
+* ovryk.cloud.auth (faite en v129, optionnelle) : { access_token, refresh_token, expires_at, user { id, email }, savedAt }, jamais le mot de passe. Absente = déconnecté. Jamais exportée, jamais restaurée, jamais dans une copie ; effacée par "Se déconnecter", par un refus définitif du jeton de renouvellement et par "Réinitialiser l'app".
 * Point de restauration local (fait en livraison 1, v124) : base IndexedDB ovryk-restore, magasin points, { id, savedAt, reason, summary, raw } où raw contient les six clés ovryk.* en valeurs brutes (null si absente). 5 copies au plus. Créée seulement à la première restauration, jamais à l'ouverture d'un écran.
 * Format d'export et d'instantané (fait en livraison 1, v124) : celui de collectAllOvrykData (version 1), avec en plus data.meta (ovryk.meta) et un bloc summary (sessionsCompleted, sessionsTotal, inProgressIds, lastSessionAt, routines, exercises, cycles, schemaVersion, checksum). Reste lisible par l'import d'avant, qui ignore les champs inconnus.
 * Côté service : une table d'instantanés (identifiant du compte, date, résumé en colonnes, contenu JSON complet), ajout et lecture seulement depuis l'app, règles d'accès par ligne.

@@ -1782,6 +1782,15 @@
   .restore-interrupted-title { margin: 0 0 6px; font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--orange-soft); }
   .restore-interrupted-text { margin: 0; font-size: 14px; line-height: 1.45; color: var(--ink); }
   .restore-interrupted-actions { display: flex; gap: 10px; margin-top: var(--space-3); }
+  /* lot 16, livraison 2 : connexion */
+  .cloud-group { padding: var(--space-4); }
+  .cloud-form { display: flex; flex-direction: column; gap: 6px; margin: 0; }
+  .cloud-form[hidden], .cloud-connected[hidden], .cloud-message[hidden] { display: none; }
+  .cloud-form .btn-primary { margin-top: var(--space-3); }
+  .cloud-connected-text { margin: 0 0 var(--space-3); font-size: 15px; color: var(--ink); overflow-wrap: anywhere; }
+  .cloud-actions { display: flex; gap: 10px; }
+  .cloud-actions > button { flex: 1; min-height: 48px; }
+  .cloud-message.is-error { color: var(--rust); font-weight: 700; }
   .restore-interrupted-error { margin: 8px 0 0; font-size: 13px; line-height: 1.45; color: var(--rust); font-weight: 700; }
   .restore-interrupted-error[hidden], .restore-interrupted-actions > button[hidden] { display: none; }
   .restore-interrupted-actions > button { flex: 1; min-height: 48px; }
@@ -4527,6 +4536,29 @@
         <p class="settings-note" id="profile-deload-note"></p>
       </div>
 
+      <!-- lot 16, livraison 2 : connexion à la sauvegarde en ligne. Aucun
+           appel réseau sans un appui sur un bouton de cette section. -->
+      <div class="settings-section" id="cloud-section">
+        <span class="settings-eyebrow">Sauvegarde en ligne</span>
+        <div class="settings-group cloud-group">
+          <form id="cloud-signin-form" class="cloud-form" novalidate>
+            <label class="form-label" for="cloud-email">E-mail</label>
+            <input type="email" id="cloud-email" name="email" class="form-input" autocomplete="username" inputmode="email" autocapitalize="none" autocorrect="off" spellcheck="false">
+            <label class="form-label" for="cloud-password">Mot de passe</label>
+            <input type="password" id="cloud-password" name="password" class="form-input" autocomplete="current-password">
+            <button type="submit" id="cloud-signin-btn" class="btn-primary">Se connecter</button>
+          </form>
+          <div id="cloud-connected" class="cloud-connected" hidden>
+            <p class="cloud-connected-text">Connecté : <span id="cloud-email-value"></span></p>
+            <div class="cloud-actions">
+              <button type="button" id="cloud-verify-btn" class="week-load-alert-btn-plain">Vérifier la connexion</button>
+              <button type="button" id="cloud-signout-btn" class="week-load-alert-btn-outline">Se déconnecter</button>
+            </div>
+          </div>
+        </div>
+        <p class="settings-note cloud-message" id="cloud-message" hidden></p>
+      </div>
+
       <div class="settings-section">
         <span class="settings-eyebrow">Général</span>
         <div class="settings-group">
@@ -6448,6 +6480,7 @@
       renderProfileGoalsCard();
       renderProfileNotificationsCard();
       renderProfileDeloadCard();
+      renderCloudSection();
       renderBarPlatesSummary();
       renderBackupReminder();
       renderStorageWarning();
@@ -17199,6 +17232,266 @@
     );
   }
 
+  /* ============================================================
+     SAUVEGARDE EN LIGNE (lot 16, livraison 2) : connexion par e-mail et
+     mot de passe à Supabase Auth, sans bibliothèque (fetch). Références :
+     spécification officielle supabase/auth (openapi.yaml) et page "Error
+     codes" de la documentation Supabase (voir LOT-16.md).
+     * Aucun appel réseau au lancement, à l'ouverture de Réglages ni par
+       minuterie : seulement sur "Se connecter", "Vérifier la connexion" et
+       "Se déconnecter".
+     * Le mot de passe n'existe que le temps de l'appel : jamais stocké,
+       jamais journalisé, champ vidé après chaque tentative.
+     * Seule la session est gardée, dans la clé exacte ovryk.cloud.auth,
+       hors des six clés de données (DB_KEYS) : jamais exportée, jamais
+       restaurée, effacée par "Se déconnecter" et par "Réinitialiser l'app".
+     * Seules l'URL du projet et la clé publique (publishable) figurent ici.
+     ============================================================ */
+  var CLOUD_URL = 'https://hroxwrcxvhpvlpmxeixw.supabase.co';
+  var CLOUD_PUBLISHABLE_KEY = 'sb_publishable_06uyz-13yFi8DjmFc_6nuA_ZJiWcEch';
+  var CLOUD_AUTH_KEY = 'ovryk.cloud.auth';
+  var CLOUD_TIMEOUT_MS = 15000;
+  var CLOUD_REFRESH_MARGIN_S = 60;
+  /* refus définitifs d'un jeton de renouvellement (page "Error codes") :
+     seuls cas où la session est effacée lors d'un renouvellement. */
+  var CLOUD_DEFINITIVE_REFRESH_CODES = ['refresh_token_not_found', 'refresh_token_already_used', 'session_not_found', 'session_expired', 'user_not_found', 'user_banned'];
+
+  /* code d'erreur Supabase : error_code (spécification), ou code s'il est
+     textuel (le champ code est sinon le statut HTTP numérique). */
+  function cloudErrorCode(data) {
+    if (!isPlainObject(data)) return null;
+    if (typeof data.error_code === 'string') return data.error_code;
+    if (typeof data.code === 'string') return data.code;
+    return null;
+  }
+
+  /* un seul point d'appel réseau. cb({ ok, status, data, code, kind }) où
+     kind vaut 'offline', 'network', 'timeout', 'unavailable' (5xx),
+     'unreadable' (réponse non JSON) ou 'refused' (4xx lisible). */
+  function cloudRequest(method, path, body, accessToken, cb) {
+    if (typeof fetch !== 'function') { cb({ ok: false, kind: 'network' }); return; }
+    var done = false;
+    var controller = window.AbortController ? new AbortController() : null;
+    var timer = setTimeout(function () {
+      if (done) return;
+      done = true;
+      if (controller) controller.abort();
+      cb({ ok: false, kind: 'timeout' });
+    }, CLOUD_TIMEOUT_MS);
+    var headers = { 'apikey': CLOUD_PUBLISHABLE_KEY };
+    if (body) headers['Content-Type'] = 'application/json';
+    if (accessToken) headers['Authorization'] = 'Bearer ' + accessToken;
+    var options = { method: method, headers: headers, cache: 'no-store', credentials: 'omit' };
+    if (body) options.body = JSON.stringify(body);
+    if (controller) options.signal = controller.signal;
+    fetch(CLOUD_URL + path, options).then(function (res) {
+      return res.text().then(function (text) {
+        if (done) return;
+        done = true;
+        clearTimeout(timer);
+        var data = null;
+        if (text) { try { data = JSON.parse(text); } catch (e) { data = undefined; } }
+        if (res.status >= 500) { cb({ ok: false, status: res.status, kind: 'unavailable' }); return; }
+        if (data === undefined) { cb({ ok: false, status: res.status, kind: 'unreadable' }); return; }
+        if (res.ok) { cb({ ok: true, status: res.status, data: data }); return; }
+        cb({ ok: false, status: res.status, data: data, code: cloudErrorCode(data), kind: 'refused' });
+      });
+    }).catch(function () {
+      if (done) return;
+      done = true;
+      clearTimeout(timer);
+      cb({ ok: false, kind: navigator.onLine === false ? 'offline' : 'network' });
+    });
+  }
+
+  /* message honnête pour une réponse en échec. context : 'signin',
+     'refresh', 'verify' ou 'signout'. "E-mail ou mot de passe incorrect"
+     seulement pour le code invalid_credentials à la connexion. */
+  function cloudErrorMessage(r, context) {
+    if (r.kind === 'offline') return 'Pas de connexion internet.';
+    if (r.kind === 'network') return 'Impossible de joindre le service de sauvegarde (réseau ou serveur). Réessaie plus tard.';
+    if (r.kind === 'timeout') return 'Le service de sauvegarde n’a pas répondu à temps. Réessaie plus tard.';
+    if (r.kind === 'unavailable' || r.kind === 'unreadable') {
+      return 'Service de sauvegarde indisponible. Si ça dure, le projet est peut-être en pause : ouvre le tableau de bord Supabase.';
+    }
+    if (context === 'signin' && r.code === 'invalid_credentials') return 'E-mail ou mot de passe incorrect.';
+    if (r.status === 429 || r.code === 'over_request_rate_limit') return 'Trop d’essais, réessaie dans quelques minutes.';
+    return 'Le service de sauvegarde a refusé la demande (' + (r.code || ('erreur ' + r.status)) + ').';
+  }
+
+  function readCloudSession() {
+    try {
+      var s = JSON.parse(localStorage.getItem(CLOUD_AUTH_KEY));
+      if (!isPlainObject(s) || typeof s.access_token !== 'string' || typeof s.refresh_token !== 'string') return null;
+      return s;
+    } catch (e) { return null; }
+  }
+
+  /* session à garder, construite à partir d'une réponse /token :
+     jamais le mot de passe. Renvoie false si la réponse est incomplète. */
+  function writeCloudSession(data) {
+    if (!isPlainObject(data) || typeof data.access_token !== 'string' || typeof data.refresh_token !== 'string') return false;
+    var now = Math.floor(Date.now() / 1000);
+    var session = {
+      access_token: data.access_token,
+      refresh_token: data.refresh_token,
+      expires_at: typeof data.expires_at === 'number' ? data.expires_at : now + (typeof data.expires_in === 'number' ? data.expires_in : 3600),
+      user: {
+        id: data.user && typeof data.user.id === 'string' ? data.user.id : null,
+        email: data.user && typeof data.user.email === 'string' ? data.user.email : null
+      },
+      savedAt: new Date().toISOString()
+    };
+    try { localStorage.setItem(CLOUD_AUTH_KEY, JSON.stringify(session)); return true; } catch (e) { return false; }
+  }
+
+  function clearCloudSession() {
+    try { localStorage.removeItem(CLOUD_AUTH_KEY); } catch (e) { /* rien d'autre à faire */ }
+  }
+
+  /* jeton d'accès valable, renouvelé si besoin (ou si force). Un seul
+     renouvellement à la fois : les demandes simultanées attendent son
+     résultat. La session n'est effacée que sur un refus définitif du jeton
+     de renouvellement ; réseau, délai, 5xx, réponse illisible ou autre
+     refus : session conservée. cb(err, session), err.kind 'nosession',
+     'revoked' ou celui de cloudRequest. */
+  var cloudRefreshWaiters = null;
+
+  function getFreshAccessToken(force, cb) {
+    var session = readCloudSession();
+    if (!session) { cb({ kind: 'nosession' }); return; }
+    var now = Math.floor(Date.now() / 1000);
+    if (!force && session.expires_at - CLOUD_REFRESH_MARGIN_S > now) { cb(null, session); return; }
+    if (cloudRefreshWaiters) { cloudRefreshWaiters.push(cb); return; }
+    cloudRefreshWaiters = [cb];
+    var usedToken = session.refresh_token;
+    cloudRequest('POST', '/auth/v1/token?grant_type=refresh_token', { refresh_token: usedToken }, null, function (r) {
+      var waiters = cloudRefreshWaiters;
+      cloudRefreshWaiters = null;
+      var err = null, fresh = null;
+      var current = readCloudSession();
+      if (!current || current.refresh_token !== usedToken) {
+        /* déconnecté ou reconnecté entre temps : ne rien écrire */
+        err = current ? null : { kind: 'nosession' };
+        fresh = current;
+      } else if (r.ok && writeCloudSession(r.data)) {
+        fresh = readCloudSession();
+      } else if (r.ok) {
+        err = { kind: 'unreadable' };
+      } else if (r.kind === 'refused' && (CLOUD_DEFINITIVE_REFRESH_CODES.indexOf(r.code) !== -1 ||
+                 (r.code === null && isPlainObject(r.data) && r.data.error === 'invalid_grant'))) {
+        clearCloudSession();
+        err = { kind: 'revoked', code: r.code };
+      } else {
+        err = r;
+      }
+      waiters.forEach(function (w) { w(err, fresh); });
+    });
+  }
+
+  var cloudBusy = false;
+
+  function setCloudMessage(text, isError) {
+    var el = document.getElementById('cloud-message');
+    el.textContent = text || '';
+    el.classList.toggle('is-error', !!isError);
+    el.hidden = !text;
+  }
+
+  function setCloudBusy(busy) {
+    cloudBusy = busy;
+    ['cloud-signin-btn', 'cloud-verify-btn', 'cloud-signout-btn'].forEach(function (id) {
+      document.getElementById(id).disabled = busy;
+    });
+  }
+
+  /* état affiché à partir de la seule session enregistrée : aucun appel
+     réseau, aucune écriture. Adresse e-mail en textContent. */
+  function renderCloudSection() {
+    var session = readCloudSession();
+    document.getElementById('cloud-signin-form').hidden = !!session;
+    document.getElementById('cloud-connected').hidden = !session;
+    document.getElementById('cloud-email-value').textContent = session && session.user && session.user.email ? session.user.email : 'compte enregistré';
+  }
+
+  function cloudSignIn() {
+    if (cloudBusy) return;
+    var emailInput = document.getElementById('cloud-email');
+    var passwordInput = document.getElementById('cloud-password');
+    var email = emailInput.value.trim();
+    var password = passwordInput.value;
+    if (!email || !password) { setCloudMessage('Saisis ton e-mail et ton mot de passe.', true); return; }
+    setCloudBusy(true);
+    setCloudMessage('Connexion…', false);
+    cloudRequest('POST', '/auth/v1/token?grant_type=password', { email: email, password: password }, null, function (r) {
+      passwordInput.value = '';
+      password = null;
+      setCloudBusy(false);
+      if (r.ok && writeCloudSession(r.data)) {
+        renderCloudSection();
+        setCloudMessage('Connecté.', false);
+        return;
+      }
+      setCloudMessage(r.ok ? 'Réponse inattendue du service, connexion non enregistrée.' : cloudErrorMessage(r, 'signin'), true);
+    });
+    password = null;
+  }
+
+  /* lecture seule : /auth/v1/user. N'écrit rien d'autre qu'un éventuel
+     renouvellement de session. */
+  function cloudVerify() {
+    if (cloudBusy) return;
+    setCloudBusy(true);
+    setCloudMessage('Vérification…', false);
+    function finish(text, isError) { setCloudBusy(false); renderCloudSection(); setCloudMessage(text, isError); }
+    function refreshFailed(err) {
+      if (err.kind === 'revoked') { finish('Ta session n’est plus valable. Reconnecte-toi.', true); return; }
+      if (err.kind === 'nosession') { finish('', false); return; }
+      finish(cloudErrorMessage(err, 'refresh') + ' Ta session est conservée.', true);
+    }
+    function askUser(session, retried) {
+      cloudRequest('GET', '/auth/v1/user', null, session.access_token, function (r) {
+        if (r.ok) {
+          finish('Connexion vérifiée' + (r.data && typeof r.data.email === 'string' ? ' : ' + r.data.email : '') + '.', false);
+          return;
+        }
+        if (r.kind === 'refused' && r.status === 401 && !retried) {
+          getFreshAccessToken(true, function (err, fresh) { if (err) { refreshFailed(err); return; } askUser(fresh, true); });
+          return;
+        }
+        finish(cloudErrorMessage(r, 'verify') + ' Ta session est conservée.', true);
+      });
+    }
+    getFreshAccessToken(false, function (err, session) { if (err) { refreshFailed(err); return; } askUser(session, false); });
+  }
+
+  /* révocation côté serveur de cette seule session (scope=local), puis
+     effacement local dans tous les cas. */
+  function cloudSignOut() {
+    if (cloudBusy) return;
+    var session = readCloudSession();
+    if (!session) { renderCloudSection(); return; }
+    setCloudBusy(true);
+    setCloudMessage('Déconnexion…', false);
+    function done(serverOk, reason) {
+      clearCloudSession();
+      setCloudBusy(false);
+      renderCloudSection();
+      setCloudMessage(serverOk ? 'Déconnecté de cet appareil.'
+        : 'Session effacée de cet appareil. Le service n’a pas pu être prévenu (' + reason + ') : la session peut rester valable côté serveur jusqu’à son expiration.', !serverOk);
+    }
+    getFreshAccessToken(false, function (err, fresh) {
+      if (err) { done(false, err.kind === 'revoked' ? 'session déjà invalide' : cloudErrorMessage(err, 'refresh')); return; }
+      cloudRequest('POST', '/auth/v1/logout?scope=local', null, fresh.access_token, function (r) {
+        done(r.ok, r.ok ? '' : cloudErrorMessage(r, 'signout'));
+      });
+    });
+  }
+
+  document.getElementById('cloud-signin-form').addEventListener('submit', function (e) { e.preventDefault(); cloudSignIn(); });
+  document.getElementById('cloud-verify-btn').addEventListener('click', cloudVerify);
+  document.getElementById('cloud-signout-btn').addEventListener('click', cloudSignOut);
+
   document.getElementById('dashboard-export-btn').addEventListener('click', downloadOvrykExport);
   document.getElementById('dashboard-share-btn').addEventListener('click', shareOvrykBackup);
   document.getElementById('storage-persist-btn').addEventListener('click', requestStoragePersistence);
@@ -17300,6 +17593,9 @@
     /* plus de restauration interrompue à proposer après une
        réinitialisation voulue. */
     localStorage.removeItem(RESTORE_MARK_KEY);
+    /* lot 16, livraison 2 : déconnexion locale (clé exacte, sans appel
+       réseau). */
+    localStorage.removeItem(CLOUD_AUTH_KEY);
     var dailyKeys = [];
     for (var i = 0; i < localStorage.length; i++) {
       var key = localStorage.key(i);
@@ -17311,7 +17607,7 @@
 
   document.getElementById('reset-app-btn').addEventListener('click', function () {
     showConfirmModal(
-      "Réinitialiser l'app ? Toutes tes données (exercices, routines, séances, réglages, cycles de force) et les copies de sécurité de ce téléphone seront supprimées définitivement. Cette action est irréversible.",
+      "Réinitialiser l'app ? Toutes tes données (exercices, routines, séances, réglages, cycles de force) et les copies de sécurité de ce téléphone seront supprimées définitivement, et tu seras déconnecté de la sauvegarde en ligne. Cette action est irréversible.",
       function () {
         showDataIOStatus('Suppression en cours…', false);
         deleteRestoreDb(function (err) {

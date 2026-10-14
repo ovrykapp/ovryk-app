@@ -1,7 +1,7 @@
 /* Ovryk — service worker: cache-first for the app shell so it loads with no
    network after the first visit. Bump CACHE_VERSION whenever a static asset
    listed in PRECACHE_URLS changes shape; the old cache is dropped on activate. */
-var CACHE_VERSION = 'v128';
+var CACHE_VERSION = 'v129';
 var CACHE_NAME = 'ovryk-static-' + CACHE_VERSION;
 
 var PRECACHE_URLS = [
@@ -50,6 +50,12 @@ self.addEventListener('notificationclick', function (event) {
 
 self.addEventListener('fetch', function (event) {
   var request = event.request;
+  /* lot 16 : les appels à Supabase (connexion, jetons, données) partent
+     toujours directement au réseau, jamais mis en cache, quelle que soit la
+     méthode. Les autres domaines (polices Google) restent mis en cache. */
+  var host = '';
+  try { host = new URL(request.url).hostname; } catch (e) { host = ''; }
+  if (/\.supabase\.co$/.test(host)) return;
   if (request.method !== 'GET') return;
 
   event.respondWith(
