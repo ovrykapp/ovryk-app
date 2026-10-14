@@ -441,3 +441,19 @@ R11 (pas de compte obligatoire).
     * Session : renouvellement si besoin, un seul rejeu après un 401. Session révoquée : effacée, liste retirée. À la déconnexion, la liste est vidée : celle d'un compte n'est jamais montrée pour un autre.
     * Aucune écriture locale avant la deuxième confirmation, aucune écriture côté serveur, aucun changement SQL ni droit ajouté.
   * Tests automatiques : test_restore_cloud.py, 47 sur 47, avec Supabase simulé et des données fabriquées dans le test (aucun vrai export, aucune vraie clé de session).
+
+## Lot de nettoyage : points non bloquants de l'audit de la livraison 4 (2026-10-14)
+
+Audit de c0b9104 et 9f186ff : verdict SÛR, aucun point bloquant. À traiter dans un lot de nettoyage, pas avant (aucun n'écrit de données sans les deux confirmations).
+
+1. Une réponse en ligne qui arrive après une déconnexion ou un changement de compte faits dans une autre fenêtre ouvre quand même l'écran de restauration (cloudDownloadBackup ne compare pas la session de départ à la session actuelle).
+2. Une réponse tardive remplace un écran de restauration déjà ouvert (par exemple un fichier importé entre temps) : l'écran affiche la sauvegarde en ligne, mais confirmRestore a déjà retenu l'ancien contenu et appliquerait celui-là. Pendant la copie de sécurité, renderRestorePage peut aussi débloquer les boutons.
+3. L'écran de restauration s'ouvre par-dessus n'importe quelle vue si l'utilisateur a quitté Réglages pendant le téléchargement, y compris pendant une séance en cours.
+4. Le recalcul du nombre de séances est contournable avec un ancien format (listes à la racine, sans data.sessions) : ce contrôle n'est fait que si data.sessions est une liste. Cas théorique, l'empreinte FNV 32 bits détecte l'abîmé, pas la falsification.
+5. Le délai de la liste des sauvegardes est de 15 s (délai par défaut) au lieu de 60 s comme le téléchargement.
+6. Le renouvellement de session pendant le téléchargement peut écrire ou effacer ovryk.cloud.auth avant toute confirmation (voulu depuis la livraison 2, à documenter ou à isoler).
+7. Des dates affichées ne sont pas couvertes par l'empreinte : "dernière le" de la liste (colonne summary) et "exportée le" de l'écran de comparaison (exportedAt).
+8. Le repère "Identique à ce téléphone" est absent juste après une restauration : les migrations et le rattrapage du catalogue au rechargement changent l'empreinte locale.
+9. Messages approximatifs : une ligne d'un autre compte donne "n'existe plus (remplacée par un envoi plus récent)", les refus de validateBackupFile parlent de "fichier", et "Dernier envoi réussi" n'est pas propre à chaque compte.
+
+Test automatique de la livraison 4 : dossier-lots/tests/test_restore_cloud.py (47 sur 47, Supabase simulé, données fabriquées). Il prend en argument un dossier de travail et attend le site servi sur http://127.0.0.1:8765.
