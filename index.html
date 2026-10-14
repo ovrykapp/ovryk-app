@@ -4232,6 +4232,7 @@
   .cloud-group .profile-toggle-row { min-height: 44px; padding: 0; margin: 0 0 var(--space-3); }
   .cloud-status-line { margin: 0 0 var(--space-3); font-size: 12px; line-height: 1.45; color: var(--steel); }
   .cloud-status-line[hidden] { display: none; }
+  .cloud-status-line-out { margin-top: var(--space-3); }
   .cloud-status-line.is-error { color: var(--rust); font-weight: 700; }
   .cloud-home-line { display: block; width: 100%; margin: 0 0 var(--space-4); padding: 4px 2px; background: none; border: none; text-align: left; font: inherit; font-size: 13px; line-height: 1.4; color: var(--rust); cursor: pointer; }
   .cloud-home-line[hidden] { display: none; }
@@ -4573,6 +4574,7 @@
             <input type="password" id="cloud-password" name="password" class="form-input" autocomplete="current-password">
             <button type="submit" id="cloud-signin-btn" class="btn-primary">Se connecter</button>
           </form>
+          <p class="cloud-status-line cloud-status-line-out" id="cloud-last-attempt-out" hidden></p>
           <div id="cloud-connected" class="cloud-connected" hidden>
             <p class="cloud-connected-text">Connecté : <span id="cloud-email-value"></span></p>
             <button type="button" id="cloud-upload-btn" class="btn-primary cloud-upload-btn">Envoyer une sauvegarde maintenant</button>
@@ -17774,10 +17776,15 @@
     var local = countLocalCompletedSessions();
     var last = relevantLastUpload();
     var lastCount = last && typeof last.sessionsCompleted === 'number' ? last.sessionsCompleted : null;
-    var pending = lastCount !== null ? Math.max(0, local - lastCount) : 0;
     var attempt = readLastAttempt();
     var interrupted = !!attempt && attempt.outcome === 'in_progress' && !cloudAttemptInFlight;
-    var attemptProblem = !!attempt && (attempt.outcome === 'failed' || attempt.outcome === 'unverified' || interrupted);
+    /* sans envoi vérifié de référence (aucun, ou d'un autre compte), les
+       séances terminées du téléphone sont à renvoyer dès que le dernier
+       essai n'a pas abouti. */
+    var needsRetry = !!attempt && attempt.outcome !== 'ok' && !(attempt.outcome === 'in_progress' && cloudAttemptInFlight);
+    var pending = lastCount !== null ? Math.max(0, local - lastCount) : (needsRetry ? local : 0);
+    var attemptProblem = !!attempt && (attempt.outcome === 'failed' || attempt.outcome === 'unverified' || interrupted ||
+      (attempt.outcome === 'skipped' && lastCount === null && pending > 0));
     var guard = isAutoUploadOn() && !!readCloudSession() && lastCount !== null && local < lastCount;
     var ageMs = last ? Date.now() - Date.parse(last.at) : NaN;
     var stale = !isNaN(ageMs) && ageMs > CLOUD_REMINDER_DAYS * 86400000 && pending > 0;
@@ -17837,6 +17844,11 @@
     if (sessionId) cloudAutoHandledIds[sessionId] = true;
     var local = countLocalCompletedSessions();
     function skip(outcome, reason) {
+      /* un "non envoyé" n'écrase jamais un essai réel (échec, non confirmé,
+         en cours, réussi) : l'alerte et le délai de 2 minutes restent ceux
+         du dernier vrai essai. */
+      var current = readLastAttempt();
+      if (outcome === 'skipped' && current && current.outcome !== 'skipped') { renderCloudSection(); renderCloudHomeLine(); return; }
       writeLastAttempt('auto', outcome, reason, sessionId, local);
       renderCloudSection();
       renderCloudHomeLine();
@@ -17873,7 +17885,8 @@
       }));
     }
 
-    var attemptEl = document.getElementById('cloud-last-attempt');
+    var attemptEl = document.getElementById(session ? 'cloud-last-attempt' : 'cloud-last-attempt-out');
+    document.getElementById(session ? 'cloud-last-attempt-out' : 'cloud-last-attempt').hidden = true;
     var a = st.attempt;
     if (a) {
       var head = 'Dernier essai (' + (a.origin === 'auto' ? 'automatique' : 'manuel') + ', ' + formatRestoreDate(a.at) + ') : ';
@@ -17921,6 +17934,7 @@
     else if (st.attemptProblem) {
       text = st.interrupted ? 'Sauvegarde en ligne : dernier envoi interrompu, non confirmé. Voir Réglages.'
         : st.attempt.outcome === 'unverified' ? 'Sauvegarde en ligne : dernier envoi non confirmé. Voir Réglages.'
+        : st.attempt.outcome === 'skipped' ? 'Sauvegarde en ligne : dernier envoi non effectué. Voir Réglages.'
         : 'Sauvegarde en ligne : dernier envoi échoué. Voir Réglages.';
     } else if (st.stale) {
       text = 'Sauvegarde en ligne : ' + cloudSessionsLabel(st.pending) + ' pas encore en ligne depuis plus de 7 jours. Voir Réglages.';

@@ -214,7 +214,13 @@ with sync_playwright() as p:
     fk = Fake(page, OK_PLAN())
     finish(page)
     att = jget(page, 'ovryk.cloud.lastAttempt')
-    check(not fk.calls and att['outcome'] == 'skipped' and 'moins de 2 minutes' in att['reason'], 'A7 envoi automatique récent : rien envoyé, "%s"' % att['reason'][:60])
+    check(not fk.calls and att['outcome'] == 'ok' and statuses(page).get('s-live') == 'completed',
+          'A7 envoi automatique récent : rien envoyé, le dernier essai réel (ok) n\'est pas écrasé par un "non envoyé"')
+    ctx.close()
+    ctx, page, errors = fresh(b, prefs={'autoUpload': True}); fk = Fake(page, OK_PLAN())
+    jset(page, 'ovryk.cloud.lastAttempt', {'at': iso(0), 'origin': 'auto', 'outcome': 'skipped', 'reason': 'x', 'sessionId': None, 'sessionsCompleted': 3, 'userId': 'u-1'})
+    finish(page)
+    check(fk.keys() == [POST, VERIFY], 'A7 un "non envoyé" récent ne compte pas dans le délai de 2 minutes : envoi fait')
     ctx.close()
 
     # A8 : verrou pris (liste en cours) : rien envoyé, noté
@@ -283,6 +289,58 @@ with sync_playwright() as p:
     page.click('#reset-app-btn'); page.wait_for_timeout(200); page.click('#confirm-modal-confirm'); page.wait_for_timeout(1500)
     left = [k for k in ls(page) if k.startswith('ovryk.cloud.')]
     check(not left, 'A12 Réinitialiser l\'app : plus aucune clé ovryk.cloud.* (%s)' % left)
+    ctx.close()
+
+    # A13 : un échec, puis une séance dans les 2 minutes : l'alerte de l'échec reste, le délai part de l'échec
+    ref = {'at': iso(1), 'id': 'x', 'fingerprint': '00000000', 'sessionsCompleted': 3, 'userId': 'u-1'}
+    ctx, page, errors = fresh(b, prefs={'autoUpload': True}, last_upload=ref); fk = Fake(page, {POST: [(500, '')]})
+    finish(page)
+    first = jget(page, 'ovryk.cloud.lastAttempt')
+    home(page)
+    check(first['outcome'] == 'failed' and 'échoué' in text(page, '#cloud-home-line'), 'A13 échec automatique : Accueil "%s"' % text(page, '#cloud-home-line'))
+    page.evaluate("() => { const s = JSON.parse(localStorage.getItem('ovryk.sessions')); const n = JSON.parse(JSON.stringify(s[0])); n.id = 's-live2'; n.status = 'in_progress'; delete n.completedAt; n.date = n.startedAt = new Date().toISOString(); s.push(n); localStorage.setItem('ovryk.sessions', JSON.stringify(s)); }")
+    page.reload(); page.wait_for_timeout(400); fk = Fake(page, OK_PLAN())
+    finish(page)
+    second = jget(page, 'ovryk.cloud.lastAttempt')
+    home(page)
+    check(not fk.calls and second == first, 'A13 deuxième séance dans les 2 minutes : rien envoyé, lastAttempt inchangé (échec et date gardés)')
+    check('échoué' in text(page, '#cloud-home-line'), 'A13 l\'Accueil signale toujours le problème : "%s"' % text(page, '#cloud-home-line'))
+    settings(page)
+    check('À renvoyer : 2 séances terminées' in text(page, '#cloud-pending'), 'A13 Réglages : "%s"' % text(page, '#cloud-pending'))
+    page.click('#cloud-upload-btn'); page.wait_for_timeout(900)
+    home(page)
+    check(jget(page, 'ovryk.cloud.lastAttempt')['outcome'] == 'ok' and not page.is_visible('#cloud-home-line'), 'A13 envoi manuel réussi : alerte levée')
+    ctx.close()
+
+    # A14 : aucun envoi de référence (absent, ou d'un autre compte) : l'Accueil ne reste pas muet, "À renvoyer" compte les séances du téléphone
+    for name, lu, att, expect_line, expect_pending in [
+            ('aucun lastUpload, échec', None, {'at': iso(1), 'origin': 'auto', 'outcome': 'failed', 'reason': 'Pas de connexion internet. Rien n’a été envoyé.'}, 'échoué', '3 séances terminées'),
+            ('aucun lastUpload, non confirmé', None, {'at': iso(1), 'origin': 'manual', 'outcome': 'unverified', 'reason': 'x'}, 'non confirmé', '3 séances terminées'),
+            ('aucun lastUpload, non envoyé', None, {'at': iso(1), 'origin': 'auto', 'outcome': 'skipped', 'reason': 'Non envoyé (x). À renvoyer.'}, 'non effectué', '3 séances terminées'),
+            ('lastUpload d\'un autre compte, échec', dict(ref, userId='u-9', sessionsCompleted=1), {'at': iso(1), 'origin': 'auto', 'outcome': 'failed', 'reason': 'x'}, 'échoué', '3 séances terminées'),
+            ('aucun lastUpload, dernier essai réussi', None, {'at': iso(1), 'origin': 'manual', 'outcome': 'ok', 'reason': ''}, '', ''),
+            ('aucun lastUpload, aucun essai', None, None, '', '')]:
+        ctx, page, errors = fresh(b, prefs={'autoUpload': True}, live=False, last_upload=lu, last_attempt=att); fk = Fake(page, {})
+        before = ls(page); home(page); line = text(page, '#cloud-home-line'); settings(page); pend = text(page, '#cloud-pending')
+        ok = (expect_line in line and expect_line != '' and expect_pending in pend) if expect_line else (not line and not pend)
+        check(ok and ls(page) == before and not fk.calls, 'A14 %s : Accueil "%s", Réglages "%s"' % (name, line, pend))
+        ctx.close()
+    ctx, page, errors = fresh(b, prefs={'autoUpload': True}); fk = Fake(page, {POST: [(500, '')]})
+    finish(page); settings(page)
+    check('À renvoyer : 4 séances terminées' in text(page, '#cloud-pending'), 'A14 de bout en bout (aucune référence, échec de la fin de séance) : "%s"' % text(page, '#cloud-pending'))
+    ctx.close()
+
+    # A15 : déconnecté après une session révoquée : Réglages explique l'échec hors de la zone connectée
+    ctx, page, errors = fresh(b, prefs={'autoUpload': True})
+    fk = Fake(page, {POST: [(401, {'code': 'PGRST301'})], REFRESH: [(400, {'error_code': 'refresh_token_already_used'})]})
+    finish(page, wait=1200)
+    home(page); line = text(page, '#cloud-home-line'); settings(page)
+    out = text(page, '#cloud-last-attempt-out')
+    check('échoué' in line and page.is_visible('#cloud-signin-form') and not page.is_visible('#cloud-connected') and 'Reconnecte-toi' in out and not page.is_visible('#cloud-last-attempt'),
+          'A15 déconnecté : Accueil "%s", Réglages "%s"' % (line, out[:80]))
+    ctx.close()
+    ctx, page, errors = fresh(b, session=False, live=False); Fake(page, {}); settings(page)
+    check(not page.is_visible('#cloud-last-attempt-out'), 'A15 déconnecté sans dernier essai : rien d\'affiché')
     ctx.close()
 
     b.close()

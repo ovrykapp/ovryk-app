@@ -470,4 +470,17 @@ Audit de c0b9104 et 9f186ff : verdict SÛR, aucun point bloquant. À traiter dan
 8. Le repère "Identique à ce téléphone" est absent juste après une restauration : les migrations et le rattrapage du catalogue au rechargement changent l'empreinte locale.
 9. Messages approximatifs : une ligne d'un autre compte donne "n'existe plus (remplacée par un envoi plus récent)", les refus de validateBackupFile parlent de "fichier", et "Dernier envoi réussi" n'est pas propre à chaque compte.
 
+### Points non corrigés de l'audit de la livraison 5 (2026-10-14)
+
+Audit de 992a6b7 et 326306f : verdict SÛR, aucun point bloquant. Les points 1 à 3 de l'audit (un "non envoyé" qui efface l'alerte d'un échec, "À renvoyer" à 0 sans envoi de référence, dernier essai invisible une fois déconnecté) sont corrigés dans le commit C (sw v135). Restent, pour le lot de nettoyage :
+
+1. Réinitialiser l'app pendant un envoi en cours : la requête est coupée au rechargement, son retour d'erreur recrée ovryk.cloud.lastAttempt (non confirmé, userId null) et l'Accueil d'une appli vierge affiche "dernier envoi non confirmé". Réinitialiser ne tient pas compte du verrou cloudBusy.
+2. Rechargement en plein envoi : l'état enregistré est honnête (non confirmé) mais le texte gardé parle de service injoignable, alors que c'est l'appli qui a été rechargée. Le cas "interrompu" n'apparaît que si le JavaScript ne tourne plus du tout.
+3. Verrou bloqué si une exception survient dans un callback réseau : le try de startCloudAttempt n'attrape que les erreurs synchrones, le catch de cloudRequest avale les autres (done vaut déjà true). cloudBusy reste vrai et l'essai reste "en cours" jusqu'au rechargement. Déjà vrai pour le bouton manuel, étendu à l'envoi automatique.
+4. Calcul lourd juste après la fin de séance : buildCloudBackupRow (sérialisation, empreinte, mesure en octets, jusqu'à 2 Mo) et plusieurs relectures des séances dans le setTimeout. Un court gel est possible sur un long historique. Non mesuré.
+5. Fenêtre de rotation plus courte : avec un envoi par séance, les 30 sauvegardes les plus récentes couvrent environ 30 séances (la plus complète reste toujours gardée).
+6. Écriture de liftBaseMode au deuxième démarrage d'une installation neuve (préexistante, commit 7b9a195, sans lien avec la livraison 5) : la clé ovryk.exercises change au deuxième lancement puis se stabilise.
+
+Test automatique de la livraison 5 : dossier-lots/tests/test_auto_upload.py (51 sur 51, Supabase simulé, données fabriquées).
+
 Test automatique de la livraison 4 : dossier-lots/tests/test_restore_cloud.py (47 sur 47, Supabase simulé, données fabriquées). Il prend en argument un dossier de travail et attend le site servi sur http://127.0.0.1:8765.
