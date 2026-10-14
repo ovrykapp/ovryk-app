@@ -2,7 +2,7 @@
 
 Taille : L. Dépend de : tous. Lot à risque (export, import, sauvegardes, écriture dans des données existantes).
 
-Statut : plan révisé le 2026-10-10, décisions de Ruben prises le 2026-10-10 (voir "Décisions prises"). Livraison 1 faite (sw v124), corrigée après quatre audits (sw v125 à v128). Livraison 2 (connexion) faite (sw v129). Livraison 3 (table backups et envoi manuel) codée (sw v130), script SQL à exécuter par Ruben ; livraisons 4 et 5 à faire.
+Statut : plan révisé le 2026-10-10, décisions de Ruben prises le 2026-10-10 (voir "Décisions prises"). Livraison 1 faite (sw v124), corrigée après quatre audits (sw v125 à v128). Livraison 2 (connexion) faite (sw v129). Livraison 3 (table backups et envoi manuel) faite (sw v130), script SQL à exécuter par Ruben. Livraison 4 (restauration depuis la sauvegarde en ligne) codée (sw v131 et v132), en attente d'audit ; livraison 5 à faire.
 
 ## Écrans de la maquette
 
@@ -421,3 +421,23 @@ R11 (pas de compte obligatoire).
     ```
     * Réponse correcte, c'est-à-dire un refus, pour les deux : 401 avec `"code":"42501"` (permission denied for table backups), ou 404 avec `"code":"PGRST205"` pour la première.
     * Échec de sécurité, à signaler : 200 (même avec `[]`) pour la première, 201 pour la seconde.
+* Livraison 4 codée le 2026-10-14 (sw v131 puis v132) : restauration depuis la sauvegarde en ligne. Plan approuvé le 2026-10-14 avec les décisions de Ruben.
+  * Numérotation : cette livraison 4 reprend la restauration prévue au point 5 de la section 10. La sauvegarde automatique après une séance (point 4 de la section 10) et la suppression des sauvegardes en ligne restent pour la livraison 5.
+  * Écart avec la section 10 : pas d'instantané "avant restauration" envoyé en ligne. Ruben a demandé une lecture seule côté serveur ; la copie IndexedDB de l'état actuel, prise avant tout remplacement, protège seule.
+  * Commit A (sw v131) : déplacement pur. Le code qui suit la lecture d'un fichier importé passe dans openRestoreFromParsed(parsed, nomSource), sans changement de comportement. Suites de la livraison 1 relancées, au vert.
+  * Commit B (sw v132) : restauration en ligne.
+    * Bouton "Restaurer depuis une sauvegarde en ligne", visible une fois connecté. Aucun appel au lancement ni à l'ouverture de Réglages.
+    * Liste au clic : `GET /rest/v1/backups?select=id,created_at,sessions_count,fingerprint,last_session:summary->>lastSessionAt&order=created_at.desc&limit=40`, sans payload. La clé lastSessionAt existe dans summary (summarizeOvrykData), donc dans toute ligne envoyée par l'app ; si elle est absente ou vide, la date de dernière séance n'est pas affichée.
+    * Chaque ligne : date d'envoi (created_at), séances terminées, date de la dernière séance, empreinte. Repères : "La plus complète" (même règle que la rotation), "Envoyée depuis cet appareil" (id de ovryk.cloud.lastUpload), "Identique à ce téléphone" (empreinte des données actuelles, calculée sans rien écrire). Les lignes mal formées sont ignorées. Tout est affiché en textContent.
+    * Choix d'une ligne : téléchargement du seul payload (`GET /rest/v1/backups?id=eq.<id>&select=payload,fingerprint,sessions_count`, délai 60 s).
+    * Contrôles avant tout, dans l'ordre :
+      1. une ligne exactement (aucune : "n'existe plus en ligne") ;
+      2. empreinte et nombre de séances égaux à ceux de la ligne choisie ;
+      3. payload JSON lisible ;
+      4. summary.checksum présent et égal à l'empreinte de la ligne ;
+      5. nombre de séances terminées recalculé sur les données égal à sessions_count (décision : refus sinon) ;
+      6. puis openRestoreFromParsed, exactement le chemin d'un fichier importé : validateBackupFile (qui recalcule l'empreinte sur les données), écran de comparaison, deuxième confirmation, copie IndexedDB, marque, annulation.
+    * getBackupBlocker n'est pas utilisé (décision) : il bloquerait la restauration sur un téléphone vide. Messages de validateBackupFile inchangés ("fichier"), précédés de "Restauration refusée :". Date de l'écran de comparaison : date d'export contenue dans la sauvegarde.
+    * Session : renouvellement si besoin, un seul rejeu après un 401. Session révoquée : effacée, liste retirée. À la déconnexion, la liste est vidée : celle d'un compte n'est jamais montrée pour un autre.
+    * Aucune écriture locale avant la deuxième confirmation, aucune écriture côté serveur, aucun changement SQL ni droit ajouté.
+  * Tests automatiques : test_restore_cloud.py, 47 sur 47, avec Supabase simulé et des données fabriquées dans le test (aucun vrai export, aucune vraie clé de session).

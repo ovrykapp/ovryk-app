@@ -1793,6 +1793,17 @@
   .cloud-message.is-error { color: var(--rust); font-weight: 700; }
   .cloud-connected .cloud-upload-btn { margin: 0 0 8px; }
   .cloud-last-upload { margin: 0 0 var(--space-3); font-size: 12px; color: var(--steel); }
+  /* lot 16, livraison 4 : liste des sauvegardes en ligne */
+  .cloud-connected .cloud-list-btn { width: 100%; min-height: 48px; margin: 0 0 var(--space-3); }
+  .cloud-backup-list { display: flex; flex-direction: column; gap: 8px; margin: 0 0 var(--space-3); }
+  .cloud-backup-list[hidden] { display: none; }
+  .cloud-backup-item { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; width: 100%; padding: 12px 14px; text-align: left; background: var(--field); color: var(--ink); border: 1px solid var(--border-card); border-radius: var(--radius); font: inherit; cursor: pointer; }
+  .cloud-backup-item:disabled { opacity: 0.5; cursor: default; }
+  .cloud-backup-date { font-size: 15px; font-weight: 700; }
+  .cloud-backup-meta { font-size: 13px; color: var(--steel); }
+  .cloud-backup-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+  .cloud-backup-tag { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: var(--radius-pill); border: 1px solid var(--border-outline); color: var(--ink); }
+  .cloud-backup-print { font-size: 11px; color: var(--steel); letter-spacing: 0.04em; }
   .restore-interrupted-error { margin: 8px 0 0; font-size: 13px; line-height: 1.45; color: var(--rust); font-weight: 700; }
   .restore-interrupted-error[hidden], .restore-interrupted-actions > button[hidden] { display: none; }
   .restore-interrupted-actions > button { flex: 1; min-height: 48px; }
@@ -4554,6 +4565,8 @@
             <p class="cloud-connected-text">Connecté : <span id="cloud-email-value"></span></p>
             <button type="button" id="cloud-upload-btn" class="btn-primary cloud-upload-btn">Envoyer une sauvegarde maintenant</button>
             <p class="cloud-last-upload" id="cloud-last-upload"></p>
+            <button type="button" id="cloud-list-btn" class="week-load-alert-btn-outline cloud-list-btn">Restaurer depuis une sauvegarde en ligne</button>
+            <div class="cloud-backup-list" id="cloud-backup-list" hidden></div>
             <div class="cloud-actions">
               <button type="button" id="cloud-verify-btn" class="week-load-alert-btn-plain">Vérifier la connexion</button>
               <button type="button" id="cloud-signout-btn" class="week-load-alert-btn-outline">Se déconnecter</button>
@@ -17405,9 +17418,11 @@
 
   function setCloudBusy(busy) {
     cloudBusy = busy;
-    ['cloud-signin-btn', 'cloud-verify-btn', 'cloud-signout-btn', 'cloud-upload-btn'].forEach(function (id) {
+    ['cloud-signin-btn', 'cloud-verify-btn', 'cloud-signout-btn', 'cloud-upload-btn', 'cloud-list-btn'].forEach(function (id) {
       document.getElementById(id).disabled = busy;
     });
+    /* lot 16, livraison 4 : lignes de la liste des sauvegardes en ligne */
+    Array.prototype.forEach.call(document.querySelectorAll('.cloud-backup-item'), function (el) { el.disabled = busy; });
   }
 
   /* état affiché à partir de la seule session enregistrée : aucun appel
@@ -17417,6 +17432,9 @@
     document.getElementById('cloud-signin-form').hidden = !!session;
     document.getElementById('cloud-connected').hidden = !session;
     document.getElementById('cloud-email-value').textContent = session && session.user && session.user.email ? session.user.email : 'compte enregistré';
+    /* lot 16, livraison 4 : plus de session, plus de liste (jamais celle
+       d'un compte affichée pour un autre) */
+    if (!session) clearCloudBackupList();
     /* lot 16, livraison 3 : dernier envoi vérifié, lu sans rien écrire */
     var last = readLastUpload();
     document.getElementById('cloud-last-upload').textContent = last
@@ -17677,6 +17695,176 @@
     });
     return null;
   }
+
+  /* ============================================================
+     RESTAURATION DEPUIS LA SAUVEGARDE EN LIGNE (lot 16, livraison 4).
+     Lecture seule côté serveur (GET /rest/v1/backups), au clic seulement.
+     * Liste sans payload : date d'envoi, séances, dernière séance,
+       empreinte. Le payload n'est téléchargé que pour la ligne choisie.
+     * Avant tout : une ligne exactement, empreinte et séances égales à la
+       ligne choisie, JSON lisible, summary.checksum présent et égal à
+       l'empreinte de la ligne, nombre de séances recalculé égal.
+     * Puis exactement le chemin d'un fichier importé (openRestoreFromParsed :
+       validateBackupFile, qui recalcule l'empreinte, écran de comparaison,
+       deuxième confirmation, copie IndexedDB, marque, annulation). Aucune
+       écriture locale avant la deuxième confirmation.
+     ============================================================ */
+  var CLOUD_BACKUP_LIST_PATH = '/rest/v1/backups?select=id,created_at,sessions_count,fingerprint,last_session:summary->>lastSessionAt&order=created_at.desc&limit=40';
+  var CLOUD_DOWNLOAD_TIMEOUT_MS = 60000;
+  var CLOUD_UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+  var CLOUD_FINGERPRINT_RE = /^[0-9a-f]{8}$/;
+  var CLOUD_KEEP_DATA = ' Tes données ne sont pas touchées.';
+
+  function clearCloudBackupList() {
+    var list = document.getElementById('cloud-backup-list');
+    list.innerHTML = '';
+    list.hidden = true;
+  }
+
+  /* message honnête pour une lecture en échec : rien n'a été écrit. */
+  function cloudRestoreErrorMessage(r) {
+    if (r.kind === 'offline') return 'Pas de connexion internet. Rien n’a été chargé.' + CLOUD_KEEP_DATA;
+    if (r.kind === 'network' || r.kind === 'timeout' || r.kind === 'unavailable' || r.kind === 'unreadable') {
+      return cloudErrorMessage(r, 'restore') + CLOUD_KEEP_DATA;
+    }
+    if (r.status === 404 || r.code === 'PGRST205' || r.code === '42P01') {
+      return 'La table de sauvegarde n’existe pas encore sur Supabase : le script SQL n’a pas été exécuté.' + CLOUD_KEEP_DATA;
+    }
+    if (r.status === 401) return 'Le serveur a refusé ta session. Reconnecte-toi.' + CLOUD_KEEP_DATA;
+    if (r.status === 403 || r.code === '42501') return 'Le serveur a refusé la lecture (droits). Vérifie le script SQL.' + CLOUD_KEEP_DATA;
+    return 'Le service de sauvegarde a refusé la demande (' + (r.code || ('erreur ' + r.status)) + ').' + CLOUD_KEEP_DATA;
+  }
+
+  /* lecture authentifiée : session renouvelée si besoin, un seul rejeu
+     après un 401. cb(errorMessage, data), errorMessage null si réussi. */
+  function cloudAuthedGet(path, timeoutMs, cb) {
+    function refreshFailed(err) {
+      if (err.kind === 'revoked') { cb('Ta session n’est plus valable. Reconnecte-toi.' + CLOUD_KEEP_DATA); return; }
+      if (err.kind === 'nosession') { cb('Tu n’es plus connecté.' + CLOUD_KEEP_DATA); return; }
+      cb(cloudErrorMessage(err, 'refresh') + ' Ta session est conservée.' + CLOUD_KEEP_DATA);
+    }
+    function ask(session, retried) {
+      cloudRequest('GET', path, null, session.access_token, function (r) {
+        if (r.ok) { cb(null, r.data); return; }
+        if (r.kind === 'refused' && r.status === 401 && !retried) {
+          getFreshAccessToken(true, function (err, fresh) { if (err) { refreshFailed(err); return; } ask(fresh, true); });
+          return;
+        }
+        cb(cloudRestoreErrorMessage(r));
+      }, null, timeoutMs);
+    }
+    getFreshAccessToken(false, function (err, session) { if (err) { refreshFailed(err); return; } ask(session, false); });
+  }
+
+  function isCloudBackupListRow(v) {
+    return isPlainObject(v) && typeof v.id === 'string' && CLOUD_UUID_RE.test(v.id) &&
+      typeof v.created_at === 'string' && typeof v.fingerprint === 'string' && CLOUD_FINGERPRINT_RE.test(v.fingerprint) &&
+      typeof v.sessions_count === 'number' && Math.floor(v.sessions_count) === v.sessions_count && v.sessions_count >= 0;
+  }
+
+  function cloudLoadBackupList() {
+    if (cloudBusy) return;
+    setCloudBusy(true);
+    setCloudMessage('Chargement des sauvegardes en ligne…', false);
+    cloudAuthedGet(CLOUD_BACKUP_LIST_PATH, null, function (error, data) {
+      setCloudBusy(false);
+      renderCloudSection();
+      if (error) { clearCloudBackupList(); setCloudMessage(error, true); return; }
+      if (!Array.isArray(data)) { clearCloudBackupList(); setCloudMessage('Réponse inattendue du service, rien n’a été chargé.' + CLOUD_KEEP_DATA, true); return; }
+      var rows = data.filter(isCloudBackupListRow);
+      if (!rows.length) { clearCloudBackupList(); setCloudMessage('Aucune sauvegarde en ligne pour ce compte.', false); return; }
+      renderCloudBackupList(rows);
+      setCloudMessage('Choisis la sauvegarde à restaurer. Rien ne sera remplacé sans ta confirmation.', false);
+    });
+  }
+
+  /* textContent seulement : rien du serveur n'est lu comme du HTML. */
+  function renderCloudBackupList(rows) {
+    var list = document.getElementById('cloud-backup-list');
+    list.innerHTML = '';
+    /* même règle que la rotation : plus grand nombre de séances, à
+       égalité la plus récente (la liste est triée de la plus récente). */
+    var completest = rows[0];
+    rows.forEach(function (r) { if (r.sessions_count > completest.sessions_count) completest = r; });
+    var last = readLastUpload();
+    var localPrint = collectAllOvrykData().summary.checksum;
+    rows.forEach(function (r) {
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'cloud-backup-item';
+      function line(cls, text) {
+        var el = document.createElement('span');
+        el.className = cls;
+        el.textContent = text;
+        btn.appendChild(el);
+        return el;
+      }
+      line('cloud-backup-date', 'Envoyée le ' + formatRestoreDate(r.created_at));
+      line('cloud-backup-meta', r.sessions_count + (r.sessions_count > 1 ? ' séances terminées' : ' séance terminée') +
+        (typeof r.last_session === 'string' && r.last_session ? ', dernière le ' + formatRestoreDay(r.last_session) : ''));
+      var tags = [];
+      if (r === completest) tags.push('La plus complète');
+      if (last && last.id === r.id) tags.push('Envoyée depuis cet appareil');
+      if (r.fingerprint === localPrint) tags.push('Identique à ce téléphone');
+      if (tags.length) {
+        var box = line('cloud-backup-tags', '');
+        tags.forEach(function (t) {
+          var tag = document.createElement('span');
+          tag.className = 'cloud-backup-tag';
+          tag.textContent = t;
+          box.appendChild(tag);
+        });
+      }
+      line('cloud-backup-print', 'Empreinte ' + r.fingerprint);
+      btn.addEventListener('click', function () { cloudDownloadBackup(r); });
+      list.appendChild(btn);
+    });
+    list.hidden = false;
+  }
+
+  /* contrôles du téléchargement, sans rien écrire : { error } ou { parsed }. */
+  function checkCloudBackupDownload(item, data) {
+    if (!Array.isArray(data) || data.length === 0) {
+      return { error: 'Cette sauvegarde n’existe plus en ligne (remplacée par un envoi plus récent). Recharge la liste.' };
+    }
+    var got = data.length === 1 && isPlainObject(data[0]) ? data[0] : null;
+    if (!got) return { error: 'Réponse inattendue du service. Rien n’a été restauré.' };
+    if (got.fingerprint !== item.fingerprint) return { error: 'Sauvegarde en ligne abîmée ou modifiée (empreinte différente). Rien n’a été restauré.' };
+    if (got.sessions_count !== item.sessions_count) return { error: 'Sauvegarde en ligne incohérente (nombre de séances différent). Rien n’a été restauré.' };
+    if (typeof got.payload !== 'string' || !got.payload.trim()) return { error: 'Sauvegarde en ligne illisible (abîmée). Rien n’a été restauré.' };
+    var parsed;
+    try { parsed = JSON.parse(got.payload); } catch (e) { return { error: 'Sauvegarde en ligne illisible (abîmée). Rien n’a été restauré.' }; }
+    /* empreinte exigée (validateBackupFile la tolère absente pour les
+       anciens fichiers) et égale à celle de la ligne ; validateBackupFile
+       la recalcule ensuite sur les données. */
+    if (!isPlainObject(parsed) || !isPlainObject(parsed.summary) || parsed.summary.checksum !== item.fingerprint) {
+      return { error: 'Sauvegarde en ligne abîmée ou modifiée (empreinte différente). Rien n’a été restauré.' };
+    }
+    if (isPlainObject(parsed.data) && Array.isArray(parsed.data.sessions) &&
+        summarizeOvrykData(parsed.data).sessionsCompleted !== item.sessions_count) {
+      return { error: 'Sauvegarde en ligne incohérente (nombre de séances différent). Rien n’a été restauré.' };
+    }
+    return { parsed: parsed };
+  }
+
+  function cloudDownloadBackup(item) {
+    if (cloudBusy) return;
+    setCloudBusy(true);
+    setCloudMessage('Téléchargement de la sauvegarde…', false);
+    cloudAuthedGet('/rest/v1/backups?id=eq.' + item.id + '&select=payload,fingerprint,sessions_count', CLOUD_DOWNLOAD_TIMEOUT_MS, function (error, data) {
+      setCloudBusy(false);
+      renderCloudSection();
+      if (error) { setCloudMessage(error, true); return; }
+      var checked = checkCloudBackupDownload(item, data);
+      if (checked.error) { setCloudMessage(checked.error + CLOUD_KEEP_DATA, true); return; }
+      /* exactement le chemin d'un fichier importé */
+      var refusal = openRestoreFromParsed(checked.parsed, 'Sauvegarde en ligne');
+      if (refusal) { setCloudMessage('Restauration refusée : ' + refusal + CLOUD_KEEP_DATA, true); return; }
+      setCloudMessage('', false);
+    });
+  }
+
+  document.getElementById('cloud-list-btn').addEventListener('click', cloudLoadBackupList);
 
   document.getElementById('dashboard-import-btn').addEventListener('click', function () {
     document.getElementById('dashboard-import-input').click();
