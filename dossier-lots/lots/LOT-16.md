@@ -2,7 +2,7 @@
 
 Taille : L. Dépend de : tous. Lot à risque (export, import, sauvegardes, écriture dans des données existantes).
 
-Statut : plan révisé le 2026-10-10, décisions de Ruben prises le 2026-10-10 (voir "Décisions prises"). Livraison 1 faite (sw v124), corrigée après quatre audits (sw v125 à v128). Livraison 2 (connexion) faite (sw v129). Livraison 3 (table backups et envoi manuel) faite (sw v130), script SQL à exécuter par Ruben. Livraison 4 (restauration depuis la sauvegarde en ligne) faite (sw v131 et v132, auditée, poussée avec le tag v132-stable). Livraison 5 (envoi automatique après chaque séance) faite (sw v133 à v135, auditée, poussée avec le tag v135-stable). Lot de nettoyage (plan du 2026-10-15) : livraisons 1 (sw v136) et 2 (sw v137) faites et auditées (livraison 1 SÛRE ; livraison 2 NON SÛRE pour un point bloquant conditionnel, corrigé par le commit D, sw v138), en attente de push.
+Statut : plan révisé le 2026-10-10, décisions de Ruben prises le 2026-10-10 (voir "Décisions prises"). Livraison 1 faite (sw v124), corrigée après quatre audits (sw v125 à v128). Livraison 2 (connexion) faite (sw v129). Livraison 3 (table backups et envoi manuel) faite (sw v130), script SQL à exécuter par Ruben. Livraison 4 (restauration depuis la sauvegarde en ligne) faite (sw v131 et v132, auditée, poussée avec le tag v132-stable). Livraison 5 (envoi automatique après chaque séance) faite (sw v133 à v135, auditée, poussée avec le tag v135-stable). Lot de nettoyage (plan du 2026-10-15) : livraisons 1 (sw v136) et 2 (sw v137) faites et auditées (livraison 1 SÛRE ; livraison 2 NON SÛRE pour un point bloquant conditionnel, corrigé par le commit D, sw v138). Mise à jour du 2026-10-16 : lot TERMINÉ et POUSSÉ, tag v138-stable (main = origin/main = v142-stable) ; ancienne mention périmée : « en attente de push ».
 
 ## Écrans de la maquette
 
@@ -500,20 +500,7 @@ Audit de c0b9104 et 9f186ff : verdict SÛR, aucun point bloquant. À traiter dan
   * La suppression de la copie après l'échec de la marque n'a pas de délai maximal (openRestoreDb sans délai ni onblocked) : si IndexedDB ne répond plus à ce moment, failRestore n'est jamais appelé et l'écran reste bloqué jusqu'au rechargement. Même schéma que la branche existante après un retour arrière réussi.
   * Réinitialiser reste refusé tant que cloudBusy est bloqué (après une exception dans un callback réseau, défaut déjà connu et abandonné) : le message dit "attends" sans parler de recharger.
 
-## À planifier
-
-* Reconstituer une suite de tests de la restauration locale. Les suites test_l16* (livraison 1 du lot 16 et ses corrections) n'ont jamais été commitées et sont perdues avec le dossier temporaire d'une ancienne session. Plus aucune suite ne couvre :
-  * le refus des 17 variantes de fichiers qui feraient planter le démarrage (getBackupCrashError) ;
-  * le retour arrière après une écriture partielle (stockage plein pendant le remplacement) ;
-  * l'abandon après 10 s si IndexedDB ne répond pas ;
-  * le retour complet à la copie depuis le bandeau de restauration interrompue ;
-  * les libellés "Annuler" et "Rétablir" ;
-  * la suppression de la base de copies et des copies quotidiennes par Réinitialiser, ainsi que le cas d'une base bloquée ;
-  * l'export refusé quand une clé est illisible ;
-  * le partage et la protection du stockage.
-  Restent couverts : l'import et la restauration d'un fichier (test_auto_upload A12), la restauration en ligne complète (test_restore_cloud R4) et test_cleanup. La suite à reconstituer doit être commitée, avec des données fabriquées.
-
-### Points non corrigés de l'audit de la livraison 5 (2026-10-14)
+## Points non corrigés de l'audit de la livraison 5 (2026-10-14)
 
 Audit de 992a6b7 et 326306f : verdict SÛR, aucun point bloquant. Les points 1 à 3 de l'audit (un "non envoyé" qui efface l'alerte d'un échec, "À renvoyer" à 0 sans envoi de référence, dernier essai invisible une fois déconnecté) sont corrigés dans le commit C (sw v135). État au 2026-10-15 :
 
@@ -527,3 +514,16 @@ Audit de 992a6b7 et 326306f : verdict SÛR, aucun point bloquant. Les points 1 �
 Test automatique de la livraison 5 : dossier-lots/tests/test_auto_upload.py (51 sur 51 à la livraison, 59 sur 59 après le nettoyage, Supabase simulé, données fabriquées).
 
 Test automatique de la livraison 4 : dossier-lots/tests/test_restore_cloud.py (47 sur 47 à la livraison, 52 sur 52 après le nettoyage, Supabase simulé, données fabriquées). Il prend en argument un dossier de travail et attend le site servi sur http://127.0.0.1:8765.
+
+## À planifier
+
+* Reconstituer une suite de tests de la restauration locale. Les suites test_l16* (livraison 1 du lot 16 et ses corrections) n'ont jamais été commitées et sont perdues avec le dossier temporaire d'une ancienne session. Plus aucune suite ne couvre :
+  * le refus des 17 variantes de fichiers qui feraient planter le démarrage (getBackupCrashError) ;
+  * le retour arrière après une écriture partielle (stockage plein pendant le remplacement) ;
+  * l'abandon après 10 s si IndexedDB ne répond pas ;
+  * le retour complet à la copie depuis le bandeau de restauration interrompue ;
+  * les libellés "Annuler" et "Rétablir" ;
+  * la suppression de la base de copies et des copies quotidiennes par Réinitialiser, ainsi que le cas d'une base bloquée ;
+  * l'export refusé quand une clé est illisible ;
+  * le partage et la protection du stockage.
+  Restent couverts : l'import et la restauration d'un fichier (test_auto_upload A12), la restauration en ligne complète (test_restore_cloud R4) et test_cleanup. La suite à reconstituer doit être commitée, avec des données fabriquées.

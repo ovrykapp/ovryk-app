@@ -1,5 +1,7 @@
 # LOT 15. Import de données
 
+Statut : ABANDONNÉ (décision de Ruben, 2026-10-16) : il n'a pas d'historique à importer. Le contenu ci-dessous est conservé tel quel.
+
 Taille : M. Dépend de : 14.
 
 ## Écrans de la maquette

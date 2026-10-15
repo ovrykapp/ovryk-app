@@ -1,5 +1,7 @@
 # LOT 18. Choix de la salle (Indé / On Air) et équivalents d'exercices
 
+Statut (2026-10-16) : TERMINÉ, audité par Opus (verdict SÛR, aucun bloquant), POUSSÉ, tag v142-stable ; les six décisions prises pendant le lot sont validées par Ruben ; reste sa validation iPhone. Les mentions « en local, non poussée » plus bas sont périmées (poussé avec v142-stable).
+
 Taille : M. Dépend de : 09, 10, 13, 17. Lot à risque (construction des séances, séance en cours, double progression) : un seul plan, approuvé le 2026-10-15. Conditions de Ruben : pas d'enchaînement, rapport et arrêt après chaque livraison ; rien n'est poussé avant la fin de la livraison 3, un audit Opus en lecture seule des 3 commits et les tests manuels. La livraison 2 n'est jamais poussée seule.
 
 ## Objectif
@@ -45,13 +47,13 @@ Ruben s'entraîne dans une salle indépendante, où il manque des machines, et �
 
 ## Avancement
 
-* Livraison 1 faite le 2026-10-15 (sw v139), en local, non poussée.
+* Livraison 1 faite le 2026-10-15 (sw v139), en local, non poussée (périmé : poussée avec v142-stable).
   * Fiche exercice (renderExerciseDetailFicheExtra) : ligne "Équivalent en salle indé · nom" (ou "Aucun", ou "Équivalent introuvable"), absente pour un mouvement (Lifting). La fiche de la cible indique "Fait en salle indé à la place de : …".
   * Écran exercise-equiv-page : recherche (normalizeSearch existante), "Aucun équivalent" en tête, choix non disponibles grisés avec leur raison, sélection en orange. Rien n'est écrit avant "Enregistrer" ; "Aucun" sur un exercice qui n'a jamais eu d'équivalent n'écrit rien.
   * OvrykDB.updateExerciseGymEquivalent : n'écrit que l'exercice concerné. Fonctions getGymEquivalent, getGymEquivalentSources, getGymEquivalentError.
   * Aucune séance n'est modifiée : une routine se lance toujours avec l'exercice d'origine, sans salle.
   * Tests : dossier-lots/tests/test_gym.py (19 contrôles, données fabriquées).
-* Livraison 2a faite le 2026-10-15 (sw v140), en local, non poussée.
+* Livraison 2a faite le 2026-10-15 (sw v140), en local, non poussée (périmé : poussée avec v142-stable).
   * Salles : constantes GYMS (Indé, On Air) ; dernière salle utilisée déduite de la séance la plus récente qui a un champ gym (getLastUsedGym), On Air par défaut ; aucune clé, aucune écriture au lancement.
   * Écran de départ : pilule (buildGymSwitch, role="switch", aria-label "Salle", texte invisible "Salle actuelle : …"), choix en mémoire jusqu'au lancement (seanceStartGym), "N remplacé(s) en indé" sur chaque ligne de routine. Une bascule n'écrit rien.
   * buildSessionFromRoutine(routine, gym) : session.gym enregistré ; en salle indé, une ligne dont l'exercice a un équivalent (jamais un mouvement de cycle) est construite avec l'équivalent, replacesExerciseId = l'exercice de la routine. Lancements de l'Accueil ("Commencer la séance"), du Programme ("Démarrer") et "Refaire cette séance" : dernière salle utilisée. Séance vide : salle enregistrée, aucun remplacement.
@@ -62,7 +64,7 @@ Ruben s'entraîne dans une salle indépendante, où il manque des machines, et �
   * smoke.py : le contrôle "une séance vide démarre" cliquait sur le premier bouton de l'onglet Séance, devenu la pilule ; il vise maintenant #seance-start-empty-btn.
   * Observé (test G17, retour en salle indé après 10 semaines à On Air) : la carte de l'équivalent repart de sa dernière séance dans la routine (charges, plage, cible de reps de la double progression), sans tenir compte du temps écoulé. La suggestion de baisse (deux dernières séances sous la plage) et la stagnation (trois dernières séances sans progrès) ne regardent que les séances de l'équivalent, quelle que soit leur ancienneté : elles s'affichent encore après 10 semaines si les dernières séances de l'équivalent les déclenchaient.
   * Tests : test_gym.py, 39 contrôles (G10 à G18 ajoutés, G7 adapté : la séance porte maintenant sa salle).
-* Livraison 2b faite le 2026-10-15 (sw v141), en local, non poussée.
+* Livraison 2b faite le 2026-10-15 (sw v141), en local, non poussée (périmé : poussée avec v142-stable).
   * findSexForSlot(session, exerciseId, replacesId) : une carte se reconnaît par exerciseId plus replacesExerciseId ; sans replacesId, la première carte sans replacesExerciseId (dans une séance sans carte remplacée : la même que findExerciseInSession).
   * Double progression (buildSessionFromRoutine) : pour un exercice concerné par un équivalent, dernière séance de la routine qui contient ce créneau (getLastCompletedRoutineSessionWithSlot), carte de ce créneau. Exercices non concernés : inchangés (findExerciseInSession sur la dernière séance de la routine).
   * Carte remplacée sans reprise possible : structure du créneau, charges de getReplacementStartWeight (créneau, sinon carte normale de l'équivalent dans la routine), sinon vides. Une série se valide normalement avec un poids saisi.
@@ -72,7 +74,7 @@ Ruben s'entraîne dans une salle indépendante, où il manque des machines, et �
   * Tests modifiés : G11 (charges vides au lieu des charges de l'exercice d'origine, décision du 2026-10-15).
   * Tests : test_gym.py, 53 contrôles. G19 charges vides et validation avec un poids saisi, exercice non concerné inchangé ; G20 prévisionnel de la charge de la semaine en Indé et en On Air ; G21 doublon (deux cartes distinctes, progression par carte sur deux séances, comparateur et suggestion par carte, enregistrement sans écrasement, une ligne d'historique par séance, record compté une fois) ; G22 comparaison avec c81f6fe : enregistrements, compteur, comparateur et suggestion identiques sur des séances sans carte remplacée (dont le même exercice deux fois), seule la séance avec une carte remplacée est fusionnée.
 
-* Livraison 3 faite le 2026-10-15 (sw v142), en local, non poussée.
+* Livraison 3 faite le 2026-10-15 (sw v142), en local, non poussée (périmé : poussée avec v142-stable).
   * Pilule de salle en tête de la séance en cours (même composant et même style que l'écran de départ), avec "Salle : …" toujours dans la barre du haut. Aucune pilule pour une séance sans salle (créée avant ce lot).
   * Verrou : calculé à chaque rendu (isSessionGymLocked), dès qu'au moins une série de la séance est validée. Pilule non cliquable (aria-disabled), atténuée, texte "Salle fixée après la première série.". Dé-valider la dernière série validée déverrouille la pilule (comportement voulu : rien n'est encore fait dans la séance).
   * Changement de salle : buildGymSwitchedExercises construit la nouvelle liste de cartes sans rien modifier, puis switchActiveSessionGym assigne la liste et la salle et écrit une seule fois (persistActiveSession). En cas d'exception pendant la construction : séance intacte en mémoire et en stockage, aucune écriture, message "Changement de salle impossible (la routine de cette séance n'a pas pu être relue). La séance n'a pas été modifiée."
@@ -81,7 +83,7 @@ Ruben s'entraîne dans une salle indépendante, où il manque des machines, et �
   * Perte assumée : poids ou reps saisis à la main sur une carte échangée, sans série validée, sont perdus ; revenir à la salle d'avant reconstruit la carte depuis l'historique ou la routine. Seul effet de bord constaté par les tests (notes, autres cartes, ordre, supersets, minuteur de repos inchangés).
   * Tests : test_gym.py, 69 contrôles (G23 à G31 ajoutés ; aucun test existant modifié par cette livraison).
 
-## Décisions prises sans Ruben pendant le lot (à valider à l'audit)
+## Décisions prises pendant le lot, validées par Ruben (2026-10-16)
 
 * Séance fusionnée (doublon avec une carte remplacée) marquée allégée dès qu'une de ses cartes l'est : elle sort alors de la stagnation, comme toute séance allégée.
 * Comparateur "Précédent" vide pour une carte remplacée jamais faite dans ce créneau, même si l'équivalent a déjà été fait en carte normale (les charges de départ, elles, se rabattent sur la carte normale).
