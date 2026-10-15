@@ -253,13 +253,13 @@ with sync_playwright() as p:
     other = copy.deepcopy(ENV); other['summary']['checksum'] = 'abcdef12'
     untouched_after_failure(b, 'R5 empreinte du payload différente de la ligne', (200, dl_body(ENV, payload=js_stringify(other))), 'empreinte différente')
     modified = copy.deepcopy(ENV); modified['data']['exercises'][0]['name'] = 'modifie'
-    untouched_after_failure(b, 'R5 données modifiées (empreinte recalculée par validateBackupFile)', (200, dl_body(ENV, payload=js_stringify(modified))), 'Restauration refusée : fichier abîmé ou modifié')
+    untouched_after_failure(b, 'R5 données modifiées (empreinte recalculée par validateBackupFile)', (200, dl_body(ENV, payload=js_stringify(modified))), 'Restauration refusée (sauvegarde en ligne contrôlée comme un fichier d’export) : fichier abîmé ou modifié')
     fewer = copy.deepcopy(ENV); fewer['data']['sessions'] = fewer['data']['sessions'][:1]
     untouched_after_failure(b, 'R5 séances du payload différentes (empreinte de la ligne recopiée)', (200, dl_body(ENV, payload=js_stringify(fewer))), 'nombre de séances différent')
     newer_data = copy.deepcopy(INCOMING); newer_data['meta']['schemaVersion'] = 9; newer = envelope(newer_data)
     ctx, page, errors, fk = setup(b, {LIST: [(200, [row(ID1, newer)])], dl_key(ID1): [(200, dl_body(newer))]})
     load_list(page); before = ls(page); items(page).nth(0).click(); page.wait_for_timeout(800)
-    check('Restauration refusée : sauvegarde faite par une version plus récente' in msg(page) and not restore_open(page) and ls(page) == before,
+    check('Restauration refusée (sauvegarde en ligne contrôlée comme un fichier d’export) : sauvegarde faite par une version plus récente' in msg(page) and not restore_open(page) and ls(page) == before,
           'R5 schéma plus récent (empreinte valide) : refus de validateBackupFile, message "fichier" inchangé')
     ctx.close()
     untouched_after_failure(b, 'R5 téléchargement 503', (503, ''), 'indisponible')
@@ -326,6 +326,32 @@ with sync_playwright() as p:
     load_list(page); items(page).nth(0).click(); page.wait_for_timeout(2000)
     check(restore_open(page) and not errors, 'R10 payload d\'environ 2 Mo : écran de restauration ouvert')
     ctx.close()
+
+    # R11 (nettoyage lot 16) : réponse tardive du téléchargement ignorée si le compte a changé, si Réglages a été quitté
+    # ou si un écran de restauration est déjà ouvert (fichier importé entre temps). Témoin : réponse à temps, écran ouvert.
+    OTHER = envelope(dataset('d', 1, 20)); other_path = F / 'fab-autre.json'; other_path.write_text(json.dumps(OTHER))
+    def late(name, during, expect_msg, keep_restore_text=False):
+        ctx, page, errors, fk = setup(b, {LIST: [(200, STD_LIST)]})
+        held = []
+        page.route(re.compile(r'https://[^/]*\.supabase\.co/rest/v1/backups\?id=eq\..*'), lambda route, request: held.append(route))
+        load_list(page); before = data(page)
+        items(page).nth(0).click(); page.wait_for_timeout(400)
+        during(page)
+        shown = page.inner_text('#restore-page') if restore_open(page) else None
+        held[0].fulfill(status=200, body=json.dumps(dl_body(ENV)), headers={'content-type': 'application/json'}); page.wait_for_timeout(600)
+        after_shown = page.inner_text('#restore-page') if restore_open(page) else None
+        if not restore_open(page) and not page.is_visible('#cloud-message'): settings(page)
+        m = page.inner_text('#cloud-message') if restore_open(page) else msg(page)
+        ok_screen = (after_shown == shown and shown is not None) if keep_restore_text else (after_shown is None)
+        ok = (expect_msg in m and ok_screen and data(page) == before and not errors) if expect_msg else (after_shown is not None and 'Sauvegarde en ligne' in after_shown)
+        check(ok, 'R11 %s : message "%s"' % (name, m[:100]))
+        ctx.close()
+    late('témoin, réponse à temps', lambda page: None, None)
+    late('fichier importé pendant le téléchargement', lambda page: (page.set_input_files('#dashboard-import-input', str(other_path)), page.wait_for_timeout(500)),
+         'un autre écran a été ouvert', keep_restore_text=True)
+    late('Réglages quitté pendant le téléchargement', lambda page: (page.click('.nav-btn[data-target="seance"]'), page.wait_for_timeout(200)), 'un autre écran a été ouvert')
+    late('autre compte pendant le téléchargement', lambda page: put_session(page, user='u-2', email='deux@exemple.test'), 'la connexion a changé')
+    late('déconnecté dans une autre fenêtre', lambda page: page.evaluate("() => localStorage.removeItem('ovryk.cloud.auth')"), 'la connexion a changé')
 
     b.close()
 print('\n%d/%d' % (sum(res), len(res)))

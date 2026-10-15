@@ -16682,18 +16682,21 @@
      illisible. Une clé présente mais illisible serait lue comme vide par
      OvrykDB (readJSON) et l'export sortirait incomplet sans le dire.
      Renvoie un message, ou null. */
-  function getBackupBlocker(payload) {
+  /* nothingDone : fin des messages ("Rien n’a été exporté." par défaut,
+     "Rien n’a été envoyé." pour l'envoi en ligne). */
+  function getBackupBlocker(payload, nothingDone) {
+    nothingDone = nothingDone || 'Rien n’a été exporté.';
     var keys = Object.keys(BACKUP_KEY_LABELS);
     for (var i = 0; i < keys.length; i++) {
       var rawValue = localStorage.getItem(keys[i]);
       if (rawValue === null) continue;
       try { JSON.parse(rawValue); } catch (e) {
-        return 'les ' + BACKUP_KEY_LABELS[keys[i]] + ' de cet appareil sont illisibles. Rien n’a été exporté.';
+        return 'les ' + BACKUP_KEY_LABELS[keys[i]] + ' de cet appareil sont illisibles. ' + nothingDone;
       }
     }
     var err = getBackupShapeError(payload.data);
     if (err === 'vide') return 'rien à sauvegarder, cet appareil ne contient aucune donnée.';
-    if (err) return 'données de cet appareil illisibles (' + err + '). Rien n’a été exporté.';
+    if (err) return 'données de cet appareil illisibles (' + err + '). ' + nothingDone;
     return null;
   }
 
@@ -17593,7 +17596,7 @@
   /* ligne à envoyer, ou { error } sans aucun appel réseau. */
   function buildCloudBackupRow() {
     var envelope = collectAllOvrykData();
-    var blocker = getBackupBlocker(envelope);
+    var blocker = getBackupBlocker(envelope, 'Rien n’a été envoyé.');
     if (blocker) return { error: 'Envoi impossible : ' + blocker };
     var text = JSON.stringify(envelope);
     var bytes = utf8ByteLength(text);
@@ -17936,6 +17939,11 @@
         : st.attempt.outcome === 'unverified' ? 'Sauvegarde en ligne : dernier envoi non confirmé. Voir Réglages.'
         : st.attempt.outcome === 'skipped' ? 'Sauvegarde en ligne : dernier envoi non effectué. Voir Réglages.'
         : 'Sauvegarde en ligne : dernier envoi échoué. Voir Réglages.';
+    } else if (st.pending > 0 && isAutoUploadOn() && !cloudAttemptInFlight) {
+      /* nettoyage lot 16 : l'envoi automatique est actif mais des séances
+         ne sont pas en ligne (par exemple "non envoyé" juste après un envoi
+         réussi) : ne jamais laisser croire que tout est sauvegardé. */
+      text = 'Sauvegarde en ligne : ' + cloudSessionsLabel(st.pending) + ' pas encore en ligne. Voir Réglages.';
     } else if (st.stale) {
       text = 'Sauvegarde en ligne : ' + cloudSessionsLabel(st.pending) + ' pas encore en ligne depuis plus de 7 jours. Voir Réglages.';
     }
@@ -18136,19 +18144,40 @@
     return { parsed: parsed };
   }
 
+  function cloudSessionUserKey() {
+    var s = readCloudSession();
+    if (!s) return null;
+    return s.user && (s.user.id || s.user.email) ? String(s.user.id || s.user.email) : 'compte enregistré';
+  }
+
   function cloudDownloadBackup(item) {
     if (cloudBusy) return;
+    /* nettoyage lot 16 : compte de départ, comparé à l'arrivée de la
+       réponse (un renouvellement de jeton ne change pas le compte). */
+    var startUser = cloudSessionUserKey();
     setCloudBusy(true);
     setCloudMessage('Téléchargement de la sauvegarde…', false);
     cloudAuthedGet('/rest/v1/backups?id=eq.' + item.id + '&select=payload,fingerprint,sessions_count', CLOUD_DOWNLOAD_TIMEOUT_MS, function (error, data) {
       setCloudBusy(false);
       renderCloudSection();
       if (error) { setCloudMessage(error, true); return; }
+      /* nettoyage lot 16 : réponse arrivée trop tard pour être montrée sans
+         risque (compte changé, Réglages quitté, ou écran de restauration
+         déjà ouvert, par exemple pour un fichier importé entre temps). */
+      if (cloudSessionUserKey() !== startUser) {
+        setCloudMessage('Téléchargement ignoré : la connexion a changé pendant le téléchargement. Rien n’a été restauré.' + CLOUD_KEEP_DATA, true);
+        return;
+      }
+      var activeViewEl = document.querySelector('.view-active');
+      if (!document.getElementById('restore-page').hidden || !activeViewEl || activeViewEl.dataset.view !== 'profil') {
+        setCloudMessage('Téléchargement ignoré : un autre écran a été ouvert pendant le téléchargement. Rien n’a été restauré. Recommence depuis la liste.' + CLOUD_KEEP_DATA, true);
+        return;
+      }
       var checked = checkCloudBackupDownload(item, data);
       if (checked.error) { setCloudMessage(checked.error + CLOUD_KEEP_DATA, true); return; }
       /* exactement le chemin d'un fichier importé */
       var refusal = openRestoreFromParsed(checked.parsed, 'Sauvegarde en ligne');
-      if (refusal) { setCloudMessage('Restauration refusée : ' + refusal + CLOUD_KEEP_DATA, true); return; }
+      if (refusal) { setCloudMessage('Restauration refusée (sauvegarde en ligne contrôlée comme un fichier d’export) : ' + refusal + CLOUD_KEEP_DATA, true); return; }
       setCloudMessage('', false);
     });
   }
@@ -18245,10 +18274,16 @@
     window.location.reload();
   }
 
+  /* nettoyage lot 16 : pas de réinitialisation pendant une opération en
+     ligne (son retour recréerait ovryk.cloud.lastAttempt après l'effacement). */
+  var RESET_CLOUD_BUSY_MESSAGE = 'Une opération de sauvegarde en ligne est en cours. Attends qu’elle se termine, puis réessaie. Rien n’a été supprimé.';
+
   document.getElementById('reset-app-btn').addEventListener('click', function () {
+    if (cloudBusy) { showDataIOStatus(RESET_CLOUD_BUSY_MESSAGE, true); return; }
     showConfirmModal(
       "Réinitialiser l'app ? Toutes tes données (exercices, routines, séances, réglages, cycles de force) et les copies de sécurité de ce téléphone seront supprimées définitivement, et tu seras déconnecté de la sauvegarde en ligne. Cette action est irréversible.",
       function () {
+        if (cloudBusy) { showDataIOStatus(RESET_CLOUD_BUSY_MESSAGE, true); return; }
         showDataIOStatus('Suppression en cours…', false);
         deleteRestoreDb(function (err) {
           if (!err) { wipeAppDataAndReload(); return; }
@@ -18257,7 +18292,7 @@
              reste en attente dans le navigateur et aboutira à la fermeture
              de cette fenêtre, même si l’utilisateur annule ici. */
           var maybeBlocked = err.message === 'pas de réponse';
-          var laterNote = ' Si une autre fenêtre de l’app est ouverte, ces copies pourront être effacées plus tard, quand cette fenêtre se fermera, même si tu annules.';
+          var laterNote = ' Si une autre fenêtre de l’app est ouverte, ou si le stockage du navigateur est resté bloqué, ces copies pourront être effacées plus tard (à la fermeture de cette fenêtre ou de l’app), même si tu annules.';
           showDataIOStatus('Réinitialisation suspendue : les copies de sécurité n’ont pas pu être effacées. Rien n’a été supprimé.', true);
           showConfirmModal(
             'Les copies de sécurité de ce téléphone n’ont pas pu être effacées (' + (err.message || err) + '). Rien n’a encore été supprimé. Réinitialiser quand même ? Tes données seront supprimées, mais ces copies resteront sur le téléphone.' + (maybeBlocked ? laterNote : ''),

@@ -63,6 +63,7 @@ class Fake:
         route.fulfill(status=st, body=body if isinstance(body, str) else json.dumps(body), headers={'content-type': 'application/json'})
     def keys(self): return [c['key'] for c in self.calls]
 
+ADD_LIVE = "() => { const s = JSON.parse(localStorage.getItem('ovryk.sessions')); const n = JSON.parse(JSON.stringify(s[0])); n.id = 's-live' + s.length; n.status = 'in_progress'; delete n.completedAt; n.date = n.startedAt = new Date().toISOString(); s.push(n); localStorage.setItem('ovryk.sessions', JSON.stringify(s)); }"
 OK_PLAN = lambda: {POST: [(201, '')], VERIFY: [(200, 'echo')]}
 
 def ls(page): return page.evaluate("() => { const o = {}; for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); o[k] = localStorage.getItem(k); } return o; }")
@@ -217,10 +218,15 @@ with sync_playwright() as p:
     check(not fk.calls and att['outcome'] == 'ok' and statuses(page).get('s-live') == 'completed',
           'A7 envoi automatique récent : rien envoyé, le dernier essai réel (ok) n\'est pas écrasé par un "non envoyé"')
     ctx.close()
-    ctx, page, errors = fresh(b, prefs={'autoUpload': True}); fk = Fake(page, OK_PLAN())
-    jset(page, 'ovryk.cloud.lastAttempt', {'at': iso(0), 'origin': 'auto', 'outcome': 'skipped', 'reason': 'x', 'sessionId': None, 'sessionsCompleted': 3, 'userId': 'u-1'})
+    # A7b : le délai part du dernier vrai essai, même après un "non envoyé" puis un rechargement (mémoire perdue)
+    at90 = (datetime.now(timezone.utc) - timedelta(seconds=90)).strftime('%Y-%m-%dT%H:%M:%S.000Z')
+    ctx, page, errors = fresh(b, prefs={'autoUpload': True}, last_attempt={'at': at90, 'origin': 'auto', 'outcome': 'ok', 'reason': ''})
+    fk = Fake(page, OK_PLAN())
     finish(page)
-    check(fk.keys() == [POST, VERIFY], 'A7 un "non envoyé" récent ne compte pas dans le délai de 2 minutes : envoi fait')
+    page.evaluate(ADD_LIVE); page.reload(); page.wait_for_timeout(400); fk2 = Fake(page, OK_PLAN())
+    finish(page)
+    check(not fk.calls and not fk2.calls and jget(page, 'ovryk.cloud.lastAttempt')['at'] == at90,
+          'A7b "non envoyé" puis rechargement, toujours dans les 2 minutes du dernier vrai essai : rien envoyé, essai réel gardé')
     ctx.close()
 
     # A8 : verrou pris (liste en cours) : rien envoyé, noté
@@ -341,6 +347,41 @@ with sync_playwright() as p:
     ctx.close()
     ctx, page, errors = fresh(b, session=False, live=False); Fake(page, {}); settings(page)
     check(not page.is_visible('#cloud-last-attempt-out'), 'A15 déconnecté sans dernier essai : rien d\'affiché')
+    ctx.close()
+
+    # A16 (nettoyage lot 16) : envoi réussi puis séance "non envoyée" : l'Accueil signale les séances pas encore en ligne
+    ctx, page, errors = fresh(b, prefs={'autoUpload': True}); fk = Fake(page, {POST: [('hang', None)]})
+    finish(page, wait=400); home(page)
+    check(not page.is_visible('#cloud-home-line'), 'A16 envoi en cours : aucune ligne sur l\'Accueil')
+    ctx.close()
+    ctx, page, errors = fresh(b, prefs={'autoUpload': True}); fk = Fake(page, OK_PLAN())
+    finish(page); home(page)
+    check(not page.is_visible('#cloud-home-line'), 'A16 envoi réussi : aucune ligne')
+    page.evaluate(ADD_LIVE); page.reload(); page.wait_for_timeout(400); fk = Fake(page, OK_PLAN())
+    finish(page); home(page)
+    line = text(page, '#cloud-home-line')
+    check(not fk.calls and '1 séance terminée pas encore en ligne' in line, 'A16 séance dans les 2 minutes : Accueil "%s"' % line)
+    page.click('#cloud-home-line'); page.wait_for_timeout(300)
+    check(page.is_visible('#cloud-upload-btn'), 'A16 appui sur la ligne : Réglages ouvert')
+    page.click('#cloud-upload-btn'); page.wait_for_timeout(900); home(page)
+    check(not page.is_visible('#cloud-home-line'), 'A16 envoi manuel réussi : ligne levée')
+    ctx.close()
+    ctx, page, errors = fresh(b, live=False, last_upload={'at': iso(1), 'id': 'x', 'fingerprint': '00000000', 'sessionsCompleted': 2, 'userId': 'u-1'}); Fake(page, {})
+    home(page)
+    check(not page.is_visible('#cloud-home-line'), 'A16 envoi automatique désactivé, 1 séance non envoyée depuis 1 jour : aucune ligne (pas de rappel avant 7 jours)')
+    ctx.close()
+    ctx, page, errors = fresh(b, session=False, live=False, prefs={'autoUpload': True}, last_upload={'at': iso(1), 'id': 'x', 'fingerprint': '00000000', 'sessionsCompleted': 2, 'userId': 'u-1'}); Fake(page, {})
+    home(page)
+    check('1 séance terminée pas encore en ligne' in text(page, '#cloud-home-line'), 'A16 envoi automatique actif mais déconnecté : "%s"' % text(page, '#cloud-home-line'))
+    ctx.close()
+
+    # A17 (nettoyage lot 16) : Réinitialiser refusé pendant un envoi en cours
+    ctx, page, errors = fresh(b, prefs={'autoUpload': True}); fk = Fake(page, {POST: [('hang', None)]})
+    finish(page, wait=400); settings(page); before = ls(page)
+    page.click('#reset-app-btn'); page.wait_for_timeout(300)
+    io = page.inner_text('#dashboard-io-status')
+    check('en cours' in io and 'Rien n’a été supprimé' in io and not page.is_visible('#confirm-modal-confirm') and ls(page) == before,
+          'A17 Réinitialiser pendant un envoi : refus "%s", aucune fenêtre, rien effacé' % io[:70])
     ctx.close()
 
     b.close()

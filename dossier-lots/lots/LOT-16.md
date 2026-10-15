@@ -2,7 +2,7 @@
 
 Taille : L. Dépend de : tous. Lot à risque (export, import, sauvegardes, écriture dans des données existantes).
 
-Statut : plan révisé le 2026-10-10, décisions de Ruben prises le 2026-10-10 (voir "Décisions prises"). Livraison 1 faite (sw v124), corrigée après quatre audits (sw v125 à v128). Livraison 2 (connexion) faite (sw v129). Livraison 3 (table backups et envoi manuel) faite (sw v130), script SQL à exécuter par Ruben. Livraison 4 (restauration depuis la sauvegarde en ligne) faite (sw v131 et v132, auditée, poussée avec le tag v132-stable). Livraison 5 (envoi automatique après chaque séance) codée (sw v133 et v134), en attente d'audit.
+Statut : plan révisé le 2026-10-10, décisions de Ruben prises le 2026-10-10 (voir "Décisions prises"). Livraison 1 faite (sw v124), corrigée après quatre audits (sw v125 à v128). Livraison 2 (connexion) faite (sw v129). Livraison 3 (table backups et envoi manuel) faite (sw v130), script SQL à exécuter par Ruben. Livraison 4 (restauration depuis la sauvegarde en ligne) faite (sw v131 et v132, auditée, poussée avec le tag v132-stable). Livraison 5 (envoi automatique après chaque séance) faite (sw v133 à v135, auditée, poussée avec le tag v135-stable). Lot de nettoyage (plan du 2026-10-15) : livraison 1 faite (sw v136), livraison 2 à suivre.
 
 ## Écrans de la maquette
 
@@ -455,6 +455,12 @@ R11 (pas de compte obligatoire).
     * Aucun appel ni écriture au lancement, aucun changement SQL ni droit ajouté, rotation à 30 inchangée.
     * Écart voulu avec la section 10 : pas de nouvel essai au retour du réseau (événement "online"), pas de message après la séance. Le prochain envoi, automatique ou manuel, rattrape.
   * Tests automatiques : dossier-lots/tests/test_auto_upload.py, Supabase simulé, données fabriquées.
+* Nettoyage, livraison 1 faite le 2026-10-15 (sw v136) : sauvegarde en ligne, sans changement des requêtes, du verrou, du payload ni du garde-fou.
+  * Accueil : avec l'envoi automatique actif (connecté ou non), une ligne "N séances terminées pas encore en ligne" dès qu'il en reste à renvoyer et qu'aucun envoi n'est en cours (cas "réussi" puis "non envoyé" dans les 2 minutes). Envoi automatique désactivé : inchangé (rappel de 7 jours seulement).
+  * Téléchargement en ligne : la réponse est ignorée, avec un message et sans rien restaurer, si le compte a changé (comparé par l'identifiant du compte, un renouvellement de jeton ne compte pas), si Réglages a été quitté ou si un écran de restauration est déjà ouvert (fichier importé pendant le téléchargement). Points 1 à 3 de l'audit de la livraison 4.
+  * Réinitialiser l'app refusé (message, rien supprimé) pendant une opération en ligne (cloudBusy), au clic et à la confirmation.
+  * Messages : un envoi bloqué dit "Rien n'a été envoyé" (getBackupBlocker reçoit la fin du message), un refus de restauration en ligne précise "sauvegarde en ligne contrôlée comme un fichier d'export", et la suppression des copies sans réponse couvre aussi un stockage du navigateur resté bloqué.
+  * Tests : test_auto_upload.py (A7b remplacé : le délai part du dernier vrai essai même après un "non envoyé" et un rechargement ; A16, A17), test_restore_cloud.py (R11 : témoin, fichier importé, Réglages quitté, autre compte, déconnexion ; R5 suit le nouveau libellé).
 
 ## Lot de nettoyage : points non bloquants de l'audit de la livraison 4 (2026-10-14)
 
