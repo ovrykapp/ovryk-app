@@ -3633,6 +3633,69 @@
   .equiv-option-radio { flex-shrink: 0; width: 20px; height: 20px; border-radius: 50%; border: 1.5px solid var(--steel); }
   .equiv-option.is-selected .equiv-option-radio { border-color: var(--rust); background: var(--rust); }
   .equiv-fiche-note { font-size: 12px; line-height: 1.45; color: var(--steel); margin: var(--space-2) 0 0; }
+  /* lot 18, livraison 2 : sélecteur de salle (pilule et pastille qui
+     glisse). Aplats seulement : fond Graphite, bordure --neutral-400,
+     pastille Rouille, nom actif en Graphite (contraste), nom inactif
+     atténué. Animation CSS seulement, coupée si l'utilisateur réduit les
+     animations. */
+  .gym-switch {
+    position: relative;
+    display: flex;
+    width: 100%;
+    min-height: 44px;
+    padding: 3px;
+    margin: 0 0 var(--space-4);
+    border: 1px solid var(--neutral-400);
+    border-radius: 999px;
+    background: var(--graphite);
+    cursor: pointer;
+    font: inherit;
+  }
+  .gym-switch-thumb {
+    position: absolute;
+    top: 3px;
+    bottom: 3px;
+    left: 3px;
+    width: calc(50% - 3px);
+    border-radius: 999px;
+    background: var(--rust);
+    transform: translateX(0);
+    transition: transform 180ms ease;
+  }
+  .gym-switch[data-gym="onair"] .gym-switch-thumb { transform: translateX(100%); }
+  .gym-switch-option {
+    position: relative;
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 15px;
+    color: var(--neutral-500);
+    transition: color 180ms ease;
+  }
+  .gym-switch[data-gym="inde"] .gym-switch-option[data-for="inde"],
+  .gym-switch[data-gym="onair"] .gym-switch-option[data-for="onair"] { color: var(--graphite); }
+  .gym-switch-sr {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+    border: 0;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .gym-switch-thumb, .gym-switch-option { transition: none; }
+  }
+  .seance-gym { font-size: 11px; color: var(--steel); }
+  .seance-gym[hidden] { display: none; }
+  .live-card-replaces { display: block; font-size: 11px; color: var(--steel); margin: 2px 0 0; }
+  .history-gym-tag { font-size: 11px; color: var(--steel); }
+  .history-ex-replaces { display: block; width: 100%; font-size: 11px; color: var(--steel); }
   .exercise-type-result {
     background: var(--blue-fill);
     border-radius: var(--radius-card);
@@ -4276,6 +4339,7 @@
     <button type="button" id="seance-cancel-btn" class="seance-topbar-action">Annuler</button>
     <div class="seance-meta">
       <span class="seance-name" id="seance-name-label"></span>
+      <span class="seance-gym mono" id="seance-gym-label" hidden></span>
       <span class="seance-timer mono" id="seance-timer-label">00:00</span>
     </div>
     <button type="button" id="seance-finish-btn" class="seance-topbar-action is-primary">Terminer</button>
@@ -4413,6 +4477,9 @@
       </div>
 
       <div id="seance-start-view">
+        <!-- lot 18, livraison 2 : salle de la séance à lancer (en mémoire
+             jusqu'au lancement, enregistrée avec la séance). -->
+        <div id="seance-gym-wrap"></div>
         <button type="button" id="seance-start-empty-btn" class="btn-add" style="width:100%;margin-bottom:20px;">+ Séance vide</button>
         <div class="filter-label mono" style="margin-bottom:8px;">Depuis une routine</div>
         <div id="seance-routine-list"></div>
@@ -5230,6 +5297,9 @@
 
   var CATEGORIES = ['Pecs', 'Dos', 'Épaules', 'Bras', 'Jambes', 'Abdos', 'Lifting'];
   var EQUIPMENT_LIST = ['Barre', 'Haltères', 'Poulie', 'Machine', 'Poids du corps', 'Autre'];
+  /* lot 18 : salles, noms constants (pas de réglage). Défini ici, avant
+     tout premier rendu de l'écran de séance au lancement. */
+  var GYMS = [{ id: 'inde', label: 'Indé' }, { id: 'onair', label: 'On Air' }];
 
   function slugify(str) {
     return str.toString().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
@@ -11884,9 +11954,14 @@
     return list.length ? list[0] : null;
   }
 
-  function buildSessionFromRoutine(routine) {
+  /* lot 18 : gym ('inde' ou 'onair', sinon la dernière salle utilisée).
+     En salle indé, une ligne dont l'exercice a un équivalent (jamais un
+     mouvement de cycle) est construite avec l'équivalent : structure de la
+     reprise habituelle, historique de l'équivalent, replacesExerciseId. */
+  function buildSessionFromRoutine(routine, gym) {
     var now = new Date().toISOString();
     var lastSession = getLastCompletedSessionForRoutine(routine.id);
+    gym = isKnownGym(gym) ? gym : getLastUsedGym();
 
     var session = {
       id: 'sess-' + OvrykDB.generateId(),
@@ -11898,9 +11973,12 @@
       status: 'in_progress',
       durationSeconds: null,
       notes: '',
+      gym: gym,
       exercises: routine.exercises.map(function (rex) {
-        var exercise = OvrykDB.getExerciseById(rex.exerciseId);
-        var cycle = OvrykDB.getForceCycle(rex.exerciseId);
+        var replacement = getRoutineSlotReplacement(rex, gym);
+        var exerciseId = replacement ? replacement.id : rex.exerciseId;
+        var exercise = replacement || OvrykDB.getExerciseById(rex.exerciseId);
+        var cycle = replacement ? null : OvrykDB.getForceCycle(rex.exerciseId);
         /* lot 06 : un cycle en attente de validation (entre
            closeCycleAndDrawNext et launchPendingCycle) a cycle_actif et
            semaine_actuelle gelés sur l'ancien cycle — une nouvelle séance
@@ -11917,16 +11995,20 @@
            changed) after the last session for it was logged — carrying that
            past session's sets forward would silently undo the edit, so drop
            the continuity and use the routine's current prescription instead */
-        var routineEditedSinceLastSession = lastSession && routine.updatedAt &&
-          new Date(routine.updatedAt) > new Date(lastSession.completedAt || lastSession.date);
-        var pastSex = (activeCycle || inBaseMode || routineEditedSinceLastSession) ? null : findExerciseInSession(lastSession, rex.exerciseId);
+        /* lot 18 : exercice concerné par un équivalent : dernière séance de
+           la routine qui le contient (l'autre salle a pu le remplacer
+           entre temps). Tous les autres : inchangé. */
+        var refSession = isGymLinkedExercise(exerciseId) ? getLastCompletedRoutineSessionWithExercise(routine.id, exerciseId) : lastSession;
+        var routineEditedSinceLastSession = refSession && routine.updatedAt &&
+          new Date(routine.updatedAt) > new Date(refSession.completedAt || refSession.date);
+        var pastSex = (activeCycle || inBaseMode || routineEditedSinceLastSession) ? null : findExerciseInSession(refSession, exerciseId);
 
         var sets, restSeconds, cycleWeekUsed = null, cycleIdUsed = null, isLightSession = false;
         if (activeCycle) {
           /* la séance n'existe pas encore en base (excludeSessionId inutile
              ici) : R12, point D — résout si c'est la première ou une séance
              légère de la semaine civile pour ce mouvement. */
-          var cycleBuild = buildCycleSessionSets(activeCycle, rex.exerciseId, now, null);
+          var cycleBuild = buildCycleSessionSets(activeCycle, exerciseId, now, null);
           sets = cycleBuild.sets;
           restSeconds = cycleBuild.restSeconds;
           cycleWeekUsed = cycleBuild.weekNumberUsed;
@@ -11944,9 +12026,9 @@
           restSeconds = rex.restSeconds;
         }
 
-        return {
+        var built = {
           id: 'sex-' + OvrykDB.generateId(),
-          exerciseId: rex.exerciseId,
+          exerciseId: exerciseId,
           exerciseName: exercise ? exercise.name : 'Exercice',
           category: exercise ? exercise.category : '',
           oneRepMaxSnapshot: cycle ? cycle.one_rm_actuel :
@@ -11959,6 +12041,8 @@
           cycleIdUsed: cycleIdUsed,
           isLightSession: isLightSession
         };
+        if (replacement) built.replacesExerciseId = rex.exerciseId;
+        return built;
       })
     };
     /* lot 13, livraison 3 : allègement automatique, seulement ici, à la
@@ -11970,9 +12054,10 @@
     return session;
   }
 
-  function buildEmptySession() {
+  function buildEmptySession(gym) {
     var now = new Date().toISOString();
     return {
+      gym: isKnownGym(gym) ? gym : getLastUsedGym(),
       id: 'sess-' + OvrykDB.generateId(),
       routineId: null,
       routineName: null,
@@ -11996,6 +12081,17 @@
     var listEl = document.getElementById('seance-routine-list');
     listEl.innerHTML = '';
 
+    /* lot 18 : pilule de salle, choix en mémoire jusqu'au lancement. */
+    var startGym = getSeanceStartGym();
+    var gymWrap = document.getElementById('seance-gym-wrap');
+    gymWrap.innerHTML = '';
+    gymWrap.appendChild(buildGymSwitch(startGym, function (next) {
+      seanceStartGym = next;
+      renderSeanceRoutineList();
+      var again = gymWrap.querySelector('.gym-switch');
+      if (again) again.focus();
+    }));
+
     if (routines.length === 0) {
       listEl.innerHTML = '<div class="empty-state"><span class="empty-tag">Vide</span>' +
         '<h2>Aucune routine disponible</h2>' +
@@ -12012,14 +12108,16 @@
       main.className = 'routine-row-main';
       main.innerHTML = '<span class="routine-row-name">' + escapeHTML(routine.name || 'Sans titre') + '</span>' +
         '<span class="routine-row-count mono">' + routine.exercises.length + ' ex.</span>';
-      main.addEventListener('click', function () { launchRoutineSession(routine, null); });
+      main.addEventListener('click', function () { launchRoutineSession(routine, null, getSeanceStartGym()); });
       wrap.appendChild(main);
 
       var last = getLastCompletedSessionForRoutine(routine.id);
       var meta = document.createElement('div');
       meta.className = 'routine-row-meta mono';
+      var replacedCount = routine.exercises.filter(function (rex) { return !!getRoutineSlotReplacement(rex, startGym); }).length;
       meta.textContent = estimateRoutineDuration(routine) + ' · ' +
-        (last ? ('Dernière fois ' + formatRelativeDate(last.date)) : 'Jamais faite');
+        (last ? ('Dernière fois ' + formatRelativeDate(last.date)) : 'Jamais faite') +
+        (replacedCount ? ' · ' + replacedCount + (replacedCount > 1 ? ' remplacés' : ' remplacé') + ' en indé' : '');
       wrap.appendChild(meta);
 
       listEl.appendChild(wrap);
@@ -12028,6 +12126,8 @@
 
   function startSession(session) {
     activeSession = session;
+    /* lot 18 : la salle choisie est maintenant celle de la dernière séance */
+    seanceStartGym = null;
     cycleTestSubmittedIds = {};
     OvrykDB.addSession(activeSession);
     showSeanceActive();
@@ -12041,7 +12141,9 @@
      R12 : semaine_actuelle n'avance jamais sur une séance légère, donc
      "Repousser" n'y aurait aucun retour possible). Sans mouvement concerné,
      comportement strictement inchangé par rapport à avant ce lot. */
-  function launchRoutineSession(routine, afterStart) {
+  /* lot 18 : gym donné par l'écran de départ ; sinon (Accueil, Programme,
+     Refaire cette séance) la dernière salle utilisée. */
+  function launchRoutineSession(routine, afterStart, gym) {
     var now = new Date().toISOString();
     var pendingIds = [];
     routine.exercises.forEach(function (rex) {
@@ -12054,7 +12156,7 @@
     });
 
     function launch() {
-      startSession(buildSessionFromRoutine(routine));
+      startSession(buildSessionFromRoutine(routine, isKnownGym(gym) ? gym : getLastUsedGym()));
       if (afterStart) afterStart();
     }
 
@@ -12118,6 +12220,10 @@
   function renderSeanceActiveView() {
     if (!activeSession) return;
     document.getElementById('seance-name-label').textContent = activeSession.routineName || 'Séance libre';
+    /* lot 18 : salle de la séance, lecture seule (absente avant ce lot) */
+    var gymEl = document.getElementById('seance-gym-label');
+    gymEl.textContent = isKnownGym(activeSession.gym) ? 'Salle : ' + gymLabel(activeSession.gym) : '';
+    gymEl.hidden = !isKnownGym(activeSession.gym);
 
     var notesInput = document.getElementById('seance-notes-input');
     if (document.activeElement !== notesInput) notesInput.value = activeSession.notes || '';
@@ -12408,6 +12514,7 @@
       : '<span class="live-card-count">' + doneCount + '/' + sex.sets.length + '</span>';
     header.innerHTML = '<span class="live-card-main">' +
       '<span class="live-card-name" style="display:block">' + escapeHTML(sex.exerciseName) + (sex.grip ? ' · ' + escapeHTML(sex.grip) : '') + '</span>' +
+      (sex.replacesExerciseId ? '<span class="live-card-replaces">' + escapeHTML(describeReplacedExercise(sex)) + '</span>' : '') +
       '<span class="live-card-meta"><span class="live-card-tag' + (tag.isCycle ? ' is-cycle' : '') + '">' + escapeHTML(tag.text) + '</span>' +
       '<span>' + escapeHTML(summarizeLiveExercise(sex)) + '</span></span></span>' + right;
     header.addEventListener('click', function () { toggleLiveCard(index); });
@@ -12424,6 +12531,12 @@
       card.appendChild(body);
     }
     return card;
+  }
+
+  /* lot 18 : "remplace X" (nom actuel de l'exercice d'origine). */
+  function describeReplacedExercise(sex) {
+    var original = sex && sex.replacesExerciseId ? OvrykDB.getExerciseById(sex.replacesExerciseId) : null;
+    return 'Remplace ' + (original ? original.name : 'l’exercice d’origine') + ' (salle indé)';
   }
 
   function buildLiveCardToolbar(sex, isCycle) {
@@ -14169,7 +14282,7 @@
 
   /* ---- wiring ---- */
   document.getElementById('seance-start-empty-btn').addEventListener('click', function () {
-    startSession(buildEmptySession());
+    startSession(buildEmptySession(getSeanceStartGym()));
   });
 
   function cancelActiveSession() {
@@ -14602,6 +14715,7 @@
       (kinds.haltero ? '<span class="day-badge-tag is-halterophilie">Haltéro</span>' : '') +
       (kinds.muscu ? '<span class="day-badge-tag is-muscu">Muscu</span>' : '') +
       (historyExercises(session).some(function (sex) { return sex && sex.deload; }) ? '<span class="day-badge-tag is-allegee">Allégée</span>' : '') +
+      (isKnownGym(session.gym) ? '<span class="history-gym-tag mono">' + escapeHTML(gymLabel(session.gym)) + '</span>' : '') +
       (meta.length ? '<span class="history-row-stats">' + escapeHTML(meta.join(' · ')) + '</span>' : '') +
       '</span></span>' +
       '<svg class="history-row-chevron" viewBox="0 0 24 24" aria-hidden="true"><polyline points="9,6 15,12 9,18"/></svg>';
@@ -14746,6 +14860,7 @@
       '<span class="history-ex-name">' + escapeHTML((sex.exerciseName || (exercise && exercise.name) || 'Exercice') + (sex.grip ? ' · ' + sex.grip : '')) + '</span>' +
       (isHistoryRecord(session, sex) ? '<span class="history-record-tag">Record</span>' : '') +
       (sex.deload ? '<span class="day-badge-tag is-allegee">Allégée</span>' : '') +
+      (sex.replacesExerciseId ? '<span class="history-ex-replaces">' + escapeHTML(describeReplacedExercise(sex)) + '</span>' : '') +
       '</div>' +
       '<div class="history-ex-bottom"><span class="history-ex-load">' + escapeHTML(describeHistoryLoad(sex, doneSets, exercise)) + '</span>' +
       '<span class="history-ex-results">' + escapeHTML(describeHistoryResults(sex, doneSets)) + '</span></div>';
@@ -14807,7 +14922,8 @@
     var d = historySessionDate(session);
     document.getElementById('history-detail-title').textContent = session.routineName || 'Séance libre';
     document.getElementById('history-detail-date').textContent = WEEKDAY_NAMES_FR[(d.getDay() + 6) % 7] + ' ' + formatDayMonthFr(d) +
-      (d.getFullYear() !== new Date().getFullYear() ? ' ' + d.getFullYear() : '');
+      (d.getFullYear() !== new Date().getFullYear() ? ' ' + d.getFullYear() : '') +
+      (isKnownGym(session.gym) ? ' · Salle : ' + gymLabel(session.gym) : '');
 
     var body = document.getElementById('history-detail-body');
     body.innerHTML = '';
@@ -15774,6 +15890,90 @@
     if (target.category === 'Lifting') return '« ' + target.name + ' » est un mouvement (Lifting) : il ne peut pas servir d’équivalent.';
     if (getGymEquivalent(target)) return '« ' + target.name + ' » a déjà son propre équivalent en salle indé : pas d’équivalent en chaîne.';
     return null;
+  }
+
+  /* ============================================================
+     SALLE DE LA SÉANCE (lot 18, livraison 2). Noms constants, pas de
+     réglage. session.gym : 'inde' ou 'onair' (absent avant ce lot).
+     Dernière salle utilisée : déduite de la séance la plus récente qui en
+     a une (aucune clé de stockage, aucune écriture), On Air par défaut.
+     ============================================================ */
+  function isKnownGym(id) { return id === 'inde' || id === 'onair'; }
+
+  function gymLabel(id) {
+    for (var i = 0; i < GYMS.length; i++) { if (GYMS[i].id === id) return GYMS[i].label; }
+    return '';
+  }
+
+  function getLastUsedGym() {
+    var best = null;
+    OvrykDB.getSessions().forEach(function (s) {
+      if (!s || !isKnownGym(s.gym)) return;
+      var t = Date.parse(s.date);
+      if (isNaN(t)) return;
+      if (!best || t > best.t) best = { t: t, gym: s.gym };
+    });
+    return best ? best.gym : 'onair';
+  }
+
+  /* choix de l'écran de départ, en mémoire seulement (null = dernière
+     salle utilisée). */
+  var seanceStartGym = null;
+
+  function getSeanceStartGym() { return isKnownGym(seanceStartGym) ? seanceStartGym : getLastUsedGym(); }
+
+  /* exercice de remplacement d'une ligne de routine pour cette salle, ou
+     null : seulement en salle indé, jamais pour un mouvement de cycle. */
+  function getRoutineSlotReplacement(rex, gym) {
+    if (gym !== 'inde' || !rex) return null;
+    if (OvrykDB.getForceCycle(rex.exerciseId)) return null;
+    return getGymEquivalent(OvrykDB.getExerciseById(rex.exerciseId));
+  }
+
+  /* exercice concerné par un équivalent (il en a un, ou il en est un) :
+     seul cas où la reprise de l'historique cherche la dernière séance de
+     la routine qui le contient, au lieu de la dernière séance de la
+     routine (qui a pu être faite dans l'autre salle). */
+  function isGymLinkedExercise(exerciseId) {
+    return !!getGymEquivalent(OvrykDB.getExerciseById(exerciseId)) || getGymEquivalentSources(exerciseId).length > 0;
+  }
+
+  function getLastCompletedRoutineSessionWithExercise(routineId, exerciseId) {
+    var matches = OvrykDB.getSessions().filter(function (s) {
+      return s.routineId === routineId && s.status === 'completed' && Array.isArray(s.exercises) && !!findExerciseInSession(s, exerciseId);
+    });
+    matches.sort(function (a, b) { return new Date(b.date) - new Date(a.date); });
+    return matches[0] || null;
+  }
+
+  /* pilule : un tap n'importe où bascule. locked : non cliquable (livraison
+     3). Aucune écriture ici, l'appelant décide. */
+  function buildGymSwitch(gym, onToggle) {
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'gym-switch';
+    btn.setAttribute('role', 'switch');
+    btn.setAttribute('aria-label', 'Salle');
+    btn.setAttribute('aria-checked', gym === 'onair' ? 'true' : 'false');
+    btn.setAttribute('data-gym', gym);
+    var thumb = document.createElement('span');
+    thumb.className = 'gym-switch-thumb';
+    thumb.setAttribute('aria-hidden', 'true');
+    btn.appendChild(thumb);
+    GYMS.forEach(function (g) {
+      var opt = document.createElement('span');
+      opt.className = 'gym-switch-option';
+      opt.setAttribute('data-for', g.id);
+      opt.setAttribute('aria-hidden', 'true');
+      opt.textContent = g.label;
+      btn.appendChild(opt);
+    });
+    var sr = document.createElement('span');
+    sr.className = 'gym-switch-sr';
+    sr.textContent = 'Salle actuelle : ' + gymLabel(gym);
+    btn.appendChild(sr);
+    if (onToggle) btn.addEventListener('click', function () { onToggle(gym === 'onair' ? 'inde' : 'onair'); });
+    return btn;
   }
 
   var exerciseEquivPageState = { exerciseId: null, pendingId: null };

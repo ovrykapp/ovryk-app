@@ -31,13 +31,17 @@ Ruben s'entraîne dans une salle indépendante, où il manque des machines, et �
 ## Limites acceptées (2026-10-15)
 
 1. Les charges de l'équivalent ne sont lues que dans la même routine : un équivalent fait dans une autre routine ne pré-remplit pas les charges.
-2. En cas de doublon, le "dernière séance" d'une carte de remplacement aurait été pris sur la première carte Y de la séance. Limite levée par la règle du créneau (findSexForSlot, livraison 2) : chaque carte a son propre "dernière séance".
+2. En cas de doublon, le "dernière séance" d'une carte de remplacement aurait été pris sur la première carte Y de la séance. Limite levée par la règle du créneau (findSexForSlot, livraison 2b) : chaque carte a son propre "dernière séance". Jusqu'à la 2b, un doublon reste traité par la première carte et compté deux fois dans les statistiques (2a jamais poussée seule).
+3. Sans historique de l'équivalent dans la routine, la première carte remplacée reprend les charges de la ligne de routine de l'exercice d'origine (décision du plan) : par exemple 100 kg de presse proposés pour un hack squat. À corriger à la main à la première séance ; la suivante repart de l'historique de l'équivalent.
+4. La suggestion de baisse et la stagnation ignorent l'ancienneté des séances (comportement existant, non spécifique aux salles).
 
 ## Livraisons
 
 1. Modèle et éditeur d'équivalent, sans changement des séances (sw v139).
-2. Pilule sur l'écran de départ, remplacement à la construction, salle enregistrée et affichée, règles du doublon, allègement automatique (lot 13) vérifié et réglé sur une carte remplacée (sw v140).
-3. Changement de salle pendant la séance avant la première série (reconstruction ciblée), verrouillage (sw v141).
+2. Découpée en deux le 2026-10-15, la livraison étant trop grosse pour un audit propre :
+   * 2a : pilule sur l'écran de départ, remplacement à la construction, salle enregistrée et affichée, continuité des charges, allègement automatique (lot 13) vérifié sur une carte remplacée (sw v140) ;
+   * 2b : règles du doublon (findSexForSlot) et fusion des statistiques seulement quand une carte porte replacesExerciseId, avec un test "avant et après identiques" sur les séances sans carte remplacée (sw v141).
+3. Changement de salle pendant la séance avant la première série (reconstruction ciblée), verrouillage (sw v142).
 
 ## Avancement
 
@@ -47,6 +51,17 @@ Ruben s'entraîne dans une salle indépendante, où il manque des machines, et �
   * OvrykDB.updateExerciseGymEquivalent : n'écrit que l'exercice concerné. Fonctions getGymEquivalent, getGymEquivalentSources, getGymEquivalentError.
   * Aucune séance n'est modifiée : une routine se lance toujours avec l'exercice d'origine, sans salle.
   * Tests : dossier-lots/tests/test_gym.py (19 contrôles, données fabriquées).
+* Livraison 2a faite le 2026-10-15 (sw v140), en local, non poussée.
+  * Salles : constantes GYMS (Indé, On Air) ; dernière salle utilisée déduite de la séance la plus récente qui a un champ gym (getLastUsedGym), On Air par défaut ; aucune clé, aucune écriture au lancement.
+  * Écran de départ : pilule (buildGymSwitch, role="switch", aria-label "Salle", texte invisible "Salle actuelle : …"), choix en mémoire jusqu'au lancement (seanceStartGym), "N remplacé(s) en indé" sur chaque ligne de routine. Une bascule n'écrit rien.
+  * buildSessionFromRoutine(routine, gym) : session.gym enregistré ; en salle indé, une ligne dont l'exercice a un équivalent (jamais un mouvement de cycle) est construite avec l'équivalent, replacesExerciseId = l'exercice de la routine. Lancements de l'Accueil ("Commencer la séance"), du Programme ("Démarrer") et "Refaire cette séance" : dernière salle utilisée. Séance vide : salle enregistrée, aucun remplacement.
+  * Continuité : pour un exercice concerné par un équivalent (il en a un, ou il en est un), la reprise lit la dernière séance de la routine qui le contient (getLastCompletedRoutineSessionWithExercise) ; tous les autres exercices : inchangé (dernière séance de la routine).
+  * Structure et charges d'une carte remplacée : reprise habituelle de la dernière séance de la routine avec l'équivalent (cloneSetsFromPastSex) ; sans historique de l'équivalent dans la routine, la ligne de routine de l'exercice d'origine (séries, plage, repos et charges, voir limite 3).
+  * Allègement automatique (lot 13) : vérifié, aucun réglage nécessaire. applyMuscuDeload tourne après la construction et traite la carte remplacée comme toute carte de muscu (type de l'équivalent) ; à la séance suivante, les séries retirées sont remises et la charge reste figée (cloneSetsFromPastSex sur une référence allégée).
+  * Affichage : "Salle : …" dans l'en-tête de la séance en cours (lecture seule, livraison 3 pour le changement), "Remplace X (salle indé)" sur la carte, salle dans la liste et le détail de l'historique, "remplace X" sur l'exercice remplacé. Rien pour une séance d'avant ce lot.
+  * smoke.py : le contrôle "une séance vide démarre" cliquait sur le premier bouton de l'onglet Séance, devenu la pilule ; il vise maintenant #seance-start-empty-btn.
+  * Observé (test G17, retour en salle indé après 10 semaines à On Air) : la carte de l'équivalent repart de sa dernière séance dans la routine (charges, plage, cible de reps de la double progression), sans tenir compte du temps écoulé. La suggestion de baisse (deux dernières séances sous la plage) et la stagnation (trois dernières séances sans progrès) ne regardent que les séances de l'équivalent, quelle que soit leur ancienneté : elles s'affichent encore après 10 semaines si les dernières séances de l'équivalent les déclenchaient.
+  * Tests : test_gym.py, 39 contrôles (G10 à G18 ajoutés, G7 adapté : la séance porte maintenant sa salle).
 
 ## Hors périmètre
 

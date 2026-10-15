@@ -74,7 +74,8 @@ with sync_playwright() as p:
     # séance vide
     page.click('.nav-btn[data-target="seance"]')
     page.wait_for_timeout(300)
-    premier = page.locator("#view-seance button").first
+    # lot 18 : la pilule de salle est maintenant le premier bouton de l'écran : on vise le bouton "+ Séance vide"
+    premier = page.locator("#seance-start-empty-btn")
     if premier.count():
         premier.click()
         page.wait_for_timeout(500)
