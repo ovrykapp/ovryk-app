@@ -14150,8 +14150,10 @@
        manual "Exporter" button in Profil, just triggered right as a session
        finishes instead of on a click — no confirmation, nothing blocking.
        Nettoyage lot 16 : après l'avancée des cycles, pour que le fichier
-       contienne la semaine de cycle avancée par cette séance. */
-    downloadOvrykExport();
+       contienne la semaine de cycle avancée par cette séance. Protégé :
+       une exception de l'export ne doit jamais empêcher la suite (écran de
+       départ, envoi en ligne) ni laisser la séance affichée après coup. */
+    try { downloadOvrykExport(); } catch (e) { /* l'export est un bonus, jamais bloquant pour la séance */ }
 
     var finishedId = activeSession.id;
     activeSession = null;
@@ -17978,7 +17980,7 @@
         : st.attempt.outcome === 'unverified' ? 'Sauvegarde en ligne : dernier envoi non confirmé. Voir Réglages.'
         : st.attempt.outcome === 'skipped' ? 'Sauvegarde en ligne : dernier envoi non effectué. Voir Réglages.'
         : 'Sauvegarde en ligne : dernier envoi échoué. Voir Réglages.';
-    } else if (st.pending > 0 && isAutoUploadOn() && !cloudAttemptInFlight) {
+    } else if (st.pending > 0 && isAutoUploadOn() && !!readCloudSession() && !cloudAttemptInFlight) {
       /* nettoyage lot 16 : l'envoi automatique est actif mais des séances
          ne sont pas en ligne (par exemple "non envoyé" juste après un envoi
          réussi) : ne jamais laisser croire que tout est sauvegardé. */

@@ -372,7 +372,7 @@ with sync_playwright() as p:
     ctx.close()
     ctx, page, errors = fresh(b, session=False, live=False, prefs={'autoUpload': True}, last_upload={'at': iso(1), 'id': 'x', 'fingerprint': '00000000', 'sessionsCompleted': 2, 'userId': 'u-1'}); Fake(page, {})
     home(page)
-    check('1 séance terminée pas encore en ligne' in text(page, '#cloud-home-line'), 'A16 envoi automatique actif mais déconnecté : "%s"' % text(page, '#cloud-home-line'))
+    check(not page.is_visible('#cloud-home-line'), 'A16 envoi automatique actif mais déconnecté : aucune ligne "%s"' % text(page, '#cloud-home-line'))
     ctx.close()
 
     # A17 (nettoyage lot 16) : Réinitialiser refusé pendant un envoi en cours

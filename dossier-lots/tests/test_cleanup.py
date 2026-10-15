@@ -3,7 +3,7 @@ des cycles, copie supprimée après un échec de pose de la marque, copies
 IndexedDB validées avant d'être proposées ou remises.
 Données FABRIQUÉES ici : aucun vrai export, aucun appel réseau.
 Usage : python3 test_cleanup.py <dossier de travail>, site servi sur http://127.0.0.1:8765."""
-import sys, json
+import sys, json, re, time
 from datetime import datetime, timezone
 from pathlib import Path
 from playwright.sync_api import sync_playwright
@@ -142,6 +142,43 @@ with sync_playwright() as p:
     vis = page.is_visible('#restore-undo-btn')
     if vis: page.click('#restore-undo-btn'); page.wait_for_timeout(500)
     check(vis and page.is_visible('#restore-page') and not errors, 'C6 copie d\'un état vide : proposée et écran d\'annulation ouvert')
+    ctx.close()
+
+    # C7 : exception dans l'export de fin de séance : la séance reste enregistrée, le cycle avance une seule fois,
+    # l'écran de départ s'affiche, activeSession est remis à null, l'envoi automatique part, un second Terminer est impossible
+    def live_cycle_dataset():
+        d = dataset(2)
+        d['exercises'].append({'id': 'ex-fab-cyc', 'name': 'Squat fabrique', 'category': 'Lifting', 'liftBaseMode': 'force', 'equipment': 'Barre', 'unit': 'kg', 'isCustom': True})
+        d['forceCycles'] = {'ex-fab-cyc': dict(CYCLE)}
+        now = datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%S.000Z')
+        lv = done_session('s-live', 1, ex='ex-fab-cyc'); lv.update({'status': 'in_progress', 'date': now, 'startedAt': now}); lv.pop('completedAt')
+        d['sessions'].append(lv)
+        return d
+    ctx, page, errors = fresh(b, live_cycle_dataset())
+    jset(page, 'ovryk.cloud.prefs', {'autoUpload': True})
+    jset(page, 'ovryk.cloud.auth', {'access_token': 'acc-0', 'refresh_token': 'ref-0', 'expires_at': int(time.time()) + 3600, 'user': {'id': 'u-1', 'email': 'un@exemple.test'}, 'savedAt': '2026-10-14T10:00:00.000Z'})
+    page.reload(); page.wait_for_timeout(300)
+    calls = []
+    page.route(re.compile(r'https://[^/]*\.supabase\.co/.*'), lambda route, request: (calls.append(request.method + ' ' + request.url.split('.supabase.co')[1][:30]), route.fulfill(status=500, body='{}', headers={'content-type': 'application/json'})))
+    page.evaluate("() => { URL.createObjectURL = () => { throw new Error('export impossible (simulé)'); }; }")
+    page.click('.nav-btn[data-target="seance"]'); page.wait_for_timeout(300)
+    page.click('#seance-finish-btn'); page.wait_for_timeout(200); page.click('#confirm-modal-confirm'); page.wait_for_timeout(1200)
+    week = lambda: json.loads(ls(page)['ovryk.forceCycles'])['ex-fab-cyc']['semaine_actuelle']
+    st = {x['id']: x['status'] for x in json.loads(ls(page)['ovryk.sessions'])}
+    check(st.get('s-live') == 'completed' and week() == 2, 'C7 export en exception : séance enregistrée (%s), cycle avancé une fois (semaine %s)' % (st.get('s-live'), week()))
+    check(page.is_visible('#seance-start-empty-btn') and not page.is_visible('#seance-finish-btn'), 'C7 écran de départ affiché, bouton Terminer absent')
+    check(any(c.startswith('POST /rest/v1/backups') for c in calls), 'C7 envoi automatique lancé (%s)' % calls[:2])
+    page.evaluate("() => document.getElementById('seance-finish-btn').click()"); page.wait_for_timeout(300)
+    page.evaluate("() => { const b = document.getElementById('confirm-modal-confirm'); if (b && b.offsetParent) b.click(); }"); page.wait_for_timeout(500)
+    check(week() == 2 and not page.is_visible('#confirm-modal-confirm'), 'C7 second Terminer (même forcé) : cycle toujours en semaine %s, aucune confirmation' % week())
+    ctx.close()
+
+    # C8 : option active puis déconnexion : aucune ligne "pas encore en ligne" sur l'Accueil
+    ctx, page, errors = fresh(b, dataset(3))
+    jset(page, 'ovryk.cloud.prefs', {'autoUpload': True})
+    jset(page, 'ovryk.cloud.lastUpload', {'at': '2026-10-14T10:00:00.000Z', 'id': 'x', 'fingerprint': '00000000', 'sessionsCompleted': 2, 'userId': 'u-1'})
+    page.reload(); page.wait_for_timeout(300); home(page)
+    check(not page.is_visible('#cloud-home-line') and json.loads(ls(page)['ovryk.cloud.prefs']) == {'autoUpload': True}, 'C8 option active, déconnecté, 1 séance non envoyée : aucune ligne, prefs intactes')
     ctx.close()
 
     b.close()

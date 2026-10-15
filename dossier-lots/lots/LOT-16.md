@@ -2,7 +2,7 @@
 
 Taille : L. Dépend de : tous. Lot à risque (export, import, sauvegardes, écriture dans des données existantes).
 
-Statut : plan révisé le 2026-10-10, décisions de Ruben prises le 2026-10-10 (voir "Décisions prises"). Livraison 1 faite (sw v124), corrigée après quatre audits (sw v125 à v128). Livraison 2 (connexion) faite (sw v129). Livraison 3 (table backups et envoi manuel) faite (sw v130), script SQL à exécuter par Ruben. Livraison 4 (restauration depuis la sauvegarde en ligne) faite (sw v131 et v132, auditée, poussée avec le tag v132-stable). Livraison 5 (envoi automatique après chaque séance) faite (sw v133 à v135, auditée, poussée avec le tag v135-stable). Lot de nettoyage (plan du 2026-10-15) : livraisons 1 (sw v136) et 2 (sw v137) faites, en attente d'audit.
+Statut : plan révisé le 2026-10-10, décisions de Ruben prises le 2026-10-10 (voir "Décisions prises"). Livraison 1 faite (sw v124), corrigée après quatre audits (sw v125 à v128). Livraison 2 (connexion) faite (sw v129). Livraison 3 (table backups et envoi manuel) faite (sw v130), script SQL à exécuter par Ruben. Livraison 4 (restauration depuis la sauvegarde en ligne) faite (sw v131 et v132, auditée, poussée avec le tag v132-stable). Livraison 5 (envoi automatique après chaque séance) faite (sw v133 à v135, auditée, poussée avec le tag v135-stable). Lot de nettoyage (plan du 2026-10-15) : livraisons 1 (sw v136) et 2 (sw v137) faites et auditées (livraison 1 SÛRE ; livraison 2 NON SÛRE pour un point bloquant conditionnel, corrigé par le commit D, sw v138), en attente de push.
 
 ## Écrans de la maquette
 
@@ -331,7 +331,7 @@ R11 (pas de compte obligatoire).
   2. Une tentative de restauration remise en état supprime la copie qu'elle avait créée (deleteRestorePointById, réutilise discardRestorePoint) : elle ne devient plus "la copie à annuler", et la copie de la restauration précédente reste proposée, y compris après une nouvelle séance.
   3. Après un export ou un partage, la ligne d'annulation de Réglages est réaffichée (renderDataSafetyRows) : elle reflète la copie que l'écran d'annulation ouvrira.
   4. Suppression de la base de copies sans réponse (le plus souvent bloquée par une autre fenêtre de l'app) : le message et le statut après "Annuler" précisent que les copies pourront être effacées plus tard, quand cette fenêtre se fermera, même si l'utilisateur annule. Pas de promesse de ce genre pour une erreur franche.
-  * Limite connue : une tentative dont l'échec survient à la pose de la marque ("stockage plein") laisse encore sa copie (identique à l'état). Elle est écartée de la ligne tant qu'elle est identique, mais redevient proposée dès que l'état change (nouvelle séance, export). Non traité ici, hors du périmètre demandé.
+  * Limite connue, corrigée le 2026-10-15 (nettoyage, livraison 2, sw v137) : une tentative dont l'échec survient à la pose de la marque ("stockage plein") laissait sa copie (identique à l'état), qui redevenait proposée dès que l'état changeait. Cette copie est maintenant supprimée (deleteRestorePointById), avant toute écriture de données.
 * Défauts restants (faibles) :
   * 6 : comptage des séances perdues par identifiant, limites théoriques impossibles avec des données de l'app (séance sans identifiant, identifiants en double, même séance au contenu différent).
   * 7 : "Ignorer" laisse un éventuel état mélangé (le message le dit, la copie reste dans Réglages tant que le nettoyage ne l'a pas supprimée).
@@ -470,17 +470,17 @@ R11 (pas de compte obligatoire).
 
 ## Lot de nettoyage : points non bloquants de l'audit de la livraison 4 (2026-10-14)
 
-Audit de c0b9104 et 9f186ff : verdict SÛR, aucun point bloquant. À traiter dans un lot de nettoyage, pas avant (aucun n'écrit de données sans les deux confirmations).
+Audit de c0b9104 et 9f186ff : verdict SÛR, aucun point bloquant. À traiter dans un lot de nettoyage, pas avant (aucun n'écrit de données sans les deux confirmations). État au 2026-10-15 : 1, 2 et 3 corrigés (nettoyage, livraison 1, sw v136), 9 corrigé pour les refus "fichier", 4 à 8 et le reste du 9 abandonnés (voir le bilan plus bas).
 
-1. Une réponse en ligne qui arrive après une déconnexion ou un changement de compte faits dans une autre fenêtre ouvre quand même l'écran de restauration (cloudDownloadBackup ne compare pas la session de départ à la session actuelle).
-2. Une réponse tardive remplace un écran de restauration déjà ouvert (par exemple un fichier importé entre temps) : l'écran affiche la sauvegarde en ligne, mais confirmRestore a déjà retenu l'ancien contenu et appliquerait celui-là. Pendant la copie de sécurité, renderRestorePage peut aussi débloquer les boutons.
-3. L'écran de restauration s'ouvre par-dessus n'importe quelle vue si l'utilisateur a quitté Réglages pendant le téléchargement, y compris pendant une séance en cours.
-4. Le recalcul du nombre de séances est contournable avec un ancien format (listes à la racine, sans data.sessions) : ce contrôle n'est fait que si data.sessions est une liste. Cas théorique, l'empreinte FNV 32 bits détecte l'abîmé, pas la falsification.
-5. Le délai de la liste des sauvegardes est de 15 s (délai par défaut) au lieu de 60 s comme le téléchargement.
-6. Le renouvellement de session pendant le téléchargement peut écrire ou effacer ovryk.cloud.auth avant toute confirmation (voulu depuis la livraison 2, à documenter ou à isoler).
-7. Des dates affichées ne sont pas couvertes par l'empreinte : "dernière le" de la liste (colonne summary) et "exportée le" de l'écran de comparaison (exportedAt).
-8. Le repère "Identique à ce téléphone" est absent juste après une restauration : les migrations et le rattrapage du catalogue au rechargement changent l'empreinte locale.
-9. Messages approximatifs : une ligne d'un autre compte donne "n'existe plus (remplacée par un envoi plus récent)", les refus de validateBackupFile parlent de "fichier", et "Dernier envoi réussi" n'est pas propre à chaque compte.
+1. [corrigé, sw v136] Une réponse en ligne qui arrive après une déconnexion ou un changement de compte faits dans une autre fenêtre ouvre quand même l'écran de restauration (cloudDownloadBackup ne compare pas la session de départ à la session actuelle).
+2. [corrigé, sw v136] Une réponse tardive remplace un écran de restauration déjà ouvert (par exemple un fichier importé entre temps) : l'écran affiche la sauvegarde en ligne, mais confirmRestore a déjà retenu l'ancien contenu et appliquerait celui-là. Pendant la copie de sécurité, renderRestorePage peut aussi débloquer les boutons.
+3. [corrigé, sw v136 ; une sous-page de Réglages ouverte n'est pas comptée comme écran quitté] L'écran de restauration s'ouvre par-dessus n'importe quelle vue si l'utilisateur a quitté Réglages pendant le téléchargement, y compris pendant une séance en cours.
+4. [abandonné] Le recalcul du nombre de séances est contournable avec un ancien format (listes à la racine, sans data.sessions) : ce contrôle n'est fait que si data.sessions est une liste. Cas théorique, l'empreinte FNV 32 bits détecte l'abîmé, pas la falsification.
+5. [abandonné] Le délai de la liste des sauvegardes est de 15 s (délai par défaut) au lieu de 60 s comme le téléchargement.
+6. [abandonné, voulu] Le renouvellement de session pendant le téléchargement peut écrire ou effacer ovryk.cloud.auth avant toute confirmation (voulu depuis la livraison 2, à documenter ou à isoler).
+7. [abandonné] Des dates affichées ne sont pas couvertes par l'empreinte : "dernière le" de la liste (colonne summary) et "exportée le" de l'écran de comparaison (exportedAt).
+8. [abandonné] Le repère "Identique à ce téléphone" est absent juste après une restauration : les migrations et le rattrapage du catalogue au rechargement changent l'empreinte locale.
+9. [libellé "fichier" corrigé, sw v136 ; le reste abandonné, un seul compte] Messages approximatifs : une ligne d'un autre compte donne "n'existe plus (remplacée par un envoi plus récent)", les refus de validateBackupFile parlent de "fichier", et "Dernier envoi réussi" n'est pas propre à chaque compte.
 
 ### Bilan du lot de nettoyage (2026-10-15)
 
@@ -488,18 +488,42 @@ Audit de c0b9104 et 9f186ff : verdict SÛR, aucun point bloquant. À traiter dan
 * Fermé : rafraîchissement de la ligne d'annulation, corrigé depuis la v128.
 * Abandonnés (décision du 2026-10-15) : lastAttempt non lié au compte (un seul compte) ; verrou bloqué après une exception dans un callback (aucun chemin connu, état honnête au rechargement) ; message trompeur au rechargement en plein envoi ; recomptage contournable avec l'ancien format (point 4) ; délai de 15 s de la liste (point 5) ; renouvellement de session pendant le téléchargement (point 6, voulu) ; dates hors empreinte (point 7) ; repère "Identique à ce téléphone" après une restauration (point 8) ; "Dernier envoi réussi" non propre au compte et ligne d'un autre compte (point 9, un seul compte) ; long mot coupé dans "Dernier essai" ; branche morte de getRestorePoint ; BACKUP_KEY_LABELS, CURRENT_SCHEMA_VERSION et autres doublons ; défauts 6, 7, 8 et 11 de la livraison 1 ; fenêtre de rotation (constat) ; liftBaseMode au deuxième démarrage (préexistant, sans effet).
 * Laissés de côté : gardes de lecture (mini-lot, PLAN.md). Hors nettoyage, à décider : bouton Reps/Plage, flèches de l'éditeur, écran du repos par type (lot 14, livraison 5).
+* Audit du 2026-10-15 des commits b0c32c5 (livraison 1, SÛRE) et 10fa3e1 (livraison 2, NON SÛRE) :
+  * Bloquant conditionnel, corrigé par le commit D (sw v138) : une exception de l'export fichier de fin de séance, placé après l'avancée des cycles, empêchait `activeSession = null`, `showSeanceStart` et l'envoi automatique, et un second appui sur Terminer faisait avancer le cycle une deuxième fois. L'export est maintenant dans son propre try/catch, ordre exact conservé : enregistrement, avancée des cycles, export protégé, activeSession = null, showSeanceStart, envoi automatique. Aucun cas réel d'exception de l'export connu.
+  * Non bloquant, corrigé par D : l'option d'envoi automatique active puis une déconnexion laissait une ligne permanente sur l'Accueil ("N séances pas encore en ligne"). La ligne exige maintenant une session connectée (readCloudSession).
+  * Tests de D : test_cleanup.py C7 (export en exception, 3 contrôles échouent sur 10fa3e1) et C8 ; A16 aligné (déconnecté : aucune ligne).
+* Non bloquants laissés de côté (audit du 2026-10-15) :
+  * Une copie IndexedDB abîmée est sautée sans le dire : la ligne "Annuler" propose la copie valide précédente, plus ancienne, sans signaler que la plus récente a été écartée (l'écran de comparaison montre sa date).
+  * Si le renouvellement de session ne renvoie pas `user` (writeCloudSession met alors l'identifiant à null), un téléchargement légitime est ignoré avec "la connexion a changé". La documentation de Supabase indique que la réponse contient `user` ; non vérifié sur le vrai service.
+  * Fenêtre de Réinitialiser pendant la suppression de la base de copies (deleteRestoreDb, quelques millisecondes à 5 s) : un envoi manuel lancé à ce moment échappe à la garde cloudBusy. Déduit de la lecture du code, non rejoué.
+  * Une sous-page de Réglages ouverte (par exemple "Barre et disques") n'est pas comptée comme écran quitté : à l'arrivée de la réponse, l'écran de restauration s'ouvre par-dessus. Aucune donnée en jeu.
+  * La suppression de la copie après l'échec de la marque n'a pas de délai maximal (openRestoreDb sans délai ni onblocked) : si IndexedDB ne répond plus à ce moment, failRestore n'est jamais appelé et l'écran reste bloqué jusqu'au rechargement. Même schéma que la branche existante après un retour arrière réussi.
+  * Réinitialiser reste refusé tant que cloudBusy est bloqué (après une exception dans un callback réseau, défaut déjà connu et abandonné) : le message dit "attends" sans parler de recharger.
+
+## À planifier
+
+* Reconstituer une suite de tests de la restauration locale. Les suites test_l16* (livraison 1 du lot 16 et ses corrections) n'ont jamais été commitées et sont perdues avec le dossier temporaire d'une ancienne session. Plus aucune suite ne couvre :
+  * le refus des 17 variantes de fichiers qui feraient planter le démarrage (getBackupCrashError) ;
+  * le retour arrière après une écriture partielle (stockage plein pendant le remplacement) ;
+  * l'abandon après 10 s si IndexedDB ne répond pas ;
+  * le retour complet à la copie depuis le bandeau de restauration interrompue ;
+  * les libellés "Annuler" et "Rétablir" ;
+  * la suppression de la base de copies et des copies quotidiennes par Réinitialiser, ainsi que le cas d'une base bloquée ;
+  * l'export refusé quand une clé est illisible ;
+  * le partage et la protection du stockage.
+  Restent couverts : l'import et la restauration d'un fichier (test_auto_upload A12), la restauration en ligne complète (test_restore_cloud R4) et test_cleanup. La suite à reconstituer doit être commitée, avec des données fabriquées.
 
 ### Points non corrigés de l'audit de la livraison 5 (2026-10-14)
 
-Audit de 992a6b7 et 326306f : verdict SÛR, aucun point bloquant. Les points 1 à 3 de l'audit (un "non envoyé" qui efface l'alerte d'un échec, "À renvoyer" à 0 sans envoi de référence, dernier essai invisible une fois déconnecté) sont corrigés dans le commit C (sw v135). Restent, pour le lot de nettoyage :
+Audit de 992a6b7 et 326306f : verdict SÛR, aucun point bloquant. Les points 1 à 3 de l'audit (un "non envoyé" qui efface l'alerte d'un échec, "À renvoyer" à 0 sans envoi de référence, dernier essai invisible une fois déconnecté) sont corrigés dans le commit C (sw v135). État au 2026-10-15 :
 
-1. Réinitialiser l'app pendant un envoi en cours : la requête est coupée au rechargement, son retour d'erreur recrée ovryk.cloud.lastAttempt (non confirmé, userId null) et l'Accueil d'une appli vierge affiche "dernier envoi non confirmé". Réinitialiser ne tient pas compte du verrou cloudBusy.
-2. Rechargement en plein envoi : l'état enregistré est honnête (non confirmé) mais le texte gardé parle de service injoignable, alors que c'est l'appli qui a été rechargée. Le cas "interrompu" n'apparaît que si le JavaScript ne tourne plus du tout.
-3. Verrou bloqué si une exception survient dans un callback réseau : le try de startCloudAttempt n'attrape que les erreurs synchrones, le catch de cloudRequest avale les autres (done vaut déjà true). cloudBusy reste vrai et l'essai reste "en cours" jusqu'au rechargement. Déjà vrai pour le bouton manuel, étendu à l'envoi automatique.
-4. Calcul lourd juste après la fin de séance : buildCloudBackupRow (sérialisation, empreinte, mesure en octets, jusqu'à 2 Mo) et plusieurs relectures des séances dans le setTimeout. Un court gel est possible sur un long historique. Non mesuré.
-5. Fenêtre de rotation plus courte : avec un envoi par séance, les 30 sauvegardes les plus récentes couvrent environ 30 séances (la plus complète reste toujours gardée).
-6. Écriture de liftBaseMode au deuxième démarrage d'une installation neuve (préexistante, commit 7b9a195, sans lien avec la livraison 5) : la clé ovryk.exercises change au deuxième lancement puis se stabilise.
+1. [corrigé, nettoyage livraison 1, sw v136] Réinitialiser l'app pendant un envoi en cours : la requête est coupée au rechargement, son retour d'erreur recrée ovryk.cloud.lastAttempt (non confirmé, userId null) et l'Accueil d'une appli vierge affiche "dernier envoi non confirmé". Réinitialiser ne tient pas compte du verrou cloudBusy.
+2. [abandonné] Rechargement en plein envoi : l'état enregistré est honnête (non confirmé) mais le texte gardé parle de service injoignable, alors que c'est l'appli qui a été rechargée. Le cas "interrompu" n'apparaît que si le JavaScript ne tourne plus du tout.
+3. [abandonné, aucun chemin connu] Verrou bloqué si une exception survient dans un callback réseau : le try de startCloudAttempt n'attrape que les erreurs synchrones, le catch de cloudRequest avale les autres (done vaut déjà true). cloudBusy reste vrai et l'essai reste "en cours" jusqu'au rechargement. Déjà vrai pour le bouton manuel, étendu à l'envoi automatique.
+4. [mesuré, non corrigé : 61 ms au rythme normal sur 1,9 Mo, 232 ms ralenti 4 fois] Calcul lourd juste après la fin de séance : buildCloudBackupRow (sérialisation, empreinte, mesure en octets, jusqu'à 2 Mo) et plusieurs relectures des séances dans le setTimeout. Un court gel est possible sur un long historique. Non mesuré.
+5. [constat, abandonné] Fenêtre de rotation plus courte : avec un envoi par séance, les 30 sauvegardes les plus récentes couvrent environ 30 séances (la plus complète reste toujours gardée).
+6. [préexistant, abandonné] Écriture de liftBaseMode au deuxième démarrage d'une installation neuve (préexistante, commit 7b9a195, sans lien avec la livraison 5) : la clé ovryk.exercises change au deuxième lancement puis se stabilise.
 
-Test automatique de la livraison 5 : dossier-lots/tests/test_auto_upload.py (51 sur 51, Supabase simulé, données fabriquées).
+Test automatique de la livraison 5 : dossier-lots/tests/test_auto_upload.py (51 sur 51 à la livraison, 59 sur 59 après le nettoyage, Supabase simulé, données fabriquées).
 
-Test automatique de la livraison 4 : dossier-lots/tests/test_restore_cloud.py (47 sur 47, Supabase simulé, données fabriquées). Il prend en argument un dossier de travail et attend le site servi sur http://127.0.0.1:8765.
+Test automatique de la livraison 4 : dossier-lots/tests/test_restore_cloud.py (47 sur 47 à la livraison, 52 sur 52 après le nettoyage, Supabase simulé, données fabriquées). Il prend en argument un dossier de travail et attend le site servi sur http://127.0.0.1:8765.
