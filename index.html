@@ -3603,6 +3603,36 @@
     color: var(--steel);
     margin: 0 0 var(--space-4);
   }
+  /* lot 18, livraison 1 : écran "Équivalent en salle indé" de la fiche
+     exercice. Sélection en orange (R.4 : muscu), mêmes tokens que les
+     cartes de l'écran Type. */
+  .equiv-search { margin: 0 0 var(--space-3); }
+  .equiv-message { font-size: 13px; line-height: 1.45; color: var(--rust); font-weight: 700; margin: 0 0 var(--space-3); }
+  .equiv-message[hidden] { display: none; }
+  .equiv-option {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    width: 100%;
+    min-height: 44px;
+    text-align: left;
+    background: transparent;
+    border: 1px solid var(--border-card);
+    border-radius: var(--radius-card);
+    padding: var(--space-3) var(--space-4);
+    margin-bottom: var(--space-2);
+    cursor: pointer;
+    font: inherit;
+  }
+  .equiv-option.is-selected { border-color: var(--rust); background: var(--accent-200); }
+  .equiv-option:disabled { opacity: 0.55; cursor: default; }
+  .equiv-option-text { flex: 1; min-width: 0; }
+  .equiv-option-name { font-size: 14px; font-weight: 700; color: var(--ink); }
+  .equiv-option-sub { font-size: 11px; color: var(--steel); margin: 2px 0 0; }
+  .equiv-option-radio { flex-shrink: 0; width: 20px; height: 20px; border-radius: 50%; border: 1.5px solid var(--steel); }
+  .equiv-option.is-selected .equiv-option-radio { border-color: var(--rust); background: var(--rust); }
+  .equiv-fiche-note { font-size: 12px; line-height: 1.45; color: var(--steel); margin: var(--space-2) 0 0; }
   .exercise-type-result {
     background: var(--blue-fill);
     border-radius: var(--radius-card);
@@ -4925,6 +4955,24 @@
     <div class="fullscreen-page-body" id="exercise-type-body"></div>
   </div>
 
+  <!-- lot 18, livraison 1 : équivalent d'un exercice en salle indé.
+       Rien n'est écrit avant "Enregistrer". -->
+  <div id="exercise-equiv-page" class="fullscreen-page" hidden>
+    <div class="fullscreen-page-topbar">
+      <button type="button" id="exercise-equiv-cancel-btn" class="fullscreen-page-action cancel">Fermer</button>
+      <span class="fullscreen-page-title" id="exercise-equiv-title"></span>
+      <button type="button" id="exercise-equiv-save-btn" class="fullscreen-page-action confirm">Enregistrer</button>
+    </div>
+    <div class="fullscreen-page-body">
+      <p class="exercise-type-note">Exercice à faire à la place de celui-ci en salle indé. Il sera proposé automatiquement quand la séance sera lancée en salle indé. Les mouvements (Lifting) ne sont jamais remplacés.</p>
+      <p class="equiv-message" id="exercise-equiv-message" role="alert" hidden></p>
+      <div class="search-input-wrap equiv-search">
+        <input type="text" id="exercise-equiv-search" class="search-input" placeholder="Rechercher un exercice…" autocomplete="off">
+      </div>
+      <div id="exercise-equiv-list"></div>
+    </div>
+  </div>
+
   <div id="coordination-page" class="fullscreen-page" hidden>
     <div class="fullscreen-page-topbar">
       <button type="button" id="coordination-back-btn" class="fullscreen-page-action cancel">Fermer</button>
@@ -5971,6 +6019,18 @@
         found.exerciseType = getExerciseType(found);
         this.saveExercises(list);
       }
+    },
+    /* lot 18 : équivalent en salle indé (champ optionnel gymEquivalentId,
+       absent = aucun). targetId null : retire l'équivalent ; rien n'est
+       écrit si le champ n'existait pas. Les contrôles (Lifting, soi-même,
+       chaîne) sont faits par l'appelant (getGymEquivalentError). */
+    updateExerciseGymEquivalent: function (id, targetId) {
+      var list = this.getExercises();
+      var found = list.filter(function (e) { return e.id === id; })[0];
+      if (!found) return false;
+      if (targetId == null && found.gymEquivalentId == null) return true;
+      found.gymEquivalentId = targetId == null ? null : String(targetId);
+      return this.saveExercises(list);
     },
     updateExerciseLastGrip: function (id, grip) {
       var list = this.getExercises();
@@ -15676,6 +15736,142 @@
     renderExerciseDetailFicheExtra(exerciseId);
   });
 
+  /* ============================================================
+     ÉQUIVALENT EN SALLE INDÉ (lot 18, livraison 1). Champ optionnel
+     exercise.gymEquivalentId, édité seulement depuis la fiche exercice.
+     Lecture seule partout ailleurs : aucune séance n'est encore touchée.
+     ============================================================ */
+
+  /* équivalent utilisable, ou null : le champ désigne un exercice qui
+     existe, autre que lui-même, et ni la source ni la cible ne sont des
+     mouvements (Lifting). Un seul saut : l'équivalent de l'équivalent
+     n'est jamais suivi. */
+  function getGymEquivalent(exercise) {
+    if (!exercise || exercise.category === 'Lifting') return null;
+    var id = exercise.gymEquivalentId;
+    if (typeof id !== 'string' || !id || id === exercise.id) return null;
+    var target = OvrykDB.getExerciseById(id);
+    if (!target || target.category === 'Lifting') return null;
+    return target;
+  }
+
+  /* exercices (hors Lifting) dont l'équivalent est exerciseId. */
+  function getGymEquivalentSources(exerciseId) {
+    return OvrykDB.getExercises().filter(function (e) {
+      return e && e.id !== exerciseId && e.category !== 'Lifting' && e.gymEquivalentId === exerciseId;
+    });
+  }
+
+  /* raison d'un refus, ou null. target null = "aucun équivalent",
+     toujours permis. */
+  function getGymEquivalentError(source, target) {
+    if (!source) return 'Exercice introuvable.';
+    if (source.category === 'Lifting') return 'Un mouvement (Lifting) suit des pourcentages de 1RM : il n’est jamais remplacé.';
+    if (!target) return null;
+    var sources = getGymEquivalentSources(source.id);
+    if (sources.length) return '« ' + source.name + ' » est déjà l’équivalent de « ' + sources[0].name + ' » : il ne peut pas avoir lui-même un équivalent.';
+    if (target.id === source.id) return 'Un exercice ne peut pas être son propre équivalent.';
+    if (target.category === 'Lifting') return '« ' + target.name + ' » est un mouvement (Lifting) : il ne peut pas servir d’équivalent.';
+    if (getGymEquivalent(target)) return '« ' + target.name + ' » a déjà son propre équivalent en salle indé : pas d’équivalent en chaîne.';
+    return null;
+  }
+
+  var exerciseEquivPageState = { exerciseId: null, pendingId: null };
+
+  function openExerciseEquivPage(exerciseId) {
+    var exercise = OvrykDB.getExerciseById(exerciseId);
+    if (!exercise || exercise.category === 'Lifting') return;
+    exerciseEquivPageState.exerciseId = exerciseId;
+    exerciseEquivPageState.pendingId = getGymEquivalent(exercise) ? exercise.gymEquivalentId : null;
+    document.getElementById('exercise-equiv-title').textContent = exercise.name;
+    document.getElementById('exercise-equiv-search').value = '';
+    showExerciseEquivMessage('');
+    document.getElementById('exercise-equiv-page').hidden = false;
+    renderExerciseEquivList();
+  }
+
+  function closeExerciseEquivPage() {
+    document.getElementById('exercise-equiv-page').hidden = true;
+    exerciseEquivPageState.exerciseId = null;
+    exerciseEquivPageState.pendingId = null;
+  }
+
+  function showExerciseEquivMessage(text) {
+    var el = document.getElementById('exercise-equiv-message');
+    el.textContent = text || '';
+    el.hidden = !text;
+  }
+
+  /* reconstruit seulement la liste : à l'ouverture, à la recherche et à
+     chaque choix. Rien n'est écrit avant "Enregistrer". */
+  function renderExerciseEquivList() {
+    var source = OvrykDB.getExerciseById(exerciseEquivPageState.exerciseId);
+    var listEl = document.getElementById('exercise-equiv-list');
+    listEl.innerHTML = '';
+    if (!source) return;
+    var query = normalizeSearch(document.getElementById('exercise-equiv-search').value).trim();
+
+    function addOption(id, name, sub, error) {
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'equiv-option' + (exerciseEquivPageState.pendingId === id ? ' is-selected' : '');
+      btn.setAttribute('aria-pressed', exerciseEquivPageState.pendingId === id ? 'true' : 'false');
+      var text = document.createElement('span');
+      text.className = 'equiv-option-text';
+      var nameEl = document.createElement('span');
+      nameEl.className = 'equiv-option-name';
+      nameEl.textContent = name;
+      text.appendChild(nameEl);
+      if (sub || error) {
+        var subEl = document.createElement('p');
+        subEl.className = 'equiv-option-sub';
+        subEl.textContent = error || sub;
+        text.appendChild(subEl);
+      }
+      btn.appendChild(text);
+      var radio = document.createElement('span');
+      radio.className = 'equiv-option-radio';
+      radio.setAttribute('aria-hidden', 'true');
+      btn.appendChild(radio);
+      if (error) {
+        btn.disabled = true;
+      } else {
+        btn.addEventListener('click', function () {
+          exerciseEquivPageState.pendingId = id;
+          showExerciseEquivMessage('');
+          renderExerciseEquivList();
+        });
+      }
+      listEl.appendChild(btn);
+    }
+
+    if (!query) addOption(null, 'Aucun équivalent', 'Cet exercice est gardé en salle indé.', null);
+    OvrykDB.getExercises().forEach(function (ex) {
+      if (!ex || ex.id === source.id || ex.category === 'Lifting') return;
+      if (query && normalizeSearch(ex.name || '').indexOf(query) === -1) return;
+      addOption(ex.id, ex.name, ex.category || '', getGymEquivalentError(source, ex));
+    });
+  }
+
+  document.getElementById('exercise-equiv-search').addEventListener('input', renderExerciseEquivList);
+  document.getElementById('exercise-equiv-cancel-btn').addEventListener('click', closeExerciseEquivPage);
+  document.getElementById('exercise-equiv-save-btn').addEventListener('click', function () {
+    var exerciseId = exerciseEquivPageState.exerciseId;
+    var source = OvrykDB.getExerciseById(exerciseId);
+    var pendingId = exerciseEquivPageState.pendingId;
+    var target = pendingId ? OvrykDB.getExerciseById(pendingId) : null;
+    if (pendingId && !target) { showExerciseEquivMessage('Exercice choisi introuvable. Rien n’a été enregistré.'); return; }
+    /* contrôle refait au moment d'écrire (l'état a pu changer) */
+    var error = getGymEquivalentError(source, target);
+    if (error) { showExerciseEquivMessage(error + ' Rien n’a été enregistré.'); return; }
+    if (!OvrykDB.updateExerciseGymEquivalent(exerciseId, pendingId)) {
+      showExerciseEquivMessage('Enregistrement impossible (stockage plein ?). Rien n’a été modifié.');
+      return;
+    }
+    closeExerciseEquivPage();
+    renderExerciseDetailFicheExtra(exerciseId);
+  });
+
   /* ligne 1RM de la fiche : même motif que openOneRepMaxEditor (onglet
      Exercices), mais affiche en plus le même message qu'à l'activation
      "Charges de départ" (buildCycleStartMessage) — jamais un rafraîchissement
@@ -15757,6 +15953,37 @@
       '<span class="rex-summary-chevron"><svg viewBox="0 0 24 24" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="9,6 15,12 9,18"/></svg></span>';
     typeBtn.addEventListener('click', function () { openExerciseTypePage(exerciseId); });
     container.appendChild(typeBtn);
+
+    /* lot 18 : équivalent en salle indé, jamais pour un mouvement (Lifting).
+       Lecture seule ici : l'écran de choix n'écrit qu'à "Enregistrer". */
+    if (exercise.category !== 'Lifting') {
+      var equiv = getGymEquivalent(exercise);
+      var equivLabel = equiv ? equiv.name
+        : (typeof exercise.gymEquivalentId === 'string' && exercise.gymEquivalentId ? 'Équivalent introuvable' : 'Aucun');
+      var equivBtn = document.createElement('button');
+      equivBtn.type = 'button';
+      equivBtn.className = 'rex-summary-row';
+      equivBtn.id = 'exercise-detail-equiv-btn';
+      var equivText = document.createElement('span');
+      equivText.className = 'rex-summary-text';
+      equivText.textContent = 'Équivalent en salle indé · ' + equivLabel;
+      equivBtn.appendChild(equivText);
+      var chevron = document.createElement('span');
+      chevron.className = 'rex-summary-chevron';
+      chevron.innerHTML = '<svg viewBox="0 0 24 24" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="9,6 15,12 9,18"/></svg>';
+      equivBtn.appendChild(chevron);
+      equivBtn.addEventListener('click', function () { openExerciseEquivPage(exerciseId); });
+      container.appendChild(equivBtn);
+
+      var sources = getGymEquivalentSources(exerciseId);
+      if (sources.length) {
+        var sourcesNote = document.createElement('p');
+        sourcesNote.className = 'equiv-fiche-note';
+        sourcesNote.id = 'exercise-detail-equiv-sources';
+        sourcesNote.textContent = 'Fait en salle indé à la place de : ' + sources.map(function (e) { return e.name; }).join(', ') + '.';
+        container.appendChild(sourcesNote);
+      }
+    }
 
     if (exercise.category === 'Lifting' && !OvrykDB.getForceCycle(exerciseId)) {
       container.appendChild(buildExerciseDetailOneRepMaxRow(exercise));
