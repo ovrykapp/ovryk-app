@@ -533,6 +533,146 @@ with sync_playwright() as p:
     else:
         check(False, 'G22 git indisponible : comparaison avec c81f6fe impossible')
 
+    # ================= Livraison 3 : changement de salle pendant la séance, verrou =================
+    def head_pill(page): return page.locator('#seance-active-gym-wrap .gym-switch')
+    COUNT_WRITES = """() => { window.__w = 0; const orig = Storage.prototype.setItem;
+      Storage.prototype.setItem = function (k, v) { if (k === 'ovryk.sessions') window.__w++; return orig.call(this, k, v); }; }"""
+    def open_card(page, card_index):
+        h = page.locator('.live-card-header').nth(card_index)
+        if h.get_attribute('aria-expanded') != 'true': h.click(); page.wait_for_timeout(250)
+    def edit_kg(page, card_index, value):
+        open_card(page, card_index)
+        inp = page.locator('.live-card.is-open .muscu-set-row.is-current input').first
+        inp.fill(str(value)); inp.press('Tab'); page.wait_for_timeout(200)
+
+    # G23 et G24 : On Air vers Indé puis retour, reconstruction ciblée, une seule écriture
+    sup_rex = [{'exerciseId': 'ex-w', 'restSeconds': 60, 'sets': [rset(30), rset(30)], 'groupId': 'g-1', 'groupType': 'superset'}]
+    ctx, page, errors = fresh(b, salle_dataset(extra_rex=sup_rex))
+    launch_gym(page, 'onair')
+    s0 = live(page)
+    # saisies à la main sans valider : poids de X (carte concernée) et de Z (non concernée), notes
+    edit_kg(page, 0, 120); edit_kg(page, 1, 47)
+    page.fill('#seance-notes-input', 'note fabriquee'); page.locator('#seance-notes-input').press('Tab'); page.wait_for_timeout(200)
+    s1 = live(page)
+    check(head_pill(page).get_attribute('data-gym') == 'onair' and head_pill(page).get_attribute('aria-disabled') is None and not page.is_visible('#seance-gym-note'),
+          'G23 en-tête : pilule On Air, active (aucune série validée)')
+    page.evaluate(COUNT_WRITES)
+    head_pill(page).click(); page.wait_for_timeout(500)
+    s2 = live(page); writes = page.evaluate('() => window.__w')
+    same_keys = all(s2[k] == s1[k] for k in ('id', 'startedAt', 'date', 'notes', 'routineId'))
+    c = s2['exercises']
+    check(s2['gym'] == 'inde' and same_keys and writes == 1 and [x['exerciseId'] for x in c] == ['ex-y', 'ex-z', 'ex-w'] and c[0].get('replacesExerciseId') == 'ex-x',
+          'G23 Indé : seule la carte X devient Y (remplace X), id, début, date, notes et ordre gardés, une seule écriture (%d)' % writes)
+    check(c[1] == s1['exercises'][1] and c[2] == s1['exercises'][2] and c[2]['groupId'] == 'g-1' and c[1]['sets'][0]['weightKg'] == 47,
+          'G23 cartes non concernées identiques (Z à 47 kg saisi à la main, superset de W gardé)')
+    check(page.inner_text('#seance-gym-label') == 'Salle : Indé' and head_pill(page).get_attribute('data-gym') == 'inde', 'G23 en-tête mis à jour : "Salle : Indé"')
+    head_pill(page).click(); page.wait_for_timeout(500)
+    s3 = live(page); c = s3['exercises']
+    check(s3['gym'] == 'onair' and [x['exerciseId'] for x in c] == ['ex-x', 'ex-z', 'ex-w'] and 'replacesExerciseId' not in c[0]
+          and c[1] == s1['exercises'][1] and c[2] == s1['exercises'][2] and s3['notes'] == 'note fabriquee',
+          'G24 retour en On Air : la carte Y redevient X, le reste identique')
+    check([x['weightKg'] for x in c[0]['sets']] == [100, 100, 100],
+          'G29 perte assumée : le poids saisi à la main sur X (120 kg) est perdu, X revient à sa ligne de routine (100 kg) ; seul effet de bord constaté')
+    ctx.close()
+
+    # G25 : doublon, carte Y normale et carte Y qui remplace X : seule la carte de remplacement change, dans les deux sens
+    dup_rex = [{'exerciseId': 'ex-y', 'restSeconds': 75, 'sets': [rset(70), rset(70)]}]
+    ctx, page, errors = fresh(b, salle_dataset(extra_rex=dup_rex))
+    launch_gym(page, 'onair')
+    edit_kg(page, 2, 71); s1 = live(page)
+    head_pill(page).click(); page.wait_for_timeout(500)
+    c = live(page)['exercises']
+    check([x['exerciseId'] for x in c] == ['ex-y', 'ex-z', 'ex-y'] and c[0].get('replacesExerciseId') == 'ex-x' and c[2] == s1['exercises'][2] and c[2]['sets'][0]['weightKg'] == 71,
+          'G25 vers Indé : X devient la carte Y de remplacement, la carte Y normale (71 kg saisi) intacte')
+    head_pill(page).click(); page.wait_for_timeout(500)
+    c = live(page)['exercises']
+    check([x['exerciseId'] for x in c] == ['ex-x', 'ex-z', 'ex-y'] and c[2] == s1['exercises'][2],
+          'G25 vers On Air : seule la carte de remplacement redevient X, la carte Y normale intacte')
+    head_pill(page).click(); page.wait_for_timeout(500)
+    c = live(page)['exercises']
+    check([x['exerciseId'] for x in c] == ['ex-y', 'ex-z', 'ex-y'] and c[0].get('replacesExerciseId') == 'ex-x' and c[2] == s1['exercises'][2],
+          'G25 retour en Indé : la carte de remplacement est recréée, l\'autre carte Y toujours intacte')
+    ctx.close()
+
+    # G26 : verrou après une série validée, puis dé-validation, minuteur de repos non touché
+    ctx, page, errors = fresh(b, salle_dataset())
+    launch_gym(page, 'onair')
+    open_card(page, 1)
+    cur_kg(page).fill('40'); cur_kg(page).press('Tab'); page.wait_for_timeout(100); cur_circle(page).click(); page.wait_for_timeout(400)
+    before = ls(page)
+    hp = head_pill(page)
+    locked_ok = hp.get_attribute('aria-disabled') == 'true' and 'is-locked' in hp.get_attribute('class') and 'Salle fixée après la première série' in page.inner_text('#seance-gym-note')
+    page.evaluate("() => { const m = document.querySelector('main'); if (m) m.scrollTop = 0; window.scrollTo(0, 0); document.getElementById('seance-active-gym-wrap').scrollIntoView({block: 'center'}); }"); page.wait_for_timeout(200)
+    page.screenshot(path=str(SHOTS / 'entete-verrouillee.png'))
+    hp.click(force=True); page.wait_for_timeout(300)
+    check(locked_ok and ls(page) == before and live(page)['gym'] == 'onair', 'G26 série validée : pilule verrouillée (aria-disabled, atténuée, texte), un tap ne change rien')
+    timer_on = page.evaluate("() => document.body.classList.contains('rest-timer-active')")
+    page.locator('.live-card.is-open .live-set-circle.is-done').first.click(); page.wait_for_timeout(400)
+    hp = head_pill(page)
+    unlocked = hp.get_attribute('aria-disabled') is None and not page.is_visible('#seance-gym-note')
+    hp.click(); page.wait_for_timeout(500)
+    timer_after = page.evaluate("() => document.body.classList.contains('rest-timer-active')")
+    check(unlocked and live(page)['gym'] == 'inde' and timer_on and timer_after,
+          'G26 série dé-validée : la pilule se déverrouille et le changement est permis ; minuteur de repos toujours en cours (%s puis %s)' % (timer_on, timer_after))
+    ctx.close()
+
+    # G27 : exception pendant la reconstruction : séance intacte, rien d'écrit, message
+    ctx, page, errors = fresh(b, salle_dataset())
+    launch_gym(page, 'onair')
+    s1 = live(page)
+    rts = json.loads(ls(page)['ovryk.routines']); rts[0]['exercises'][0]['sets'] = None   # ligne de routine abîmée après le lancement
+    jset(page, 'ovryk.routines', rts); before = ls(page)
+    head_pill(page).click(); page.wait_for_timeout(400)
+    msg = page.inner_text('#seance-gym-note') if page.is_visible('#seance-gym-note') else ''
+    check(ls(page) == before and live(page) == s1 and 'La séance n’a pas été modifiée' in msg and head_pill(page).get_attribute('data-gym') == 'onair',
+          'G27 exception simulée : séance identique en mémoire et en stockage, aucune écriture, message "%s"' % msg[:60])
+    page.locator('.live-card-header').nth(1).click(); page.wait_for_timeout(250)
+    check(live(page) == s1 and page.inner_text('#seance-gym-label') == 'Salle : On Air' and 'presse fabriquee' in page.locator('.live-card').first.inner_text().lower()
+          and 'Cannot' not in msg, 'G27 l\'écran affiche toujours On Air et la carte d\'origine (X), message en français')
+    ctx.close()
+
+    # G28 : séance en cours sans salle (créée avant la mise à jour) : aucune pilule, aucun remplacement
+    d = salle_dataset()
+    old_live = sess2('s-avant', datetime.now(timezone.utc).strftime('%Y-%m-%d'), None, [('ex-x', 'Presse fabriquee', [rset(100), rset(100)])])
+    old_live.update({'status': 'in_progress', 'completedAt': None})
+    d['sessions'] = [old_live]
+    ctx, page, errors = fresh(b, d)
+    seance(page)
+    check(page.is_visible('#seance-active-view') and head_pill(page).count() == 0 and not page.is_visible('#seance-gym-label') and live(page) == old_live and not errors,
+          'G28 séance sans salle : aucune pilule, aucun libellé, séance inchangée')
+    ctx.close()
+
+    # G30 : allègement déjà appliqué : gardé sur les cartes non concernées et reporté sur la carte échangée
+    d = salle_dataset()
+    d['exercises'].append(ex('ex-c', 'Arrache fabrique', 'Lifting', liftBaseMode='force'))
+    d['forceCycles'] = {'ex-c': {'cycle_actif': '6', 'semaine_actuelle': 4, 'one_rm_actuel': 100, 'historique_1rm': [], 'historique_cycles': [], 'prochain_cycle': None,
+                                 'en_attente_de_validation': False, 'semaines_modifiees': {}, 'test_report_used': False, 'decalage_semaines': 0}}
+    d['settings']['deloadMuscuMode'] = 'auto'
+    ctx, page, errors = fresh(b, d)
+    launch_gym(page, 'onair')
+    s1 = live(page)
+    head_pill(page).click(); page.wait_for_timeout(500)
+    c = live(page)['exercises']
+    check(s1['exercises'][0].get('deload') and c[0]['exerciseId'] == 'ex-y' and c[0].get('deload') is True and len(c[0]['sets']) == 2
+          and c[0].get('deloadSource') == s1['exercises'][0].get('deloadSource') and c[1] == s1['exercises'][1],
+          'G30 allègement : la carte Y de remplacement est allégée avec la même source, la carte Z allégée reste identique')
+    ctx.close()
+
+    # G31 : pilule de l'en-tête à 390 px : On Air, Indé (captures) et styles identiques à l'écran de départ
+    ctx, page, errors = fresh(b, salle_dataset())
+    launch_gym(page, 'onair')
+    page.screenshot(path=str(SHOTS / 'entete-onair.png'))
+    head_pill(page).click(); page.wait_for_timeout(400)
+    page.screenshot(path=str(SHOTS / 'entete-inde.png'))
+    st = page.evaluate("""() => { const b = document.querySelector('#seance-active-gym-wrap .gym-switch'); const t = b.querySelector('.gym-switch-thumb');
+      const r = b.getBoundingClientRect(); const cs = getComputedStyle(b), ts = getComputedStyle(t);
+      return {h: r.height, right: r.right, sw: document.documentElement.scrollWidth, bg: cs.backgroundColor, border: cs.borderTopColor, thumb: ts.backgroundColor,
+              shadow: [cs.boxShadow, ts.boxShadow], img: [cs.backgroundImage, ts.backgroundImage], role: b.getAttribute('role'), label: b.getAttribute('aria-label')}; }""")
+    check(st['h'] >= 44 and st['right'] <= 390 and st['sw'] <= 390 and st['bg'] == 'rgb(17, 17, 16)' and st['border'] == 'rgb(58, 58, 53)' and st['thumb'] == 'rgb(255, 106, 43)'
+          and st['shadow'] == ['none', 'none'] and st['img'] == ['none', 'none'] and st['role'] == 'switch' and st['label'] == 'Salle',
+          'G31 pilule de l\'en-tête à 390 px : %s px de haut, même style que l\'écran de départ, sans ombre ni dégradé' % round(st['h']))
+    ctx.close()
+
     b.close()
 
 print('\n%d/%d' % (sum(res), len(res)))

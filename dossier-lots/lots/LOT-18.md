@@ -72,6 +72,24 @@ Ruben s'entraîne dans une salle indépendante, où il manque des machines, et �
   * Tests modifiés : G11 (charges vides au lieu des charges de l'exercice d'origine, décision du 2026-10-15).
   * Tests : test_gym.py, 53 contrôles. G19 charges vides et validation avec un poids saisi, exercice non concerné inchangé ; G20 prévisionnel de la charge de la semaine en Indé et en On Air ; G21 doublon (deux cartes distinctes, progression par carte sur deux séances, comparateur et suggestion par carte, enregistrement sans écrasement, une ligne d'historique par séance, record compté une fois) ; G22 comparaison avec c81f6fe : enregistrements, compteur, comparateur et suggestion identiques sur des séances sans carte remplacée (dont le même exercice deux fois), seule la séance avec une carte remplacée est fusionnée.
 
+* Livraison 3 faite le 2026-10-15 (sw v142), en local, non poussée.
+  * Pilule de salle en tête de la séance en cours (même composant et même style que l'écran de départ), avec "Salle : …" toujours dans la barre du haut. Aucune pilule pour une séance sans salle (créée avant ce lot).
+  * Verrou : calculé à chaque rendu (isSessionGymLocked), dès qu'au moins une série de la séance est validée. Pilule non cliquable (aria-disabled), atténuée, texte "Salle fixée après la première série.". Dé-valider la dernière série validée déverrouille la pilule (comportement voulu : rien n'est encore fait dans la séance).
+  * Changement de salle : buildGymSwitchedExercises construit la nouvelle liste de cartes sans rien modifier, puis switchActiveSessionGym assigne la liste et la salle et écrit une seule fois (persistActiveSession). En cas d'exception pendant la construction : séance intacte en mémoire et en stockage, aucune écriture, message "Changement de salle impossible (la routine de cette séance n'a pas pu être relue). La séance n'a pas été modifiée."
+  * Reconstruction ciblée : les cartes issues de la routine sont reconnues dans l'ordre (la n-ième ligne d'un exercice correspond à sa n-ième carte normale ; pour le retour en On Air, à sa n-ième carte de remplacement) ; une carte en plus est un ajout à la main et n'est jamais échangée. Seules les cartes concernées par un équivalent sont reconstruites (buildSessionExerciseFromRex, extraite telle quelle de buildSessionFromRoutine) ; id, début, date, notes, ordre, supersets (groupId et groupType de la carte d'origine), cartes de cycle, ajouts à la main et cartes non concernées (poids et reps saisis compris) restent identiques. Un allègement déjà appliqué à la carte échangée est appliqué de même à la nouvelle carte (même source).
+  * Doublon : vers On Air, seule la carte de remplacement redevient X ; vers Indé, seule la carte normale de X devient la carte de remplacement ; la carte Y normale n'est jamais touchée.
+  * Perte assumée : poids ou reps saisis à la main sur une carte échangée, sans série validée, sont perdus ; revenir à la salle d'avant reconstruit la carte depuis l'historique ou la routine. Seul effet de bord constaté par les tests (notes, autres cartes, ordre, supersets, minuteur de repos inchangés).
+  * Tests : test_gym.py, 69 contrôles (G23 à G31 ajoutés ; aucun test existant modifié par cette livraison).
+
+## Décisions prises sans Ruben pendant le lot (à valider à l'audit)
+
+* Séance fusionnée (doublon avec une carte remplacée) marquée allégée dès qu'une de ses cartes l'est : elle sort alors de la stagnation, comme toute séance allégée.
+* Comparateur "Précédent" vide pour une carte remplacée jamais faite dans ce créneau, même si l'équivalent a déjà été fait en carte normale (les charges de départ, elles, se rabattent sur la carte normale).
+* Charges vides pour un équivalent sans historique dans la routine (décision de Ruben du 2026-10-15, appliquée en 2b), structure du créneau gardée.
+* "+ Séance vide" passé en bouton secondaire (contour) en 2b, la pilule et lui se disputant l'attention.
+* Pilule de la séance en cours placée en tête de la vue de séance (zone tactile de 44 px), et non dans la barre du haut trop étroite ; la barre garde "Salle : …".
+* Dé-valider la dernière série validée déverrouille la salle.
+
 ## Hors périmètre
 
 Bouton Reps/Plage, flèches de l'éditeur, écran du repos par type, gardes de lecture, suite de tests de la restauration locale, migration des routines "(indé)".

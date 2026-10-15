@@ -3697,6 +3697,11 @@
   @media (hover: hover) and (pointer: fine) {
     .btn-add.btn-add-outline:hover { background: var(--accent-200); }
   }
+  /* livraison 3 : pilule verrouillée dès la première série validée */
+  .gym-switch.is-locked { opacity: 0.5; cursor: default; }
+  .seance-gym-note { margin: calc(-1 * var(--space-2)) 0 var(--space-4); font-size: 12px; line-height: 1.45; color: var(--steel); }
+  .seance-gym-note[hidden] { display: none; }
+  .seance-gym-note.is-error { color: var(--rust); font-weight: 700; }
   .seance-gym { font-size: 11px; color: var(--steel); }
   .seance-gym[hidden] { display: none; }
   .live-card-replaces { display: block; font-size: 11px; color: var(--steel); margin: 2px 0 0; }
@@ -4492,6 +4497,10 @@
       </div>
 
       <div id="seance-active-view" hidden>
+        <!-- lot 18, livraison 3 : salle de la séance en cours, modifiable
+             jusqu'à la première série validée. -->
+        <div id="seance-active-gym-wrap"></div>
+        <p class="seance-gym-note" id="seance-gym-note" hidden></p>
 
         <div id="seance-exercise-list"></div>
 
@@ -11979,6 +11988,92 @@
     return list.length ? list[0] : null;
   }
 
+  /* lot 18, livraison 3 : construction d'une carte à partir d'une ligne
+     de routine, extraite telle quelle de buildSessionFromRoutine (même
+     code), pour être réutilisée par le changement de salle en séance. */
+  function buildSessionExerciseFromRex(routine, rex, gym, now, lastSession) {
+    var replacement = getRoutineSlotReplacement(rex, gym);
+    var exerciseId = replacement ? replacement.id : rex.exerciseId;
+    var exercise = replacement || OvrykDB.getExerciseById(rex.exerciseId);
+    var cycle = replacement ? null : OvrykDB.getForceCycle(rex.exerciseId);
+    /* lot 06 : un cycle en attente de validation (entre
+       closeCycleAndDrawNext et launchPendingCycle) a cycle_actif et
+       semaine_actuelle gelés sur l'ancien cycle — une nouvelle séance
+       ne doit pas rejouer cette semaine de test figée, elle bascule en
+       mode de base comme un mouvement pas encore démarré.
+       lot 08 : même bascule en mode de base tant que le mouvement n'a
+       pas atteint sa date de départ coordonnée (isBeforeForceCycleStart)
+       — le cycle existe déjà (decalage_semaines connu) mais reste gelé,
+       semaine_actuelle n'avance pas (voir advanceForceCycleWeek). */
+    var cyclePending = !!(cycle && cycle.en_attente_de_validation);
+    var activeCycle = (cyclePending || isBeforeForceCycleStart(exercise)) ? null : cycle;
+    var inBaseMode = !activeCycle && (cyclePending || isBeforeForceCycleStart(exercise));
+    /* the routine was edited (sets/reps/weight/rest added, removed or
+       changed) after the last session for it was logged — carrying that
+       past session's sets forward would silently undo the edit, so drop
+       the continuity and use the routine's current prescription instead */
+    /* lot 18 : exercice concerné par un équivalent : dernière séance de
+       la routine qui le contient (l'autre salle a pu le remplacer
+       entre temps). Tous les autres : inchangé. */
+    var gymLinked = isGymLinkedExercise(exerciseId);
+    var slotReplaces = replacement ? rex.exerciseId : null;
+    var refSession = gymLinked ? getLastCompletedRoutineSessionWithSlot(routine.id, exerciseId, slotReplaces) : lastSession;
+    var routineEditedSinceLastSession = refSession && routine.updatedAt &&
+      new Date(routine.updatedAt) > new Date(refSession.completedAt || refSession.date);
+    var pastSex = (activeCycle || inBaseMode || routineEditedSinceLastSession) ? null
+      : (gymLinked ? findSexForSlot(refSession, exerciseId, slotReplaces) : findExerciseInSession(refSession, exerciseId));
+
+    var sets, restSeconds, cycleWeekUsed = null, cycleIdUsed = null, isLightSession = false;
+    if (activeCycle) {
+      /* la séance n'existe pas encore en base (excludeSessionId inutile
+         ici) : R12, point D — résout si c'est la première ou une séance
+         légère de la semaine civile pour ce mouvement. */
+      var cycleBuild = buildCycleSessionSets(activeCycle, exerciseId, now, null);
+      sets = cycleBuild.sets;
+      restSeconds = cycleBuild.restSeconds;
+      cycleWeekUsed = cycleBuild.weekNumberUsed;
+      cycleIdUsed = cycleBuild.cycleIdUsed;
+      isLightSession = cycleBuild.isLightSession;
+    } else if (inBaseMode) {
+      var basePrescription = getBaseModePrescription(exercise);
+      sets = buildSessionSetsFromPrescription(basePrescription.sets);
+      restSeconds = basePrescription.restSeconds || 90;
+    } else if (pastSex) {
+      sets = cloneSetsFromPastSex(pastSex, exercise);
+      restSeconds = pastSex.restSeconds != null ? pastSex.restSeconds : rex.restSeconds;
+    } else if (replacement) {
+      /* livraison 2b : carte remplacée sans reprise possible : structure
+         du créneau (séries, plage, repos), charges de l'équivalent dans
+         cette routine (créneau, sinon carte normale du même exercice),
+         sinon vides, jamais celles de l'exercice d'origine. */
+      sets = cloneSetsFromRoutineRex(rex);
+      restSeconds = rex.restSeconds;
+      var weightKg = getReplacementStartWeight(routine.id, exerciseId, slotReplaces);
+      sets.forEach(function (set) { set.weightKg = weightKg; });
+    } else {
+      sets = cloneSetsFromRoutineRex(rex);
+      restSeconds = rex.restSeconds;
+    }
+
+    var built = {
+      id: 'sex-' + OvrykDB.generateId(),
+      exerciseId: exerciseId,
+      exerciseName: exercise ? exercise.name : 'Exercice',
+      category: exercise ? exercise.category : '',
+      oneRepMaxSnapshot: cycle ? cycle.one_rm_actuel :
+        ((exercise && exercise.category === 'Lifting' && exercise.oneRepMax != null) ? exercise.oneRepMax : null),
+      restSeconds: restSeconds,
+      sets: sets,
+      groupId: rex.groupId || null,
+      groupType: rex.groupType || null,
+      cycleWeekUsed: cycleWeekUsed,
+      cycleIdUsed: cycleIdUsed,
+      isLightSession: isLightSession
+    };
+    if (replacement) built.replacesExerciseId = rex.exerciseId;
+    return built;
+  }
+
   /* lot 18 : gym ('inde' ou 'onair', sinon la dernière salle utilisée).
      En salle indé, une ligne dont l'exercice a un équivalent (jamais un
      mouvement de cycle) est construite avec l'équivalent : structure de la
@@ -12000,86 +12095,7 @@
       notes: '',
       gym: gym,
       exercises: routine.exercises.map(function (rex) {
-        var replacement = getRoutineSlotReplacement(rex, gym);
-        var exerciseId = replacement ? replacement.id : rex.exerciseId;
-        var exercise = replacement || OvrykDB.getExerciseById(rex.exerciseId);
-        var cycle = replacement ? null : OvrykDB.getForceCycle(rex.exerciseId);
-        /* lot 06 : un cycle en attente de validation (entre
-           closeCycleAndDrawNext et launchPendingCycle) a cycle_actif et
-           semaine_actuelle gelés sur l'ancien cycle — une nouvelle séance
-           ne doit pas rejouer cette semaine de test figée, elle bascule en
-           mode de base comme un mouvement pas encore démarré.
-           lot 08 : même bascule en mode de base tant que le mouvement n'a
-           pas atteint sa date de départ coordonnée (isBeforeForceCycleStart)
-           — le cycle existe déjà (decalage_semaines connu) mais reste gelé,
-           semaine_actuelle n'avance pas (voir advanceForceCycleWeek). */
-        var cyclePending = !!(cycle && cycle.en_attente_de_validation);
-        var activeCycle = (cyclePending || isBeforeForceCycleStart(exercise)) ? null : cycle;
-        var inBaseMode = !activeCycle && (cyclePending || isBeforeForceCycleStart(exercise));
-        /* the routine was edited (sets/reps/weight/rest added, removed or
-           changed) after the last session for it was logged — carrying that
-           past session's sets forward would silently undo the edit, so drop
-           the continuity and use the routine's current prescription instead */
-        /* lot 18 : exercice concerné par un équivalent : dernière séance de
-           la routine qui le contient (l'autre salle a pu le remplacer
-           entre temps). Tous les autres : inchangé. */
-        var gymLinked = isGymLinkedExercise(exerciseId);
-        var slotReplaces = replacement ? rex.exerciseId : null;
-        var refSession = gymLinked ? getLastCompletedRoutineSessionWithSlot(routine.id, exerciseId, slotReplaces) : lastSession;
-        var routineEditedSinceLastSession = refSession && routine.updatedAt &&
-          new Date(routine.updatedAt) > new Date(refSession.completedAt || refSession.date);
-        var pastSex = (activeCycle || inBaseMode || routineEditedSinceLastSession) ? null
-          : (gymLinked ? findSexForSlot(refSession, exerciseId, slotReplaces) : findExerciseInSession(refSession, exerciseId));
-
-        var sets, restSeconds, cycleWeekUsed = null, cycleIdUsed = null, isLightSession = false;
-        if (activeCycle) {
-          /* la séance n'existe pas encore en base (excludeSessionId inutile
-             ici) : R12, point D — résout si c'est la première ou une séance
-             légère de la semaine civile pour ce mouvement. */
-          var cycleBuild = buildCycleSessionSets(activeCycle, exerciseId, now, null);
-          sets = cycleBuild.sets;
-          restSeconds = cycleBuild.restSeconds;
-          cycleWeekUsed = cycleBuild.weekNumberUsed;
-          cycleIdUsed = cycleBuild.cycleIdUsed;
-          isLightSession = cycleBuild.isLightSession;
-        } else if (inBaseMode) {
-          var basePrescription = getBaseModePrescription(exercise);
-          sets = buildSessionSetsFromPrescription(basePrescription.sets);
-          restSeconds = basePrescription.restSeconds || 90;
-        } else if (pastSex) {
-          sets = cloneSetsFromPastSex(pastSex, exercise);
-          restSeconds = pastSex.restSeconds != null ? pastSex.restSeconds : rex.restSeconds;
-        } else if (replacement) {
-          /* livraison 2b : carte remplacée sans reprise possible : structure
-             du créneau (séries, plage, repos), charges de l'équivalent dans
-             cette routine (créneau, sinon carte normale du même exercice),
-             sinon vides, jamais celles de l'exercice d'origine. */
-          sets = cloneSetsFromRoutineRex(rex);
-          restSeconds = rex.restSeconds;
-          var weightKg = getReplacementStartWeight(routine.id, exerciseId, slotReplaces);
-          sets.forEach(function (set) { set.weightKg = weightKg; });
-        } else {
-          sets = cloneSetsFromRoutineRex(rex);
-          restSeconds = rex.restSeconds;
-        }
-
-        var built = {
-          id: 'sex-' + OvrykDB.generateId(),
-          exerciseId: exerciseId,
-          exerciseName: exercise ? exercise.name : 'Exercice',
-          category: exercise ? exercise.category : '',
-          oneRepMaxSnapshot: cycle ? cycle.one_rm_actuel :
-            ((exercise && exercise.category === 'Lifting' && exercise.oneRepMax != null) ? exercise.oneRepMax : null),
-          restSeconds: restSeconds,
-          sets: sets,
-          groupId: rex.groupId || null,
-          groupType: rex.groupType || null,
-          cycleWeekUsed: cycleWeekUsed,
-          cycleIdUsed: cycleIdUsed,
-          isLightSession: isLightSession
-        };
-        if (replacement) built.replacesExerciseId = rex.exerciseId;
-        return built;
+        return buildSessionExerciseFromRex(routine, rex, gym, now, lastSession);
       })
     };
     /* lot 13, livraison 3 : allègement automatique, seulement ici, à la
@@ -12261,6 +12277,21 @@
     var gymEl = document.getElementById('seance-gym-label');
     gymEl.textContent = isKnownGym(activeSession.gym) ? 'Salle : ' + gymLabel(activeSession.gym) : '';
     gymEl.hidden = !isKnownGym(activeSession.gym);
+    /* livraison 3 : pilule de la séance en cours (aucune pour une séance
+       sans salle, d'avant ce lot), verrouillée dès une série validée. */
+    var activeGymWrap = document.getElementById('seance-active-gym-wrap');
+    var gymNote = document.getElementById('seance-gym-note');
+    activeGymWrap.innerHTML = '';
+    gymNote.classList.remove('is-error');
+    if (isKnownGym(activeSession.gym)) {
+      var gymLocked = isSessionGymLocked(activeSession);
+      activeGymWrap.appendChild(buildGymSwitch(activeSession.gym, switchActiveSessionGym, gymLocked));
+      gymNote.textContent = gymLocked ? 'Salle fixée après la première série.' : '';
+      gymNote.hidden = !gymLocked;
+    } else {
+      gymNote.textContent = '';
+      gymNote.hidden = true;
+    }
 
     var notesInput = document.getElementById('seance-notes-input');
     if (document.activeElement !== notesInput) notesInput.value = activeSession.notes || '';
@@ -16048,10 +16079,11 @@
 
   /* pilule : un tap n'importe où bascule. locked : non cliquable (livraison
      3). Aucune écriture ici, l'appelant décide. */
-  function buildGymSwitch(gym, onToggle) {
+  function buildGymSwitch(gym, onToggle, locked) {
     var btn = document.createElement('button');
     btn.type = 'button';
-    btn.className = 'gym-switch';
+    btn.className = 'gym-switch' + (locked ? ' is-locked' : '');
+    if (locked) btn.setAttribute('aria-disabled', 'true');
     btn.setAttribute('role', 'switch');
     btn.setAttribute('aria-label', 'Salle');
     btn.setAttribute('aria-checked', gym === 'onair' ? 'true' : 'false');
@@ -16072,8 +16104,92 @@
     sr.className = 'gym-switch-sr';
     sr.textContent = 'Salle actuelle : ' + gymLabel(gym);
     btn.appendChild(sr);
-    if (onToggle) btn.addEventListener('click', function () { onToggle(gym === 'onair' ? 'inde' : 'onair'); });
+    if (onToggle && !locked) btn.addEventListener('click', function () { onToggle(gym === 'onair' ? 'inde' : 'onair'); });
     return btn;
+  }
+
+  /* ============================================================
+     CHANGEMENT DE SALLE PENDANT LA SÉANCE (lot 18, livraison 3).
+     Permis tant qu'aucune série n'est validée (verrou calculé à chaque
+     rendu, jamais stocké). Reconstruction ciblée : seules les cartes
+     concernées par un équivalent sont échangées ; tout le reste de la
+     séance est gardé tel quel. Nouvel état construit d'abord, assigné
+     ensuite, une seule écriture.
+     ============================================================ */
+  function isSessionGymLocked(session) {
+    return !!session && Array.isArray(session.exercises) && session.exercises.some(function (sex) {
+      return sex && Array.isArray(sex.sets) && sex.sets.some(function (set) { return set && set.done; });
+    });
+  }
+
+  /* nouvelle liste de cartes pour nextGym, sans rien modifier de la
+     séance reçue. Les cartes issues de la routine sont reconnues dans
+     l'ordre : la n-ième ligne de routine d'un exercice correspond à sa
+     n-ième carte normale ; une carte en plus est un ajout à la main
+     (jamais échangé). Lève une exception si la construction échoue. */
+  function buildGymSwitchedExercises(session, routine, nextGym) {
+    var now = session.date || new Date().toISOString();
+    var lastSession = routine ? getLastCompletedSessionForRoutine(routine.id) : null;
+    var rexes = routine && Array.isArray(routine.exercises) ? routine.exercises : [];
+    var usedCards = {};
+    var rexForCard = {};
+    var seenByExercise = {};
+    rexes.forEach(function (rex) {
+      var n = seenByExercise[rex.exerciseId] = (seenByExercise[rex.exerciseId] || 0) + 1;
+      if (nextGym === 'inde') {
+        /* carte normale de cet exercice, n-ième occurrence */
+        var count = 0;
+        for (var i = 0; i < session.exercises.length; i++) {
+          var sex = session.exercises[i];
+          if (!sex || sex.exerciseId !== rex.exerciseId || sex.replacesExerciseId) continue;
+          count++;
+          if (count === n) { if (!usedCards[i]) { usedCards[i] = true; rexForCard[i] = rex; } break; }
+        }
+      } else {
+        /* carte qui remplace cet exercice, n-ième occurrence */
+        var countR = 0;
+        for (var k = 0; k < session.exercises.length; k++) {
+          var sexR = session.exercises[k];
+          if (!sexR || sexR.replacesExerciseId !== rex.exerciseId) continue;
+          countR++;
+          if (countR === n) { if (!usedCards[k]) { usedCards[k] = true; rexForCard[k] = rex; } break; }
+        }
+      }
+    });
+    return session.exercises.map(function (sex, index) {
+      var rex = rexForCard[index];
+      if (!rex) return sex;
+      if (nextGym === 'inde' && !getRoutineSlotReplacement(rex, 'inde')) return sex;
+      var built = buildSessionExerciseFromRex(routine, rex, nextGym, now, lastSession);
+      built.groupId = sex.groupId || null;
+      built.groupType = sex.groupType || null;
+      /* allègement déjà appliqué à ce créneau : appliqué de même à la
+         nouvelle carte (même source). */
+      if (sex.deload && sex.deloadSource) applyMuscuDeload({ exercises: [built] }, sex.deloadSource);
+      return built;
+    });
+  }
+
+  function switchActiveSessionGym(nextGym) {
+    var note = document.getElementById('seance-gym-note');
+    if (!activeSession || !isKnownGym(activeSession.gym) || !isKnownGym(nextGym) || nextGym === activeSession.gym) return;
+    if (isSessionGymLocked(activeSession)) { renderSeanceActiveView(); return; }
+    var routine = activeSession.routineId ? OvrykDB.getRoutineById(activeSession.routineId) : null;
+    var nextExercises;
+    try {
+      nextExercises = buildGymSwitchedExercises(activeSession, routine, nextGym);
+    } catch (e) {
+      note.textContent = 'Changement de salle impossible (la routine de cette séance n’a pas pu être relue). La séance n’a pas été modifiée.';
+      note.classList.add('is-error');
+      note.hidden = false;
+      return;
+    }
+    activeSession.exercises = nextExercises;
+    activeSession.gym = nextGym;
+    persistActiveSession();
+    renderSeanceActiveView();
+    var again = document.querySelector('#seance-active-gym-wrap .gym-switch');
+    if (again) again.focus();
   }
 
   var exerciseEquivPageState = { exerciseId: null, pendingId: null };
