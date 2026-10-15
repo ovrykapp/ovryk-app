@@ -3,7 +3,7 @@ Livraison 1 : champ exercise.gymEquivalentId et écran de la fiche exercice,
 sans aucun changement des séances.
 Données FABRIQUÉES ici : aucun vrai export, aucun appel réseau.
 Usage : python3 test_gym.py <dossier de travail>, site servi sur http://127.0.0.1:8765."""
-import sys, json
+import sys, json, re, subprocess
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 from playwright.sync_api import sync_playwright
@@ -252,8 +252,10 @@ with sync_playwright() as p:
     check(lv and lv.get('gym') == 'inde' and [x['exerciseId'] for x in exs_] == ['ex-y', 'ex-z'] and exs_[0].get('replacesExerciseId') == 'ex-x'
           and exs_[0]['exerciseName'] == 'Hack squat fabrique' and 'replacesExerciseId' not in exs_[1],
           'G11 Indé : ex-x remplacé par ex-y (replacesExerciseId ex-x), ex-z inchangé, salle "inde" enregistrée')
-    check(len(exs_[0]['sets']) == 3 and all(x['weightKg'] == 100 for x in exs_[0]['sets']) and exs_[0]['restSeconds'] == 90,
-          'G11 sans historique de l\'équivalent : structure et charges de la ligne de routine (3 séries, 100 kg, repos 90 s)')
+    # livraison 2b : sans historique de l'équivalent dans la routine, charges vides (avant : celles de l'exercice d'origine)
+    check(len(exs_[0]['sets']) == 3 and all(x['weightKg'] is None for x in exs_[0]['sets']) and exs_[0]['restSeconds'] == 90
+          and all(x['repsMin'] == 8 and x['repsMax'] == 10 for x in exs_[0]['sets']),
+          'G11 sans historique de l\'équivalent : structure du créneau (3 séries, plage 8-10, repos 90 s), charges vides')
     head = page.inner_text('#seance-gym-label') if page.is_visible('#seance-gym-label') else ''
     card = page.locator('.live-card').first.inner_text()
     check(head == 'Salle : Indé' and 'Remplace Presse fabriquee (salle indé)' in card, 'G11 en-tête "%s", carte "remplace"' % head)
@@ -391,6 +393,145 @@ with sync_playwright() as p:
     page.locator('#history-list .history-row').first.click(); page.wait_for_timeout(400)
     check('Salle' not in page.inner_text('#history-detail-date') and 'Remplace' not in page.inner_text('#history-detail-body'), 'G18 séance d\'avant le lot (sans salle) : rien d\'affiché')
     ctx.close()
+
+    # ================= Livraison 2b : doublon, statistiques, charges vides, prévisionnel =================
+    def cur_kg(page): return page.locator('.live-card.is-open .muscu-set-row.is-current input').first
+    def cur_circle(page): return page.locator('.live-card.is-open .muscu-set-row.is-current .live-set-col-check button').first
+    def launch_gym(page, gym_):
+        seance(page)
+        if pill(page).get_attribute('data-gym') != gym_: pill(page).click(); page.wait_for_timeout(200)
+        page.locator('#seance-routine-list .routine-row-main', has_text='Routine salle').first.click(); page.wait_for_timeout(700)
+
+    # G19 : charges vides pour un équivalent sans historique dans la routine ; une série se valide avec un poids saisi ; Z non concerné inchangé
+    hist = [sess2('s-z', '2026-09-01', 'onair', [('ex-x', 'Presse fabriquee', [rset(100, 9, True)] * 3), ('ex-z', 'Fente fabriquee', [rset(42.5, 10, True), rset(42.5, 10, True)])])]
+    ctx, page, errors = fresh(b, salle_dataset(hist))
+    launch_gym(page, 'inde')
+    lv = live(page); y, z = lv['exercises'][0], lv['exercises'][1]
+    check(y['exerciseId'] == 'ex-y' and all(st_['weightKg'] is None for st_ in y['sets']) and len(y['sets']) == 3,
+          'G19 équivalent sans historique : 3 séries, charges vides (jamais les 100 kg de la presse)')
+    check(z['exerciseId'] == 'ex-z' and [st_['weightKg'] for st_ in z['sets']] == [45, 45] and 'replacesExerciseId' not in z,
+          'G19 exercice non concerné : reprise habituelle de la dernière séance (42,5 kg haut de plage, 45 kg) (%s)' % [st_['weightKg'] for st_ in z['sets']])
+    cur_kg(page).fill('55'); cur_kg(page).press('Tab'); page.wait_for_timeout(150)
+    cur_circle(page).click(); page.wait_for_timeout(400)
+    y = live(page)['exercises'][0]
+    check(y['sets'][0]['done'] is True and y['sets'][0]['weightKg'] == 55 and not errors, 'G19 série validée avec un poids saisi à la main (55 kg)')
+    ctx.close()
+
+    # G20 : prévisionnel de la charge de la semaine (lot 13) : en Indé, la carte remplacée est prévue à la place de l'exercice d'origine
+    today = datetime.now().isoweekday()
+    # l'écran n'affiche que des nombres de séries : la carte remplacée a 2 séries (son historique), l'exercice d'origine 3 (sa ligne de routine)
+    for gym_, expected in [('inde', 4), ('onair', 5)]:
+        hist = [sess2('s-w1', '2026-09-01', 'inde', [('ex-y', 'Hack squat fabrique', [rset(50, 10, True)] * 2, 'ex-x')])]
+        if gym_ == 'onair': hist.append(sess2('s-w2', '2026-09-08', 'onair', [('ex-w', 'Leg extension fabrique', [rset(30, 10, True)])], routine='r-autre'))
+        ctx, page, errors = fresh(b, salle_dataset(hist, weekdays=[today]))
+        page.click('.nav-btn[data-target="routine"]'); page.wait_for_timeout(400)
+        sub = page.inner_text('#programme-week-load-sub')
+        check(('%d séries' % expected) in sub and not errors,
+              'G20 charge de la semaine, dernière salle %s : "%s" (attendu %d : %s)' % (gym_, sub, expected, 'Y 2 + Z 2' if gym_ == 'inde' else 'X 3 + Z 2'))
+        ctx.close()
+
+    # G21 : doublon X vers Y alors que Y est aussi dans la routine
+    dup_rex = [{'exerciseId': 'ex-y', 'restSeconds': 75, 'sets': [rset(70), rset(70)]}]
+    def dup_session(sid, date, w_rep, w_norm, reps_rep=10, reps_norm=8, gym='inde'):
+        return sess2(sid, date, gym, [('ex-y', 'Hack squat fabrique', [rset(w_rep, reps_rep, True)] * 3, 'ex-x'),
+                                       ('ex-z', 'Fente fabriquee', [rset(40, 8, True)] * 2),
+                                       ('ex-y', 'Hack squat fabrique', [rset(w_norm, reps_norm, True)] * 2)])
+    hist = [dup_session('s-d1', '2026-09-01', 50, 70), dup_session('s-d2', '2026-09-08', 52.5, 70)]
+    ctx, page, errors = fresh(b, salle_dataset(hist, extra_rex=dup_rex))
+    launch_gym(page, 'inde')
+    lv = live(page); cards = lv['exercises']
+    c_rep, c_norm = cards[0], cards[2]
+    check([c['exerciseId'] for c in cards] == ['ex-y', 'ex-z', 'ex-y'] and c_rep.get('replacesExerciseId') == 'ex-x' and 'replacesExerciseId' not in c_norm and c_rep['id'] != c_norm['id'],
+          'G21 deux cartes Y distinctes : la première remplace X, la seconde est la carte normale')
+    check(len(c_rep['sets']) == 3 and all(abs(st_['weightKg'] - 55) < 0.01 for st_ in c_rep['sets']) and len(c_norm['sets']) == 2
+          and all(st_['weightKg'] == 70 and st_.get('targetReps') == 9 for st_ in c_norm['sets']),
+          'G21 progression par carte sur deux séances : remplacée 50 puis 52,5 vers 55 kg ; normale 70 kg cible 9 (%s / %s)' % (
+              [st_['weightKg'] for st_ in c_rep['sets']], [(st_['weightKg'], st_.get('targetReps')) for st_ in c_norm['sets']]))
+    prev_rep = page.locator('.live-card.is-open .muscu-set-row .live-set-col-prev').first.inner_text()
+    page.locator('.live-card-header').nth(2).click(); page.wait_for_timeout(300)
+    prev_norm = page.locator('.live-card.is-open .muscu-set-row .live-set-col-prev').first.inner_text()
+    check('52.5' in prev_rep and '70' in prev_norm and '52.5' not in prev_norm, 'G21 comparateur "Précédent" par carte : remplacée "%s", normale "%s"' % (prev_rep, prev_norm))
+    cur_kg(page).fill('72'); cur_kg(page).press('Tab'); page.wait_for_timeout(100); cur_circle(page).click(); page.wait_for_timeout(300)
+    page.locator('.live-card-header').nth(0).click(); page.wait_for_timeout(300)
+    cur_kg(page).fill('56'); cur_kg(page).press('Tab'); page.wait_for_timeout(100); cur_circle(page).click(); page.wait_for_timeout(300)
+    page.click('#seance-finish-btn'); page.wait_for_timeout(200); page.click('#confirm-modal-confirm'); page.wait_for_timeout(800)
+    done_s = [x for x in json.loads(ls(page)['ovryk.sessions']) if x['id'] == lv['id']][0]
+    ys = [x for x in done_s['exercises'] if x['exerciseId'] == 'ex-y']
+    check(done_s['status'] == 'completed' and len(ys) == 2 and ys[0].get('replacesExerciseId') == 'ex-x' and ys[0]['sets'][0]['weightKg'] == 56
+          and ys[1]['sets'][0]['weightKg'] == 72 and 'replacesExerciseId' not in ys[1] and ys[0]['id'] != ys[1]['id'],
+          'G21 séance enregistrée : deux cartes Y gardées séparément (56 kg remplacée, 72 kg normale), aucune n\'écrase l\'autre')
+    fiche(page, 'Hack squat fabrique')
+    hist_rows = page.locator('#exercise-detail-history .history-row').count()
+    check(hist_rows == 3, 'G21 fiche de Y : %d lignes d\'historique pour 3 séances avec doublon (une par séance)' % hist_rows)
+    # compteur de séances (countSessionsForExercise) : vérifié par G22 sur les mêmes règles (séance avec carte remplacée comptée une fois)
+    ctx.close()
+    hist = [dup_session('s-e1', '2026-09-01', 50, 70, reps_rep=10, reps_norm=6), dup_session('s-e2', '2026-09-08', 52.5, 70, reps_rep=10, reps_norm=6)]
+    ctx, page, errors = fresh(b, salle_dataset(hist, extra_rex=dup_rex))
+    launch_gym(page, 'inde')
+    txt_rep = page.locator('.live-card.is-open').first.inner_text()
+    page.locator('.live-card-header').nth(2).click(); page.wait_for_timeout(300)
+    txt_norm = page.locator('.live-card.is-open').first.inner_text()
+    sug = 'Deux dernières séances sous la plage'
+    check(sug in txt_norm and sug not in txt_rep, 'G21 suggestion de baisse par carte : normale oui, remplacée non')
+    ctx.close()
+    hist = [sess2('s-r0', '2026-08-25', 'onair', [('ex-y', 'Hack squat fabrique', [rset(50, 8, True)])]), dup_session('s-r1', '2026-09-08', 60, 70)]
+    ctx, page, errors = fresh(b, salle_dataset(hist, extra_rex=dup_rex))
+    page.click('.nav-btn[data-target="progression"]'); page.wait_for_timeout(300); page.click('#history-open-btn'); page.wait_for_timeout(400)
+    page.locator('#history-list .history-row').first.click(); page.wait_for_timeout(400)
+    tiles = ' '.join(page.locator('#history-detail-body .history-tile').all_inner_texts()).lower().replace('\n', ' ')
+    check('record 1' in tiles, 'G21 détail : "%s" (Y en doublon bat son record : compté une fois)' % tiles)
+    ctx.close()
+
+    # G22 : strictement identique sans carte remplacée. Fonctions extraites de c81f6fe (avant la 2b) et de la version actuelle, mêmes séances.
+    ROOT = Path(__file__).resolve().parents[2]
+    def extract(src, name):
+        m = re.search(r'\n  function ' + name + r'\(', src)
+        if not m: return ''
+        i = src.index('{', m.end()); depth = 0
+        for j in range(i, len(src)):
+            if src[j] == '{': depth += 1
+            elif src[j] == '}':
+                depth -= 1
+                if depth == 0: return src[m.start():j + 1]
+        return ''
+    NAMES = ['findExerciseInSession', 'findSexForSlot', 'getMuscuSetReps', 'computeSuccessfulReps', 'computeWeightFromPercent', 'epley1RM',
+             'resolveDoneSets', 'mergeSessionRecords', 'getExerciseSessionRecords', 'countSessionsForExercise', 'getLastLoggedSex', 'hasBelowRangeSet', 'checkDeloadSuggestion']
+    def harness(html):
+        src = html[html.index('<script>'):]
+        return '\n'.join(extract(src, n) for n in NAMES)
+    try:
+        old_html = subprocess.run(['git', '-C', str(ROOT), 'show', 'c81f6fe:index.html'], capture_output=True, text=True, check=True).stdout
+        new_html = (ROOT / 'index.html').read_text()
+        ok_git = True
+    except Exception:
+        ok_git = False; old_html = new_html = ''
+    def lx(sid, date, items, status='completed'):
+        s_ = sess2(sid, date, None, items); s_['status'] = status; return s_
+    plain = [lx('p1', '2026-08-01', [('ex-a', 'A', [rset(50, 8, True), rset(52.5, 7, True)]), ('ex-b', 'B', [rset(30, 10, True)])]),
+             lx('p2', '2026-08-08', [('ex-a', 'A', [rset(55, 6, True)]), ('ex-a', 'A', [rset(60, 5, True), {'reps': 5, 'weightKg': 62.5, 'done': True, 'rpe': 8}])]),
+             lx('p3', '2026-08-15', [('ex-a', 'A', [rset(55, 6, True)] * 2), ('ex-b', 'B', [rset(32.5, 10, True)])]),
+             lx('p4', '2026-08-22', [('ex-a', 'A', [rset(57.5, 9, False)])], status='in_progress'),
+             lx('p5', '2026-08-29', [('ex-l', 'L', [{'reps': 3, 'percent1rm': 80, 'done': True}])])]
+    plain[4]['exercises'][0]['category'] = 'Lifting'; plain[4]['exercises'][0]['oneRepMaxSnapshot'] = 100
+    plain[2]['exercises'][0]['deload'] = True
+    JS_TAIL = "\nvar out = {};\n['ex-a', 'ex-b', 'ex-l'].forEach(function (id) {\n  out[id] = { recAll: getExerciseSessionRecords(id), recDone: getExerciseSessionRecords(id, true), count: countSessionsForExercise(id), last: getLastLoggedSex(id), deload: checkDeloadSuggestion(id) };\n});\nconsole.log(JSON.stringify(out));\n"
+    def run_js(code, sessions):
+        js = ('var activeSession = null;\nvar OvrykDB = { getSessions: function () { return %s; } };\n' % json.dumps(sessions)) + code + JS_TAIL
+        f = SP / 'harness.js'; f.write_text(js)
+        r = subprocess.run(['node', str(f)], capture_output=True, text=True)
+        return json.loads(r.stdout) if r.returncode == 0 else {'erreur': r.stderr[:300]}
+    if ok_git:
+        o, n = run_js(harness(old_html), plain), run_js(harness(new_html), plain)
+        check('erreur' not in o and 'erreur' not in n and o == n,
+              'G22 séances sans carte remplacée (dont le même exercice deux fois dans une séance) : enregistrements, compteur, comparateur et décharge identiques avant et après (%s)' % (o.get('erreur') or n.get('erreur') or 'ok'))
+        mixed = plain + [lx('p6', '2026-09-05', [('ex-a', 'A', [rset(70, 8, True)], 'ex-x'), ('ex-a', 'A', [rset(65, 9, True)])])]
+        o2, n2 = run_js(harness(old_html), mixed), run_js(harness(new_html), mixed)
+        ok2 = ('erreur' not in o2 and 'erreur' not in n2 and len(n2['ex-a']['recAll']) == len(o2['ex-a']['recAll']) - 1
+               and n2['ex-a']['count'] == o2['ex-a']['count'] - 1 and n2['ex-a']['recAll'][:-1] == o2['ex-a']['recAll'][:-2]
+               and n2['ex-a']['recAll'][-1]['maxWeight'] == 70 and len(n2['ex-a']['recAll'][-1]['sets']) == 2)
+        check(ok2, 'G22 seule la séance avec une carte remplacée est fusionnée (un enregistrement et une séance de moins qu\'avant, les autres identiques)')
+    else:
+        check(False, 'G22 git indisponible : comparaison avec c81f6fe impossible')
 
     b.close()
 

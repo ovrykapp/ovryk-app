@@ -3691,6 +3691,12 @@
   @media (prefers-reduced-motion: reduce) {
     .gym-switch-thumb, .gym-switch-option { transition: none; }
   }
+  /* livraison 2b : "+ Séance vide" passe en secondaire (contour, sans fond
+     Rouille) pour ne pas concurrencer la pilule de salle juste au-dessus. */
+  .btn-add.btn-add-outline { background: transparent; color: var(--rust); border: 1px solid var(--rust); box-shadow: none; }
+  @media (hover: hover) and (pointer: fine) {
+    .btn-add.btn-add-outline:hover { background: var(--accent-200); }
+  }
   .seance-gym { font-size: 11px; color: var(--steel); }
   .seance-gym[hidden] { display: none; }
   .live-card-replaces { display: block; font-size: 11px; color: var(--steel); margin: 2px 0 0; }
@@ -4480,7 +4486,7 @@
         <!-- lot 18, livraison 2 : salle de la séance à lancer (en mémoire
              jusqu'au lancement, enregistrée avec la séance). -->
         <div id="seance-gym-wrap"></div>
-        <button type="button" id="seance-start-empty-btn" class="btn-add" style="width:100%;margin-bottom:20px;">+ Séance vide</button>
+        <button type="button" id="seance-start-empty-btn" class="btn-add btn-add-outline" style="width:100%;margin-bottom:20px;">+ Séance vide</button>
         <div class="filter-label mono" style="margin-bottom:8px;">Depuis une routine</div>
         <div id="seance-routine-list"></div>
       </div>
@@ -11607,6 +11613,22 @@
     return null;
   }
 
+  /* lot 18, livraison 2b : carte d'un créneau. Une carte se reconnaît par
+     exerciseId plus replacesExerciseId : replacesId donné = la carte qui
+     remplace cet exercice en salle indé ; absent = une carte normale (sans
+     replacesExerciseId). Dans une séance sans carte remplacée, une carte
+     normale est la première carte de l'exercice, comme
+     findExerciseInSession. */
+  function findSexForSlot(session, exerciseId, replacesId) {
+    if (!session || !Array.isArray(session.exercises)) return null;
+    for (var i = 0; i < session.exercises.length; i++) {
+      var sex = session.exercises[i];
+      if (!sex || sex.exerciseId !== exerciseId) continue;
+      if (replacesId ? sex.replacesExerciseId === replacesId : !sex.replacesExerciseId) return sex;
+    }
+    return null;
+  }
+
   /* ============================================================
      R12 (lot 07, point D) — deuxième séance de la semaine. referenceDate
      est toujours session.date (début, jamais completedAt — même convention
@@ -11683,11 +11705,14 @@
     });
   }
 
-  function getLastLoggedSex(exerciseId) {
+  /* lot 18, livraison 2b : replacesId (optionnel) = créneau de la carte
+     (findSexForSlot) ; sans carte remplacée dans l'historique, même
+     résultat qu'avant. */
+  function getLastLoggedSex(exerciseId, replacesId) {
     var candidates = [];
     OvrykDB.getSessions().forEach(function (s) {
       if (activeSession && s.id === activeSession.id) return;
-      var sex = findExerciseInSession(s, exerciseId);
+      var sex = findSexForSlot(s, exerciseId, replacesId || null);
       if (sex && sex.sets.some(function (set) { return set.done; })) {
         candidates.push({ date: s.date, sex: sex });
       }
@@ -11768,12 +11793,12 @@
     });
   }
 
-  function checkDeloadSuggestion(exerciseId) {
+  function checkDeloadSuggestion(exerciseId, replacesId) {
     var candidates = [];
     OvrykDB.getSessions().forEach(function (s) {
       if (activeSession && s.id === activeSession.id) return;
       if (s.status !== 'completed') return;
-      var sex = findExerciseInSession(s, exerciseId);
+      var sex = findSexForSlot(s, exerciseId, replacesId || null);
       /* lot 13 : une séance allégée est sautée, on regarde les précédentes */
       if (sex && !sex.deload && sex.sets.some(function (set) { return set.done; })) {
         candidates.push({ date: s.date, sex: sex });
@@ -11998,10 +12023,13 @@
         /* lot 18 : exercice concerné par un équivalent : dernière séance de
            la routine qui le contient (l'autre salle a pu le remplacer
            entre temps). Tous les autres : inchangé. */
-        var refSession = isGymLinkedExercise(exerciseId) ? getLastCompletedRoutineSessionWithExercise(routine.id, exerciseId) : lastSession;
+        var gymLinked = isGymLinkedExercise(exerciseId);
+        var slotReplaces = replacement ? rex.exerciseId : null;
+        var refSession = gymLinked ? getLastCompletedRoutineSessionWithSlot(routine.id, exerciseId, slotReplaces) : lastSession;
         var routineEditedSinceLastSession = refSession && routine.updatedAt &&
           new Date(routine.updatedAt) > new Date(refSession.completedAt || refSession.date);
-        var pastSex = (activeCycle || inBaseMode || routineEditedSinceLastSession) ? null : findExerciseInSession(refSession, exerciseId);
+        var pastSex = (activeCycle || inBaseMode || routineEditedSinceLastSession) ? null
+          : (gymLinked ? findSexForSlot(refSession, exerciseId, slotReplaces) : findExerciseInSession(refSession, exerciseId));
 
         var sets, restSeconds, cycleWeekUsed = null, cycleIdUsed = null, isLightSession = false;
         if (activeCycle) {
@@ -12021,6 +12049,15 @@
         } else if (pastSex) {
           sets = cloneSetsFromPastSex(pastSex, exercise);
           restSeconds = pastSex.restSeconds != null ? pastSex.restSeconds : rex.restSeconds;
+        } else if (replacement) {
+          /* livraison 2b : carte remplacée sans reprise possible : structure
+             du créneau (séries, plage, repos), charges de l'équivalent dans
+             cette routine (créneau, sinon carte normale du même exercice),
+             sinon vides, jamais celles de l'exercice d'origine. */
+          sets = cloneSetsFromRoutineRex(rex);
+          restSeconds = rex.restSeconds;
+          var weightKg = getReplacementStartWeight(routine.id, exerciseId, slotReplaces);
+          sets.forEach(function (set) { set.weightKg = weightKg; });
         } else {
           sets = cloneSetsFromRoutineRex(rex);
           restSeconds = rex.restSeconds;
@@ -12989,7 +13026,7 @@
     var currentSet = currentIndex !== -1 ? sex.sets[currentIndex] : null;
     var counterMode = currentSet ? isHalteroCounterMode(currentSet) : false;
 
-    var lastSex = getLastLoggedSex(sex.exerciseId);
+    var lastSex = getLastLoggedSex(sex.exerciseId, sex.replacesExerciseId);
     var lastHintText = lastSex ? formatLastSessionHint(lastSex) : null;
     var bestRecord = getBestRecordForExercise(sex.exerciseId);
     if (lastHintText || bestRecord) {
@@ -13336,7 +13373,7 @@
       '<div class="live-set-col-check" aria-hidden="true"></div>';
     table.appendChild(header);
 
-    var lastSex = getLastLoggedSex(sex.exerciseId);
+    var lastSex = getLastLoggedSex(sex.exerciseId, sex.replacesExerciseId);
     sex.sets.forEach(function (set, setIndex) {
       table.appendChild(buildMuscuSetRow(sex, set, setIndex, currentIndex, lastSex));
     });
@@ -13452,11 +13489,11 @@
     var refSet = currentSet || sex.sets[sex.sets.length - 1];
 
     if (currentSet) {
-      var lastSexForCompare = getLastLoggedSex(sex.exerciseId);
+      var lastSexForCompare = getLastLoggedSex(sex.exerciseId, sex.replacesExerciseId);
       var lastSetForCompare = lastSexForCompare ? lastSexForCompare.sets[currentIndex] : null;
       var isHigherWeight = !!(lastSetForCompare && lastSetForCompare.weightKg != null &&
         currentSet.weightKg != null && currentSet.weightKg > lastSetForCompare.weightKg);
-      var deloadSuggested = checkDeloadSuggestion(sex.exerciseId);
+      var deloadSuggested = checkDeloadSuggestion(sex.exerciseId, sex.replacesExerciseId);
       frag.appendChild(buildLiveObjectiveCard(currentSet, isHigherWeight, deloadSuggested));
     }
     frag.appendChild(buildMuscuSetsTable(sex, currentIndex));
@@ -14929,7 +14966,18 @@
     body.innerHTML = '';
     var exercises = historyExercises(session);
 
-    var recordCount = exercises.filter(function (sex) { return isHistoryRecord(session, sex); }).length;
+    /* lot 18, livraison 2b : un exercice présent en carte normale et en
+       carte remplacée ne compte qu'un record ; tous les autres comme avant. */
+    var replacedIds = {};
+    exercises.forEach(function (sex) { if (sex && sex.replacesExerciseId) replacedIds[sex.exerciseId] = true; });
+    var countedReplaced = {};
+    var recordCount = exercises.filter(function (sex) {
+      if (!isHistoryRecord(session, sex)) return false;
+      if (!replacedIds[sex.exerciseId]) return true;
+      if (countedReplaced[sex.exerciseId]) return false;
+      countedReplaced[sex.exerciseId] = true;
+      return true;
+    }).length;
     var cycleWeeks = [];
     exercises.forEach(function (sex) {
       if (sex && sex.cycleWeekUsed != null && cycleWeeks.indexOf(sex.cycleWeekUsed) === -1) cycleWeeks.push(sex.cycleWeekUsed);
@@ -15463,9 +15511,17 @@
   function countSessionsForExercise(exerciseId) {
     var count = 0;
     OvrykDB.getSessions().forEach(function (session) {
+      /* lot 18, livraison 2b : une séance qui contient une carte remplacée
+         de cet exercice compte une fois ; toutes les autres comme avant
+         (une fois par carte). */
+      var matching = 0, hasReplaced = false;
       session.exercises.forEach(function (sex) {
-        if (sex.exerciseId === exerciseId && sex.sets.some(function (s) { return s.done; })) count++;
+        if (sex.exerciseId === exerciseId && sex.sets.some(function (s) { return s.done; })) {
+          matching++;
+          if (sex.replacesExerciseId) hasReplaced = true;
+        }
       });
+      count += (hasReplaced && matching > 1) ? 1 : matching;
     });
     return count;
   }
@@ -15525,6 +15581,25 @@
   });
 
   /* ---- exercise detail view ---- */
+  /* lot 18, livraison 2b : un enregistrement pour plusieurs cartes du même
+     exercice dans une séance (séries réunies, volume additionné, charge
+     et 1RM estimé maximaux, RPE moyen sur toutes les séries ; allégé si
+     l'une des cartes l'est, pour rester hors de la stagnation). */
+  function mergeSessionRecords(list) {
+    var sets = [];
+    list.forEach(function (r) { sets = sets.concat(r.sets); });
+    var rpeValues = sets.map(function (s) { return s.rpe; }).filter(function (r) { return r !== null; });
+    return {
+      date: list[0].date,
+      maxWeight: Math.max.apply(null, list.map(function (r) { return r.maxWeight; })),
+      volume: list.reduce(function (sum, r) { return sum + r.volume; }, 0),
+      sets: sets,
+      estimated1RM: Math.max.apply(null, list.map(function (r) { return r.estimated1RM; })),
+      avgRPE: rpeValues.length ? (rpeValues.reduce(function (a, b) { return a + b; }, 0) / rpeValues.length) : null,
+      deload: list.some(function (r) { return r.deload; })
+    };
+  }
+
   function getExerciseSessionRecords(exerciseId, completedOnly) {
     var sessions = OvrykDB.getSessions().filter(function (session) {
       return !completedOnly || session.status === 'completed';
@@ -15534,6 +15609,12 @@
     var records = [];
 
     sessions.forEach(function (session) {
+      /* lot 18, livraison 2b : les cartes de cet exercice d'une même séance
+         ne sont fusionnées en un enregistrement que si l'une d'elles porte
+         replacesExerciseId ; sinon, un enregistrement par carte, comme
+         avant. */
+      var sessionRecords = [];
+      var hasReplaced = false;
       /* lecture tolérante : séance sans exercises ou exercice null ignoré */
       (Array.isArray(session.exercises) ? session.exercises : []).forEach(function (sex) {
         if (!sex || sex.exerciseId !== exerciseId || !Array.isArray(sex.sets)) return;
@@ -15553,7 +15634,8 @@
         var rpeValues = resolvedSets.map(function (s) { return s.rpe; }).filter(function (r) { return r !== null; });
         var avgRPE = rpeValues.length ? (rpeValues.reduce(function (a, b) { return a + b; }, 0) / rpeValues.length) : null;
 
-        records.push({
+        if (sex.replacesExerciseId) hasReplaced = true;
+        sessionRecords.push({
           date: session.date,
           maxWeight: maxWeight,
           volume: volume,
@@ -15563,6 +15645,8 @@
           deload: !!sex.deload
         });
       });
+      if (hasReplaced && sessionRecords.length > 1) records.push(mergeSessionRecords(sessionRecords));
+      else sessionRecords.forEach(function (r) { records.push(r); });
     });
 
     return records;
@@ -15938,12 +16022,28 @@
     return !!getGymEquivalent(OvrykDB.getExerciseById(exerciseId)) || getGymEquivalentSources(exerciseId).length > 0;
   }
 
-  function getLastCompletedRoutineSessionWithExercise(routineId, exerciseId) {
+  /* livraison 2b : par créneau (findSexForSlot), une carte remplacée et
+     une carte normale du même exercice ne se mélangent jamais. */
+  function getLastCompletedRoutineSessionWithSlot(routineId, exerciseId, replacesId) {
     var matches = OvrykDB.getSessions().filter(function (s) {
-      return s.routineId === routineId && s.status === 'completed' && Array.isArray(s.exercises) && !!findExerciseInSession(s, exerciseId);
+      return s.routineId === routineId && s.status === 'completed' && !!findSexForSlot(s, exerciseId, replacesId || null);
     });
     matches.sort(function (a, b) { return new Date(b.date) - new Date(a.date); });
     return matches[0] || null;
+  }
+
+  /* charge de départ d'une carte remplacée sans reprise : première série
+     faite de la dernière séance de la routine avec ce créneau, sinon avec
+     une carte normale de l'équivalent ; null sinon (charge vide). */
+  function getReplacementStartWeight(routineId, exerciseId, replacesId) {
+    var candidates = [replacesId, null];
+    for (var i = 0; i < candidates.length; i++) {
+      var session = getLastCompletedRoutineSessionWithSlot(routineId, exerciseId, candidates[i]);
+      var sex = session ? findSexForSlot(session, exerciseId, candidates[i]) : null;
+      var done = sex && Array.isArray(sex.sets) ? sex.sets.filter(function (set) { return set && set.done && typeof set.weightKg === 'number'; }) : [];
+      if (done.length) return done[0].weightKg;
+    }
+    return null;
   }
 
   /* pilule : un tap n'importe où bascule. locked : non cliquable (livraison

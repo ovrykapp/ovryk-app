@@ -31,8 +31,8 @@ Ruben s'entraîne dans une salle indépendante, où il manque des machines, et �
 ## Limites acceptées (2026-10-15)
 
 1. Les charges de l'équivalent ne sont lues que dans la même routine : un équivalent fait dans une autre routine ne pré-remplit pas les charges.
-2. En cas de doublon, le "dernière séance" d'une carte de remplacement aurait été pris sur la première carte Y de la séance. Limite levée par la règle du créneau (findSexForSlot, livraison 2b) : chaque carte a son propre "dernière séance". Jusqu'à la 2b, un doublon reste traité par la première carte et compté deux fois dans les statistiques (2a jamais poussée seule).
-3. Sans historique de l'équivalent dans la routine, la première carte remplacée reprend les charges de la ligne de routine de l'exercice d'origine (décision du plan) : par exemple 100 kg de presse proposés pour un hack squat. À corriger à la main à la première séance ; la suivante repart de l'historique de l'équivalent.
+2. En cas de doublon, le "dernière séance" d'une carte de remplacement aurait été pris sur la première carte Y de la séance. Limite levée en livraison 2b par la règle du créneau (findSexForSlot) : chaque carte a son propre "dernière séance", sa propre progression et sa propre suggestion de baisse.
+3. Décision du 2026-10-15, appliquée en 2b : sans historique de l'équivalent dans la routine (ni carte de ce créneau, ni carte normale de l'équivalent), la carte remplacée garde la structure du créneau (séries, plage, repos) avec des charges vides, jamais celles de l'exercice d'origine. Avec une carte normale de l'équivalent dans la routine, la charge de départ est la sienne (première série faite).
 4. La suggestion de baisse et la stagnation ignorent l'ancienneté des séances (comportement existant, non spécifique aux salles).
 
 ## Livraisons
@@ -62,6 +62,15 @@ Ruben s'entraîne dans une salle indépendante, où il manque des machines, et �
   * smoke.py : le contrôle "une séance vide démarre" cliquait sur le premier bouton de l'onglet Séance, devenu la pilule ; il vise maintenant #seance-start-empty-btn.
   * Observé (test G17, retour en salle indé après 10 semaines à On Air) : la carte de l'équivalent repart de sa dernière séance dans la routine (charges, plage, cible de reps de la double progression), sans tenir compte du temps écoulé. La suggestion de baisse (deux dernières séances sous la plage) et la stagnation (trois dernières séances sans progrès) ne regardent que les séances de l'équivalent, quelle que soit leur ancienneté : elles s'affichent encore après 10 semaines si les dernières séances de l'équivalent les déclenchaient.
   * Tests : test_gym.py, 39 contrôles (G10 à G18 ajoutés, G7 adapté : la séance porte maintenant sa salle).
+* Livraison 2b faite le 2026-10-15 (sw v141), en local, non poussée.
+  * findSexForSlot(session, exerciseId, replacesId) : une carte se reconnaît par exerciseId plus replacesExerciseId ; sans replacesId, la première carte sans replacesExerciseId (dans une séance sans carte remplacée : la même que findExerciseInSession).
+  * Double progression (buildSessionFromRoutine) : pour un exercice concerné par un équivalent, dernière séance de la routine qui contient ce créneau (getLastCompletedRoutineSessionWithSlot), carte de ce créneau. Exercices non concernés : inchangés (findExerciseInSession sur la dernière séance de la routine).
+  * Carte remplacée sans reprise possible : structure du créneau, charges de getReplacementStartWeight (créneau, sinon carte normale de l'équivalent dans la routine), sinon vides. Une série se valide normalement avec un poids saisi.
+  * Comparateur "Précédent" (getLastLoggedSex) et suggestion de baisse (checkDeloadSuggestion) : reçoivent replacesExerciseId de la carte ; sans carte remplacée dans l'historique, résultat identique.
+  * Statistiques : getExerciseSessionRecords ne fusionne les cartes d'un même exercice dans une séance que si l'une porte replacesExerciseId (mergeSessionRecords : séries réunies, volume additionné, charge et 1RM estimé maximaux, RPE moyen sur toutes les séries, allégé si l'une l'est) ; countSessionsForExercise compte alors la séance une fois ; toutes les autres séances : un enregistrement et un compte par carte, comme avant. Graphique, 1RM estimé, "Meilleur", stagnation et "Record" de l'historique suivent. Le détail de l'historique compte un record une fois pour un exercice présent en carte normale et en carte remplacée.
+  * "+ Séance vide" passe en bouton secondaire (contour Rouille, sans fond), la capture à 390 px montrant qu'il concurrençait la pilule.
+  * Tests modifiés : G11 (charges vides au lieu des charges de l'exercice d'origine, décision du 2026-10-15).
+  * Tests : test_gym.py, 53 contrôles. G19 charges vides et validation avec un poids saisi, exercice non concerné inchangé ; G20 prévisionnel de la charge de la semaine en Indé et en On Air ; G21 doublon (deux cartes distinctes, progression par carte sur deux séances, comparateur et suggestion par carte, enregistrement sans écrasement, une ligne d'historique par séance, record compté une fois) ; G22 comparaison avec c81f6fe : enregistrements, compteur, comparateur et suggestion identiques sur des séances sans carte remplacée (dont le même exercice deux fois), seule la séance avec une carte remplacée est fusionnée.
 
 ## Hors périmètre
 
