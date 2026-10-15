@@ -4273,7 +4273,7 @@
       <div class="restore-interrupted-banner" id="restore-interrupted-banner" hidden>
         <p class="restore-interrupted-title">Restauration interrompue</p>
         <p class="restore-interrupted-text">Une restauration ne s'est pas terminée. Tes données peuvent être incomplètes.<span id="restore-interrupted-copy-note"> La copie faite juste avant est sur ce téléphone.</span></p>
-        <p class="restore-interrupted-error" id="restore-interrupted-msg" hidden>La copie d'avant est introuvable sur ce téléphone (supprimée ou effacée). Il n'y a plus de retour possible : tu peux ignorer ce message.</p>
+        <p class="restore-interrupted-error" id="restore-interrupted-msg" hidden>La copie d'avant est introuvable ou abîmée sur ce téléphone. Il n'y a plus de retour possible : tu peux ignorer ce message.</p>
         <div class="restore-interrupted-actions">
           <button type="button" class="week-load-alert-btn-outline" id="restore-interrupted-back-btn">Revenir à la copie d'avant</button>
           <button type="button" class="week-load-alert-btn-plain" id="restore-interrupted-dismiss-btn">Ignorer</button>
@@ -14132,11 +14132,6 @@
     activeSession.status = 'completed';
     OvrykDB.updateSession(activeSession);
 
-    /* silent auto-backup: same download + lastExportAt bookkeeping as the
-       manual "Exporter" button in Profil, just triggered right as a session
-       finishes instead of on a click — no confirmation, nothing blocking */
-    downloadOvrykExport();
-
     var advancedIds = {};
     activeSession.exercises.forEach(function (sex) {
       if (advancedIds[sex.exerciseId] || cycleTestSubmittedIds[sex.exerciseId]) return;
@@ -14150,6 +14145,13 @@
       var priorThisWeek = getPriorCompletedSessionsThisWeekForExercise(sex.exerciseId, activeSession.date, activeSession.id);
       if (priorThisWeek.length === 0) OvrykDB.advanceForceCycleWeek(sex.exerciseId);
     });
+
+    /* silent auto-backup: same download + lastExportAt bookkeeping as the
+       manual "Exporter" button in Profil, just triggered right as a session
+       finishes instead of on a click — no confirmation, nothing blocking.
+       Nettoyage lot 16 : après l'avancée des cycles, pour que le fichier
+       contienne la semaine de cycle avancée par cette séance. */
+    downloadOvrykExport();
 
     var finishedId = activeSession.id;
     activeSession = null;
@@ -16900,6 +16902,37 @@
      DIFFÈRE de l'état actuel (une copie identique, par exemple après une
      tentative ratée puis remise en état, n'annulerait rien). Lecture seule,
      aucune base créée. cb(point ou null). */
+  /* nettoyage lot 16 : une copie n'est proposée ou remise que si ses
+     valeurs se lisent et ne feraient pas planter le démarrage (même contrôle
+     getBackupCrashError qu'un fichier importé). Une clé absente est un état
+     vide, toujours accepté (annuler vers un téléphone vide reste possible).
+     Renvoie la raison d'un refus, ou null. Lecture seule. */
+  function getRawStateError(raw) {
+    if (!isPlainObject(raw)) return 'copie vide';
+    var parsed = {};
+    var keys = Object.keys(DB_KEYS);
+    for (var i = 0; i < keys.length; i++) {
+      var key = DB_KEYS[keys[i]];
+      var v = raw[key];
+      if (v === null || v === undefined) continue;
+      if (typeof v !== 'string') return 'les ' + BACKUP_KEY_LABELS[key] + ' de la copie sont abîmés';
+      try { parsed[key] = JSON.parse(v); } catch (e) { return 'les ' + BACKUP_KEY_LABELS[key] + ' de la copie sont illisibles'; }
+    }
+    var data = {
+      exercises: parsed[DB_KEYS.EXERCISES] === undefined ? [] : parsed[DB_KEYS.EXERCISES],
+      routines: parsed[DB_KEYS.ROUTINES] === undefined ? [] : parsed[DB_KEYS.ROUTINES],
+      sessions: parsed[DB_KEYS.SESSIONS] === undefined ? [] : parsed[DB_KEYS.SESSIONS],
+      forceCycles: parsed[DB_KEYS.FORCE_CYCLES]
+    };
+    if (!Array.isArray(data.exercises) || !Array.isArray(data.routines) || !Array.isArray(data.sessions)) return 'listes de la copie invalides';
+    if (data.forceCycles != null && !isPlainObject(data.forceCycles)) return 'cycles de force de la copie invalides';
+    var settings = parsed[DB_KEYS.SETTINGS], meta = parsed[DB_KEYS.META];
+    if (settings != null && !isPlainObject(settings)) return 'réglages de la copie invalides';
+    if (meta != null && !isPlainObject(meta)) return 'version de schéma de la copie invalide';
+    var crashErr = getBackupCrashError(data);
+    return crashErr && crashErr.blocksStart ? crashErr.text : null;
+  }
+
   function getUndoCandidatePoint(cb) {
     openRestoreDb(false, function (err, db) {
       if (err || !db) { cb(null); return; }
@@ -16909,7 +16942,7 @@
       req.onsuccess = function () {
         var c = req.result;
         if (!c) { db.close(); cb(null); return; }
-        if (c.value && c.value.raw && !sameRawState(c.value.raw, current)) { db.close(); cb(c.value); return; }
+        if (c.value && c.value.raw && !sameRawState(c.value.raw, current) && !getRawStateError(c.value.raw)) { db.close(); cb(c.value); return; }
         c.continue();
       };
       req.onerror = function () { db.close(); cb(null); };
@@ -17111,7 +17144,11 @@
           try {
             localStorage.setItem(RESTORE_MARK_KEY, JSON.stringify({ pointId: pointId, startedAt: new Date().toISOString(), mode: st.mode }));
           } catch (e) {
-            failRestore('Restauration annulée : stockage plein. Rien n’a été modifié.');
+            /* nettoyage lot 16 : la copie, identique à l'état, n'annulerait
+               rien ; supprimée comme après une tentative remise en état. */
+            deleteRestorePointById(pointId, function () {
+              failRestore('Restauration annulée : stockage plein. Rien n’a été modifié.');
+            });
             return;
           }
           var ok = st.mode === 'file' ? applyBackupData(st.data) : writeRawOvrykState(st.raw);
@@ -17206,12 +17243,12 @@
      la copie liée à une restauration interrompue (bandeau). */
   function openRestorePointPage(id, fromBanner) {
     getRestorePoint(id, function (point) {
-      if (!point || !point.raw) {
+      if (!point || !point.raw || getRawStateError(point.raw)) {
         renderDataSafetyRows();
         if (fromBanner) {
           showRestoreBannerCopyMissing();
         } else {
-          showDataIOStatus('Copie introuvable sur ce téléphone.', true);
+          showDataIOStatus('Copie introuvable ou abîmée sur ce téléphone. Rien n’a été modifié.', true);
         }
         return;
       }
@@ -17220,6 +17257,8 @@
   }
 
   function openRestorePageFromPoint(point) {
+    var rawError = getRawStateError(point.raw);
+    if (rawError) { showDataIOStatus('Cette copie ne peut pas être remise (' + rawError + '). Rien n’a été modifié.', true); return; }
     openRestorePage({
       mode: point.reason === 'avant annulation' ? 'redo' : 'undo',
       raw: point.raw,

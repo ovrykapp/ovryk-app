@@ -2,7 +2,7 @@
 
 Taille : L. Dépend de : tous. Lot à risque (export, import, sauvegardes, écriture dans des données existantes).
 
-Statut : plan révisé le 2026-10-10, décisions de Ruben prises le 2026-10-10 (voir "Décisions prises"). Livraison 1 faite (sw v124), corrigée après quatre audits (sw v125 à v128). Livraison 2 (connexion) faite (sw v129). Livraison 3 (table backups et envoi manuel) faite (sw v130), script SQL à exécuter par Ruben. Livraison 4 (restauration depuis la sauvegarde en ligne) faite (sw v131 et v132, auditée, poussée avec le tag v132-stable). Livraison 5 (envoi automatique après chaque séance) faite (sw v133 à v135, auditée, poussée avec le tag v135-stable). Lot de nettoyage (plan du 2026-10-15) : livraison 1 faite (sw v136), livraison 2 à suivre.
+Statut : plan révisé le 2026-10-10, décisions de Ruben prises le 2026-10-10 (voir "Décisions prises"). Livraison 1 faite (sw v124), corrigée après quatre audits (sw v125 à v128). Livraison 2 (connexion) faite (sw v129). Livraison 3 (table backups et envoi manuel) faite (sw v130), script SQL à exécuter par Ruben. Livraison 4 (restauration depuis la sauvegarde en ligne) faite (sw v131 et v132, auditée, poussée avec le tag v132-stable). Livraison 5 (envoi automatique après chaque séance) faite (sw v133 à v135, auditée, poussée avec le tag v135-stable). Lot de nettoyage (plan du 2026-10-15) : livraisons 1 (sw v136) et 2 (sw v137) faites, en attente d'audit.
 
 ## Écrans de la maquette
 
@@ -461,6 +461,12 @@ R11 (pas de compte obligatoire).
   * Réinitialiser l'app refusé (message, rien supprimé) pendant une opération en ligne (cloudBusy), au clic et à la confirmation.
   * Messages : un envoi bloqué dit "Rien n'a été envoyé" (getBackupBlocker reçoit la fin du message), un refus de restauration en ligne précise "sauvegarde en ligne contrôlée comme un fichier d'export", et la suppression des copies sans réponse couvre aussi un stockage du navigateur resté bloqué.
   * Tests : test_auto_upload.py (A7b remplacé : le délai part du dernier vrai essai même après un "non envoyé" et un rechargement ; A16, A17), test_restore_cloud.py (R11 : témoin, fichier importé, Réglages quitté, autre compte, déconnexion ; R5 suit le nouveau libellé).
+* Nettoyage, livraison 2 faite le 2026-10-15 (sw v137) : restauration locale et fin de séance.
+  * Fin de séance : seul l'appel de l'export fichier (downloadOvrykExport) est déplacé après la boucle d'avancée des cycles. Le fichier contient donc la semaine de cycle avancée par la séance. Rien d'autre ne change dans finishActiveSession.
+  * Restauration : un échec à la pose de la marque (stockage plein) supprime la copie qu'il venait de créer (deleteRestorePointById), comme une tentative remise en état.
+  * Copies IndexedDB validées avant d'être proposées ou remises (getRawStateError, lecture seule) : valeurs lisibles, listes et objets du bon type, puis le même contrôle getBackupCrashError qu'un fichier importé (seulement les cas qui feraient planter le démarrage). Une clé absente est un état vide, accepté : annuler vers un téléphone vide reste possible. Une copie abîmée n'est jamais proposée par la ligne "Annuler" (la copie valide suivante l'est), et le bandeau de restauration interrompue la traite comme introuvable ("introuvable ou abîmée").
+  * Mesure, sans correction : sur un état fabriqué d'environ 1,9 Mo (ovryk.sessions 1,67 Mo, 520 séances), la tâche de l'envoi automatique après la fin de séance dure 61 ms sur le Mac, 232 ms avec le processeur ralenti 4 fois. La tâche de fin de séance elle-même (enregistrement et export fichier, préexistante) dure 69 ms, 177 ms ralentie. Les données réelles font environ 240 Ko, 8 fois moins. Non mesuré sur l'iPhone.
+  * Tests : dossier-lots/tests/test_cleanup.py (9 contrôles, données fabriquées, copies écrites directement dans IndexedDB) ; 6 échouent sur le code de la livraison 1, aucun sur celui-ci.
 
 ## Lot de nettoyage : points non bloquants de l'audit de la livraison 4 (2026-10-14)
 
@@ -475,6 +481,13 @@ Audit de c0b9104 et 9f186ff : verdict SÛR, aucun point bloquant. À traiter dan
 7. Des dates affichées ne sont pas couvertes par l'empreinte : "dernière le" de la liste (colonne summary) et "exportée le" de l'écran de comparaison (exportedAt).
 8. Le repère "Identique à ce téléphone" est absent juste après une restauration : les migrations et le rattrapage du catalogue au rechargement changent l'empreinte locale.
 9. Messages approximatifs : une ligne d'un autre compte donne "n'existe plus (remplacée par un envoi plus récent)", les refus de validateBackupFile parlent de "fichier", et "Dernier envoi réussi" n'est pas propre à chaque compte.
+
+### Bilan du lot de nettoyage (2026-10-15)
+
+* Corrigés (livraisons 1 et 2) : audit de la livraison 4, points 1 à 3 et la partie "fichier" du point 9 ; audit de la livraison 5, points 1 (Réinitialiser pendant un envoi) et 4 (mesuré, sous le seuil de correction au rythme normal) ; Accueil muet après "réussi" puis "non envoyé" ; copie laissée après un échec de la marque (limite de la livraison 1) ; copies validées avant d'être proposées (audit de la livraison 1) ; message de suppression sans réponse qui couvre un stockage bloqué ; export de fin de séance après l'avancée des cycles ; test A7b qui ne prouvait rien.
+* Fermé : rafraîchissement de la ligne d'annulation, corrigé depuis la v128.
+* Abandonnés (décision du 2026-10-15) : lastAttempt non lié au compte (un seul compte) ; verrou bloqué après une exception dans un callback (aucun chemin connu, état honnête au rechargement) ; message trompeur au rechargement en plein envoi ; recomptage contournable avec l'ancien format (point 4) ; délai de 15 s de la liste (point 5) ; renouvellement de session pendant le téléchargement (point 6, voulu) ; dates hors empreinte (point 7) ; repère "Identique à ce téléphone" après une restauration (point 8) ; "Dernier envoi réussi" non propre au compte et ligne d'un autre compte (point 9, un seul compte) ; long mot coupé dans "Dernier essai" ; branche morte de getRestorePoint ; BACKUP_KEY_LABELS, CURRENT_SCHEMA_VERSION et autres doublons ; défauts 6, 7, 8 et 11 de la livraison 1 ; fenêtre de rotation (constat) ; liftBaseMode au deuxième démarrage (préexistant, sans effet).
+* Laissés de côté : gardes de lecture (mini-lot, PLAN.md). Hors nettoyage, à décider : bouton Reps/Plage, flèches de l'éditeur, écran du repos par type (lot 14, livraison 5).
 
 ### Points non corrigés de l'audit de la livraison 5 (2026-10-14)
 
