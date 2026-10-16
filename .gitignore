@@ -50,3 +50,6 @@ dossier-lots/*.json
 
 # documents et captures personnels (PDF de cycles, photos) : jamais dans le dépôt public
 CYCLE/
+
+# originaux des icones (1254 px, 1,2 Mo chacun) : seules les versions reduites de icones/ sont suivies
+sources-icones/
