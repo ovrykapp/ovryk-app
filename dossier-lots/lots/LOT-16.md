@@ -515,7 +515,26 @@ Test automatique de la livraison 5 : dossier-lots/tests/test_auto_upload.py (51 
 
 Test automatique de la livraison 4 : dossier-lots/tests/test_restore_cloud.py (47 sur 47 à la livraison, 52 sur 52 après le nettoyage, Supabase simulé, données fabriquées). Il prend en argument un dossier de travail et attend le site servi sur http://127.0.0.1:8765.
 
-## À planifier
+## Suite de tests de la restauration locale (reconstituée le 2026-10-16)
+
+Fait le 2026-10-16, commits 2bd84e9 à dec58a9, sans aucune modification de index.html ni de sw.js. Données fabriquées dans les tests, aucun appel réseau, aucune dépendance à git. Mode d'emploi : dossier-lots/tests/LISEZ-MOI.md.
+
+| Cas non couvert (ancienne liste ci-dessous) | Fichier | Contrôles |
+|---|---|---|
+| Refus des 17 variantes (getBackupCrashError) | test_restore_refus.py | V01 à V17, plus 15 refus de format et 4 témoins acceptés (39) |
+| Retour arrière après écriture partielle | test_restore_ecriture.py | E1, E2, E3 |
+| Abandon après 10 s si IndexedDB ne répond pas | test_restore_ecriture.py | E4 (horloge figée, réponse tardive supprimée) |
+| Retour complet depuis le bandeau | test_restore_annulation.py | N1, N2, N3 |
+| Libellés Annuler et Rétablir | test_restore_annulation.py | N4, N5 |
+| Réinitialiser : base, copies quotidiennes, base bloquée | test_restore_reinit.py | T1, T2, T3 |
+| Export refusé quand une clé est illisible | test_restore_export.py | X1 (6 clés), X0 témoin |
+| Partage et protection du stockage | test_restore_export.py | X2 à X6 |
+
+En plus : séance en cours, séances perdues comptées par identifiant, 5 copies au plus, abandons, copie relue différente, copie impossible, Réglages sans écriture. Totaux : 39 + 11 + 15 + 9 + 17 = 91 contrôles, environ 3 minutes. Preuve qu'ils savent échouer : mutations_restore.py, 14 mutations sur une copie de index.html, 14 détectées.
+
+Constat (non bloquant, imprimé par test_restore_refus) : 14 variantes sur 17 plantent le démarrage quand la séance abîmée est de la semaine en cours ; les 3 "sans identifiant" ne plantent pas. V13 (exercice de séance sans séries) ne plante pas si la séance est ancienne : sessionVolume (sans garde depuis le premier commit d72ccf5) ne lit les séries que pour la semaine en cours.
+
+## Ancienne liste "À planifier" (couverte, voir le tableau ci-dessus)
 
 * Reconstituer une suite de tests de la restauration locale. Les suites test_l16* (livraison 1 du lot 16 et ses corrections) n'ont jamais été commitées et sont perdues avec le dossier temporaire d'une ancienne session. Plus aucune suite ne couvre :
   * le refus des 17 variantes de fichiers qui feraient planter le démarrage (getBackupCrashError) ;

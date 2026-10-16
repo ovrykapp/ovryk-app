@@ -10,6 +10,7 @@
 Données FABRIQUÉES ici. Usage : python3 test_restore_refus.py <dossier de travail>,
 site servi sur OVRYK_URL (par défaut http://127.0.0.1:8765/index.html)."""
 import copy, json
+from datetime import datetime, timezone
 from playwright.sync_api import sync_playwright
 from restore_commun import *
 
@@ -131,13 +132,21 @@ with sync_playwright() as p:
     ctx.close()
 
     # ---------- constat non bloquant : la variante injectée directement plante-t-elle le démarrage ? ----------
+    # séances datées d'aujourd'hui : l'Accueil ne lit les séries que pour la semaine en cours (sessionVolume) ;
+    # une séance ancienne ne ferait rien planter et le constat serait trompeur (V13 avant cette correction).
+    TODAY = datetime.now(timezone.utc).strftime('%Y-%m-%dT08:00:00.000Z')
+    def this_week(d):
+        for s in d['sessions']:
+            if isinstance(s, dict) and s.get('date') != 'pas une date':
+                s['date'] = s['startedAt'] = s['completedAt'] = TODAY
+        return d
     crashes = []
     for i, (label, fn, expect) in enumerate(VARIANTS, 1):
-        c, pg, errs = fresh(b, v(fn))
+        c, pg, errs = fresh(b, this_week(v(fn)))
         crashes.append(bool(errs))
         constat('V%02d %s injectée directement : %s' % (i, label, ('plante au démarrage (' + errs[0][:60] + ')') if errs else 'démarre sans erreur'))
         c.close()
-    constat('%d variantes sur 17 plantent le démarrage aujourd\'hui (les 3 "sans identifiant" ne plantent pas, par construction ; le refus à l\'import, lui, est vérifié plus haut)' % sum(crashes))
+    constat('%d variantes sur 17 plantent le démarrage aujourd\'hui, séances datées de la semaine en cours (les 3 "sans identifiant" ne plantent pas, par construction ; le refus à l\'import, lui, est vérifié plus haut)' % sum(crashes))
 
     b.close()
 done()
