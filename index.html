@@ -16481,7 +16481,12 @@
        *computed* 1RMs (Epley), not the raw weight difference between sets */
     var heroEl = document.getElementById('exercise-detail-hero');
     heroEl.innerHTML = '';
-    if (records.length === 0) {
+    /* le 1RM estimé n'a de sens que pour un mouvement (catégorie Lifting) ;
+       toute autre catégorie, vide ou inconnue comprise, le masque */
+    heroEl.hidden = exercise.category !== 'Lifting';
+    if (heroEl.hidden) {
+      /* rien à afficher */
+    } else if (records.length === 0) {
       heroEl.innerHTML = '<span class="exercise-detail-hero-label">1RM estimé</span>' +
         '<div class="exercise-detail-hero-row"><span class="exercise-detail-hero-value">-</span></div>';
     } else {
