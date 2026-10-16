@@ -3182,6 +3182,14 @@
     font-weight: 500;
     margin: 0 0 var(--space-4);
   }
+  /* détails optionnels sous la question (suppression de routine : cycles
+     concernés et note sur l'historique) */
+  .modal-details { margin: calc(-1 * var(--space-2)) 0 var(--space-4); font-size: 13px; line-height: 1.5; color: var(--steel); }
+  .modal-details[hidden] { display: none; }
+  .modal-details-list { margin: 0 0 var(--space-2); padding-left: 18px; color: var(--ink); }
+  .modal-details-note { margin: 0; }
+  .modal-details-note + .modal-details-note { margin-top: var(--space-2); }
+  .modal-actions [hidden] { display: none; }
   .modal-actions { display: flex; gap: 10px; }
   .modal-actions .btn-back,
   .modal-actions .btn-primary {
@@ -5132,6 +5140,7 @@
   <div class="modal-overlay" id="confirm-modal-overlay" hidden>
     <div class="modal-box" role="alertdialog" aria-modal="true" aria-labelledby="confirm-modal-message">
       <p class="modal-message" id="confirm-modal-message"></p>
+      <div class="modal-details" id="confirm-modal-details" hidden></div>
       <div class="modal-actions">
         <button type="button" class="btn-back" id="confirm-modal-cancel">Annuler</button>
         <button type="button" class="btn-primary" id="confirm-modal-confirm">Confirmer</button>
@@ -6079,13 +6088,14 @@
       this.saveExercises(list);
       return exercise;
     },
+    /* renvoie true si l'écriture a réussi (false si exercice introuvable ou
+       stockage en échec) ; les appelants historiques ignorent ce résultat */
     updateExerciseOneRepMax: function (id, value) {
       var list = this.getExercises();
       var found = list.filter(function (e) { return e.id === id; })[0];
-      if (found) {
-        found.oneRepMax = value;
-        this.saveExercises(list);
-      }
+      if (!found) return false;
+      found.oneRepMax = value;
+      return this.saveExercises(list) !== false;
     },
     updateExerciseCycleStartDate: function (id, dateStr) {
       var list = this.getExercises();
@@ -6742,12 +6752,40 @@
 
   /* confirmLabel/cancelLabel optionnels : "Confirmer"/"Annuler" par défaut,
      inchangé pour tous les appels existants qui ne les passent pas. */
-  function showConfirmModal(message, onConfirm, onCancel, confirmLabel, cancelLabel) {
+  /* details (optionnel) : { items: [texte, ...], note: texte } affichés
+     sous la question ; vidé à chaque ouverture pour ne jamais rester d'une
+     confirmation à l'autre. */
+  function showConfirmModal(message, onConfirm, onCancel, confirmLabel, cancelLabel, details) {
     confirmModalState.onConfirm = onConfirm || null;
     confirmModalState.onCancel = onCancel || null;
     document.getElementById('confirm-modal-message').textContent = message;
+    var detailsEl = document.getElementById('confirm-modal-details');
+    detailsEl.innerHTML = '';
+    detailsEl.hidden = !details;
+    if (details) {
+      if (details.items && details.items.length) {
+        var listEl = document.createElement('ul');
+        listEl.className = 'modal-details-list';
+        details.items.forEach(function (text) {
+          var li = document.createElement('li');
+          li.textContent = text;
+          listEl.appendChild(li);
+        });
+        detailsEl.appendChild(listEl);
+      }
+      (Array.isArray(details.note) ? details.note : (details.note ? [details.note] : [])).forEach(function (text) {
+        var noteEl = document.createElement('p');
+        noteEl.className = 'modal-details-note';
+        noteEl.textContent = text;
+        detailsEl.appendChild(noteEl);
+      });
+    }
     document.getElementById('confirm-modal-confirm').textContent = confirmLabel || 'Confirmer';
-    document.getElementById('confirm-modal-cancel').textContent = cancelLabel || 'Annuler';
+    /* cancelLabel === false : message à un seul bouton (Annuler masqué),
+       remis visible à chaque ouverture */
+    var cancelBtn = document.getElementById('confirm-modal-cancel');
+    cancelBtn.hidden = cancelLabel === false;
+    cancelBtn.textContent = cancelLabel || 'Annuler';
     document.getElementById('confirm-modal-overlay').hidden = false;
     document.getElementById('confirm-modal-confirm').focus();
   }
@@ -7638,15 +7676,136 @@
     });
   }
 
-  /* Mirror of the above: an exercise's cycle only makes sense while it's
-     scheduled somewhere. Called wherever an exercise can stop being used in
-     any routine (routine deleted, exercise removed from its routine) so a
-     dropped cycle doesn't linger on the Dashboard. Must run AFTER the
-     routine change is persisted, since isExerciseUsedInRoutine reads storage. */
-  function maybeAutoDeactivateForceCycle(exerciseId) {
-    if (!OvrykDB.getForceCycle(exerciseId)) return;
-    if (isExerciseUsedInRoutine(exerciseId)) return;
+  /* Suppression de routine (livraison 1) : cycles de la routine dont
+     l'exercice n'est dans aucune autre routine, dédoublonnés, dans l'ordre
+     de la routine. Lecture seule. */
+  function getCyclesRemovedWithRoutine(routine) {
+    var otherRoutines = OvrykDB.getRoutines().filter(function (r) { return r.id !== routine.id; });
+    var seen = {};
+    var result = [];
+    routine.exercises.forEach(function (rex) {
+      var exerciseId = rex.exerciseId;
+      if (seen[exerciseId]) return;
+      seen[exerciseId] = true;
+      var cycle = OvrykDB.getForceCycle(exerciseId);
+      if (!cycle) return;
+      var usedElsewhere = otherRoutines.some(function (r) {
+        return r.exercises.some(function (other) { return other.exerciseId === exerciseId; });
+      });
+      if (usedElsewhere) return;
+      result.push({ exercise: OvrykDB.getExerciseById(exerciseId), cycle: cycle, exerciseId: exerciseId });
+    });
+    return result;
+  }
+
+  /* "Back Squat, cycle 16, semaine 2 sur 6" */
+  function describeCycleForRemoval(exercise, cycle) {
+    var name = exercise ? exercise.name : 'Exercice';
+    return name + ', cycle ' + displayCycleNumber(cycle.cycle_actif) + ', semaine ' + cycle.semaine_actuelle +
+      ' sur ' + cycleLength(cycle.cycle_actif);
+  }
+
+  /* nombre fini, ou NaN : accepte un nombre ou un texte numérique non vide,
+     jamais null, booléen ou texte vide (Number('') vaudrait 0) */
+  function toFiniteNumberOrNaN(value) {
+    if (typeof value === 'number') return isFinite(value) ? value : NaN;
+    if (typeof value === 'string' && value.trim() !== '') {
+      var n = Number(value);
+      return isFinite(n) ? n : NaN;
+    }
+    return NaN;
+  }
+
+  /* Règle A (livraison 1), en lecture seule : ce que deviendra
+     exercise.oneRepMax si le cycle est supprimé maintenant. Un test doit
+     avoir été validé (historique_cycles non vide) et one_rm_actuel être un
+     nombre supérieur à 0 ; exercise.oneRepMax doit être vide ou valoir
+     encore le 1RM de départ du cycle (historique_1rm[0].valeur), sinon il a
+     été changé à la main et n'est jamais écrasé. Renvoie null si rien n'est
+     conservé, sinon { value, write } (write faux quand la valeur est déjà
+     celle de l'exercice). Partagé par les confirmations (texte exact) et
+     par la suppression elle-même. */
+  function getValidatedOneRMKeepPlan(exerciseId) {
+    var cycle = OvrykDB.getForceCycle(exerciseId);
+    var exercise = OvrykDB.getExerciseById(exerciseId);
+    if (!cycle || !exercise) return null;
+    if (!Array.isArray(cycle.historique_cycles) || cycle.historique_cycles.length === 0) return null;
+    var validated = toFiniteNumberOrNaN(cycle.one_rm_actuel);
+    if (!(validated > 0)) return null;
+    var current = exercise.oneRepMax;
+    var isEmpty = current == null || (typeof current === 'string' && current.trim() === '');
+    if (isEmpty) return { value: validated, write: true };
+    var currentNum = toFiniteNumberOrNaN(current);
+    var start = Array.isArray(cycle.historique_1rm) && cycle.historique_1rm.length && cycle.historique_1rm[0]
+      ? toFiniteNumberOrNaN(cycle.historique_1rm[0].valeur)
+      : NaN;
+    if (isNaN(currentNum) || isNaN(start) || currentNum !== start) return null;
+    return { value: validated, write: currentNum !== validated };
+  }
+
+  /* Lignes de confirmation d'une suppression de cycles : une ligne par
+     cycle, avec la promesse de conservation seulement pour ceux dont le 1RM
+     validé restera réellement sur l'exercice (getValidatedOneRMKeepPlan). */
+  function buildCycleRemovalDetails(exerciseIds) {
+    var items = exerciseIds.map(function (exerciseId) {
+      var line = describeCycleForRemoval(OvrykDB.getExerciseById(exerciseId), OvrykDB.getForceCycle(exerciseId));
+      var plan = getValidatedOneRMKeepPlan(exerciseId);
+      return plan ? line + '. 1RM validé de ' + String(plan.value).replace('.', ',') + ' kg conservé sur l\'exercice.' : line + '.';
+    });
+    return {
+      items: items,
+      note: exerciseIds.length > 1 ? 'L\'historique de ces cycles sera effacé.' : 'L\'historique de ce cycle sera effacé.'
+    };
+  }
+
+  /* Écrit, pour chaque exercice, le 1RM validé prévu par
+     getValidatedOneRMKeepPlan (seulement si plan.write). S'arrête au premier
+     échec (stockage plein ou exception) et renvoie l'identifiant de
+     l'exercice en échec, sinon null. Rien n'est écrit quand aucune recopie
+     n'est prévue. Une recopie réussie avant l'échec reste écrite : c'est la
+     bonne valeur, et le cycle de cet exercice n'est pas supprimé non plus. */
+  function writeValidatedOneRMs(exerciseIds) {
+    for (var i = 0; i < exerciseIds.length; i++) {
+      var plan = getValidatedOneRMKeepPlan(exerciseIds[i]);
+      if (!plan || !plan.write) continue;
+      var ok = false;
+      try { ok = OvrykDB.updateExerciseOneRepMax(exerciseIds[i], plan.value) === true; } catch (err) { ok = false; }
+      if (!ok) return exerciseIds[i];
+    }
+    return null;
+  }
+
+  /* message à un seul bouton quand la recopie du 1RM a échoué : rien n'a
+     été supprimé (keptText dit quoi) */
+  function showOneRMWriteFailure(exerciseId, keptText) {
+    var exercise = OvrykDB.getExerciseById(exerciseId);
+    showConfirmModal('Le 1RM validé de « ' + (exercise ? exercise.name : 'Exercice') + ' » n\'a pas pu être enregistré ' +
+      '(stockage plein ou indisponible). Rien n\'a été supprimé : ' + keptText,
+      null, null, 'Compris', false);
+  }
+
+  /* Supprime un cycle après avoir recopié son dernier 1RM validé (règle A).
+     Si la recopie prévue échoue, le cycle n'est PAS supprimé et la fonction
+     renvoie false. Sans contrôle des routines : utilisé tel quel par
+     "Désactiver le cycle", et par removeOrphanCycleKeepingOneRM. */
+  function deactivateCycleKeepingOneRM(exerciseId) {
+    if (writeValidatedOneRMs([exerciseId]) !== null) return false;
     OvrykDB.deactivateForceCycle(exerciseId);
+    return true;
+  }
+
+  /* Mirror of maybeAutoActivateForceCycle: an exercise's cycle only makes
+     sense while it's scheduled somewhere. Called wherever an exercise can
+     stop being used in any routine (routine deleted, exercise removed from
+     its routine) so a dropped cycle doesn't linger on the Dashboard. Must run
+     AFTER the routine change is persisted, since isExerciseUsedInRoutine
+     reads storage. Dernier 1RM validé conservé (règle A) : les appelants
+     l'écrivent d'abord avec writeValidatedOneRMs, avant de toucher à la
+     routine, pour ne rien supprimer si cette écriture échoue. */
+  function removeOrphanCycleKeepingOneRM(exerciseId) {
+    if (!OvrykDB.getForceCycle(exerciseId)) return true;
+    if (isExerciseUsedInRoutine(exerciseId)) return true;
+    return deactivateCycleKeepingOneRM(exerciseId);
   }
 
   /* Cycles start automatically (see the 1RM input's change handler above),
@@ -7867,11 +8026,20 @@
       deactivateBtn.className = 'routine-action-btn danger cycle-full-deactivate';
       deactivateBtn.textContent = 'Désactiver le cycle';
       deactivateBtn.addEventListener('click', function () {
-        showConfirmModal('Désactiver le cycle de force de « ' + exercise.name + ' » ? L\'historique du 1RM sera perdu.', function () {
-          OvrykDB.deactivateForceCycle(exerciseId);
+        var deactivateDetails = buildCycleRemovalDetails([exerciseId]);
+        /* comportement inchangé : l'activation automatique relance un cycle
+           neuf pour un mouvement encore programmé ; la confirmation le dit */
+        if (isExerciseUsedInRoutine(exerciseId)) {
+          deactivateDetails.note = [deactivateDetails.note, 'Ce mouvement est encore dans une routine : un nouveau cycle démarrera à partir de son 1RM.'];
+        }
+        showConfirmModal('Désactiver le cycle de force de « ' + exercise.name + ' » ?', function () {
+          if (!deactivateCycleKeepingOneRM(exerciseId)) {
+            showOneRMWriteFailure(exerciseId, 'le cycle est conservé.');
+            return;
+          }
           closeCycleDetailPage();
           renderExerciseList();
-        });
+        }, null, 'Désactiver', 'Annuler', deactivateDetails);
       });
       body.appendChild(deactivateBtn);
     }
@@ -9369,12 +9537,26 @@
     delBtn.className = 'routine-action-btn danger';
     delBtn.textContent = 'Supprimer';
     delBtn.addEventListener('click', function () {
+      /* lu à l'ouverture de la confirmation, sans rien écrire : les cycles
+         dont l'exercice n'est dans aucune autre routine (décision D) */
+      var removedCycles = getCyclesRemovedWithRoutine(routine);
+      var details = removedCycles.length
+        ? buildCycleRemovalDetails(removedCycles.map(function (entry) { return entry.exerciseId; }))
+        : { note: 'Aucun cycle concerné.' };
       showConfirmModal('Supprimer la routine « ' + routine.name + ' » ?', function () {
+        /* règle A d'abord : si la recopie d'un 1RM validé échoue, ni la
+           routine ni aucun cycle n'est supprimé */
+        var failedId = writeValidatedOneRMs(getCyclesRemovedWithRoutine(routine).map(function (entry) { return entry.exerciseId; }));
+        if (failedId !== null) {
+          renderProgrammeWeek();
+          showOneRMWriteFailure(failedId, 'la routine et ses cycles sont conservés.');
+          return;
+        }
         var exerciseIds = routine.exercises.map(function (rex) { return rex.exerciseId; });
         OvrykDB.deleteRoutine(routine.id);
-        exerciseIds.forEach(function (exerciseId) { maybeAutoDeactivateForceCycle(exerciseId); });
+        exerciseIds.forEach(function (exerciseId) { removeOrphanCycleKeepingOneRM(exerciseId); });
         renderProgrammeWeek();
-      });
+      }, null, 'Supprimer', 'Annuler', details);
     });
 
     actions.appendChild(dupBtn);
@@ -10473,10 +10655,35 @@
     removeBtn.setAttribute('aria-label', "Retirer l'exercice");
     removeBtn.textContent = '×';
     removeBtn.addEventListener('click', function () {
-      routine.exercises.splice(index, 1);
-      OvrykDB.updateRoutine(routine);
-      maybeAutoDeactivateForceCycle(rex.exerciseId);
-      renderRoutineEditor();
+      function removeNow() {
+        /* routine est routineEditorLive (renderRoutineEditor) ; la modale
+           bloque tout autre changement pendant la confirmation, mais on
+           revérifie que l'entrée est toujours à cet index avant d'écrire */
+        if (routine.exercises[index] !== rex) { renderRoutineEditor(); return; }
+        /* règle A d'abord (rien n'est prévu, donc rien n'est écrit, quand
+           le retrait ne supprime aucun cycle) */
+        if (writeValidatedOneRMs(removesCycle ? [rex.exerciseId] : []) !== null) {
+          renderRoutineEditor();
+          showOneRMWriteFailure(rex.exerciseId, 'l\'exercice reste dans la routine et son cycle est conservé.');
+          return;
+        }
+        routine.exercises.splice(index, 1);
+        OvrykDB.updateRoutine(routine);
+        removeOrphanCycleKeepingOneRM(rex.exerciseId);
+        renderRoutineEditor();
+      }
+      /* confirmation seulement si ce retrait supprime un cycle : aucune
+         autre entrée de cette routine ni aucune autre routine ne contient
+         l'exercice. Sinon, retrait immédiat comme avant. */
+      var exerciseId = rex.exerciseId;
+      var stillInThisRoutine = routine.exercises.some(function (other, i) { return i !== index && other.exerciseId === exerciseId; });
+      var inOtherRoutine = OvrykDB.getRoutines().some(function (r) {
+        return r.id !== routine.id && r.exercises.some(function (other) { return other.exerciseId === exerciseId; });
+      });
+      var removesCycle = !!OvrykDB.getForceCycle(exerciseId) && !stillInThisRoutine && !inOtherRoutine;
+      if (!removesCycle) { removeNow(); return; }
+      showConfirmModal('Retirer « ' + (exercise ? exercise.name : 'Exercice') + ' » de la routine ?', removeNow,
+        null, 'Supprimer', 'Annuler', buildCycleRemovalDetails([exerciseId]));
     });
 
     controls.appendChild(upBtn);
