@@ -90,6 +90,12 @@ def settings(page):
 def msg(page): return page.inner_text('#cloud-message') if page.is_visible('#cloud-message') else ''
 def items(page): return page.locator('.cloud-backup-item')
 def load_list(page, wait=600): page.click('#cloud-list-btn'); page.wait_for_timeout(wait)
+def wait_offline_msg(page, timeout=15000):
+    """attend, ENCORE HORS LIGNE, que l'échec de la requête soit affiché, au lieu d'une attente fixe : sous charge,
+    la requête peut ne pas avoir échoué au bout de 600 ou 800 ms ; remise en ligne trop tôt, elle partait alors
+    vers le vrai service (la route simulée est retirée), et le contrôle lisait encore "Chargement…"."""
+    try: page.wait_for_function("() => (document.getElementById('cloud-message') || {}).textContent.indexOf('Pas de connexion internet') !== -1", timeout=timeout)
+    except Exception: pass   # le contrôle qui suit échoue alors, avec le message affiché
 def restore_open(page): return page.is_visible('#restore-page')
 def setup(b, plan, local=LOCAL, clock=False):
     ctx, page, errors = fresh(b, local, clock); put_session(page); page.reload(); page.wait_for_timeout(300)
@@ -175,7 +181,7 @@ with sync_playwright() as p:
         ctx.close()
     # hors ligne
     ctx, page, errors, fk = setup(b, {}); before = ls(page)
-    fk.stop(); ctx.set_offline(True); load_list(page); ctx.set_offline(False)
+    fk.stop(); ctx.set_offline(True); load_list(page, wait=0); wait_offline_msg(page); ctx.set_offline(False)
     check('Pas de connexion internet' in msg(page) and ls(page) == before, 'R3 liste hors ligne : "%s"' % msg(page)[:80])
     ctx.close()
     # 401 puis renouvellement puis liste
@@ -264,7 +270,7 @@ with sync_playwright() as p:
     ctx.close()
     untouched_after_failure(b, 'R5 téléchargement 503', (503, ''), 'indisponible')
     ctx, page, errors, fk = setup(b, {LIST: [(200, STD_LIST)], dl_key(ID1): [(200, dl_body(ENV))]})
-    load_list(page); before = ls(page); fk.stop(); ctx.set_offline(True); items(page).nth(0).click(); page.wait_for_timeout(800); ctx.set_offline(False)
+    load_list(page); before = ls(page); fk.stop(); ctx.set_offline(True); items(page).nth(0).click(); wait_offline_msg(page); ctx.set_offline(False)
     check('Pas de connexion internet' in msg(page) and not restore_open(page) and ls(page) == before, 'R5 téléchargement hors ligne : "%s"' % msg(page)[:70])
     ctx.close()
 
