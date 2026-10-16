@@ -16680,6 +16680,8 @@
   function sessionVolume(session) {
     var volume = 0;
     session.exercises.forEach(function (sex) {
+      /* lecture tolérante : un exercice sans liste de séries compte zéro (rien n'est réécrit) */
+      if (!Array.isArray(sex.sets)) return;
       sex.sets.forEach(function (set) { if (set.done) volume += computeSetVolume(sex, set); });
     });
     return volume;
@@ -17297,7 +17299,7 @@
   var RESTORE_COPY_TIMEOUT_MS = 10000;
   var BACKUP_KEY_LABELS = {
     'ovryk.exercises': 'exercices', 'ovryk.routines': 'routines', 'ovryk.sessions': 'séances',
-    'ovryk.settings': 'réglages', 'ovryk.forceCycles': 'cycles de force', 'ovryk.meta': 'version de schéma'
+    'ovryk.settings': 'réglages', 'ovryk.forceCycles': 'cycles de force', 'ovryk.meta': 'données de version de schéma'
   };
 
   /* empreinte FNV-1a 32 bits du contenu (data), en hexadécimal : détecte

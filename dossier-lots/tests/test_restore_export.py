@@ -17,7 +17,7 @@ from restore_commun import *
 F = workdir()
 PHONE = dataset('tel', 3)
 LABELS = {'ovryk.exercises': 'exercices', 'ovryk.routines': 'routines', 'ovryk.sessions': 'séances',
-          'ovryk.settings': 'réglages', 'ovryk.forceCycles': 'cycles de force', 'ovryk.meta': 'version de schéma'}
+          'ovryk.settings': 'réglages', 'ovryk.forceCycles': 'cycles de force', 'ovryk.meta': 'données de version de schéma'}
 # partage simulé : mode 'ok', 'abort', 'error' ou 'pending' (résolu par __resolveShare) ; 'none' = pas de partage de fichiers
 SHARE = """(() => { window.__share = { mode: 'ok', calls: 0, text: null, resolve: null };
   Object.defineProperty(navigator, 'canShare', { configurable: true, value: (d) => window.__share.mode !== 'none' });
@@ -53,12 +53,7 @@ with sync_playwright() as p:
         page.click('#dashboard-share-btn'); page.wait_for_timeout(500)
         m_sh = io(page)
         expect = 'les ' + label + ' de cet appareil sont illisibles. Rien n’a été exporté.'
-        if key == 'ovryk.meta':
-            # texte de l'app : "les version de schéma ... sont illisibles" (accord fautif, noté dans PLAN.md) : la faute n'est pas figée ici
-            msg_ok = all(m.startswith(pre) and 'version de schéma de cet appareil sont illisibles' in m and m.endswith('Rien n’a été exporté.')
-                         for m, pre in ((m_exp, 'Export impossible : '), (m_sh, 'Partage impossible : ')))
-        else:
-            msg_ok = m_exp == 'Export impossible : ' + expect and m_sh == 'Partage impossible : ' + expect
+        msg_ok = m_exp == 'Export impossible : ' + expect and m_sh == 'Partage impossible : ' + expect
         check(msg_ok and len(downloads) == n_dl
               and share_state(page)['calls'] == 0 and ls(page) == before and not errors,
               'X1 %s illisibles : export et partage refusés ("%s"), rien téléchargé ni partagé, rien écrit' % (label, expect[:45]))
