@@ -33,3 +33,4 @@ Servir le site depuis la racine du projet, puis lancer chaque fichier avec un do
 Un autre site peut être visé avec la variable OVRYK_URL (c'est ce que fait mutations_restore.py). Chaque fichier commence par un contrôle de l'empreinte : celle des tests doit être égale à celle d'un export produit par l'app sur des données fabriquées, sinon la suite s'arrête.
 
 * test_restore_refus.py : les 17 variantes refusées à l'import (getBackupCrashError), les refus de format, les fichiers acceptés. Les lignes CONSTAT (variante injectée directement : plantage au démarrage ou non) ne comptent pas dans le résultat.
+* test_restore_ecriture.py : écriture partielle (stockage plein simulé : retour arrière réussi, en échec, ou sur une clé jamais modifiée), IndexedDB muette (abandon à 10 s, horloge simulée, réponse tardive supprimée), copie relue différente, copie impossible.
