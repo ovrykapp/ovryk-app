@@ -673,6 +673,152 @@ with sync_playwright() as p:
           'G31 pilule de l\'en-tête à 390 px : %s px de haut, même style que l\'écran de départ, sans ombre ni dégradé' % round(st['h']))
     ctx.close()
 
+    # ================= Livraison 4 : pilule sur l'Accueil, choix partagé par tous les points de lancement =================
+    def dash(page): page.click('.nav-btn[data-target="dashboard"]'); page.wait_for_timeout(350)
+    def dpill(page): return page.locator('#dash-gym-wrap .gym-switch')
+    def dnote(page):
+        n = page.locator('#dash-gym-wrap .seance-gym-note')
+        return n.first.inner_text() if n.count() and n.first.is_visible() else ''
+    def prog(page): page.click('.nav-btn[data-target="routine"]'); page.wait_for_timeout(400)
+    def row_note(page):
+        n = page.locator('#routine-list .gym-pending-note')
+        return n.first.inner_text() if n.count() else ''
+    onair1 = [sess2('s-on', '2026-09-01', 'onair', [('ex-x', 'Presse fabriquee', [rset(100, 10, True)])])]
+    inde1 = [sess2('s-in', '2026-09-08', 'inde', [('ex-y', 'Hack squat fabrique', [rset(50, 8, True)], 'ex-x')])]
+
+    # G32 : pilule de l'Accueil présente près du bouton, défaut = dernière salle utilisée (On Air sans historique, Indé après une séance indé)
+    ctx, page, errors = fresh(b, salle_dataset())
+    dash(page)
+    pl = dpill(page)
+    order = page.evaluate("() => { const w = document.getElementById('dash-gym-wrap'); return w.nextElementSibling && w.nextElementSibling.id; }")
+    ok_a = pl.count() == 1 and pl.get_attribute('role') == 'switch' and pl.get_attribute('aria-label') == 'Salle' and pl.get_attribute('data-gym') == 'onair' and order == 'dash-session-cta'
+    ctx.close()
+    ctx, page, errors = fresh(b, salle_dataset(onair1 + inde1))
+    dash(page)
+    check(ok_a and dpill(page).get_attribute('data-gym') == 'inde' and not errors,
+          'G32 Accueil : pilule juste avant "Commencer la séance", On Air sans historique, Indé quand la dernière séance est indé')
+    ctx.close()
+
+    # G33 : bascules sur l'Accueil : aucune écriture (ni avant, ni après un aller-retour d'onglets), ligne "N remplacé(s) en indé"
+    ctx, page, errors = fresh(b, salle_dataset(onair1))
+    dash(page)
+    before = ls(page)
+    dpill(page).click(); page.wait_for_timeout(300)
+    n_inde = dnote(page); g1 = dpill(page).get_attribute('data-gym')
+    focused = page.evaluate("() => !!document.activeElement && document.activeElement.matches('#dash-gym-wrap .gym-switch')")
+    prog(page); seance(page); dash(page)
+    g2 = dpill(page).get_attribute('data-gym')
+    dpill(page).click(); page.wait_for_timeout(300)
+    n_onair = dnote(page)
+    check(g1 == 'inde' and g2 == 'inde' and '1 remplacé en indé' in n_inde and 'remplacé' not in n_onair and focused and ls(page) == before and not errors,
+          'G33 Accueil : bascule Indé ("%s"), choix gardé après Programme et Séance, retour On Air sans ligne, focus gardé, aucune écriture' % n_inde.strip())
+    ctx.close()
+
+    # G34 : état partagé : Accueil vers Séance et Séance vers Accueil, rappel "Salle : X" dans Programme seulement si un choix est en attente
+    ctx, page, errors = fresh(b, salle_dataset(onair1))
+    prog(page); note0 = row_note(page)
+    dash(page); dpill(page).click(); page.wait_for_timeout(300)
+    seance(page); s1 = pill(page).get_attribute('data-gym')
+    meta1 = page.locator('#seance-routine-list .routine-row-meta').first.inner_text()
+    pill(page).click(); page.wait_for_timeout(300)
+    dash(page); d1 = dpill(page).get_attribute('data-gym')
+    dpill(page).click(); page.wait_for_timeout(300)
+    prog(page); note1 = row_note(page)
+    seance(page); s2 = pill(page).get_attribute('data-gym')
+    hidden_ok = page.evaluate("() => { const a = document.querySelector('#seance-gym-wrap .gym-switch'), b = document.querySelector('#dash-gym-wrap .gym-switch'); return a.dataset.gym === b.dataset.gym; }")
+    check(note0 == '' and s1 == 'inde' and '1 remplacé en indé' in meta1 and d1 == 'onair' and note1 == 'Salle : Indé' and s2 == 'inde' and hidden_ok and not errors,
+          'G34 état partagé : Accueil Indé vu sur Séance, Séance On Air vu sur l\'Accueil, pilule masquée identique, Programme "%s" (rien sans choix)' % note1)
+    ctx.close()
+
+    # G35 : le choix fait sur l'Accueil est repris au lancement depuis chaque point (Accueil, Programme, écran de départ, Refaire)
+    def from_dash(page): page.click('#dash-session-cta'); page.wait_for_timeout(700)
+    def from_prog(page):
+        prog(page); page.locator('#routine-list .routine-row-start', has_text='Démarrer').first.click(); page.wait_for_timeout(700)
+    def from_start(page):
+        seance(page); page.locator('#seance-routine-list .routine-row-main', has_text='Routine salle').first.click(); page.wait_for_timeout(700)
+    redo_note = {}
+    def from_redo(page):
+        page.click('.nav-btn[data-target="progression"]'); page.wait_for_timeout(300); page.click('#history-open-btn'); page.wait_for_timeout(400)
+        page.locator('#history-list .history-row').first.click(); page.wait_for_timeout(400)
+        redo_note['t'] = page.inner_text('#history-detail-footer')
+        page.click('.history-redo-btn'); page.wait_for_timeout(700)
+    got = []
+    for name_, fn in [('Accueil', from_dash), ('Programme', from_prog), ('écran de départ', from_start), ('Refaire', from_redo)]:
+        ctx, page, errors = fresh(b, salle_dataset(onair1))
+        dash(page); dpill(page).click(); page.wait_for_timeout(300)
+        before = data(page)
+        fn(page)
+        lv = live(page)
+        sessions_before = json.loads(before['ovryk.sessions'])
+        others_same = all(data(page)[k] == before[k] for k in DATA_KEYS if k != 'ovryk.sessions' and k in before)
+        ok_ = (lv and lv.get('gym') == 'inde' and lv['exercises'][0]['exerciseId'] == 'ex-y' and lv['exercises'][0].get('replacesExerciseId') == 'ex-x'
+               and json.loads(data(page)['ovryk.sessions'])[:len(sessions_before)] == sessions_before and others_same and not errors)
+        got.append(name_ if ok_ else name_ + ' ECHEC')
+        ctx.close()
+    check(all('ECHEC' not in g for g in got) and 'Salle : Indé' in redo_note.get('t', ''),
+          'G35 choix Indé de l\'Accueil repris à chaque lancement (%s), seule la nouvelle séance est écrite, Refaire affiche "Salle : Indé"' % ', '.join(got))
+
+    # G36 : Lifting jamais remplacé ni compté depuis l'Accueil, routine sans équivalent : pilule présente, aucune ligne de remplacement
+    d = salle_dataset(extra_rex=[{'exerciseId': 'ex-l', 'restSeconds': 120, 'sets': [{'reps': 5, 'weightKg': 80}]}])
+    d['exercises'][4]['gymEquivalentId'] = 'ex-z'
+    ctx, page, errors = fresh(b, d)
+    dash(page); dpill(page).click(); page.wait_for_timeout(300)
+    n_ = dnote(page)
+    from_dash(page)
+    ids = [x['exerciseId'] for x in live(page)['exercises']]
+    ctx.close()
+    d = salle_dataset(); d['exercises'][0].pop('gymEquivalentId')
+    ctx, page, errors = fresh(b, d)
+    dash(page); dpill(page).click(); page.wait_for_timeout(300)
+    check('1 remplacé en indé' in n_ and ids == ['ex-y', 'ex-z', 'ex-l'] and dpill(page).get_attribute('data-gym') == 'inde' and 'remplacé' not in dnote(page) and not errors,
+          'G36 Lifting non compté ("%s") ni remplacé (%s) ; routine sans équivalent : pilule Indé, aucune ligne' % (n_.strip(), ids))
+    ctx.close()
+
+    # G37 : séance en cours : Accueil sans pilule (Reprendre), Programme sans rappel de salle
+    ctx, page, errors = fresh(b, salle_dataset(onair1))
+    dash(page); dpill(page).click(); page.wait_for_timeout(300)
+    from_dash(page); dash(page)
+    cta = page.inner_text('#dash-session-cta').lower()
+    prog(page)
+    check(dpill(page).count() == 0 and not page.is_visible('#dash-gym-wrap') and 'reprendre' in cta and page.locator('.gym-pending-note').count() == 0 and not errors,
+          'G37 séance en cours : Accueil sans pilule ("%s"), aucun rappel "Salle" dans Programme' % cta)
+    ctx.close()
+
+    # G38 : 390 px : pilule de l'Accueil (captures On Air et Indé), 44 px, sans débordement, mêmes styles que l'écran de départ
+    ctx, page, errors = fresh(b, salle_dataset(onair1))
+    dash(page)
+    page.locator('#dash-session-card').screenshot(path=str(SHOTS / 'accueil-onair.png'))
+    dpill(page).click(); page.wait_for_timeout(400)
+    page.locator('#dash-session-card').screenshot(path=str(SHOTS / 'accueil-inde.png'))
+    st = page.evaluate("""() => { const b = document.querySelector('#dash-gym-wrap .gym-switch'); const t = b.querySelector('.gym-switch-thumb');
+      const r = b.getBoundingClientRect(); const cs = getComputedStyle(b), ts = getComputedStyle(t);
+      const n = document.querySelector('#dash-gym-wrap .seance-gym-note'); const cta = document.getElementById('dash-session-cta').getBoundingClientRect();
+      let over = []; document.querySelectorAll('#dash-session-card *').forEach(x => { const q = x.getBoundingClientRect(); if (q.width && q.right > 390.5) over.push(x.id || x.className); });
+      return {h: r.height, right: r.right, bottom: r.bottom, sw: document.documentElement.scrollWidth, bg: cs.backgroundColor, border: cs.borderTopColor, bw: cs.borderTopWidth,
+              thumb: ts.backgroundColor, shadow: [cs.boxShadow, ts.boxShadow], img: [cs.backgroundImage, ts.backgroundImage],
+              noteBottom: n ? n.getBoundingClientRect().bottom : null, ctaTop: cta.top, over: over,
+              fits: Array.from(b.querySelectorAll('.gym-switch-option')).every(o => o.scrollWidth <= o.clientWidth)}; }""")
+    check(st['h'] >= 44 and st['right'] <= 390 and st['sw'] <= 390 and not st['over'] and st['fits'] and st['noteBottom'] is not None and st['noteBottom'] <= st['ctaTop']
+          and st['bg'] == 'rgb(17, 17, 16)' and st['border'] == 'rgb(58, 58, 53)' and st['bw'] == '1px' and st['thumb'] == 'rgb(255, 106, 43)'
+          and st['shadow'] == ['none', 'none'] and st['img'] == ['none', 'none'],
+          'G38 Accueil 390 px : %s px de haut, aucun débordement, ligne de remplacement au-dessus du bouton, même style que l\'écran de départ' % round(st['h']))
+    ctx.close()
+
+    # G39 : le choix vit en mémoire seulement : remis à zéro par le lancement (séance annulée : retour à la dernière salle) et par un rechargement
+    ctx, page, errors = fresh(b, salle_dataset(onair1))
+    dash(page); dpill(page).click(); page.wait_for_timeout(300)
+    from_dash(page)
+    page.click('#seance-cancel-btn'); page.wait_for_timeout(200); page.click('#confirm-modal-confirm'); page.wait_for_timeout(400)
+    after_cancel = pill(page).get_attribute('data-gym')
+    dash(page); after_cancel_d = dpill(page).get_attribute('data-gym')
+    dpill(page).click(); page.wait_for_timeout(300)
+    page.reload(); page.wait_for_timeout(500); dash(page)
+    after_reload = dpill(page).get_attribute('data-gym')
+    prog(page)
+    check(after_cancel == 'onair' and after_cancel_d == 'onair' and after_reload == 'onair' and row_note(page) == '' and live(page) is None and not errors,
+          'G39 après lancement puis annulation : On Air partout ; après rechargement : On Air, aucun rappel dans Programme')
+    ctx.close()
+
     b.close()
 
 print('\n%d/%d' % (sum(res), len(res)))

@@ -3703,6 +3703,10 @@
   .seance-gym-note[hidden] { display: none; }
   .seance-gym-note.is-error { color: var(--rust); font-weight: 700; }
   .seance-gym { font-size: 11px; color: var(--steel); }
+  /* livraison 4 : salle choisie sur l'Accueil ou l'écran de départ, pas
+     encore lancée, rappelée sans interaction là où il n'y a pas de pilule
+     (Programme, Refaire cette séance). */
+  .gym-pending-note { margin: 6px 0 0; font-size: 11px; color: var(--steel); }
   .seance-gym[hidden] { display: none; }
   .live-card-replaces { display: block; font-size: 11px; color: var(--steel); margin: 2px 0 0; }
   .history-gym-tag { font-size: 11px; color: var(--steel); }
@@ -4408,6 +4412,7 @@
         <h1 class="dash-session-title" id="dash-session-title"></h1>
         <p class="dash-session-meta" id="dash-session-meta"></p>
         <div class="dash-session-exercises" id="dash-session-exercises"></div>
+        <div id="dash-gym-wrap" hidden></div>
         <button type="button" class="btn-primary" id="dash-session-cta"></button>
         <button type="button" class="routine-action-btn dash-session-secondary" id="dash-session-secondary-cta" hidden>Autre séance</button>
       </div>
@@ -6655,6 +6660,11 @@
     }
     if (target === 'routine') {
       renderProgrammeWeek();
+    }
+    /* livraison 4 : l'écran de départ reflète toujours le choix partagé
+       (lecture seule, aucune écriture) */
+    if (target === 'seance' && !activeSession) {
+      renderSeanceRoutineList();
     }
     if (target === 'profil') {
       renderProfileGoalsCard();
@@ -9336,9 +9346,11 @@
     startBtn.className = 'btn-add routine-row-start';
     startBtn.textContent = 'Démarrer';
     startBtn.addEventListener('click', function () {
-      launchRoutineSession(routine, function () { setActiveView('seance'); });
+      launchRoutineSession(routine, function () { setActiveView('seance'); }, getSeanceStartGym());
     });
     row.appendChild(startBtn);
+    var gymNote = buildPendingGymNote();
+    if (gymNote) row.appendChild(gymNote);
 
     var actions = document.createElement('div');
     actions.className = 'routine-row-actions';
@@ -9568,10 +9580,12 @@
       btn.textContent = 'Démarrer';
       btn.disabled = !!active;
       btn.addEventListener('click', function () {
-        launchRoutineSession(routine, function () { setActiveView('seance'); });
+        launchRoutineSession(routine, function () { setActiveView('seance'); }, getSeanceStartGym());
       });
     }
     card.appendChild(btn);
+    var gymNote = active ? null : buildPendingGymNote();
+    if (gymNote) card.appendChild(gymNote);
 
     if (active && active.routineId !== routine.id) {
       var hint = document.createElement('p');
@@ -12139,8 +12153,7 @@
     var gymWrap = document.getElementById('seance-gym-wrap');
     gymWrap.innerHTML = '';
     gymWrap.appendChild(buildGymSwitch(startGym, function (next) {
-      seanceStartGym = next;
-      renderSeanceRoutineList();
+      setSeanceStartGym(next);
       var again = gymWrap.querySelector('.gym-switch');
       if (again) again.focus();
     }));
@@ -12167,10 +12180,10 @@
       var last = getLastCompletedSessionForRoutine(routine.id);
       var meta = document.createElement('div');
       meta.className = 'routine-row-meta mono';
-      var replacedCount = routine.exercises.filter(function (rex) { return !!getRoutineSlotReplacement(rex, startGym); }).length;
+      var replacedCount = countRoutineGymReplacements(routine, startGym);
       meta.textContent = estimateRoutineDuration(routine) + ' · ' +
         (last ? ('Dernière fois ' + formatRelativeDate(last.date)) : 'Jamais faite') +
-        (replacedCount ? ' · ' + replacedCount + (replacedCount > 1 ? ' remplacés' : ' remplacé') + ' en indé' : '');
+        (replacedCount ? ' · ' + formatGymReplacedCount(replacedCount) : '');
       wrap.appendChild(meta);
 
       listEl.appendChild(wrap);
@@ -12194,8 +12207,9 @@
      R12 : semaine_actuelle n'avance jamais sur une séance légère, donc
      "Repousser" n'y aurait aucun retour possible). Sans mouvement concerné,
      comportement strictement inchangé par rapport à avant ce lot. */
-  /* lot 18 : gym donné par l'écran de départ ; sinon (Accueil, Programme,
-     Refaire cette séance) la dernière salle utilisée. */
+  /* lot 18 : gym donné par l'appelant ; livraison 4 : tous les points de
+     lancement passent getSeanceStartGym() (choix en attente, sinon la
+     dernière salle utilisée). Repli identique si gym est absent. */
   function launchRoutineSession(routine, afterStart, gym) {
     var now = new Date().toISOString();
     var pendingIds = [];
@@ -14973,10 +14987,12 @@
       redoNote.className = 'history-detail-note';
       redoNote.textContent = 'La séance repart de la dernière séance terminée de cette routine, pas forcément de celle affichée ici.';
       btn.addEventListener('click', function () {
-        launchRoutineSession(routine, function () { closeHistoryPage(); setActiveView('seance'); });
+        launchRoutineSession(routine, function () { closeHistoryPage(); setActiveView('seance'); }, getSeanceStartGym());
       });
     }
     footer.appendChild(btn);
+    var gymNote = active ? null : buildPendingGymNote();
+    if (gymNote) { gymNote.className += ' history-detail-note'; footer.appendChild(gymNote); }
     if (typeof redoNote !== 'undefined') footer.appendChild(redoNote);
     if (active && active.routineId !== routine.id) {
       var hint = document.createElement('p');
@@ -16037,6 +16053,38 @@
 
   function getSeanceStartGym() { return isKnownGym(seanceStartGym) ? seanceStartGym : getLastUsedGym(); }
 
+  /* livraison 4 : seul point d'écriture du choix, partagé par les pilules
+     de l'Accueil et de l'écran de départ. Une pilule n'est jamais la
+     source de vérité : les deux hôtes sont redessinés ici, visibles ou
+     non, depuis getSeanceStartGym(). Mémoire seulement, aucune écriture
+     dans les données. Sans effet pendant une séance (pilule de l'en-tête). */
+  function setSeanceStartGym(next) {
+    if (!isKnownGym(next) || activeSession || OvrykDB.getActiveSession()) return;
+    seanceStartGym = next;
+    renderSeanceRoutineList();
+    renderDashboardHero();
+  }
+
+  /* lignes de la routine remplacées par leur équivalent dans cette salle */
+  function countRoutineGymReplacements(routine, gym) {
+    return routine.exercises.filter(function (rex) { return !!getRoutineSlotReplacement(rex, gym); }).length;
+  }
+
+  function formatGymReplacedCount(n) {
+    return n + (n > 1 ? ' remplacés' : ' remplacé') + ' en indé';
+  }
+
+  /* rappel non interactif "Salle : X", seulement quand un choix est en
+     attente (null sinon : le lancement prend la dernière salle utilisée,
+     comme avant). */
+  function buildPendingGymNote() {
+    if (!isKnownGym(seanceStartGym)) return null;
+    var note = document.createElement('p');
+    note.className = 'gym-pending-note mono';
+    note.textContent = 'Salle : ' + gymLabel(seanceStartGym);
+    return note;
+  }
+
   /* exercice de remplacement d'une ligne de routine pour cette salle, ou
      null : seulement en salle indé, jamais pour un mouvement de cycle. */
   function getRoutineSlotReplacement(rex, gym) {
@@ -16671,6 +16719,11 @@
     var exCount = session.exercises.length;
     document.getElementById('dash-session-meta').textContent = exCount + ' exercice' + (exCount > 1 ? 's' : '');
     document.getElementById('dash-session-exercises').innerHTML = '';
+    /* livraison 4 : pas de pilule ici, la salle se change dans l'en-tête
+       de la séance en cours */
+    var gymWrap = document.getElementById('dash-gym-wrap');
+    gymWrap.innerHTML = '';
+    gymWrap.hidden = true;
 
     var ctaBtn = document.getElementById('dash-session-cta');
     ctaBtn.textContent = 'Reprendre la séance';
@@ -16748,10 +16801,29 @@
       exercisesEl.appendChild(row);
     });
 
+    /* livraison 4 : même pilule que l'écran de départ, même état partagé
+       (setSeanceStartGym). Aucune écriture avant le lancement. */
+    var startGym = getSeanceStartGym();
+    var gymWrap = document.getElementById('dash-gym-wrap');
+    gymWrap.innerHTML = '';
+    gymWrap.hidden = false;
+    gymWrap.appendChild(buildGymSwitch(startGym, function (next) {
+      setSeanceStartGym(next);
+      var again = document.querySelector('#dash-gym-wrap .gym-switch');
+      if (again) again.focus();
+    }));
+    var replacedCount = countRoutineGymReplacements(routine, startGym);
+    if (replacedCount) {
+      var replacedNote = document.createElement('p');
+      replacedNote.className = 'seance-gym-note mono';
+      replacedNote.textContent = formatGymReplacedCount(replacedCount);
+      gymWrap.appendChild(replacedNote);
+    }
+
     var ctaBtn = document.getElementById('dash-session-cta');
     ctaBtn.textContent = 'Commencer la séance';
     ctaBtn.onclick = function () {
-      launchRoutineSession(routine, function () { setActiveView('seance'); });
+      launchRoutineSession(routine, function () { setActiveView('seance'); }, getSeanceStartGym());
     };
 
     /* point 8 : pour lancer une autre routine que celle prévue aujourd'hui
