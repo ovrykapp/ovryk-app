@@ -47,14 +47,18 @@ with sync_playwright() as p:
     mixed = data(page) != before and jget(page, MARK) is not None
     page.reload(); page.wait_for_timeout(500); home(page)
     banner = page.is_visible('#restore-interrupted-banner') and page.is_visible('#restore-interrupted-back-btn')
-    page.click('#restore-interrupted-back-btn'); page.wait_for_timeout(600)
-    title = txt(page, '#restore-title'); btn = txt(page, '#restore-confirm-btn')
-    confirm_restore(page); wait_reload(page); home(page)
-    check(mixed and banner and title == 'Annuler la restauration' and btn == 'Revenir à cette copie' and data(page) == before
-          and MARK not in ls(page) and not page.is_visible('#restore-interrupted-banner') and not errors,
-          'N1 bandeau : écran "%s", retour complet, état identique octet pour octet à celui d\'avant, marque retirée, plus de bandeau' % title)
-    page.reload(); page.wait_for_timeout(500); home(page)
-    check(not page.is_visible('#restore-interrupted-banner'), 'N1 au rechargement suivant : aucun bandeau')
+    if not (mixed and banner):
+        # sans marque ni bandeau, aucun retour possible : échec explicite plutôt qu'un clic qui attendrait 30 s
+        check(False, 'N1 restauration interrompue : état mélangé %s, marque %s, bandeau %s (attendus tous les trois)' % (data(page) != before, jget(page, MARK) is not None, banner))
+    else:
+        page.click('#restore-interrupted-back-btn'); page.wait_for_timeout(600)
+        title = txt(page, '#restore-title'); btn = txt(page, '#restore-confirm-btn')
+        confirm_restore(page); wait_reload(page); home(page)
+        check(title == 'Annuler la restauration' and btn == 'Revenir à cette copie' and data(page) == before
+              and MARK not in ls(page) and not page.is_visible('#restore-interrupted-banner') and not errors,
+              'N1 bandeau : écran "%s", retour complet, état identique octet pour octet à celui d\'avant, marque retirée, plus de bandeau' % title)
+        page.reload(); page.wait_for_timeout(500); home(page)
+        check(not page.is_visible('#restore-interrupted-banner'), 'N1 au rechargement suivant : aucun bandeau')
     ctx.close()
 
     # N2 : marque vers une copie qui n'existe pas

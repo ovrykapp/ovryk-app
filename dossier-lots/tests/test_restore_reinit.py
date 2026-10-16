@@ -62,6 +62,10 @@ with sync_playwright() as p:
         modal = page.text_content('#confirm-modal-message') or ''; status = io(page)
         suspended = ('n’ont pas pu être effacées (pas de réponse)' in modal and 'Réinitialiser quand même' in (page.text_content('#confirm-modal-confirm') or '')
                      and LATER in modal and status.startswith('Réinitialisation suspendue') and ls(page) == st0)
+        if not page.is_visible('#confirm-modal-overlay'):
+            # aucune suspension proposée (réinitialisation partie sans attendre la base) : échec explicite
+            check(False, 'T2/T3 (%s) base bloquée : aucune suspension à 5 s (rien avant 5 s %s ; état %s)' % (choice, early, 'inchangé' if ls(page) == st0 else 'effacé'))
+            ctx.close(); continue
         if choice == 'annuler':
             page.click('#confirm-modal-cancel'); page.wait_for_timeout(300)
             check(early and suspended, 'T2 base bloquée : rien avant 5 s, puis suspension "pas de réponse", choix proposé, rien supprimé')
