@@ -20,3 +20,16 @@ Il ne remplace pas les critères d'acceptation des lots. Il sert à détecter un
 ## Jeu de données
 
 donnees-exemple.json contient des cycles d'exemple. Si tu changes les identifiants d'exercices, adapte le fichier.
+
+## Suite de la restauration locale (test_restore_*)
+
+Données fabriquées dans les tests uniquement : jamais d'export réel ni de fichier de backups/. Aucun appel réseau (les polices de l'app sont coupées). Aucune dépendance à git. Les outils communs sont dans restore_commun.py.
+
+Servir le site depuis la racine du projet, puis lancer chaque fichier avec un dossier de travail hors du dépôt :
+
+    python3 -m http.server 8765 --bind 127.0.0.1
+    python3 dossier-lots/tests/test_restore_refus.py /tmp/ovryk-tests/refus
+
+Un autre site peut être visé avec la variable OVRYK_URL (c'est ce que fait mutations_restore.py). Chaque fichier commence par un contrôle de l'empreinte : celle des tests doit être égale à celle d'un export produit par l'app sur des données fabriquées, sinon la suite s'arrête.
+
+* test_restore_refus.py : les 17 variantes refusées à l'import (getBackupCrashError), les refus de format, les fichiers acceptés. Les lignes CONSTAT (variante injectée directement : plantage au démarrage ou non) ne comptent pas dans le résultat.
