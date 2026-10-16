@@ -16,7 +16,7 @@ Ce dossier réunit l'application, les outils de vérification, les 12 cycles et 
 
 1. Décompresse le zip, puis Fichier, Ouvrir le dossier, et choisis le dossier ovryk. VS Code n'ouvre pas un zip directement.
 2. Avant tout, exporte tes données depuis ton application actuelle (Réglages, Exporter) et garde ce fichier.
-3. Dans ton vrai projet, remplace index.html par celui ci. Ne touche pas à manifest.json, sw.js ni aux icônes : ils ne sont pas dans ce dossier. Ouvre sw.js, repère la version du cache et augmente la d'un cran, sinon l'application installée garde l'ancien index.html.
+3. Dans ton vrai projet, remplace index.html par celui ci. manifest.json, sw.js et les icônes sont suivis par git à la racine du dépôt : ne les remplace pas. Ouvre sw.js, repère la version du cache et augmente la d'un cran, sinon l'application installée garde l'ancien index.html.
 4. Pour tester dans le navigateur : extension Live Server (recommandée par VS Code), clic droit sur index.html puis Open with Live Server.
 5. Copie outils/, data/, docs/ et dossier-lots/ ainsi que CLAUDE.md dans ton vrai projet, à côté de index.html.
 
