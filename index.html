@@ -8934,10 +8934,6 @@
       null, 'Confirmer', 'Annuler');
   }
 
-  function showSwapFailure(text) {
-    showConfirmModal('Le remplacement n\'a pas pu être enregistré (stockage plein ou indisponible). ' + text, null, null, 'Compris', false);
-  }
-
   /* Écritures, dans l'ordre : copie brute de forceCycles et sauvegarde du
      jour, 1RM validé du mouvement terminé (règle A), cycle du mouvement
      tiré, puis routines en une seule écriture. Si l'écriture des routines
@@ -8953,21 +8949,34 @@
       showConfirmModal('Le tirage n\'est plus à jour : rien n\'a changé. Tire à nouveau un mouvement.', null, null, 'Compris', false);
       return;
     }
-    var keptText = 'Rien n\'a changé : ' + finished.name + ' reste dans tes routines et son cycle attend d\'être lancé.';
+    /* le 1RM validé n'est recopié sur l'exercice qu'à la deuxième écriture ;
+       les messages d'échec le disent quand c'est déjà fait */
+    var oneRMPlan = getValidatedOneRMKeepPlan(finishedId);
+    var oneRMWritten = false;
+    function showSwapFailure(text) {
+      var oneRMText = oneRMWritten
+        ? ' Seul le 1RM validé de ' + finished.name + ' (' + String(oneRMPlan.value).replace('.', ',') + ' kg) a été enregistré sur l\'exercice.'
+        : '';
+      showConfirmModal('Le changement de mouvement a échoué (stockage plein ou indisponible). ' + text + oneRMText, null, null, 'Compris', false);
+    }
+    var KEPT_TEXT = 'Tes routines et tes cycles sont restés comme avant.';
 
     var rawCycles;
     try {
       rawCycles = localStorage.getItem(DB_KEYS.FORCE_CYCLES);
       ensureForceCyclesBackupToday();
-    } catch (err) { showSwapFailure(keptText); return; }
+    } catch (err) { showSwapFailure(KEPT_TEXT); return; }
 
     if (writeValidatedOneRMs([finishedId]) !== null) {
       showOneRMWriteFailure(finishedId, 'aucun mouvement n\'a été remplacé.');
       return;
     }
+    oneRMWritten = !!(oneRMPlan && oneRMPlan.write);
 
     function restoreCycles() {
       try {
+        /* déjà identique (l'écriture a été refusée) : rien à remettre */
+        if (localStorage.getItem(DB_KEYS.FORCE_CYCLES) === rawCycles) return true;
         if (rawCycles === null) localStorage.removeItem(DB_KEYS.FORCE_CYCLES);
         else localStorage.setItem(DB_KEYS.FORCE_CYCLES, rawCycles);
         return localStorage.getItem(DB_KEYS.FORCE_CYCLES) === rawCycles;
@@ -8986,8 +8995,12 @@
     } catch (err) { /* vérifié juste dessous */ }
     var written = OvrykDB.getForceCycle(nextId);
     if (!written || written.en_attente_de_validation || written.cycle_actif !== cycleId || written.semaine_actuelle !== 1) {
-      restoreCycles();
-      showSwapFailure(keptText);
+      if (restoreCycles()) {
+        showSwapFailure(KEPT_TEXT);
+      } else {
+        showSwapFailure('Tes routines n\'ont pas changé, mais les cycles n\'ont pas pu être remis comme avant. ' +
+          'Contrôle les cycles de ' + finished.name + ' et de ' + next.name + ' dans Exercices.');
+      }
       return;
     }
 
@@ -9009,17 +9022,21 @@
     });
     if (OvrykDB.saveRoutines(list) === false) {
       if (restoreCycles()) {
-        showSwapFailure(keptText);
+        showSwapFailure(KEPT_TEXT);
       } else {
-        showSwapFailure('Tes routines n\'ont pas changé. Le cycle de ' + next.name + ' a été créé mais, hors programme, il reste masqué et sans effet ; ' +
-          'tu peux le supprimer depuis Tirer mes cycles (Supprimer les cycles hors programme).');
+        showSwapFailure('Tes routines n\'ont pas changé. Le cycle de ' + next.name + ' a été lancé mais, hors programme, il reste masqué et sans effet ; ' +
+          'il peut être supprimé depuis Tirer mes cycles (Supprimer les cycles hors programme).');
       }
       return;
     }
-    /* règle 14 : copie partagée de l'éditeur remise à jour */
+    /* règle 14 : copie partagée de l'éditeur remise à jour ; si l'éditeur est
+       ouvert sur une de ces routines, il est redessiné (il relit la routine
+       enregistrée) : sinon il afficherait encore l'ancien mouvement et ses
+       boutons seraient liés à d'anciennes lignes */
     Object.keys(changed).forEach(function (id) {
       syncEditorRoutine(id, { exercises: changed[id].exercises, updatedAt: changed[id].updatedAt });
     });
+    if (currentRoutineId && changed[currentRoutineId] && !document.getElementById('routine-editor-view').hidden) renderRoutineEditor();
 
     /* R7 (lot 08) : coordonné comme "Lancer ce cycle" */
     var warnings = coordinateAndApplyOffsets([nextId]);

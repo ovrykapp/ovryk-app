@@ -14,7 +14,9 @@ SP.mkdir(parents=True, exist_ok=True)
 res = []
 def check(c, m): res.append(bool(c)); print(('ok     ' if c else 'ECHEC  ') + m)
 DATA_KEYS = ['ovryk.exercises', 'ovryk.routines', 'ovryk.sessions', 'ovryk.settings', 'ovryk.forceCycles', 'ovryk.meta']
-KEPT = "Le remplacement n'a pas pu être enregistré (stockage plein ou indisponible). Rien n'a changé : Deadlift fab reste dans tes routines et son cycle attend d'être lancé."
+FAIL = "Le changement de mouvement a échoué (stockage plein ou indisponible). "
+KEPT = FAIL + "Tes routines et tes cycles sont restés comme avant."
+ONERM = " Seul le 1RM validé de Deadlift fab (110 kg) a été enregistré sur l'exercice."
 EMPTY = "Aucun mouvement Lifting avec un 1RM et sans cycle. Ajoute un 1RM à un mouvement Lifting pour qu'il puisse être tiré."
 MSG_RE = re.compile(r"^Remplacer Deadlift fab par (.+?) dans (.+) \? (.+?), cycle (\d+), semaine 1\.$")
 LETTERS = {'13': 'A', '14': 'B', '15': 'C', '16': 'D', '17': 'E'}
@@ -158,9 +160,9 @@ with sync_playwright() as p:
     before = data(page)
     open_end(page); swap(page); page.evaluate(break_key('ovryk.routines')); confirm(page); m = modal(page)
     e = exs(page)
-    check(m['message'] == KEPT and m['confirm'] == 'Compris' and ls(page)['ovryk.routines'] == before['ovryk.routines']
+    check(m['message'] == KEPT + ONERM and m['confirm'] == 'Compris' and ls(page)['ovryk.routines'] == before['ovryk.routines']
           and ls(page)['ovryk.forceCycles'] == before['ovryk.forceCycles'] and e[DL]['oneRepMax'] == 110 and not errors,
-          'F5 routines en échec : message exact, routines et forceCycles identiques octet pour octet, seul le 1RM validé recopié (%s)' % m['message'])
+          'F5 routines en échec : message exact avec la mention du 1RM déjà recopié, routines et forceCycles identiques octet pour octet (%s)' % m['message'])
     ctx.close()
 
     # F6 : routines en échec ET remise de forceCycles en échec : message clair, nouveau cycle hors programme
@@ -168,7 +170,7 @@ with sync_playwright() as p:
     before = data(page)
     open_end(page); swap(page)
     page.evaluate(break_key('ovryk.routines')); page.evaluate(break_key('ovryk.forceCycles', 1)); confirm(page); m = modal(page)
-    check(m['message'].startswith("Le remplacement n'a pas pu être enregistré") and "Tes routines n'ont pas changé. Le cycle de Power Clean fab a été créé" in m['message']
+    check(m['message'].startswith(FAIL + "Tes routines n'ont pas changé. Le cycle de Power Clean fab a été lancé") and m['message'].endswith(ONERM)
           and ls(page)['ovryk.routines'] == before['ovryk.routines'] and PC in cycles(page) and not errors,
           'F6 remise en échec : message clair, routines intactes, cycle de Power Clean hors programme (%s)' % m['message'])
     ctx.close()
@@ -177,8 +179,30 @@ with sync_playwright() as p:
     ctx, page, errors = fresh(b, full_pool())
     before = data(page)
     open_end(page); swap(page); page.evaluate(break_key('ovryk.forceCycles')); confirm(page); m = modal(page)
-    check(m['message'] == KEPT and ls(page)['ovryk.routines'] == before['ovryk.routines'] and ls(page)['ovryk.forceCycles'] == before['ovryk.forceCycles'] and not errors,
-          'F7 cycle en échec : message exact, routines et forceCycles intacts')
+    check(m['message'] == KEPT + ONERM and ls(page)['ovryk.routines'] == before['ovryk.routines'] and ls(page)['ovryk.forceCycles'] == before['ovryk.forceCycles'] and not errors,
+          'F7 cycle en échec : message exact avec la mention du 1RM, routines et forceCycles intacts')
+    ctx.close()
+
+    # F5b : le 1RM de l'exercice vaut déjà 110 (rien à recopier) : le message ne mentionne aucun 1RM
+    d = full_pool(); d['exercises'][0]['oneRepMax'] = 110
+    ctx, page, errors = fresh(b, d)
+    before = data(page)
+    open_end(page); swap(page); page.evaluate(break_key('ovryk.routines')); confirm(page); m = modal(page)
+    check(m['message'] == KEPT and data(page) == before and not errors,
+          'F5b routines en échec sans recopie du 1RM : message sans mention du 1RM, toutes les données identiques octet pour octet (%s)' % m['message'])
+    ctx.close()
+
+    # F5c : la sauvegarde du jour de forceCycles échoue avant toute écriture : rien n'est écrit, pas de mention du 1RM
+    ctx, page, errors = fresh(b, full_pool())
+    before = data(page)
+    open_end(page); swap(page)
+    page.evaluate("() => { Object.keys(localStorage).filter(k => k.indexOf('ovryk.backup.forceCycles.') === 0).forEach(k => localStorage.removeItem(k)); }")
+    before = data(page)
+    page.evaluate("""() => { const orig = Storage.prototype.setItem; Storage.prototype.setItem = function (k, v) {
+      if (k.indexOf('ovryk.backup.forceCycles.') === 0) throw new DOMException('quota', 'QuotaExceededError'); return orig.call(this, k, v); }; }""")
+    confirm(page); m = modal(page)
+    check(m['message'] == KEPT and data(page) == before and exs(page)[DL]['oneRepMax'] == 100 and not errors,
+          'F5c sauvegarde du jour en échec : message sans mention du 1RM, 1RM non recopié, données identiques (%s)' % m['message'])
     ctx.close()
 
     # F8 : R7 : seuil lourd 0, 1 cycle lourd par semaine, un cycle fixe dans le programme en semaine 1 de A : Power Clean décalé de 6
@@ -221,6 +245,44 @@ with sync_playwright() as p:
     open_end(page)
     check(page.locator('#cycle-end-swap-btn').count() == 0 and 'CHANGER DE MOUVEMENT' not in page.inner_text('#cycle-end-body') and not errors,
           'F11 mouvement hors programme : bloc absent')
+    ctx.close()
+
+    # E1 / E2 : éditeur de routine ouvert sur une routine qui contient le mouvement terminé ; on remplace depuis l'écran
+    # de fin de cycle (ouvert par le clic du bandeau, en JS : l'éditeur plein écran le recouvre), puis on agit dans
+    # l'éditeur et on l'enregistre. Le nouveau mouvement reste, l'ancien ne revient pas.
+    def open_editor_then_swap(page):
+        nav(page, 'routine')
+        page.locator('.routine-row', has_text='Force fab').first.locator('.routine-row-main').click(); page.wait_for_timeout(400)
+        page.evaluate("() => document.getElementById('cycle-alert-banner').click()"); page.wait_for_timeout(300)
+        page.evaluate("() => document.getElementById('cycle-end-swap-btn').click()"); page.wait_for_timeout(200)
+        confirm(page)
+    def editor_names(page): return page.locator('#routine-editor-view .routine-exercise-block').count(), \
+        page.locator('#routine-editor-view .routine-exercise-block', has_text='Deadlift fab').count(), \
+        page.locator('#routine-editor-view .routine-exercise-block', has_text='Power Clean fab').count()
+
+    ctx, page, errors = fresh(b, full_pool())
+    open_editor_then_swap(page)
+    total, n_dl, n_pc = editor_names(page)
+    check(page.is_visible('#routine-editor-view') and n_dl == 0 and n_pc == 1 and total == 3,
+          'E1 éditeur ouvert pendant le remplacement : il affiche Power Clean et plus Deadlift (%d blocs, Deadlift %d, Power Clean %d)' % (total, n_dl, n_pc))
+    page.locator('#routine-editor-view .routine-exercise-block', has_text='Back Squat fab').first.locator('.rex-remove-btn').click(); page.wait_for_timeout(300)
+    page.click('#routine-save-btn'); page.wait_for_timeout(400)
+    r = routines(page)
+    ids_a = [x['exerciseId'] for x in r[0]['exercises']]
+    ids_b = [x['exerciseId'] for x in r[1]['exercises']]
+    check(ids_a == [PC, MU] and ids_b == [PC, BS] and r[0]['exercises'][0]['restSeconds'] == 180 and r[0]['exercises'][0].get('groupId') == 'g1'
+          and page.is_hidden('#routine-editor-view') and PC in cycles(page) and not errors,
+          'E1 retrait d\'une autre ligne puis Enregistrer : Power Clean toujours là, Deadlift pas revenu (%s / %s) (%s)' % (ids_a, ids_b, errors[:1]))
+    ctx.close()
+
+    ctx, page, errors = fresh(b, full_pool())
+    open_editor_then_swap(page)
+    page.fill('#routine-name-input', 'Force renommée fab'); page.dispatch_event('#routine-name-input', 'change'); page.wait_for_timeout(300)
+    page.click('#routine-save-btn-bottom'); page.wait_for_timeout(400)
+    r = routines(page)
+    check([x['exerciseId'] for x in r[0]['exercises']] == [BS, PC, MU] and r[0]['name'] == 'Force renommée fab'
+          and [x['exerciseId'] for x in r[1]['exercises']] == [PC, BS] and page.is_hidden('#routine-editor-view') and not errors,
+          'E2 renommage puis Enregistrer : nom pris, Power Clean toujours là, Deadlift pas revenu (%s)' % errors[:1])
     ctx.close()
 
     b.close()
