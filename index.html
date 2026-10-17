@@ -7450,6 +7450,15 @@
     return isExerciseUsedInRoutine(exerciseId);
   }
 
+  /* constat 1 du second audit de la livraison 2 : en séance, le cycle d'un
+     exercice hors programme est ignoré (ni prescription, ni test, ni
+     avancement de semaine) ; l'exercice se comporte comme un exercice sans
+     cycle. Lecture seule. */
+  function getSessionForceCycle(exerciseId) {
+    var cycle = OvrykDB.getForceCycle(exerciseId);
+    return cycle && isCycleInProgramme(exerciseId) ? cycle : null;
+  }
+
   /* copie de ovryk.forceCycles réduite aux cycles du programme (lecture seule) */
   function getProgrammeForceCycles() {
     var all = OvrykDB.getForceCycles() || {};
@@ -13411,7 +13420,7 @@
        intitulé, avec leurs cercles. Même condition qu'avant, mêmes
        fonctions (buildCycleTestForm, completeCycleTest), rien de neuf
        n'est écrit. */
-    var cycle = OvrykDB.getForceCycle(sex.exerciseId);
+    var cycle = getSessionForceCycle(sex.exerciseId);
     var testBlock = null;
     if (cycle && cycle.en_attente_de_validation) testBlock = buildCyclePendingNotice(sex.exerciseId);
     else if (cycle && getCycleWeek(cycle).isTestWeek) testBlock = buildCycleTestForm(sex, cycle);
@@ -14624,7 +14633,7 @@
      rien n'est poussé dans activeSession.exercises. */
   function addExerciseToSession(exerciseId) {
     if (!activeSession) return;
-    var cycle = OvrykDB.getForceCycle(exerciseId);
+    var cycle = getSessionForceCycle(exerciseId);
     if (cycle && isCycleTestWeekPending(cycle, OvrykDB.getExerciseById(exerciseId))) {
       var prior = getPriorCompletedSessionsThisWeekForExercise(exerciseId, activeSession.date, activeSession.id);
       if (prior.length === 0) {
@@ -14641,7 +14650,7 @@
 
   function doAddExerciseToSession(exerciseId) {
     var exercise = OvrykDB.getExerciseById(exerciseId);
-    var cycle = OvrykDB.getForceCycle(exerciseId);
+    var cycle = getSessionForceCycle(exerciseId);
     /* R12, point D : un mouvement de cycle ajouté à la volée (hors routine)
        respecte la même règle de séance légère que buildSessionFromRoutine —
        activeSession.id existe déjà ici (séance en cours persistée), donc on
@@ -14706,7 +14715,7 @@
     activeSession.exercises.forEach(function (sex) {
       if (advancedIds[sex.exerciseId] || cycleTestSubmittedIds[sex.exerciseId]) return;
       advancedIds[sex.exerciseId] = true;
-      if (!OvrykDB.getForceCycle(sex.exerciseId)) return;
+      if (!getSessionForceCycle(sex.exerciseId)) return;
       /* R12, point D : la semaine du cycle n'avance qu'une seule fois par
          semaine civile — une séance légère (deuxième ou plus pour ce
          mouvement cette semaine) ne fait jamais avancer semaine_actuelle.
@@ -14746,7 +14755,7 @@
     activeSession.exercises.forEach(function (sex) {
       total += sex.sets.length;
       done += sex.sets.filter(function (s) { return s.done; }).length;
-      if (OvrykDB.getForceCycle(sex.exerciseId)) touchesCycle = true;
+      if (getSessionForceCycle(sex.exerciseId)) touchesCycle = true;
     });
 
     if (done === 0) {
