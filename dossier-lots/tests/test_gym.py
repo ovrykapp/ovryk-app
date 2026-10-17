@@ -331,6 +331,7 @@ with sync_playwright() as p:
     d['forceCycles'] = {'ex-c': {'cycle_actif': '6', 'semaine_actuelle': 4, 'one_rm_actuel': 100, 'historique_1rm': [], 'historique_cycles': [], 'prochain_cycle': None,
                                  'en_attente_de_validation': False, 'semaines_modifiees': {}, 'test_report_used': False, 'decalage_semaines': 0}}
     d['settings']['deloadMuscuMode'] = 'auto'
+    d['routines'].append({'id': 'r-force', 'name': 'Force fabriquee', 'weekdays': [], 'updatedAt': '2026-06-01T00:00:00.000Z', 'exercises': [{'exerciseId': 'ex-c', 'restSeconds': 120, 'sets': [rset(0)]}]})  # cycles liés au programme : ex-c doit être dans une routine pour compter
     ctx, page, errors = fresh(b, d)
     seance(page)
     if pill(page).get_attribute('data-gym') != 'inde': pill(page).click(); page.wait_for_timeout(200)
@@ -648,6 +649,7 @@ with sync_playwright() as p:
     d['forceCycles'] = {'ex-c': {'cycle_actif': '6', 'semaine_actuelle': 4, 'one_rm_actuel': 100, 'historique_1rm': [], 'historique_cycles': [], 'prochain_cycle': None,
                                  'en_attente_de_validation': False, 'semaines_modifiees': {}, 'test_report_used': False, 'decalage_semaines': 0}}
     d['settings']['deloadMuscuMode'] = 'auto'
+    d['routines'].append({'id': 'r-force', 'name': 'Force fabriquee', 'weekdays': [], 'updatedAt': '2026-06-01T00:00:00.000Z', 'exercises': [{'exerciseId': 'ex-c', 'restSeconds': 120, 'sets': [rset(0)]}]})  # cycles liés au programme : ex-c doit être dans une routine pour compter
     ctx, page, errors = fresh(b, d)
     launch_gym(page, 'onair')
     s1 = live(page)

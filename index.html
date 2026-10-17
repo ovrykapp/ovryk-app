@@ -3188,6 +3188,10 @@
   .modal-details[hidden] { display: none; }
   .modal-details-list { margin: 0 0 var(--space-2); padding-left: 18px; color: var(--ink); }
   .modal-details-note { margin: 0; }
+  /* livraison 2 : encart des cycles hors programme ("Tirer mes cycles") */
+  .activate-cycles-orphans { margin-top: var(--space-5); padding-top: var(--space-4); border-top: 1px solid var(--divider); }
+  .activate-cycles-orphans[hidden] { display: none; }
+  .activate-cycles-orphans-text { margin: 0 0 var(--space-3); font-size: 13px; line-height: 1.5; color: var(--steel); }
   .modal-details-note + .modal-details-note { margin-top: var(--space-2); }
   .modal-actions [hidden] { display: none; }
   .modal-actions { display: flex; gap: 10px; }
@@ -5096,6 +5100,7 @@
       <p class="activate-cycles-intro">Choisis tes mouvements et leur 1RM. L'app tire un cycle parmi les 17 pour chacun.</p>
       <div id="activate-cycles-list"></div>
       <button type="button" id="activate-cycles-draw-btn" class="btn-primary" disabled>Tirer mes cycles</button>
+      <div id="activate-cycles-orphans" class="activate-cycles-orphans" hidden></div>
     </div>
   </div>
 
@@ -6172,13 +6177,15 @@
       this.saveRoutines(list);
       return routine;
     },
+    /* renvoie true si l'écriture a réussi (false si routine introuvable ou
+       stockage en échec) ; les appelants historiques ignorent ce résultat */
     updateRoutine: function (routine) {
       var list = this.getRoutines();
       var index = list.findIndex(function (r) { return r.id === routine.id; });
-      if (index === -1) return;
+      if (index === -1) return false;
       routine.updatedAt = new Date().toISOString();
       list[index] = routine;
-      this.saveRoutines(list);
+      return this.saveRoutines(list) !== false;
     },
     /* jours seulement : routine.updatedAt n'est jamais touché. Changer de
        jour n'est pas une modification de contenu : avec updateRoutine, la
@@ -6194,8 +6201,10 @@
       this.saveRoutines(list);
       return true;
     },
+    /* renvoie true si l'écriture a réussi ; les appelants historiques
+       ignorent ce résultat */
     deleteRoutine: function (id) {
-      this.saveRoutines(this.getRoutines().filter(function (r) { return r.id !== id; }));
+      return this.saveRoutines(this.getRoutines().filter(function (r) { return r.id !== id; })) !== false;
     },
     duplicateRoutine: function (id) {
       var source = this.getRoutineById(id);
@@ -7431,6 +7440,37 @@
     });
   }
 
+  /* Cycles liés au programme (livraison 2) : un cycle ne compte que si son
+     exercice est dans au moins une routine. Seule règle utilisée par la
+     carte "Prochain test 1RM", le bandeau d'alerte, la carte de Programme,
+     la coordination des départs (R7), la décharge de la muscu (lot 13),
+     "Tirer mes cycles" et le nettoyage des cycles hors programme. Lecture
+     seule : un cycle hors programme est masqué, jamais supprimé ici. */
+  function isCycleInProgramme(exerciseId) {
+    return isExerciseUsedInRoutine(exerciseId);
+  }
+
+  /* copie de ovryk.forceCycles réduite aux cycles du programme (lecture seule) */
+  function getProgrammeForceCycles() {
+    var all = OvrykDB.getForceCycles() || {};
+    var result = {};
+    Object.keys(all).forEach(function (exerciseId) {
+      if (isCycleInProgramme(exerciseId)) result[exerciseId] = all[exerciseId];
+    });
+    return result;
+  }
+
+  /* exercices dont le cycle existe mais qui ne sont dans aucune routine,
+     triés par nom (lecture seule) */
+  function getOutOfProgrammeCycleIds() {
+    return Object.keys(OvrykDB.getForceCycles() || {})
+      .filter(function (exerciseId) { return !isCycleInProgramme(exerciseId); })
+      .sort(function (a, b) {
+        var ea = OvrykDB.getExerciseById(a), eb = OvrykDB.getExerciseById(b);
+        return (ea ? ea.name : a).localeCompare(eb ? eb.name : b, 'fr');
+      });
+  }
+
   /* Décalage de démarrage : un mouvement avec une forceCycleStartDate future
      reste en mode base (voir BASE_MODE_PRESCRIPTIONS) au lieu de rejoindre
      tout de suite la rotation A-E. Une fois la date passée, l'activation
@@ -7580,8 +7620,9 @@
      (avertissement non bloquant à afficher par l'appelant). */
   function coordinateAndApplyOffsets(exerciseIdsOrdonnes) {
     var allCycles = OvrykDB.getForceCycles();
+    /* livraison 2 : un cycle hors programme n'occupe aucune semaine */
     var fixedCycles = Object.keys(allCycles)
-      .filter(function (id) { return exerciseIdsOrdonnes.indexOf(id) === -1 && !allCycles[id].en_attente_de_validation; })
+      .filter(function (id) { return exerciseIdsOrdonnes.indexOf(id) === -1 && !allCycles[id].en_attente_de_validation && isCycleInProgramme(id); })
       .map(function (id) { return { exerciseId: id, exercise: OvrykDB.getExerciseById(id), cycle: allCycles[id] }; });
     var newCycles = exerciseIdsOrdonnes
       .map(function (id) { return { exerciseId: id, cycle: allCycles[id] }; })
@@ -8591,7 +8632,8 @@
   var COORDINATION_TABLE_WEEKS = 12;
 
   function getCoordinationEntries() {
-    var cycles = OvrykDB.getForceCycles();
+    /* livraison 2 : cycles hors programme exclus (isCycleInProgramme) */
+    var cycles = getProgrammeForceCycles();
     var entries = Object.keys(cycles)
       .map(function (exerciseId) {
         return { exerciseId: exerciseId, exercise: OvrykDB.getExerciseById(exerciseId), cycle: cycles[exerciseId] };
@@ -9049,13 +9091,14 @@
   function renderActivateCyclesList() {
     var container = document.getElementById('activate-cycles-list');
     container.innerHTML = '';
-    var liftingExercises = OvrykDB.getExercises()
-      .filter(function (ex) { return ex.category === 'Lifting'; })
+    renderOutOfProgrammeCycles();
+    /* livraison 2 : seuls les mouvements Lifting présents dans une routine */
+    var liftingExercises = getActivatableLiftingExercises()
       .sort(function (a, b) { return a.name.localeCompare(b.name, 'fr'); });
 
     if (liftingExercises.length === 0) {
       container.innerHTML = '<div class="empty-state"><span class="empty-tag">Vide</span>' +
-        '<h2>Aucun mouvement</h2><p>Ajoute un exercice de catégorie Lifting pour pouvoir activer un cycle.</p></div>';
+        '<h2>Aucun mouvement</h2><p>Ajoute d\'abord un mouvement Lifting à une routine.</p></div>';
       updateActivateCyclesDrawBtnState();
       return;
     }
@@ -9064,9 +9107,58 @@
     updateActivateCyclesDrawBtnState();
   }
 
+  /* livraison 2 : mouvements proposés par "Tirer mes cycles" */
+  function getActivatableLiftingExercises() {
+    return OvrykDB.getExercises().filter(function (ex) { return ex.category === 'Lifting' && isCycleInProgramme(ex.id); });
+  }
+
+  /* livraison 2 : encart des cycles hors programme, sous la liste ; absent
+     s'il n'y en a aucun. Lecture seule jusqu'au geste "Supprimer". */
+  function renderOutOfProgrammeCycles() {
+    var box = document.getElementById('activate-cycles-orphans');
+    box.innerHTML = '';
+    var ids = getOutOfProgrammeCycleIds();
+    box.hidden = ids.length === 0;
+    if (ids.length === 0) return;
+
+    var text = document.createElement('p');
+    text.className = 'activate-cycles-orphans-text';
+    text.textContent = (ids.length > 1 ? ids.length + ' cycles ne sont liés à aucune routine : ' : '1 cycle n\'est lié à aucune routine : ') +
+      ids.map(function (id) { var ex = OvrykDB.getExerciseById(id); return ex ? ex.name : 'Exercice'; }).join(', ') +
+      (ids.length > 1 ? '. Ils sont masqués de l\'Accueil et de Programme.' : '. Il est masqué de l\'Accueil et de Programme.');
+    box.appendChild(text);
+
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.id = 'activate-cycles-orphans-btn';
+    btn.className = 'routine-action-btn danger';
+    btn.textContent = 'Supprimer les cycles hors programme';
+    btn.addEventListener('click', confirmRemoveOutOfProgrammeCycles);
+    box.appendChild(btn);
+  }
+
+  /* même texte que la livraison 1 ; dernier 1RM validé écrit AVANT toute
+     suppression (writeValidatedOneRMs) : si une recopie prévue échoue,
+     aucun cycle n'est supprimé */
+  function confirmRemoveOutOfProgrammeCycles() {
+    var ids = getOutOfProgrammeCycleIds();
+    if (ids.length === 0) { renderActivateCyclesList(); return; }
+    showConfirmModal('Supprimer les cycles hors programme ?', function () {
+      var current = getOutOfProgrammeCycleIds().filter(function (id) { return ids.indexOf(id) !== -1; });
+      var failedId = writeValidatedOneRMs(current);
+      if (failedId !== null) {
+        renderActivateCyclesList();
+        showOneRMWriteFailure(failedId, 'les cycles hors programme sont conservés.');
+        return;
+      }
+      current.forEach(function (id) { removeOrphanCycleKeepingOneRM(id); });
+      renderActivateCyclesList();
+    }, null, 'Supprimer', 'Annuler', buildCycleRemovalDetails(ids));
+  }
+
   function openActivateCyclesPage() {
     activateCyclesSelection = {};
-    OvrykDB.getExercises().filter(function (ex) { return ex.category === 'Lifting'; }).forEach(function (ex) {
+    getActivatableLiftingExercises().forEach(function (ex) {
       var cycle = OvrykDB.getForceCycle(ex.id);
       activateCyclesSelection[ex.id] = {
         checked: !cycle,
@@ -9553,7 +9645,13 @@
           return;
         }
         var exerciseIds = routine.exercises.map(function (rex) { return rex.exerciseId; });
-        OvrykDB.deleteRoutine(routine.id);
+        if (!OvrykDB.deleteRoutine(routine.id)) {
+          /* rien n'est retiré : isExerciseUsedInRoutine lit encore la routine */
+          renderProgrammeWeek();
+          showConfirmModal('La routine « ' + routine.name + ' » n\'a pas pu être supprimée (stockage plein ou indisponible). ' +
+            'Elle et ses cycles sont conservés.', null, null, 'Compris', false);
+          return;
+        }
         exerciseIds.forEach(function (exerciseId) { removeOrphanCycleKeepingOneRM(exerciseId); });
         renderProgrammeWeek();
       }, null, 'Supprimer', 'Annuler', details);
@@ -9626,7 +9724,8 @@
   function renderProgrammeCyclesCard() {
     var card = document.getElementById('programme-cycles-card');
     var body = document.getElementById('programme-cycles-body');
-    var cycles = OvrykDB.getForceCycles();
+    /* livraison 2 : cycles hors programme masqués (isCycleInProgramme) */
+    var cycles = getProgrammeForceCycles();
     var exerciseIds = Object.keys(cycles);
 
     /* lot 07, point d'entrée : aucun cycle actif, la carte propose d'en
@@ -10668,7 +10767,14 @@
           return;
         }
         routine.exercises.splice(index, 1);
-        OvrykDB.updateRoutine(routine);
+        if (!OvrykDB.updateRoutine(routine) && removesCycle) {
+          /* renderRoutineEditor relit la routine stockée, l'exercice y est
+             encore ; son cycle n'est pas touché */
+          renderRoutineEditor();
+          showConfirmModal('« ' + (exercise ? exercise.name : 'Exercice') + ' » n\'a pas pu être retiré de la routine (stockage plein ou indisponible). ' +
+            'L\'exercice et son cycle sont conservés.', null, null, 'Compris', false);
+          return;
+        }
         removeOrphanCycleKeepingOneRM(rex.exerciseId);
         renderRoutineEditor();
       }
@@ -12116,7 +12222,8 @@
   /* cycle de force présent, pas en attente de validation, sur un exercice
      qui existe encore. */
   function hasActiveHalteroCycle() {
-    var cycles = OvrykDB.getForceCycles() || {};
+    /* livraison 2 : cycles hors programme exclus (isCycleInProgramme) */
+    var cycles = getProgrammeForceCycles();
     return Object.keys(cycles).some(function (exerciseId) {
       var cycle = cycles[exerciseId];
       return !!(cycle && !cycle.en_attente_de_validation && FORCE_CYCLES[cycle.cycle_actif] && OvrykDB.getExerciseById(exerciseId));
@@ -12134,7 +12241,8 @@
      semaine_actuelle avance dès la séance d'haltérophilie terminée : la
      muscu du lendemain doit rester allégée. Lecture seule. */
   function getDeloadCyclesForWeek(refDate, excludeSessionId) {
-    var cycles = OvrykDB.getForceCycles() || {};
+    /* livraison 2 : cycles hors programme exclus (isCycleInProgramme) */
+    var cycles = getProgrammeForceCycles();
     var list = [];
     Object.keys(cycles).forEach(function (exerciseId) {
       var cycle = cycles[exerciseId];
@@ -17206,7 +17314,7 @@
 
     var cycles = OvrykDB.getForceCycles();
     var closest = null;
-    Object.keys(cycles).forEach(function (exerciseId) {
+    Object.keys(cycles).filter(isCycleInProgramme).forEach(function (exerciseId) {
       var cycle = cycles[exerciseId];
       var remaining = cycleLength(cycle.cycle_actif) - cycle.semaine_actuelle;
       if (!closest || remaining < closest.remaining) {
@@ -17297,7 +17405,8 @@
   function renderCycleAlertBanner() {
     var banner = document.getElementById('cycle-alert-banner');
     var textEl = document.getElementById('cycle-alert-text');
-    var cycles = OvrykDB.getForceCycles();
+    /* livraison 2 : cycles hors programme masqués (isCycleInProgramme) */
+    var cycles = getProgrammeForceCycles();
 
     /* lot 06 : un cycle en attente garde semaine_actuelle gelée sur
        l'ancienne dernière semaine — il ne doit plus jamais compter comme
@@ -17358,7 +17467,7 @@
   /* point 6 du lot : mène au test (Séance) tant qu'aucun cycle n'attend sa
      validation, puis à l'écran "Cycle terminé" dès qu'un cycle attend. */
   document.getElementById('cycle-alert-banner').addEventListener('click', function () {
-    var cycles = OvrykDB.getForceCycles();
+    var cycles = getProgrammeForceCycles();
     var pendingId = Object.keys(cycles).find(function (exerciseId) { return cycles[exerciseId].en_attente_de_validation; });
     if (pendingId) {
       openCycleEndPage(pendingId);
