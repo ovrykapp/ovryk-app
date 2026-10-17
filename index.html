@@ -8919,6 +8919,32 @@
     return OvrykDB.getExercises().filter(function (ex) { return isEligibleNextMovement(ex, finishedId); });
   }
 
+  /* livraison 3b : le même pool, trié par nom (identifiant en cas
+     d'égalité, pour un ordre stable d'une ouverture à l'autre) */
+  function getSortedNextMovementPool(finishedId) {
+    return getNextMovementPool(finishedId).slice().sort(function (a, b) {
+      var byName = String(a.name || '').localeCompare(String(b.name || ''), 'fr', { sensitivity: 'base' });
+      if (byName !== 0) return byName;
+      return a.id < b.id ? -1 : (a.id > b.id ? 1 : 0);
+    });
+  }
+
+  /* pool vide (lecture seule) : dit pourquoi, pour le tirage comme pour
+     la liste. Seuls deux motifs sont comptés : pas de 1RM saisi, ou un
+     cycle déjà présent (en cours, ou en attente dans le programme). */
+  function describeEmptyNextMovementPool(finishedId) {
+    var others = OvrykDB.getExercises().filter(function (ex) { return ex.category === 'Lifting' && ex.id !== finishedId; });
+    if (others.length === 0) return 'Aucun autre mouvement Lifting. Crée-en un dans Exercices et saisis son 1RM pour qu\'il puisse être tiré ou choisi.';
+    var withoutRM = others.filter(function (ex) { return !(toFiniteNumberOrNaN(ex.oneRepMax) > 0); }).length;
+    var withCycle = others.filter(function (ex) {
+      return toFiniteNumberOrNaN(ex.oneRepMax) > 0 && OvrykDB.getForceCycle(ex.id) && !isEligibleNextMovement(ex, finishedId);
+    }).length;
+    var text = 'Aucun mouvement disponible.';
+    if (withoutRM > 0) text += withoutRM === 1 ? ' 1 mouvement Lifting n\'a pas de 1RM saisi.' : ' ' + withoutRM + ' mouvements Lifting n\'ont pas de 1RM saisi.';
+    if (withCycle > 0) text += withCycle === 1 ? ' 1 mouvement Lifting a déjà un cycle, en cours ou à lancer.' : ' ' + withCycle + ' mouvements Lifting ont déjà un cycle, en cours ou à lancer.';
+    return text + ' Le 1RM se saisit dans Exercices.';
+  }
+
   /* « A », « B » et « C » */
   function joinQuotedNames(names) {
     var quoted = names.map(function (n) { return '« ' + n + ' »'; });
@@ -8926,20 +8952,30 @@
   }
 
   /* tirage (aucune écriture), puis confirmation ; rien n'est écrit avant
-     "Confirmer" */
-  function proposeNextMovement(finishedId) {
+     "Confirmer". livraison 3b : chosenId (optionnel) remplace le tirage du
+     mouvement, relu ici ; le cycle reste tiré au sort. Renvoie false si le
+     mouvement choisi n'est plus éligible. */
+  function proposeNextMovement(finishedId, chosenId) {
     var finishedCycle = OvrykDB.getForceCycle(finishedId);
     var finished = OvrykDB.getExerciseById(finishedId);
     if (!finished || !finishedCycle || !finishedCycle.en_attente_de_validation) return;
     var routines = getRoutinesContainingExercise(finishedId);
     if (routines.length === 0) return;
-    var pool = getNextMovementPool(finishedId);
-    if (pool.length === 0) {
-      showConfirmModal('Aucun mouvement Lifting avec un 1RM et sans cycle. Ajoute un 1RM à un mouvement Lifting pour qu\'il puisse être tiré.',
-        null, null, 'Compris', false);
-      return;
+    var next;
+    if (chosenId) {
+      next = OvrykDB.getExerciseById(chosenId);
+      if (!isEligibleNextMovement(next, finishedId)) {
+        showConfirmModal('Ce mouvement n\'est plus disponible : la liste a été mise à jour.', null, null, 'Compris', false);
+        return false;
+      }
+    } else {
+      var pool = getNextMovementPool(finishedId);
+      if (pool.length === 0) {
+        showConfirmModal(describeEmptyNextMovementPool(finishedId), null, null, 'Compris', false);
+        return;
+      }
+      next = pool[Math.floor(Math.random() * pool.length)];
     }
-    var next = pool[Math.floor(Math.random() * pool.length)];
     var cycleId = tirerProchainCycle(finishedCycle.cycle_actif);
     var routineIds = routines.map(function (r) { return r.id; });
     /* 1RM de départ : celui de l'exercice (la saisie à la main prime), y
@@ -9219,7 +9255,7 @@
 
       var swapNote = document.createElement('p');
       swapNote.className = 'cycle-end-note';
-      swapNote.textContent = 'Remplace ' + exercise.name + ' dans ses routines par un autre mouvement Lifting, tiré au sort avec son cycle. ' +
+      swapNote.textContent = 'Remplace ' + exercise.name + ' dans ses routines par un autre mouvement Lifting, tiré au sort ou choisi ; son cycle est tiré au sort. ' +
         'Une confirmation est demandée avant tout changement.';
       body.appendChild(swapNote);
 
@@ -9230,6 +9266,52 @@
       swapBtn.textContent = 'Tirer un autre mouvement';
       swapBtn.addEventListener('click', function () { proposeNextMovement(exerciseId); });
       body.appendChild(swapBtn);
+
+      /* livraison 3b : le mouvement est choisi dans le même pool, le cycle
+         reste tiré au sort ; la suite est celle de la 3a. La liste est
+         relue à chaque ouverture, rien n'est écrit avant "Confirmer". */
+      var chooseMoveBtn = document.createElement('button');
+      chooseMoveBtn.type = 'button';
+      chooseMoveBtn.id = 'cycle-end-choose-move-btn';
+      chooseMoveBtn.className = 'routine-action-btn cycle-end-swap-btn';
+      chooseMoveBtn.textContent = 'Choisir le mouvement';
+      body.appendChild(chooseMoveBtn);
+
+      var moveList = document.createElement('div');
+      moveList.id = 'cycle-end-move-list';
+      moveList.className = 'exercise-list';
+      moveList.hidden = true;
+      body.appendChild(moveList);
+
+      var renderMoveList = function () {
+        moveList.innerHTML = '';
+        var pool = getSortedNextMovementPool(exerciseId);
+        if (pool.length === 0) {
+          var empty = document.createElement('p');
+          empty.className = 'cycle-end-note cycle-end-move-empty';
+          empty.textContent = describeEmptyNextMovementPool(exerciseId);
+          moveList.appendChild(empty);
+          return;
+        }
+        pool.forEach(function (candidate) {
+          var row = document.createElement('button');
+          row.type = 'button';
+          row.className = 'picker-row';
+          row.setAttribute('data-exercise-id', candidate.id);
+          /* 1RM de l'exercice, celui que la confirmation utilisera */
+          row.innerHTML = '<span class="picker-row-name">' + escapeHTML(candidate.name) + '</span>' +
+            '<span class="picker-row-right"><span class="picker-row-meta mono">1RM ' +
+            String(toFiniteNumberOrNaN(candidate.oneRepMax)).replace('.', ',') + ' kg</span></span>';
+          row.addEventListener('click', function () {
+            if (proposeNextMovement(exerciseId, candidate.id) === false) renderMoveList();
+          });
+          moveList.appendChild(row);
+        });
+      };
+      chooseMoveBtn.addEventListener('click', function () {
+        if (moveList.hidden) renderMoveList();
+        moveList.hidden = !moveList.hidden;
+      });
     }
 
     document.getElementById('cycle-end-page').hidden = false;

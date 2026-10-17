@@ -17,7 +17,7 @@ DATA_KEYS = ['ovryk.exercises', 'ovryk.routines', 'ovryk.sessions', 'ovryk.setti
 FAIL = "Le changement de mouvement a échoué (stockage plein ou indisponible). "
 KEPT = FAIL + "Tes routines et tes cycles sont restés comme avant."
 ONERM = " Seul le 1RM validé de Deadlift fab (110 kg) a été enregistré sur l'exercice."
-EMPTY = "Aucun mouvement Lifting avec un 1RM et sans cycle. Ajoute un 1RM à un mouvement Lifting pour qu'il puisse être tiré."
+EMPTY = "Aucun mouvement disponible. 20 mouvements Lifting n'ont pas de 1RM saisi. Le 1RM se saisit dans Exercices."
 MSG_RE = re.compile(r"^Remplacer Deadlift fab par (.+?) dans (.+) \? (.+?), cycle (\d+), semaine 1, 1RM ([\d,]+) kg\.$")
 LETTERS = {'13': 'A', '14': 'B', '15': 'C', '16': 'D', '17': 'E'}
 
