@@ -6431,6 +6431,21 @@
       this.saveForceCycles(map);
       return cycle;
     },
+    /* livraison 3a : entrée reprise (mouvement terminé plus tôt, de nouveau
+       tiré par "Tirer un autre mouvement") : le cycle repart sur le 1RM de
+       l'exercice, qui prime (règle A). Nouvelle entrée datée de maintenant
+       dans historique_1rm, comme activateForceCycle : c'est elle qui fixe le
+       point de départ du cycle (computeCycleStats), pas la date de l'ancien
+       test. L'historique existant n'est jamais modifié. */
+    resumeForceCycleOneRM: function (exerciseId, oneRM) {
+      var map = this.getForceCycles();
+      var cycle = map[exerciseId];
+      if (!cycle || cycle.en_attente_de_validation) return;
+      cycle.one_rm_actuel = oneRM;
+      cycle.historique_1rm = (cycle.historique_1rm || []).concat([{ date: new Date().toISOString(), valeur: oneRM }]);
+      this.saveForceCycles(map);
+      return cycle;
+    },
     /* livraison E : "Repousser le test d'une semaine" — recule d'une semaine
        pour rejouer la dernière semaine d'entraînement avec la même
        prescription (semaine normale, jamais une semaine de test ni une
@@ -8927,10 +8942,13 @@
     var next = pool[Math.floor(Math.random() * pool.length)];
     var cycleId = tirerProchainCycle(finishedCycle.cycle_actif);
     var routineIds = routines.map(function (r) { return r.id; });
+    /* 1RM de départ : celui de l'exercice (la saisie à la main prime), y
+       compris pour une entrée reprise dont l'ancien 1RM était différent */
+    var startRM = toFiniteNumberOrNaN(next.oneRepMax);
     showConfirmModal('Remplacer ' + finished.name + ' par ' + next.name + ' dans ' +
       joinQuotedNames(routines.map(function (r) { return r.name || 'Routine sans titre'; })) + ' ? ' +
-      next.name + ', cycle ' + displayCycleNumber(cycleId) + ', semaine 1.',
-      function () { applyNextMovement(finishedId, next.id, cycleId, routineIds); },
+      next.name + ', cycle ' + displayCycleNumber(cycleId) + ', semaine 1, 1RM ' + String(startRM).replace('.', ',') + ' kg.',
+      function () { applyNextMovement(finishedId, next.id, cycleId, routineIds, startRM); },
       null, 'Confirmer', 'Annuler');
   }
 
@@ -8939,13 +8957,13 @@
      tiré, puis routines en une seule écriture. Si l'écriture des routines
      échoue, forceCycles est remis depuis la copie brute. L'état est relu ici
      (double tap, changement entre le tirage et la confirmation). */
-  function applyNextMovement(finishedId, nextId, cycleId, routineIds) {
+  function applyNextMovement(finishedId, nextId, cycleId, routineIds, startRM) {
     var finished = OvrykDB.getExerciseById(finishedId);
     var next = OvrykDB.getExerciseById(nextId);
     var finishedCycle = OvrykDB.getForceCycle(finishedId);
     var routinesNow = getRoutinesContainingExercise(finishedId).map(function (r) { return r.id; });
     if (!finished || !finishedCycle || !finishedCycle.en_attente_de_validation || routinesNow.length === 0) return;
-    if (!isEligibleNextMovement(next, finishedId) || routinesNow.join('|') !== routineIds.join('|')) {
+    if (!isEligibleNextMovement(next, finishedId) || routinesNow.join('|') !== routineIds.join('|') || toFiniteNumberOrNaN(next.oneRepMax) !== startRM) {
       showConfirmModal('Le tirage n\'est plus à jour : rien n\'a changé. Tire à nouveau un mouvement.', null, null, 'Compris', false);
       return;
     }
@@ -8989,12 +9007,15 @@
       if (reused) {
         OvrykDB.setPendingCycle(nextId, cycleId);
         OvrykDB.launchPendingCycle(nextId);
+        OvrykDB.resumeForceCycleOneRM(nextId, startRM);
       } else {
-        OvrykDB.activateForceCycle(nextId, toFiniteNumberOrNaN(next.oneRepMax), cycleId);
+        OvrykDB.activateForceCycle(nextId, startRM, cycleId);
       }
     } catch (err) { /* vérifié juste dessous */ }
     var written = OvrykDB.getForceCycle(nextId);
-    if (!written || written.en_attente_de_validation || written.cycle_actif !== cycleId || written.semaine_actuelle !== 1) {
+    var writtenHist = written && Array.isArray(written.historique_1rm) ? written.historique_1rm : [];
+    if (!written || written.en_attente_de_validation || written.cycle_actif !== cycleId || written.semaine_actuelle !== 1 ||
+        written.one_rm_actuel !== startRM || !writtenHist.length || writtenHist[writtenHist.length - 1].valeur !== startRM) {
       if (restoreCycles()) {
         showSwapFailure(KEPT_TEXT);
       } else {
@@ -9004,7 +9025,6 @@
       return;
     }
 
-    var now = new Date().toISOString();
     var list = OvrykDB.getRoutines();
     var changed = {};
     list.forEach(function (routine) {
@@ -9017,7 +9037,12 @@
         copy.grip = null;
         return copy;
       });
-      routine.updatedAt = now;
+      /* updatedAt n'est pas touché : remplacer le mouvement d'un créneau ne
+         doit pas faire croire que la routine a été modifiée depuis la
+         dernière séance, sinon les autres exercices ne reprennent plus leur
+         progression (R5, comme updateRoutineWeekdays) ; le créneau remplacé
+         ne reprend de toute façon jamais l'ancienne séance (cycle actif ou
+         mode de base) */
       changed[routine.id] = routine;
     });
     if (OvrykDB.saveRoutines(list) === false) {
@@ -9034,7 +9059,7 @@
        enregistrée) : sinon il afficherait encore l'ancien mouvement et ses
        boutons seraient liés à d'anciennes lignes */
     Object.keys(changed).forEach(function (id) {
-      syncEditorRoutine(id, { exercises: changed[id].exercises, updatedAt: changed[id].updatedAt });
+      syncEditorRoutine(id, { exercises: changed[id].exercises });
     });
     if (currentRoutineId && changed[currentRoutineId] && !document.getElementById('routine-editor-view').hidden) renderRoutineEditor();
 
@@ -9179,7 +9204,10 @@
       renderCycleAlertBanner();
       if (warnings.length > 0) showCoordinationWarning(warnings);
     });
-    body.appendChild(launchBtn);
+    /* livraison 3a : un mouvement hors programme ne se lance pas (le cycle
+       resterait masqué et sans effet) ; il redevient lançable dès qu'il est
+       dans une routine */
+    if (isCycleInProgramme(exerciseId)) body.appendChild(launchBtn);
 
     /* livraison 3a : seulement si le mouvement est dans une routine (sinon
        il n'y a rien à remplacer) */

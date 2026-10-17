@@ -18,7 +18,7 @@ FAIL = "Le changement de mouvement a échoué (stockage plein ou indisponible). 
 KEPT = FAIL + "Tes routines et tes cycles sont restés comme avant."
 ONERM = " Seul le 1RM validé de Deadlift fab (110 kg) a été enregistré sur l'exercice."
 EMPTY = "Aucun mouvement Lifting avec un 1RM et sans cycle. Ajoute un 1RM à un mouvement Lifting pour qu'il puisse être tiré."
-MSG_RE = re.compile(r"^Remplacer Deadlift fab par (.+?) dans (.+) \? (.+?), cycle (\d+), semaine 1\.$")
+MSG_RE = re.compile(r"^Remplacer Deadlift fab par (.+?) dans (.+) \? (.+?), cycle (\d+), semaine 1, 1RM ([\d,]+) kg\.$")
 LETTERS = {'13': 'A', '14': 'B', '15': 'C', '16': 'D', '17': 'E'}
 
 # ---------- fixtures fabriquées ----------
@@ -96,6 +96,7 @@ with sync_playwright() as p:
     check(all(t in body for t in ['Relancer', 'Garder ce cycle', 'Choisir moi même', 'Lancer ce cycle', 'CHANGER DE MOUVEMENT'])
           and page.is_visible('#cycle-end-swap-btn') and page.text_content('#cycle-end-swap-btn') == 'Tirer un autre mouvement' and ls(page) == before,
           'F0 écran de fin : quatre commandes, bloc "Changer de mouvement", aucune écriture à l\'ouverture')
+    check(page.locator('.cycle-end-launch-btn').count() == 1, 'F0 mouvement du programme : "Lancer ce cycle" présent')
     m = swap(page)
     g = MSG_RE.match(m['message'])
     check(g and g.group(1) == 'Power Clean fab' and g.group(2) == '« Force fab » et « Force fab (indé) »' and g.group(3) == 'Power Clean fab'
@@ -109,8 +110,9 @@ with sync_playwright() as p:
     r = routines(page); c = cycles(page); e = exs(page)
     exp_a = [old['r'][0]['exercises'][0], dict(old['r'][0]['exercises'][1], exerciseId=PC, grip=None), old['r'][0]['exercises'][2]]
     exp_b = [dict(old['r'][1]['exercises'][0], exerciseId=PC, grip=None), old['r'][1]['exercises'][1]]
-    check(r[0]['exercises'] == exp_a and r[1]['exercises'] == exp_b and r[0]['updatedAt'] != old['r'][0]['updatedAt'],
-          'F1 deux routines remplacées à la même place : séries, repos, groupId, groupType conservés, prise remise à null')
+    check(r[0]['exercises'] == exp_a and r[1]['exercises'] == exp_b and r[0]['updatedAt'] == old['r'][0]['updatedAt'] and r[1]['updatedAt'] == old['r'][1]['updatedAt'],
+          'F1 deux routines remplacées à la même place : séries, repos, groupId, groupType conservés, prise remise à null, updatedAt inchangé (R5)')
+    check(g.group(5) == '70', 'F1 la confirmation affiche le 1RM utilisé (%s kg)' % g.group(5))
     check(sorted(c) == sorted([DL, PC, BS, OA]) and c[DL] == old['c'][DL] and c[BS] == old['c'][BS] and c[OA] == old['c'][OA]
           and c[PC]['cycle_actif'] == cyc and cyc != 'C' and c[PC]['semaine_actuelle'] == 1 and c[PC]['one_rm_actuel'] == 70
           and not c[PC]['en_attente_de_validation'] and c[PC]['historique_cycles'] == [],
@@ -149,10 +151,35 @@ with sync_playwright() as p:
     check(g and g.group(1) == 'Zercher fab', 'F4 Zercher (en attente, hors programme) éligible : %s' % m['message'])
     cyc = LETTERS.get(g.group(4), g.group(4)); confirm(page)
     z = cycles(page)[ZS]
-    check(z['historique_cycles'] == old_z['historique_cycles'] and z['historique_1rm'] == old_z['historique_1rm'] and z['one_rm_actuel'] == 90
+    check(z['historique_cycles'] == old_z['historique_cycles'] and z['historique_1rm'][:-1] == old_z['historique_1rm']
+          and len(z['historique_1rm']) == len(old_z['historique_1rm']) + 1 and z['historique_1rm'][-1]['valeur'] == 90 and g.group(5) == '90' and z['one_rm_actuel'] == 90
           and z['cycle_actif'] == cyc and cyc != 'C' and z['semaine_actuelle'] == 1 and not z['en_attente_de_validation'] and z['prochain_cycle'] is None
           and [x['exerciseId'] for x in routines(page)[0]['exercises']] == [ZS] and not errors,
-          'F4 entrée de Zercher reprise : historique conservé, cycle %s semaine 1, routine remplacée' % g.group(4))
+          'F4 entrée de Zercher reprise (1RM identique) : historiques conservés, point de départ daté ajouté, cycle %s semaine 1, routine remplacée' % g.group(4))
+    ctx.close()
+
+    # F4b : 1RM de l'exercice (95) différent de celui de l'ancienne entrée (90) : la saisie à la main prime
+    d = dataset([ex(DL, 'Deadlift fab', 100), ex(ZS, 'Zercher fab', 95)], [routine('r-a', 'Force fab', [DL])],
+                {DL: pending(DL, 100, 110), ZS: pending(ZS, 80, 90, 'A', 'B')})
+    ctx, page, errors = fresh(b, d)
+    old_z = cycles(page)[ZS]
+    open_end(page); m = swap(page); g = MSG_RE.match(m['message'])
+    check(g and g.group(1) == 'Zercher fab' and g.group(5) == '95', 'F4b la confirmation affiche le 1RM de l\'exercice (95), pas celui de l\'ancienne entrée (90) : %s' % m['message'])
+    confirm(page)
+    z = cycles(page)[ZS]
+    check(z['one_rm_actuel'] == 95 and z['historique_1rm'][:-1] == old_z['historique_1rm'] and z['historique_1rm'][-1]['valeur'] == 95
+          and z['historique_cycles'] == old_z['historique_cycles'] and z['semaine_actuelle'] == 1 and not z['en_attente_de_validation']
+          and exs(page)[ZS]['oneRepMax'] == 95 and not errors,
+          'F4b cycle relancé à 95 kg : historique_1rm = ancien + point à 95, historique_cycles intact, 1RM de l\'exercice inchangé (%s)' % errors[:1])
+    ctx.close()
+
+    # F4c : 1RM de l'exercice absent : jamais tiré (décision 3), pool vide, rien n'est écrit
+    d = dataset([ex(DL, 'Deadlift fab', 100), ex(ZS, 'Zercher fab', None)], [routine('r-a', 'Force fab', [DL])],
+                {DL: pending(DL, 100, 110), ZS: pending(ZS, 80, 90, 'A', 'B')})
+    ctx, page, errors = fresh(b, d)
+    before = ls(page)
+    open_end(page); m = swap(page); confirm(page)
+    check(m['message'] == EMPTY and ls(page) == before and not errors, 'F4c entrée en attente sans 1RM sur l\'exercice : exclue du pool, message de pool vide, rien n\'est écrit')
     ctx.close()
 
     # F5 : écriture des routines en échec : forceCycles remis depuis la copie, message, routines intactes
@@ -245,6 +272,35 @@ with sync_playwright() as p:
     open_end(page)
     check(page.locator('#cycle-end-swap-btn').count() == 0 and 'CHANGER DE MOUVEMENT' not in page.inner_text('#cycle-end-body') and not errors,
           'F11 mouvement hors programme : bloc absent')
+    # F12 : « Lancer ce cycle » masqué hors programme, les trois autres commandes restent
+    body = page.text_content('#cycle-end-body')
+    check(page.locator('.cycle-end-launch-btn').count() == 0 and 'Lancer ce cycle' not in body
+          and all(t in body for t in ['Relancer', 'Garder ce cycle', 'Choisir moi même']), 'F12 hors programme : "Lancer ce cycle" masqué, Relancer / Garder / Choisir présents')
+    ctx.close()
+
+    # G1 (R5) : la routine contient Deadlift et Presse, séance précédente de Presse à 150 kg : après le remplacement de
+    # Deadlift, la séance suivante reprend 150 kg pour la Presse (updatedAt non touché), et le créneau remplacé suit son cycle
+    def prev_session():
+        sets = [{'repType': 'range', 'repsMin': 8, 'repsMax': 10, 'weightKg': 150, 'repsActual': 9, 'done': True} for _ in range(3)]
+        return {'id': 's-prev', 'status': 'completed', 'date': '2026-09-20T10:00:00.000Z', 'startedAt': '2026-09-20T10:00:00.000Z',
+                'completedAt': '2026-09-20T11:00:00.000Z', 'durationSeconds': 3600, 'routineId': 'r-a', 'routineName': 'Force fab', 'notes': '',
+                'exercises': [{'id': 'sex-prev-0', 'exerciseId': MU, 'exerciseName': 'Presse fab', 'category': 'Jambes', 'restSeconds': 90,
+                               'sets': sets, 'groupId': None, 'groupType': None}]}
+    d = dataset([ex(DL, 'Deadlift fab', 100), ex(PC, 'Power Clean fab', 70), ex(MU, 'Presse fab', 150, 'Jambes')],
+                [routine('r-a', 'Force fab', [rex(DL), rex(MU, 3, 40)])], {DL: pending(DL, 100, 110)})
+    d['sessions'] = [prev_session()]
+    ctx, page, errors = fresh(b, d)
+    open_end(page); swap(page); confirm(page)
+    r = routines(page)
+    nav(page, 'seance'); page.locator('#seance-routine-list .routine-row-main', has_text='Force fab').first.click(); page.wait_for_timeout(700)
+    lv = [x for x in json.loads(ls(page)['ovryk.sessions']) if x['status'] == 'in_progress'][0]
+    pc_card = [x for x in lv['exercises'] if x['exerciseId'] == PC][0]
+    mu_card = [x for x in lv['exercises'] if x['exerciseId'] == MU][0]
+    check(r[0]['updatedAt'] == '2026-09-01T00:00:00.000Z' and [x['exerciseId'] for x in r[0]['exercises']] == [PC, MU]
+          and len(mu_card['sets']) == 3 and all(st['weightKg'] == 150 for st in mu_card['sets']) and not errors,
+          'G1 séance suivante après remplacement : Presse reprend ses 150 kg (%s), updatedAt inchangé (%s)' % ([st['weightKg'] for st in mu_card['sets']], r[0]['updatedAt']))
+    check(pc_card['cycleIdUsed'] is not None and pc_card['cycleWeekUsed'] == 1 and pc_card['oneRepMaxSnapshot'] == 70,
+          'G1 le créneau remplacé suit le cycle de Power Clean (cycle %s, semaine %s, 1RM figé %s)' % (pc_card['cycleIdUsed'], pc_card['cycleWeekUsed'], pc_card['oneRepMaxSnapshot']))
     ctx.close()
 
     # E1 / E2 : éditeur de routine ouvert sur une routine qui contient le mouvement terminé ; on remplace depuis l'écran
