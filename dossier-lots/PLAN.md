@@ -121,8 +121,11 @@ Taille : S = moins d'une heure de travail assisté, M = une demi journée, L = u
   * Séance commencée avant v150 puis reprise : pour un orphelin déjà prescrit, formulaire de test absent et semaine non avancée pour cette séance.
   * test_cycles_seance.py : plante au lieu d'afficher ECHEC quand le filtre du choix du test est retiré. Vérifier choice_visible avant validate_one et passer S2 si la fenêtre est ouverte.
   * Routines illisibles : tous les cycles sont ignorés en séance libre ; risque « données abîmées » accepté.
-* Livraison 3a (« Tirer un autre mouvement », audit Opus du 2026-10-17), constats mineurs non traités :
+* Livraison 3a (« Tirer un autre mouvement ») : poussée le 2026-10-17 (sw v153, commit f28b4e0, tag v153-stable, audit Opus SÛR sur 675cacc..f28b4e0). Constats mineurs non traités (audit Opus du 2026-10-17) :
   * La confirmation dit « semaine 1 » même quand la coordination R7 décale le départ du cycle : le décalage est à annoncer (même défaut pour « Lancer ce cycle »).
   * L'écriture de la coordination (setCycleStartOffset, qui écrit forceCycles et la date de départ de l'exercice) n'est pas vérifiée : si elle échoue, le cycle démarre sans décalage.
   * La routine garde les charges de l'ancien mouvement sur le créneau remplacé (par exemple 80 kg de Deadlift sur Power Clean). Elles ne servent que si le cycle est désactivé, cas improbable puisque l'activation automatique relance un cycle.
+  * M1 : la règle de copie du 1RM (getValidatedOneRMKeepPlan) compare avec historique_1rm[0], qui reste le départ du premier cycle après une reprise ; un 1RM validé après reprise peut donc ne pas être recopié sur l'exercice (côté sûr, rien n'est écrasé).
+  * M2 : resumeForceCycleOneRM ne vérifie pas le résultat de writeJSON ; échec invisible si one_rm_actuel et le dernier point valaient déjà startRM (très improbable).
+  * M3 : point doublon dans le graphique d'évolution du 1RM après une reprise (cosmétique).
 * Statistiques en plage : mises de côté le 16/10 par Ruben, pas urgent. Décisions déjà prises (2026-10-16) : repsActual quand il existe, sinon le milieu de la plage ; le 1RM estimé est masqué pour les exercices qui ne sont pas de catégorie Lifting (le calcul est conservé) ; le label « Record » reste à trancher. Rien n'est codé. Constat : sur les exports réels, 138 séries (export du 2026-10-01) et 145 (export du 2026-10-10) en plage ont des reps faites différentes du milieu, soit environ 2 % de volume en plus avec la règle repsActual.
