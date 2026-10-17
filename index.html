@@ -1073,6 +1073,7 @@
     line-height: 1.5;
   }
   .cycle-end-launch-btn { width: calc(100% - 2 * var(--space-4)); margin: var(--space-4) var(--space-4); }
+  .cycle-end-swap-btn { width: calc(100% - 2 * var(--space-4)); margin: 0 var(--space-4) var(--space-4); }
 
   /* lot 07 : écrans "Activer des cycles" et "Tes N cycles" */
   .activate-cycles-intro { color: var(--steel); font-size: 13px; line-height: 1.5; margin-bottom: var(--space-3); }
@@ -8874,6 +8875,161 @@
     return 'S1 : ' + week1.phase + ', jusqu\'à ' + (kg != null ? kg + ' kg' : '-') + ' (' + heaviest.percent + ' %)';
   }
 
+  /* Livraison 3a (cycles liés au programme) : "Tirer un autre mouvement"
+     depuis l'écran de fin de cycle. Le mouvement tiré remplace le mouvement
+     terminé dans toutes ses routines ; l'entrée du mouvement terminé reste
+     en place (en attente, hors programme, historique intact). */
+
+  /* routines qui contiennent l'exercice (lecture seule) */
+  function getRoutinesContainingExercise(exerciseId) {
+    return OvrykDB.getRoutines().filter(function (routine) {
+      return routine.exercises.some(function (rex) { return rex.exerciseId === exerciseId; });
+    });
+  }
+
+  /* éligible au tirage : Lifting, 1RM supérieur à 0, pas de date de départ
+     future, pas le mouvement qui finit, et sans cycle, ou avec une entrée en
+     attente hors programme (mouvement terminé plus tôt, repris tel quel).
+     Un cycle en cours hors programme n'est jamais repris ici. */
+  function isEligibleNextMovement(exercise, finishedId) {
+    if (!exercise || exercise.category !== 'Lifting' || exercise.id === finishedId) return false;
+    if (!(toFiniteNumberOrNaN(exercise.oneRepMax) > 0)) return false;
+    if (isBeforeForceCycleStart(exercise)) return false;
+    var cycle = OvrykDB.getForceCycle(exercise.id);
+    if (!cycle) return true;
+    return !!cycle.en_attente_de_validation && !isCycleInProgramme(exercise.id);
+  }
+
+  function getNextMovementPool(finishedId) {
+    return OvrykDB.getExercises().filter(function (ex) { return isEligibleNextMovement(ex, finishedId); });
+  }
+
+  /* « A », « B » et « C » */
+  function joinQuotedNames(names) {
+    var quoted = names.map(function (n) { return '« ' + n + ' »'; });
+    return quoted.length > 1 ? quoted.slice(0, -1).join(', ') + ' et ' + quoted[quoted.length - 1] : quoted[0];
+  }
+
+  /* tirage (aucune écriture), puis confirmation ; rien n'est écrit avant
+     "Confirmer" */
+  function proposeNextMovement(finishedId) {
+    var finishedCycle = OvrykDB.getForceCycle(finishedId);
+    var finished = OvrykDB.getExerciseById(finishedId);
+    if (!finished || !finishedCycle || !finishedCycle.en_attente_de_validation) return;
+    var routines = getRoutinesContainingExercise(finishedId);
+    if (routines.length === 0) return;
+    var pool = getNextMovementPool(finishedId);
+    if (pool.length === 0) {
+      showConfirmModal('Aucun mouvement Lifting avec un 1RM et sans cycle. Ajoute un 1RM à un mouvement Lifting pour qu\'il puisse être tiré.',
+        null, null, 'Compris', false);
+      return;
+    }
+    var next = pool[Math.floor(Math.random() * pool.length)];
+    var cycleId = tirerProchainCycle(finishedCycle.cycle_actif);
+    var routineIds = routines.map(function (r) { return r.id; });
+    showConfirmModal('Remplacer ' + finished.name + ' par ' + next.name + ' dans ' +
+      joinQuotedNames(routines.map(function (r) { return r.name || 'Routine sans titre'; })) + ' ? ' +
+      next.name + ', cycle ' + displayCycleNumber(cycleId) + ', semaine 1.',
+      function () { applyNextMovement(finishedId, next.id, cycleId, routineIds); },
+      null, 'Confirmer', 'Annuler');
+  }
+
+  function showSwapFailure(text) {
+    showConfirmModal('Le remplacement n\'a pas pu être enregistré (stockage plein ou indisponible). ' + text, null, null, 'Compris', false);
+  }
+
+  /* Écritures, dans l'ordre : copie brute de forceCycles et sauvegarde du
+     jour, 1RM validé du mouvement terminé (règle A), cycle du mouvement
+     tiré, puis routines en une seule écriture. Si l'écriture des routines
+     échoue, forceCycles est remis depuis la copie brute. L'état est relu ici
+     (double tap, changement entre le tirage et la confirmation). */
+  function applyNextMovement(finishedId, nextId, cycleId, routineIds) {
+    var finished = OvrykDB.getExerciseById(finishedId);
+    var next = OvrykDB.getExerciseById(nextId);
+    var finishedCycle = OvrykDB.getForceCycle(finishedId);
+    var routinesNow = getRoutinesContainingExercise(finishedId).map(function (r) { return r.id; });
+    if (!finished || !finishedCycle || !finishedCycle.en_attente_de_validation || routinesNow.length === 0) return;
+    if (!isEligibleNextMovement(next, finishedId) || routinesNow.join('|') !== routineIds.join('|')) {
+      showConfirmModal('Le tirage n\'est plus à jour : rien n\'a changé. Tire à nouveau un mouvement.', null, null, 'Compris', false);
+      return;
+    }
+    var keptText = 'Rien n\'a changé : ' + finished.name + ' reste dans tes routines et son cycle attend d\'être lancé.';
+
+    var rawCycles;
+    try {
+      rawCycles = localStorage.getItem(DB_KEYS.FORCE_CYCLES);
+      ensureForceCyclesBackupToday();
+    } catch (err) { showSwapFailure(keptText); return; }
+
+    if (writeValidatedOneRMs([finishedId]) !== null) {
+      showOneRMWriteFailure(finishedId, 'aucun mouvement n\'a été remplacé.');
+      return;
+    }
+
+    function restoreCycles() {
+      try {
+        if (rawCycles === null) localStorage.removeItem(DB_KEYS.FORCE_CYCLES);
+        else localStorage.setItem(DB_KEYS.FORCE_CYCLES, rawCycles);
+        return localStorage.getItem(DB_KEYS.FORCE_CYCLES) === rawCycles;
+      } catch (err) { return false; }
+    }
+
+    /* entrée en attente reprise (historique conservé), sinon entrée neuve */
+    var reused = OvrykDB.getForceCycle(nextId);
+    try {
+      if (reused) {
+        OvrykDB.setPendingCycle(nextId, cycleId);
+        OvrykDB.launchPendingCycle(nextId);
+      } else {
+        OvrykDB.activateForceCycle(nextId, toFiniteNumberOrNaN(next.oneRepMax), cycleId);
+      }
+    } catch (err) { /* vérifié juste dessous */ }
+    var written = OvrykDB.getForceCycle(nextId);
+    if (!written || written.en_attente_de_validation || written.cycle_actif !== cycleId || written.semaine_actuelle !== 1) {
+      restoreCycles();
+      showSwapFailure(keptText);
+      return;
+    }
+
+    var now = new Date().toISOString();
+    var list = OvrykDB.getRoutines();
+    var changed = {};
+    list.forEach(function (routine) {
+      if (!routine.exercises.some(function (rex) { return rex.exerciseId === finishedId; })) return;
+      routine.exercises = routine.exercises.map(function (rex) {
+        if (rex.exerciseId !== finishedId) return rex;
+        var copy = {};
+        for (var k in rex) { if (rex.hasOwnProperty(k)) copy[k] = rex[k]; }
+        copy.exerciseId = nextId;
+        copy.grip = null;
+        return copy;
+      });
+      routine.updatedAt = now;
+      changed[routine.id] = routine;
+    });
+    if (OvrykDB.saveRoutines(list) === false) {
+      if (restoreCycles()) {
+        showSwapFailure(keptText);
+      } else {
+        showSwapFailure('Tes routines n\'ont pas changé. Le cycle de ' + next.name + ' a été créé mais, hors programme, il reste masqué et sans effet ; ' +
+          'tu peux le supprimer depuis Tirer mes cycles (Supprimer les cycles hors programme).');
+      }
+      return;
+    }
+    /* règle 14 : copie partagée de l'éditeur remise à jour */
+    Object.keys(changed).forEach(function (id) {
+      syncEditorRoutine(id, { exercises: changed[id].exercises, updatedAt: changed[id].updatedAt });
+    });
+
+    /* R7 (lot 08) : coordonné comme "Lancer ce cycle" */
+    var warnings = coordinateAndApplyOffsets([nextId]);
+    closeCycleEndPage();
+    renderExerciseList();
+    renderProgrammeWeek();
+    renderCycleAlertBanner();
+    if (warnings.length > 0) showCoordinationWarning(warnings);
+  }
+
   /* écran "Cycle terminé" (lot 06, maquette 27). Lu depuis la dernière
      entrée de historique_cycles (stats figées au moment de la clôture,
      jamais recalculées ici) et prochain_cycle/en_attente_de_validation. */
@@ -9007,6 +9163,29 @@
       if (warnings.length > 0) showCoordinationWarning(warnings);
     });
     body.appendChild(launchBtn);
+
+    /* livraison 3a : seulement si le mouvement est dans une routine (sinon
+       il n'y a rien à remplacer) */
+    if (getRoutinesContainingExercise(exerciseId).length > 0) {
+      var swapLabel = document.createElement('span');
+      swapLabel.className = 'dash-section-eyebrow';
+      swapLabel.textContent = 'CHANGER DE MOUVEMENT';
+      body.appendChild(swapLabel);
+
+      var swapNote = document.createElement('p');
+      swapNote.className = 'cycle-end-note';
+      swapNote.textContent = 'Remplace ' + exercise.name + ' dans ses routines par un autre mouvement Lifting, tiré au sort avec son cycle. ' +
+        'Une confirmation est demandée avant tout changement.';
+      body.appendChild(swapNote);
+
+      var swapBtn = document.createElement('button');
+      swapBtn.type = 'button';
+      swapBtn.id = 'cycle-end-swap-btn';
+      swapBtn.className = 'routine-action-btn cycle-end-swap-btn';
+      swapBtn.textContent = 'Tirer un autre mouvement';
+      swapBtn.addEventListener('click', function () { proposeNextMovement(exerciseId); });
+      body.appendChild(swapBtn);
+    }
 
     document.getElementById('cycle-end-page').hidden = false;
   }
