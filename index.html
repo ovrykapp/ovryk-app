@@ -1999,6 +1999,7 @@
   .fullscreen-page[hidden] { display: none; }
   #routine-exercise-picker.fullscreen-page { z-index: 41; }
   #routine-exercise-settings-page.fullscreen-page { z-index: 41; }
+  #routine-onair-page.fullscreen-page { z-index: 42; }
   #routine-starting-charges-page.fullscreen-page { z-index: 41; }
   /* point E : cycle-detail-page est déclarée avant coordination-page et
      cycles-drawn-page dans le HTML — sans ceci, l'ordre du DOM les
@@ -5068,6 +5069,24 @@
     </div>
   </div>
 
+  <!-- lot 19, livraison 1 : machine à On Air d'un créneau de routine.
+       Rien n'est écrit avant "Enregistrer". -->
+  <div id="routine-onair-page" class="fullscreen-page" hidden>
+    <div class="fullscreen-page-topbar">
+      <button type="button" id="routine-onair-cancel-btn" class="fullscreen-page-action cancel">Fermer</button>
+      <span class="fullscreen-page-title" id="routine-onair-title"></span>
+      <button type="button" id="routine-onair-save-btn" class="fullscreen-page-action confirm">Enregistrer</button>
+    </div>
+    <div class="fullscreen-page-body">
+      <p class="exercise-type-note">Machine à faire à la place de cet exercice quand la séance est faite à On Air, pour ce créneau de cette routine seulement. Les mouvements (Lifting) ne sont jamais remplacés.</p>
+      <p class="equiv-message" id="routine-onair-message" role="alert" hidden></p>
+      <div class="search-input-wrap equiv-search">
+        <input type="text" id="routine-onair-search" class="search-input" placeholder="Rechercher un exercice…" autocomplete="off">
+      </div>
+      <div id="routine-onair-list"></div>
+    </div>
+  </div>
+
   <div id="coordination-page" class="fullscreen-page" hidden>
     <div class="fullscreen-page-topbar">
       <button type="button" id="coordination-back-btn" class="fullscreen-page-action cancel">Fermer</button>
@@ -6183,6 +6202,24 @@
       list[index] = routine;
       return this.saveRoutines(list) !== false;
     },
+    /* lot 19 : machine à faire à On Air sur un créneau (rex.onairExerciseId,
+       facultatif, absent = aucun). Relit la routine au moment d'écrire
+       (règle 14) et n'écrit que ce champ de ce créneau. routine.updatedAt
+       n'est jamais touché (comme les jours) : la séance suivante reprend la
+       progression (R5). targetId null : retire le choix ; rien n'est écrit si
+       le créneau n'en avait pas. Les contrôles (Lifting, soi-même, cycle)
+       sont faits par l'appelant (getRoutineSlotOnAirError). Renvoie true si
+       l'état voulu est en place. */
+    updateRoutineSlotOnAir: function (routineId, rexId, targetId) {
+      var list = this.getRoutines();
+      var routine = list.filter(function (r) { return r.id === routineId; })[0];
+      if (!routine || !Array.isArray(routine.exercises)) return false;
+      var rex = routine.exercises.filter(function (r) { return r && r.id === rexId; })[0];
+      if (!rex) return false;
+      if (targetId == null && rex.onairExerciseId == null) return true;
+      rex.onairExerciseId = targetId == null ? null : String(targetId);
+      return this.saveRoutines(list) !== false;
+    },
     /* jours seulement : routine.updatedAt n'est jamais touché. Changer de
        jour n'est pas une modification de contenu : avec updateRoutine, la
        séance suivante verrait la routine "modifiée depuis la dernière
@@ -6212,7 +6249,7 @@
         updatedAt: new Date().toISOString(),
         weekdays: [],
         exercises: source.exercises.map(function (rex) {
-          return {
+          var rexCopy = {
             id: 'rex-' + OvrykDB.generateId(),
             exerciseId: rex.exerciseId,
             restSeconds: rex.restSeconds,
@@ -6225,6 +6262,9 @@
               return clone;
             })
           };
+          /* lot 19 : machine On Air du créneau, copiée seulement si elle existe */
+          if (rex.onairExerciseId !== undefined) rexCopy.onairExerciseId = rex.onairExerciseId;
+          return rexCopy;
         })
       };
       this.addRoutine(copy);
@@ -11265,6 +11305,9 @@
     var summaryText = document.createElement('span');
     summaryText.className = 'rex-summary-text mono';
     summaryText.textContent = 'Réglages : palier de montée, progression automatique';
+    /* lot 19 : machine On Air visible sans ouvrir les réglages */
+    var onairLabel = getRoutineSlotOnAirLabel(rex);
+    if (onairLabel) summaryText.textContent += ' · On Air : ' + onairLabel;
     summaryBtn.appendChild(summaryText);
 
     var summaryChevron = document.createElement('span');
@@ -11450,6 +11493,33 @@
     autoScopeNote.textContent = "S'applique à cet exercice dans toutes tes routines.";
     autoSection.appendChild(autoScopeNote);
     body.appendChild(autoSection);
+
+    /* ---- lot 19 : machine à On Air, propre à CE créneau. Lecture seule à
+       l'ouverture ; l'écran de choix n'écrit qu'à "Enregistrer". Jamais
+       pour un mouvement (Lifting) ni pour un créneau sans identifiant. */
+    if (exercise && exercise.category !== 'Lifting' && rex.id) {
+      var onairSection = document.createElement('div');
+      onairSection.className = 'rex-settings-section';
+      var onairBtn = document.createElement('button');
+      onairBtn.type = 'button';
+      onairBtn.className = 'rex-summary-row';
+      onairBtn.id = 'rex-settings-onair-btn';
+      var onairText = document.createElement('span');
+      onairText.className = 'rex-summary-text';
+      onairText.textContent = 'Machine à On Air · ' + (getRoutineSlotOnAirLabel(rex) || 'Aucune (même exercice)');
+      onairBtn.appendChild(onairText);
+      var onairChevron = document.createElement('span');
+      onairChevron.className = 'rex-summary-chevron';
+      onairChevron.innerHTML = '<svg viewBox="0 0 24 24" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="9,6 15,12 9,18"/></svg>';
+      onairBtn.appendChild(onairChevron);
+      onairBtn.addEventListener('click', function () { openRoutineOnAirPage(routine.id, rex.id); });
+      onairSection.appendChild(onairBtn);
+      var onairNote = document.createElement('p');
+      onairNote.className = 'rex-settings-scope-note';
+      onairNote.textContent = 'Propre à ce créneau de cette routine. Sera utilisée à la place de cet exercice quand la séance sera faite à On Air.';
+      onairSection.appendChild(onairNote);
+      body.appendChild(onairSection);
+    }
   }
 
   /* ---- cycle de force — read-only prescription (Routine tab) ---- */
@@ -16863,6 +16933,168 @@
     var again = document.querySelector('#seance-active-gym-wrap .gym-switch');
     if (again) again.focus();
   }
+
+  /* ============================================================
+     MACHINE À ON AIR PAR CRÉNEAU (lot 19, livraison 1). Champ optionnel
+     rex.onairExerciseId, édité seulement depuis les réglages du créneau.
+     Livraison 1 : mémorisé et affiché seulement, aucune séance n'est
+     encore touchée (getRoutineSlotReplacement inchangé).
+     ============================================================ */
+
+  /* raison d'un refus, ou null. target null = "aucune machine", toujours
+     permis sur un créneau qui peut en avoir une. Mêmes exclusions que le
+     lot 18 : jamais un mouvement (Lifting), jamais un créneau de cycle,
+     jamais l'exercice du créneau lui-même. */
+  function getRoutineSlotOnAirError(rex, target) {
+    var slotExercise = rex ? OvrykDB.getExerciseById(rex.exerciseId) : null;
+    if (!slotExercise) return 'Exercice du créneau introuvable.';
+    if (slotExercise.category === 'Lifting') return 'Un mouvement (Lifting) suit des pourcentages de 1RM : il n’est jamais remplacé.';
+    if (OvrykDB.getForceCycle(slotExercise.id)) return '« ' + slotExercise.name + ' » a un cycle : il n’est jamais remplacé.';
+    if (!target) return null;
+    if (target.id === slotExercise.id) return 'C’est déjà l’exercice de ce créneau.';
+    if (target.category === 'Lifting') return '« ' + target.name + ' » est un mouvement (Lifting) : il ne peut pas servir de machine à On Air.';
+    return null;
+  }
+
+  /* machine utilisable du créneau, ou null (aucune, introuvable ou plus
+     valable). Un seul saut : l'équivalent de la machine n'est jamais suivi. */
+  function getRoutineSlotOnAir(rex) {
+    if (!rex || typeof rex.onairExerciseId !== 'string' || !rex.onairExerciseId) return null;
+    var target = OvrykDB.getExerciseById(rex.onairExerciseId);
+    if (!target || getRoutineSlotOnAirError(rex, target)) return null;
+    return target;
+  }
+
+  /* texte affiché pour le créneau, ou null s'il n'a aucun choix */
+  function getRoutineSlotOnAirLabel(rex) {
+    if (!rex || typeof rex.onairExerciseId !== 'string' || !rex.onairExerciseId) return null;
+    var target = OvrykDB.getExerciseById(rex.onairExerciseId);
+    if (!target) return 'Machine introuvable';
+    if (getRoutineSlotOnAirError(rex, target)) return target.name + ' (non utilisée)';
+    return target.name;
+  }
+
+  /* règle 14 : la copie de l'éditeur reçoit le champ en place, sans
+     remplacer le tableau (les boutons de l'éditeur restent liés aux bons
+     objets) */
+  function syncEditorRexOnAir(routineId, rexId, value) {
+    if (!routineEditorLive || routineEditorLive.id !== routineId || !Array.isArray(routineEditorLive.exercises)) return;
+    routineEditorLive.exercises.forEach(function (r) { if (r && r.id === rexId) r.onairExerciseId = value; });
+  }
+
+  var routineOnAirPageState = { routineId: null, rexId: null, pendingId: null };
+
+  function getRoutineOnAirContext() {
+    var routine = OvrykDB.getRoutineById(routineOnAirPageState.routineId);
+    if (!routine || !Array.isArray(routine.exercises)) return null;
+    var rex = routine.exercises.filter(function (r) { return r && r.id === routineOnAirPageState.rexId; })[0];
+    return rex ? { routine: routine, rex: rex } : null;
+  }
+
+  function openRoutineOnAirPage(routineId, rexId) {
+    routineOnAirPageState.routineId = routineId;
+    routineOnAirPageState.rexId = rexId;
+    var ctx = getRoutineOnAirContext();
+    if (!ctx || getRoutineSlotOnAirError(ctx.rex, null)) { routineOnAirPageState.routineId = null; routineOnAirPageState.rexId = null; return; }
+    var slotExercise = OvrykDB.getExerciseById(ctx.rex.exerciseId);
+    /* présélection : le choix enregistré s'il désigne encore un exercice */
+    var saved = typeof ctx.rex.onairExerciseId === 'string' && ctx.rex.onairExerciseId ? ctx.rex.onairExerciseId : null;
+    routineOnAirPageState.pendingId = saved && OvrykDB.getExerciseById(saved) ? saved : null;
+    document.getElementById('routine-onair-title').textContent = slotExercise.name;
+    document.getElementById('routine-onair-search').value = '';
+    showRoutineOnAirMessage(saved && !OvrykDB.getExerciseById(saved) ? 'Machine introuvable : choisis une autre machine ou « Aucune machine ».' : '');
+    document.getElementById('routine-onair-page').hidden = false;
+    renderRoutineOnAirList();
+  }
+
+  function closeRoutineOnAirPage() {
+    document.getElementById('routine-onair-page').hidden = true;
+    routineOnAirPageState.routineId = null;
+    routineOnAirPageState.rexId = null;
+    routineOnAirPageState.pendingId = null;
+  }
+
+  function showRoutineOnAirMessage(text) {
+    var el = document.getElementById('routine-onair-message');
+    el.textContent = text || '';
+    el.hidden = !text;
+  }
+
+  /* reconstruit seulement la liste : à l'ouverture, à la recherche et à
+     chaque choix. Rien n'est écrit avant "Enregistrer". Exercices existants
+     seulement. */
+  function renderRoutineOnAirList() {
+    var listEl = document.getElementById('routine-onair-list');
+    listEl.innerHTML = '';
+    var ctx = getRoutineOnAirContext();
+    if (!ctx) return;
+    var query = normalizeSearch(document.getElementById('routine-onair-search').value).trim();
+
+    function addOption(id, name, sub, error) {
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'equiv-option' + (routineOnAirPageState.pendingId === id ? ' is-selected' : '');
+      btn.setAttribute('aria-pressed', routineOnAirPageState.pendingId === id ? 'true' : 'false');
+      if (id) btn.setAttribute('data-exercise-id', id);
+      var text = document.createElement('span');
+      text.className = 'equiv-option-text';
+      var nameEl = document.createElement('span');
+      nameEl.className = 'equiv-option-name';
+      nameEl.textContent = name;
+      text.appendChild(nameEl);
+      if (sub || error) {
+        var subEl = document.createElement('p');
+        subEl.className = 'equiv-option-sub';
+        subEl.textContent = error || sub;
+        text.appendChild(subEl);
+      }
+      btn.appendChild(text);
+      var radio = document.createElement('span');
+      radio.className = 'equiv-option-radio';
+      radio.setAttribute('aria-hidden', 'true');
+      btn.appendChild(radio);
+      if (error) {
+        btn.disabled = true;
+      } else {
+        btn.addEventListener('click', function () {
+          routineOnAirPageState.pendingId = id;
+          showRoutineOnAirMessage('');
+          renderRoutineOnAirList();
+        });
+      }
+      listEl.appendChild(btn);
+    }
+
+    if (!query) addOption(null, 'Aucune machine', 'Le même exercice est fait à On Air.', null);
+    OvrykDB.getExercises().forEach(function (ex) {
+      if (!ex || ex.id === ctx.rex.exerciseId || ex.category === 'Lifting') return;
+      if (query && normalizeSearch(ex.name || '').indexOf(query) === -1) return;
+      addOption(ex.id, ex.name, ex.category || '', getRoutineSlotOnAirError(ctx.rex, ex));
+    });
+  }
+
+  document.getElementById('routine-onair-search').addEventListener('input', renderRoutineOnAirList);
+  document.getElementById('routine-onair-cancel-btn').addEventListener('click', closeRoutineOnAirPage);
+  document.getElementById('routine-onair-save-btn').addEventListener('click', function () {
+    var ctx = getRoutineOnAirContext();
+    if (!ctx) { showRoutineOnAirMessage('Créneau introuvable. Rien n’a été enregistré.'); return; }
+    var routineId = ctx.routine.id, rexId = ctx.rex.id;
+    var pendingId = routineOnAirPageState.pendingId;
+    var target = pendingId ? OvrykDB.getExerciseById(pendingId) : null;
+    if (pendingId && !target) { showRoutineOnAirMessage('Exercice choisi introuvable. Rien n’a été enregistré.'); return; }
+    /* contrôle refait au moment d'écrire (l'état a pu changer) */
+    var error = getRoutineSlotOnAirError(ctx.rex, target);
+    if (error) { showRoutineOnAirMessage(error + ' Rien n’a été enregistré.'); return; }
+    if (!OvrykDB.updateRoutineSlotOnAir(routineId, rexId, pendingId)) {
+      showRoutineOnAirMessage('Enregistrement impossible (stockage plein ?). Rien n’a été modifié.');
+      return;
+    }
+    /* valeur relue après l'écriture (absent si rien n'a été écrit) */
+    var written = getRoutineOnAirContext();
+    if (written && written.rex.onairExerciseId !== undefined) syncEditorRexOnAir(routineId, rexId, written.rex.onairExerciseId);
+    closeRoutineOnAirPage();
+    if (!document.getElementById('routine-exercise-settings-page').hidden) renderRoutineExerciseSettingsPage();
+  });
 
   var exerciseEquivPageState = { exerciseId: null, pendingId: null };
 
