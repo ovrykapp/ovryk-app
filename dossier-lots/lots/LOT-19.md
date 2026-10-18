@@ -1,6 +1,6 @@
 # LOT 19. Machine à On Air par créneau de routine
 
-Statut (2026-10-18) : livraison 1 faite en local (sw v157), non poussée, à auditer ; livraison 2 à suivre. Un seul push après l'audit Opus de la livraison 2, sur accord explicite de Ruben.
+Statut (2026-10-18) : livraisons 1 (sw v157) et 2 (sw v158) faites en local, non poussées, à auditer chacune par Opus. Un seul push après l'audit Opus de la livraison 2, sur accord explicite de Ruben.
 
 Lot à risque (écriture dans des routines existantes, puis construction des séances). Plan approuvé par Ruben le 2026-10-18 (plan dans ~/.claude/plans).
 
@@ -34,3 +34,10 @@ Le programme principal de Ruben est en salle indé : ses routines portent l'exer
   * Règle 14 : après l'écriture, le rex de même identifiant de routineEditorLive reçoit le champ en place (sécurité en plus : la fermeture des réglages redessine déjà l'éditeur depuis le stockage).
   * Conservation du champ vérifiée par chemin : nom, jours, monter, descendre, grouper, type, dissoudre, kilos, repos, ajout, retrait d'un autre créneau, Enregistrer, duplication, remplacement de la 3a (copie toutes les clés), export et restauration, migrateSchema. Glisser-déposer : non testé (réinsère le même objet, lu dans le code).
   * Tests : dossier-lots/tests/test_onair.py (41 contrôles). Mutations : duplication sans le champ, updatedAt touché, Lifting proposé, contrôle non refait à l'écriture, écriture sans choix : détectées ; section pour un Lifting et copie de l'éditeur non synchronisée : non détectées (chemin inaccessible, sécurité redondante).
+* Livraison 2 faite le 2026-10-18 (sw v158), en local.
+  * getRoutineSlotReplacement(rex, gym) : machine On Air valide -> remplace le créneau à On Air, créneau fait tel quel en indé (il gagne sur l'équivalent de la fiche) ; sinon lot 18 inchangé.
+  * isGymLinkedExercise étendu (isRoutineSlotOnAirLinked) : la reprise de la machine et de l'exercice du créneau lit la dernière séance de la routine avec ce créneau, pas la dernière séance de la routine (faite dans l'autre salle).
+  * buildGymSwitchedExercises : la n-ième ligne d'un exercice correspond à la n-ième carte de ce créneau (normale ou qui le remplace) ; une carte n'est reconstruite que si l'exercice voulu pour la nouvelle salle diffère. Sans machine On Air, résultat identique au lot 18 (test_gym 77/77 inchangé).
+  * Libellés : « N remplacé(s) à On Air » ou « en indé » selon la salle ; « Remplace X (On Air) » ou « (salle indé) » sur la carte et dans l'historique.
+  * Tests : test_onair.py, 60 contrôles (S1 à S9 ajoutés ; le contrôle O7 de la livraison 1, « séances inchangées », remplacé par S1 à S4). Mutations : créneau qui ne gagne plus en indé, machine ignorée, sens inversé, reprise non étendue, changement de salle à sens unique : détectées ; garde du cycle retirée de getRoutineSlotReplacement : non détectée (redondante avec getRoutineSlotOnAirError, seul un Lifting peut avoir un cycle).
+  * Limite héritée du lot 18 (limite 3) : une machine sans historique dans le créneau part de la charge d'une carte normale de la machine dans la routine, sinon de charges vides.

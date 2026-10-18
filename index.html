@@ -12877,7 +12877,7 @@
       var replacedCount = countRoutineGymReplacements(routine, startGym);
       meta.textContent = estimateRoutineDuration(routine) + ' · ' +
         (last ? ('Dernière fois ' + formatRelativeDate(last.date)) : 'Jamais faite') +
-        (replacedCount ? ' · ' + formatGymReplacedCount(replacedCount) : '');
+        (replacedCount ? ' · ' + formatGymReplacedCount(replacedCount, startGym) : '');
       wrap.appendChild(meta);
 
       listEl.appendChild(wrap);
@@ -13290,7 +13290,7 @@
       : '<span class="live-card-count">' + doneCount + '/' + sex.sets.length + '</span>';
     header.innerHTML = '<span class="live-card-main">' +
       '<span class="live-card-name" style="display:block">' + escapeHTML(sex.exerciseName) + (sex.grip ? ' · ' + escapeHTML(sex.grip) : '') + '</span>' +
-      (sex.replacesExerciseId ? '<span class="live-card-replaces">' + escapeHTML(describeReplacedExercise(sex)) + '</span>' : '') +
+      (sex.replacesExerciseId ? '<span class="live-card-replaces">' + escapeHTML(describeReplacedExercise(sex, activeSession && activeSession.gym)) + '</span>' : '') +
       '<span class="live-card-meta"><span class="live-card-tag' + (tag.isCycle ? ' is-cycle' : '') + '">' + escapeHTML(tag.text) + '</span>' +
       '<span>' + escapeHTML(summarizeLiveExercise(sex)) + '</span></span></span>' + right;
     header.addEventListener('click', function () { toggleLiveCard(index); });
@@ -13309,10 +13309,11 @@
     return card;
   }
 
-  /* lot 18 : "remplace X" (nom actuel de l'exercice d'origine). */
-  function describeReplacedExercise(sex) {
+  /* lot 18 : "remplace X" (nom actuel de l'exercice d'origine). lot 19 :
+     salle de la séance (On Air pour une machine On Air), salle indé sinon. */
+  function describeReplacedExercise(sex, gym) {
     var original = sex && sex.replacesExerciseId ? OvrykDB.getExerciseById(sex.replacesExerciseId) : null;
-    return 'Remplace ' + (original ? original.name : 'l’exercice d’origine') + ' (salle indé)';
+    return 'Remplace ' + (original ? original.name : 'l’exercice d’origine') + (gym === 'onair' ? ' (On Air)' : ' (salle indé)');
   }
 
   function buildLiveCardToolbar(sex, isCycle) {
@@ -15636,7 +15637,7 @@
       '<span class="history-ex-name">' + escapeHTML((sex.exerciseName || (exercise && exercise.name) || 'Exercice') + (sex.grip ? ' · ' + sex.grip : '')) + '</span>' +
       (isHistoryRecord(session, sex) ? '<span class="history-record-tag">Record</span>' : '') +
       (sex.deload ? '<span class="day-badge-tag is-allegee">Allégée</span>' : '') +
-      (sex.replacesExerciseId ? '<span class="history-ex-replaces">' + escapeHTML(describeReplacedExercise(sex)) + '</span>' : '') +
+      (sex.replacesExerciseId ? '<span class="history-ex-replaces">' + escapeHTML(describeReplacedExercise(sex, session && session.gym)) + '</span>' : '') +
       '</div>' +
       '<div class="history-ex-bottom"><span class="history-ex-load">' + escapeHTML(describeHistoryLoad(sex, doneSets, exercise)) + '</span>' +
       '<span class="history-ex-results">' + escapeHTML(describeHistoryResults(sex, doneSets)) + '</span></div>';
@@ -16764,8 +16765,8 @@
     return routine.exercises.filter(function (rex) { return !!getRoutineSlotReplacement(rex, gym); }).length;
   }
 
-  function formatGymReplacedCount(n) {
-    return n + (n > 1 ? ' remplacés' : ' remplacé') + ' en indé';
+  function formatGymReplacedCount(n, gym) {
+    return n + (n > 1 ? ' remplacés' : ' remplacé') + (gym === 'onair' ? ' à On Air' : ' en indé');
   }
 
   /* rappel non interactif "Salle : X", seulement quand un choix est en
@@ -16780,10 +16781,17 @@
   }
 
   /* exercice de remplacement d'une ligne de routine pour cette salle, ou
-     null : seulement en salle indé, jamais pour un mouvement de cycle. */
+     null, jamais pour un mouvement de cycle. lot 19 : un créneau avec une
+     machine On Air valide (getRoutineSlotOnAir) est un créneau indé :
+     remplacé par la machine à On Air, fait tel quel en indé (le créneau
+     gagne sur l'équivalent de la fiche). Sans machine valide : lot 18
+     inchangé (équivalent de la fiche en indé, rien à On Air). */
   function getRoutineSlotReplacement(rex, gym) {
-    if (gym !== 'inde' || !rex) return null;
+    if (!rex || !isKnownGym(gym)) return null;
     if (OvrykDB.getForceCycle(rex.exerciseId)) return null;
+    var onairMachine = getRoutineSlotOnAir(rex);
+    if (onairMachine) return gym === 'onair' ? onairMachine : null;
+    if (gym !== 'inde') return null;
     return getGymEquivalent(OvrykDB.getExerciseById(rex.exerciseId));
   }
 
@@ -16792,7 +16800,21 @@
      la routine qui le contient, au lieu de la dernière séance de la
      routine (qui a pu être faite dans l'autre salle). */
   function isGymLinkedExercise(exerciseId) {
-    return !!getGymEquivalent(OvrykDB.getExerciseById(exerciseId)) || getGymEquivalentSources(exerciseId).length > 0;
+    return !!getGymEquivalent(OvrykDB.getExerciseById(exerciseId)) || getGymEquivalentSources(exerciseId).length > 0 ||
+      isRoutineSlotOnAirLinked(exerciseId);
+  }
+
+  /* lot 19 : exercice d'un créneau qui a une machine On Air valide, ou
+     machine On Air d'un créneau. Seuls les créneaux qui portent le champ
+     sont examinés (lecture seule). */
+  function isRoutineSlotOnAirLinked(exerciseId) {
+    return OvrykDB.getRoutines().some(function (routine) {
+      return Array.isArray(routine.exercises) && routine.exercises.some(function (rex) {
+        if (!rex || typeof rex.onairExerciseId !== 'string' || !rex.onairExerciseId) return false;
+        if (rex.exerciseId !== exerciseId && rex.onairExerciseId !== exerciseId) return false;
+        return !!getRoutineSlotOnAir(rex);
+      });
+    });
   }
 
   /* livraison 2b : par créneau (findSexForSlot), une carte remplacée et
@@ -16866,9 +16888,14 @@
 
   /* nouvelle liste de cartes pour nextGym, sans rien modifier de la
      séance reçue. Les cartes issues de la routine sont reconnues dans
-     l'ordre : la n-ième ligne de routine d'un exercice correspond à sa
-     n-ième carte normale ; une carte en plus est un ajout à la main
-     (jamais échangé). Lève une exception si la construction échoue. */
+     l'ordre : la n-ième ligne de routine d'un exercice correspond à la
+     n-ième carte de ce créneau (carte normale de cet exercice ou carte qui
+     le remplace) ; une carte en plus est un ajout à la main (jamais
+     échangé). lot 19 : les deux sens sont traités de la même façon : une
+     carte n'est reconstruite que si l'exercice voulu pour nextGym
+     (getRoutineSlotReplacement) diffère de celui de la carte. Sans machine
+     On Air, résultat identique au lot 18. Lève une exception si la
+     construction échoue. */
   function buildGymSwitchedExercises(session, routine, nextGym) {
     var now = session.date || new Date().toISOString();
     var lastSession = routine ? getLastCompletedSessionForRoutine(routine.id) : null;
@@ -16878,30 +16905,22 @@
     var seenByExercise = {};
     rexes.forEach(function (rex) {
       var n = seenByExercise[rex.exerciseId] = (seenByExercise[rex.exerciseId] || 0) + 1;
-      if (nextGym === 'inde') {
-        /* carte normale de cet exercice, n-ième occurrence */
-        var count = 0;
-        for (var i = 0; i < session.exercises.length; i++) {
-          var sex = session.exercises[i];
-          if (!sex || sex.exerciseId !== rex.exerciseId || sex.replacesExerciseId) continue;
-          count++;
-          if (count === n) { if (!usedCards[i]) { usedCards[i] = true; rexForCard[i] = rex; } break; }
-        }
-      } else {
-        /* carte qui remplace cet exercice, n-ième occurrence */
-        var countR = 0;
-        for (var k = 0; k < session.exercises.length; k++) {
-          var sexR = session.exercises[k];
-          if (!sexR || sexR.replacesExerciseId !== rex.exerciseId) continue;
-          countR++;
-          if (countR === n) { if (!usedCards[k]) { usedCards[k] = true; rexForCard[k] = rex; } break; }
-        }
+      var count = 0;
+      for (var i = 0; i < session.exercises.length; i++) {
+        var sex = session.exercises[i];
+        if (!sex) continue;
+        var ofSlot = sex.replacesExerciseId ? sex.replacesExerciseId === rex.exerciseId : sex.exerciseId === rex.exerciseId;
+        if (!ofSlot) continue;
+        count++;
+        if (count === n) { if (!usedCards[i]) { usedCards[i] = true; rexForCard[i] = rex; } break; }
       }
     });
     return session.exercises.map(function (sex, index) {
       var rex = rexForCard[index];
       if (!rex) return sex;
-      if (nextGym === 'inde' && !getRoutineSlotReplacement(rex, 'inde')) return sex;
+      var wanted = getRoutineSlotReplacement(rex, nextGym);
+      var wantedId = wanted ? wanted.id : rex.exerciseId;
+      if (sex.exerciseId === wantedId && !!sex.replacesExerciseId === !!wanted) return sex;
       var built = buildSessionExerciseFromRex(routine, rex, nextGym, now, lastSession);
       built.groupId = sex.groupId || null;
       built.groupType = sex.groupType || null;
@@ -17679,7 +17698,7 @@
     if (replacedCount) {
       var replacedNote = document.createElement('p');
       replacedNote.className = 'seance-gym-note mono';
-      replacedNote.textContent = formatGymReplacedCount(replacedCount);
+      replacedNote.textContent = formatGymReplacedCount(replacedCount, startGym);
       gymWrap.appendChild(replacedNote);
     }
 
