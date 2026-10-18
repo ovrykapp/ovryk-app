@@ -1383,6 +1383,7 @@
   }
   .dash-session-ex-row:last-child { border-bottom: none; }
   .dash-session-ex-name { font-size: 14px; color: var(--ink); }
+  .dash-session-ex-sub { display: block; font-size: 11px; color: var(--steel); margin: 2px 0 0; }
   .dash-session-ex-value { font-family: var(--font-mono); font-size: 13px; color: var(--steel); white-space: nowrap; }
   .dash-session-ex-value.is-cycle { color: var(--blue); font-weight: 700; }
   .dash-session-card .btn-primary { width: 100%; }
@@ -17644,11 +17645,18 @@
     }
     document.getElementById('dash-session-meta').textContent = metaParts.join(' · ');
 
+    /* salle choisie avec la pilule (livraison 4) : la liste montre
+       l'exercice réellement fait dans cette salle, comme le fera la séance
+       (getRoutineSlotReplacement). Affichage seulement : séries et reps
+       restent celles du créneau, aucune écriture. */
+    var startGym = getSeanceStartGym();
     var exercisesEl = document.getElementById('dash-session-exercises');
     exercisesEl.innerHTML = '';
     routine.exercises.forEach(function (rex) {
-      var exercise = OvrykDB.getExerciseById(rex.exerciseId);
-      var cycle = exercise && exercise.category === 'Lifting' ? OvrykDB.getForceCycle(rex.exerciseId) : null;
+      var slotExercise = OvrykDB.getExerciseById(rex.exerciseId);
+      var replacement = getRoutineSlotReplacement(rex, startGym);
+      var exercise = replacement || slotExercise;
+      var cycle = slotExercise && slotExercise.category === 'Lifting' ? OvrykDB.getForceCycle(rex.exerciseId) : null;
 
       var valueHtml;
       if (cycle) {
@@ -17673,7 +17681,8 @@
          autres lignes restent inertes. */
       var row = document.createElement(cycle ? 'button' : 'div');
       row.className = 'dash-session-ex-row' + (cycle ? ' is-link' : '');
-      row.innerHTML = '<span class="dash-session-ex-name">' + escapeHTML(exercise ? exercise.name : 'Exercice supprimé') + '</span>' + valueHtml +
+      row.innerHTML = '<span class="dash-session-ex-name">' + escapeHTML(exercise ? exercise.name : 'Exercice supprimé') +
+        (replacement && slotExercise ? '<span class="dash-session-ex-sub">Remplace ' + escapeHTML(slotExercise.name) + '</span>' : '') + '</span>' + valueHtml +
         (cycle ? '<svg class="cycle-link-chevron" viewBox="0 0 24 24" aria-hidden="true"><polyline points="9,6 15,12 9,18"/></svg>' : '');
       if (cycle) {
         row.type = 'button';
@@ -17685,7 +17694,6 @@
 
     /* livraison 4 : même pilule que l'écran de départ, même état partagé
        (setSeanceStartGym). Aucune écriture avant le lancement. */
-    var startGym = getSeanceStartGym();
     var gymWrap = document.getElementById('dash-gym-wrap');
     gymWrap.innerHTML = '';
     gymWrap.hidden = false;
