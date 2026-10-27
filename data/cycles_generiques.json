@@ -1,10 +1,5207 @@
 {
   "_info": "Généré par outils/exporter-cycles-json.js depuis index.html. Ne pas modifier à la main.",
-  "nombre_de_cycles": 12,
+  "nombre_de_cycles": 32,
   "cycles": [
+    {
+      "id": "C1",
+      "nom": "Linéaire simple",
+      "dans_le_tirage": true,
+      "type": "Volume",
+      "explication": "Progression simple et régulière : même nombre de séries, la charge monte de 3% par semaine. Sert à accumuler du volume propre avant d'attaquer plus lourd. Repos 2 min entre les séries.",
+      "duree_semaines": 7,
+      "test_1rm": "séparé en dernière semaine",
+      "semaines": [
+        {
+          "week": 1,
+          "phase": "5x3 à 68 %",
+          "sets": [
+            {
+              "reps": 3,
+              "percent": 68
+            },
+            {
+              "reps": 3,
+              "percent": 68
+            },
+            {
+              "reps": 3,
+              "percent": 68
+            },
+            {
+              "reps": 3,
+              "percent": 68
+            },
+            {
+              "reps": 3,
+              "percent": 68
+            }
+          ],
+          "restSeconds": 120,
+          "timed": false,
+          "isTestWeek": false,
+          "deload": false
+        },
+        {
+          "week": 2,
+          "phase": "5x3 à 71 %",
+          "sets": [
+            {
+              "reps": 3,
+              "percent": 71
+            },
+            {
+              "reps": 3,
+              "percent": 71
+            },
+            {
+              "reps": 3,
+              "percent": 71
+            },
+            {
+              "reps": 3,
+              "percent": 71
+            },
+            {
+              "reps": 3,
+              "percent": 71
+            }
+          ],
+          "restSeconds": 120,
+          "timed": false,
+          "isTestWeek": false,
+          "deload": false
+        },
+        {
+          "week": 3,
+          "phase": "5x3 à 74 %",
+          "sets": [
+            {
+              "reps": 3,
+              "percent": 74
+            },
+            {
+              "reps": 3,
+              "percent": 74
+            },
+            {
+              "reps": 3,
+              "percent": 74
+            },
+            {
+              "reps": 3,
+              "percent": 74
+            },
+            {
+              "reps": 3,
+              "percent": 74
+            }
+          ],
+          "restSeconds": 120,
+          "timed": false,
+          "isTestWeek": false,
+          "deload": false
+        },
+        {
+          "week": 4,
+          "phase": "5x3 à 77 %",
+          "sets": [
+            {
+              "reps": 3,
+              "percent": 77
+            },
+            {
+              "reps": 3,
+              "percent": 77
+            },
+            {
+              "reps": 3,
+              "percent": 77
+            },
+            {
+              "reps": 3,
+              "percent": 77
+            },
+            {
+              "reps": 3,
+              "percent": 77
+            }
+          ],
+          "restSeconds": 120,
+          "timed": false,
+          "isTestWeek": false,
+          "deload": false
+        },
+        {
+          "week": 5,
+          "phase": "4x3 à 80 %",
+          "sets": [
+            {
+              "reps": 3,
+              "percent": 80
+            },
+            {
+              "reps": 3,
+              "percent": 80
+            },
+            {
+              "reps": 3,
+              "percent": 80
+            },
+            {
+              "reps": 3,
+              "percent": 80
+            }
+          ],
+          "restSeconds": 120,
+          "timed": false,
+          "isTestWeek": false,
+          "deload": false
+        },
+        {
+          "week": 6,
+          "phase": "Allégée 3x3 à 65 %",
+          "sets": [
+            {
+              "reps": 3,
+              "percent": 65
+            },
+            {
+              "reps": 3,
+              "percent": 65
+            },
+            {
+              "reps": 3,
+              "percent": 65
+            }
+          ],
+          "restSeconds": 120,
+          "timed": false,
+          "isTestWeek": false,
+          "deload": true
+        },
+        {
+          "week": 7,
+          "phase": "Test 1RM séparé",
+          "sets": [
+            {
+              "reps": 5,
+              "percent": 40
+            },
+            {
+              "reps": 3,
+              "percent": 60
+            },
+            {
+              "reps": 1,
+              "percent": 75
+            },
+            {
+              "reps": 1,
+              "percent": 85
+            },
+            {
+              "reps": 1,
+              "percent": 92
+            },
+            {
+              "reps": 1,
+              "percent": 97
+            },
+            {
+              "reps": 1,
+              "percent": 100
+            }
+          ],
+          "restSeconds": 180,
+          "timed": false,
+          "isTestWeek": true,
+          "deload": false
+        }
+      ]
+    },
+    {
+      "id": "C2",
+      "nom": "Volume décroissant, charge croissante",
+      "dans_le_tirage": true,
+      "type": "Mixte",
+      "explication": "Le volume baisse et la charge monte chaque semaine. Tu commences par beaucoup de doubles légers pour bâtir la technique, tu finis avec peu de reps sur du lourd.",
+      "duree_semaines": 7,
+      "test_1rm": "séparé en dernière semaine",
+      "semaines": [
+        {
+          "week": 1,
+          "phase": "6x2 à 72 %",
+          "sets": [
+            {
+              "reps": 2,
+              "percent": 72
+            },
+            {
+              "reps": 2,
+              "percent": 72
+            },
+            {
+              "reps": 2,
+              "percent": 72
+            },
+            {
+              "reps": 2,
+              "percent": 72
+            },
+            {
+              "reps": 2,
+              "percent": 72
+            },
+            {
+              "reps": 2,
+              "percent": 72
+            }
+          ],
+          "restSeconds": 120,
+          "timed": false,
+          "isTestWeek": false,
+          "deload": false
+        },
+        {
+          "week": 2,
+          "phase": "5x2 à 76 %",
+          "sets": [
+            {
+              "reps": 2,
+              "percent": 76
+            },
+            {
+              "reps": 2,
+              "percent": 76
+            },
+            {
+              "reps": 2,
+              "percent": 76
+            },
+            {
+              "reps": 2,
+              "percent": 76
+            },
+            {
+              "reps": 2,
+              "percent": 76
+            }
+          ],
+          "restSeconds": 120,
+          "timed": false,
+          "isTestWeek": false,
+          "deload": false
+        },
+        {
+          "week": 3,
+          "phase": "4x2 à 80 %",
+          "sets": [
+            {
+              "reps": 2,
+              "percent": 80
+            },
+            {
+              "reps": 2,
+              "percent": 80
+            },
+            {
+              "reps": 2,
+              "percent": 80
+            },
+            {
+              "reps": 2,
+              "percent": 80
+            }
+          ],
+          "restSeconds": 150,
+          "timed": false,
+          "isTestWeek": false,
+          "deload": false
+        },
+        {
+          "week": 4,
+          "phase": "3x2 à 84 %",
+          "sets": [
+            {
+              "reps": 2,
+              "percent": 84
+            },
+            {
+              "reps": 2,
+              "percent": 84
+            },
+            {
+              "reps": 2,
+              "percent": 84
+            }
+          ],
+          "restSeconds": 150,
+          "timed": false,
+          "isTestWeek": false,
+          "deload": false
+        },
+        {
+          "week": 5,
+          "phase": "3x1 à 88 %",
+          "sets": [
+            {
+              "reps": 1,
+              "percent": 88
+            },
+            {
+              "reps": 1,
+              "percent": 88
+            },
+            {
+              "reps": 1,
+              "percent": 88
+            }
+          ],
+          "restSeconds": 150,
+          "timed": false,
+          "isTestWeek": false,
+          "deload": false
+        },
+        {
+          "week": 6,
+          "phase": "Allégée 3x2 à 65 %",
+          "sets": [
+            {
+              "reps": 2,
+              "percent": 65
+            },
+            {
+              "reps": 2,
+              "percent": 65
+            },
+            {
+              "reps": 2,
+              "percent": 65
+            }
+          ],
+          "restSeconds": 90,
+          "timed": false,
+          "isTestWeek": false,
+          "deload": true
+        },
+        {
+          "week": 7,
+          "phase": "Test 1RM séparé",
+          "sets": [
+            {
+              "reps": 5,
+              "percent": 40
+            },
+            {
+              "reps": 3,
+              "percent": 60
+            },
+            {
+              "reps": 1,
+              "percent": 75
+            },
+            {
+              "reps": 1,
+              "percent": 85
+            },
+            {
+              "reps": 1,
+              "percent": 92
+            },
+            {
+              "reps": 1,
+              "percent": 97
+            },
+            {
+              "reps": 1,
+              "percent": 100
+            }
+          ],
+          "restSeconds": 180,
+          "timed": false,
+          "isTestWeek": true,
+          "deload": false
+        }
+      ]
+    },
+    {
+      "id": "C3",
+      "nom": "EMOM léger",
+      "dans_le_tirage": true,
+      "type": "Technique",
+      "explication": "Une série de 2 reps au début de chaque minute, à charge légère. Le chrono t'oblige à enchaîner des reps propres sans te précipiter. Objectif : régularité de la technique, pas de la force.",
+      "duree_semaines": 7,
+      "test_1rm": "séparé en dernière semaine",
+      "semaines": [
+        {
+          "week": 1,
+          "phase": "EMOM 8x2 à 62 %",
+          "sets": [
+            {
+              "reps": 2,
+              "percent": 62
+            },
+            {
+              "reps": 2,
+              "percent": 62
+            },
+            {
+              "reps": 2,
+              "percent": 62
+            },
+            {
+              "reps": 2,
+              "percent": 62
+            },
+            {
+              "reps": 2,
+              "percent": 62
+            },
+            {
+              "reps": 2,
+              "percent": 62
+            },
+            {
+              "reps": 2,
+              "percent": 62
+            },
+            {
+              "reps": 2,
+              "percent": 62
+            }
+          ],
+          "restSeconds": 60,
+          "timed": true,
+          "isTestWeek": false,
+          "deload": false
+        },
+        {
+          "week": 2,
+          "phase": "EMOM 8x2 à 65 %",
+          "sets": [
+            {
+              "reps": 2,
+              "percent": 65
+            },
+            {
+              "reps": 2,
+              "percent": 65
+            },
+            {
+              "reps": 2,
+              "percent": 65
+            },
+            {
+              "reps": 2,
+              "percent": 65
+            },
+            {
+              "reps": 2,
+              "percent": 65
+            },
+            {
+              "reps": 2,
+              "percent": 65
+            },
+            {
+              "reps": 2,
+              "percent": 65
+            },
+            {
+              "reps": 2,
+              "percent": 65
+            }
+          ],
+          "restSeconds": 60,
+          "timed": true,
+          "isTestWeek": false,
+          "deload": false
+        },
+        {
+          "week": 3,
+          "phase": "EMOM 8x2 à 68 %",
+          "sets": [
+            {
+              "reps": 2,
+              "percent": 68
+            },
+            {
+              "reps": 2,
+              "percent": 68
+            },
+            {
+              "reps": 2,
+              "percent": 68
+            },
+            {
+              "reps": 2,
+              "percent": 68
+            },
+            {
+              "reps": 2,
+              "percent": 68
+            },
+            {
+              "reps": 2,
+              "percent": 68
+            },
+            {
+              "reps": 2,
+              "percent": 68
+            },
+            {
+              "reps": 2,
+              "percent": 68
+            }
+          ],
+          "restSeconds": 60,
+          "timed": true,
+          "isTestWeek": false,
+          "deload": false
+        },
+        {
+          "week": 4,
+          "phase": "EMOM 6x2 à 72 %",
+          "sets": [
+            {
+              "reps": 2,
+              "percent": 72
+            },
+            {
+              "reps": 2,
+              "percent": 72
+            },
+            {
+              "reps": 2,
+              "percent": 72
+            },
+            {
+              "reps": 2,
+              "percent": 72
+            },
+            {
+              "reps": 2,
+              "percent": 72
+            },
+            {
+              "reps": 2,
+              "percent": 72
+            }
+          ],
+          "restSeconds": 60,
+          "timed": true,
+          "isTestWeek": false,
+          "deload": false
+        },
+        {
+          "week": 5,
+          "phase": "EMOM 6x2 à 75 %",
+          "sets": [
+            {
+              "reps": 2,
+              "percent": 75
+            },
+            {
+              "reps": 2,
+              "percent": 75
+            },
+            {
+              "reps": 2,
+              "percent": 75
+            },
+            {
+              "reps": 2,
+              "percent": 75
+            },
+            {
+              "reps": 2,
+              "percent": 75
+            },
+            {
+              "reps": 2,
+              "percent": 75
+            }
+          ],
+          "restSeconds": 60,
+          "timed": true,
+          "isTestWeek": false,
+          "deload": false
+        },
+        {
+          "week": 6,
+          "phase": "Allégée EMOM 6x1 à 60 %",
+          "sets": [
+            {
+              "reps": 1,
+              "percent": 60
+            },
+            {
+              "reps": 1,
+              "percent": 60
+            },
+            {
+              "reps": 1,
+              "percent": 60
+            },
+            {
+              "reps": 1,
+              "percent": 60
+            },
+            {
+              "reps": 1,
+              "percent": 60
+            },
+            {
+              "reps": 1,
+              "percent": 60
+            }
+          ],
+          "restSeconds": 60,
+          "timed": true,
+          "isTestWeek": false,
+          "deload": true
+        },
+        {
+          "week": 7,
+          "phase": "Test 1RM séparé",
+          "sets": [
+            {
+              "reps": 5,
+              "percent": 40
+            },
+            {
+              "reps": 3,
+              "percent": 60
+            },
+            {
+              "reps": 1,
+              "percent": 75
+            },
+            {
+              "reps": 1,
+              "percent": 85
+            },
+            {
+              "reps": 1,
+              "percent": 92
+            },
+            {
+              "reps": 1,
+              "percent": 97
+            },
+            {
+              "reps": 1,
+              "percent": 100
+            }
+          ],
+          "restSeconds": 180,
+          "timed": false,
+          "isTestWeek": true,
+          "deload": false
+        }
+      ]
+    },
+    {
+      "id": "C4",
+      "nom": "Complexes (1+1)",
+      "dans_le_tirage": true,
+      "type": "Technique",
+      "explication": "Chaque série combine un tirage depuis les genoux et un mouvement complet. Le tirage corrige la trajectoire de la barre, le mouvement complet la remet en pratique. Sur un squat, le tirage devient 1 rep avec pause de 3 s en bas.",
+      "duree_semaines": 7,
+      "test_1rm": "séparé en dernière semaine",
+      "semaines": [
+        {
+          "week": 1,
+          "phase": "5 complexes (1 tirage + 1 complet) à 62 %",
+          "sets": [
+            {
+              "reps": 2,
+              "percent": 62
+            },
+            {
+              "reps": 2,
+              "percent": 62
+            },
+            {
+              "reps": 2,
+              "percent": 62
+            },
+            {
+              "reps": 2,
+              "percent": 62
+            },
+            {
+              "reps": 2,
+              "percent": 62
+            }
+          ],
+          "restSeconds": 90,
+          "timed": false,
+          "isTestWeek": false,
+          "deload": false
+        },
+        {
+          "week": 2,
+          "phase": "5 complexes (1 tirage + 1 complet) à 65 %",
+          "sets": [
+            {
+              "reps": 2,
+              "percent": 65
+            },
+            {
+              "reps": 2,
+              "percent": 65
+            },
+            {
+              "reps": 2,
+              "percent": 65
+            },
+            {
+              "reps": 2,
+              "percent": 65
+            },
+            {
+              "reps": 2,
+              "percent": 65
+            }
+          ],
+          "restSeconds": 90,
+          "timed": false,
+          "isTestWeek": false,
+          "deload": false
+        },
+        {
+          "week": 3,
+          "phase": "5 complexes (1 tirage + 1 complet) à 68 %",
+          "sets": [
+            {
+              "reps": 2,
+              "percent": 68
+            },
+            {
+              "reps": 2,
+              "percent": 68
+            },
+            {
+              "reps": 2,
+              "percent": 68
+            },
+            {
+              "reps": 2,
+              "percent": 68
+            },
+            {
+              "reps": 2,
+              "percent": 68
+            }
+          ],
+          "restSeconds": 90,
+          "timed": false,
+          "isTestWeek": false,
+          "deload": false
+        },
+        {
+          "week": 4,
+          "phase": "5 complexes (1 tirage + 1 complet) à 71 %",
+          "sets": [
+            {
+              "reps": 2,
+              "percent": 71
+            },
+            {
+              "reps": 2,
+              "percent": 71
+            },
+            {
+              "reps": 2,
+              "percent": 71
+            },
+            {
+              "reps": 2,
+              "percent": 71
+            },
+            {
+              "reps": 2,
+              "percent": 71
+            }
+          ],
+          "restSeconds": 120,
+          "timed": false,
+          "isTestWeek": false,
+          "deload": false
+        },
+        {
+          "week": 5,
+          "phase": "5 complexes (1 tirage + 1 complet) à 74 %",
+          "sets": [
+            {
+              "reps": 2,
+              "percent": 74
+            },
+            {
+              "reps": 2,
+              "percent": 74
+            },
+            {
+              "reps": 2,
+              "percent": 74
+            },
+            {
+              "reps": 2,
+              "percent": 74
+            },
+            {
+              "reps": 2,
+              "percent": 74
+            }
+          ],
+          "restSeconds": 120,
+          "timed": false,
+          "isTestWeek": false,
+          "deload": false
+        },
+        {
+          "week": 6,
+          "phase": "Allégée 3 complexes (1 tirage + 1 complet) à 58 %",
+          "sets": [
+            {
+              "reps": 2,
+              "percent": 58
+            },
+            {
+              "reps": 2,
+              "percent": 58
+            },
+            {
+              "reps": 2,
+              "percent": 58
+            }
+          ],
+          "restSeconds": 90,
+          "timed": false,
+          "isTestWeek": false,
+          "deload": true
+        },
+        {
+          "week": 7,
+          "phase": "Test 1RM séparé",
+          "sets": [
+            {
+              "reps": 5,
+              "percent": 40
+            },
+            {
+              "reps": 3,
+              "percent": 60
+            },
+            {
+              "reps": 1,
+              "percent": 75
+            },
+            {
+              "reps": 1,
+              "percent": 85
+            },
+            {
+              "reps": 1,
+              "percent": 92
+            },
+            {
+              "reps": 1,
+              "percent": 97
+            },
+            {
+              "reps": 1,
+              "percent": 100
+            }
+          ],
+          "restSeconds": 180,
+          "timed": false,
+          "isTestWeek": true,
+          "deload": false
+        }
+      ]
+    },
+    {
+      "id": "C5",
+      "nom": "Vagues 3.2.1",
+      "dans_le_tirage": true,
+      "type": "Mixte",
+      "explication": "Trois séries de 3, 2 puis 1 rep à charge croissante, répétées deux fois. Tu t'habitues à monter en charge en peu de reps tout en gardant une technique propre sur la dernière rep.",
+      "duree_semaines": 7,
+      "test_1rm": "séparé en dernière semaine",
+      "semaines": [
+        {
+          "week": 1,
+          "phase": "2 vagues 3, 2, 1 à 70, 75, 80 %",
+          "sets": [
+            {
+              "reps": 3,
+              "percent": 70
+            },
+            {
+              "reps": 2,
+              "percent": 75
+            },
+            {
+              "reps": 1,
+              "percent": 80
+            },
+            {
+              "reps": 3,
+              "percent": 70
+            },
+            {
+              "reps": 2,
+              "percent": 75
+            },
+            {
+              "reps": 1,
+              "percent": 80
+            }
+          ],
+          "restSeconds": 150,
+          "timed": false,
+          "isTestWeek": false,
+          "deload": false
+        },
+        {
+          "week": 2,
+          "phase": "2 vagues 3, 2, 1 à 72, 77, 82 %",
+          "sets": [
+            {
+              "reps": 3,
+              "percent": 72
+            },
+            {
+              "reps": 2,
+              "percent": 77
+            },
+            {
+              "reps": 1,
+              "percent": 82
+            },
+            {
+              "reps": 3,
+              "percent": 72
+            },
+            {
+              "reps": 2,
+              "percent": 77
+            },
+            {
+              "reps": 1,
+              "percent": 82
+            }
+          ],
+          "restSeconds": 150,
+          "timed": false,
+          "isTestWeek": false,
+          "deload": false
+        },
+        {
+          "week": 3,
+          "phase": "2 vagues 3, 2, 1 à 74, 79, 84 %",
+          "sets": [
+            {
+              "reps": 3,
+              "percent": 74
+            },
+            {
+              "reps": 2,
+              "percent": 79
+            },
+            {
+              "reps": 1,
+              "percent": 84
+            },
+            {
+              "reps": 3,
+              "percent": 74
+            },
+            {
+              "reps": 2,
+              "percent": 79
+            },
+            {
+              "reps": 1,
+              "percent": 84
+            }
+          ],
+          "restSeconds": 150,
+          "timed": false,
+          "isTestWeek": false,
+          "deload": false
+        },
+        {
+          "week": 4,
+          "phase": "2 vagues 3, 2, 1 à 76, 81, 85 %",
+          "sets": [
+            {
+              "reps": 3,
+              "percent": 76
+            },
+            {
+              "reps": 2,
+              "percent": 81
+            },
+            {
+              "reps": 1,
+              "percent": 85
+            },
+            {
+              "reps": 3,
+              "percent": 76
+            },
+            {
+              "reps": 2,
+              "percent": 81
+            },
+            {
+              "reps": 1,
+              "percent": 85
+            }
+          ],
+          "restSeconds": 150,
+          "timed": false,
+          "isTestWeek": false,
+          "deload": false
+        },
+        {
+          "week": 5,
+          "phase": "2 vagues 3, 2, 1 à 78, 83, 87 %",
+          "sets": [
+            {
+              "reps": 3,
+              "percent": 78
+            },
+            {
+              "reps": 2,
+              "percent": 83
+            },
+            {
+              "reps": 1,
+              "percent": 87
+            },
+            {
+              "reps": 3,
+              "percent": 78
+            },
+            {
+              "reps": 2,
+              "percent": 83
+            },
+            {
+              "reps": 1,
+              "percent": 87
+            }
+          ],
+          "restSeconds": 150,
+          "timed": false,
+          "isTestWeek": false,
+          "deload": false
+        },
+        {
+          "week": 6,
+          "phase": "Allégée 1 vague 3, 2, 1 à 65, 70, 75 %",
+          "sets": [
+            {
+              "reps": 3,
+              "percent": 65
+            },
+            {
+              "reps": 2,
+              "percent": 70
+            },
+            {
+              "reps": 1,
+              "percent": 75
+            }
+          ],
+          "restSeconds": 120,
+          "timed": false,
+          "isTestWeek": false,
+          "deload": true
+        },
+        {
+          "week": 7,
+          "phase": "Test 1RM séparé",
+          "sets": [
+            {
+              "reps": 5,
+              "percent": 40
+            },
+            {
+              "reps": 3,
+              "percent": 60
+            },
+            {
+              "reps": 1,
+              "percent": 75
+            },
+            {
+              "reps": 1,
+              "percent": 85
+            },
+            {
+              "reps": 1,
+              "percent": 92
+            },
+            {
+              "reps": 1,
+              "percent": 97
+            },
+            {
+              "reps": 1,
+              "percent": 100
+            }
+          ],
+          "restSeconds": 180,
+          "timed": false,
+          "isTestWeek": true,
+          "deload": false
+        }
+      ]
+    },
+    {
+      "id": "C6",
+      "nom": "Pause 2 s",
+      "dans_le_tirage": true,
+      "type": "Technique",
+      "explication": "Chaque rep s'arrête 2 s en position basse (réception ou bas du squat). La pause supprime l'élan : tu corriges positions et stabilité. Les charges sont plus basses que d'habitude, c'est voulu.",
+      "duree_semaines": 7,
+      "test_1rm": "séparé en dernière semaine",
+      "semaines": [
+        {
+          "week": 1,
+          "phase": "5x3 à 60 %, pause 2 s",
+          "sets": [
+            {
+              "reps": 3,
+              "percent": 60
+            },
+            {
+              "reps": 3,
+              "percent": 60
+            },
+            {
+              "reps": 3,
+              "percent": 60
+            },
+            {
+              "reps": 3,
+              "percent": 60
+            },
+            {
+              "reps": 3,
+              "percent": 60
+            }
+          ],
+          "restSeconds": 90,
+          "timed": false,
+          "isTestWeek": false,
+          "deload": false
+        },
+        {
+          "week": 2,
+          "phase": "5x3 à 63 %, pause 2 s",
+          "sets": [
+            {
+              "reps": 3,
+              "percent": 63
+            },
+            {
+              "reps": 3,
+              "percent": 63
+            },
+            {
+              "reps": 3,
+              "percent": 63
+            },
+            {
+              "reps": 3,
+              "percent": 63
+            },
+            {
+              "reps": 3,
+              "percent": 63
+            }
+          ],
+          "restSeconds": 90,
+          "timed": false,
+          "isTestWeek": false,
+          "deload": false
+        },
+        {
+          "week": 3,
+          "phase": "5x2 à 67 %, pause 2 s",
+          "sets": [
+            {
+              "reps": 2,
+              "percent": 67
+            },
+            {
+              "reps": 2,
+              "percent": 67
+            },
+            {
+              "reps": 2,
+              "percent": 67
+            },
+            {
+              "reps": 2,
+              "percent": 67
+            },
+            {
+              "reps": 2,
+              "percent": 67
+            }
+          ],
+          "restSeconds": 90,
+          "timed": false,
+          "isTestWeek": false,
+          "deload": false
+        },
+        {
+          "week": 4,
+          "phase": "5x2 à 70 %, pause 2 s",
+          "sets": [
+            {
+              "reps": 2,
+              "percent": 70
+            },
+            {
+              "reps": 2,
+              "percent": 70
+            },
+            {
+              "reps": 2,
+              "percent": 70
+            },
+            {
+              "reps": 2,
+              "percent": 70
+            },
+            {
+              "reps": 2,
+              "percent": 70
+            }
+          ],
+          "restSeconds": 120,
+          "timed": false,
+          "isTestWeek": false,
+          "deload": false
+        },
+        {
+          "week": 5,
+          "phase": "4x2 à 73 %, pause 2 s",
+          "sets": [
+            {
+              "reps": 2,
+              "percent": 73
+            },
+            {
+              "reps": 2,
+              "percent": 73
+            },
+            {
+              "reps": 2,
+              "percent": 73
+            },
+            {
+              "reps": 2,
+              "percent": 73
+            }
+          ],
+          "restSeconds": 120,
+          "timed": false,
+          "isTestWeek": false,
+          "deload": false
+        },
+        {
+          "week": 6,
+          "phase": "Allégée 3x2 à 58 %, pause 2 s",
+          "sets": [
+            {
+              "reps": 2,
+              "percent": 58
+            },
+            {
+              "reps": 2,
+              "percent": 58
+            },
+            {
+              "reps": 2,
+              "percent": 58
+            }
+          ],
+          "restSeconds": 90,
+          "timed": false,
+          "isTestWeek": false,
+          "deload": true
+        },
+        {
+          "week": 7,
+          "phase": "Test 1RM séparé",
+          "sets": [
+            {
+              "reps": 5,
+              "percent": 40
+            },
+            {
+              "reps": 3,
+              "percent": 60
+            },
+            {
+              "reps": 1,
+              "percent": 75
+            },
+            {
+              "reps": 1,
+              "percent": 85
+            },
+            {
+              "reps": 1,
+              "percent": 92
+            },
+            {
+              "reps": 1,
+              "percent": 97
+            },
+            {
+              "reps": 1,
+              "percent": 100
+            }
+          ],
+          "restSeconds": 180,
+          "timed": false,
+          "isTestWeek": true,
+          "deload": false
+        }
+      ]
+    },
+    {
+      "id": "C7",
+      "nom": "Densité E90s",
+      "dans_le_tirage": true,
+      "type": "Volume",
+      "explication": "Une série toutes les 90 secondes, beaucoup de volume à charge modérée. Travaille l'endurance technique : garder des reps propres quand la fatigue arrive. Arrête dès que la technique se dégrade.",
+      "duree_semaines": 7,
+      "test_1rm": "séparé en dernière semaine",
+      "semaines": [
+        {
+          "week": 1,
+          "phase": "E90s 5x3 à 65 %",
+          "sets": [
+            {
+              "reps": 3,
+              "percent": 65
+            },
+            {
+              "reps": 3,
+              "percent": 65
+            },
+            {
+              "reps": 3,
+              "percent": 65
+            },
+            {
+              "reps": 3,
+              "percent": 65
+            },
+            {
+              "reps": 3,
+              "percent": 65
+            }
+          ],
+          "restSeconds": 90,
+          "timed": true,
+          "isTestWeek": false,
+          "deload": false
+        },
+        {
+          "week": 2,
+          "phase": "E90s 5x3 à 68 %",
+          "sets": [
+            {
+              "reps": 3,
+              "percent": 68
+            },
+            {
+              "reps": 3,
+              "percent": 68
+            },
+            {
+              "reps": 3,
+              "percent": 68
+            },
+            {
+              "reps": 3,
+              "percent": 68
+            },
+            {
+              "reps": 3,
+              "percent": 68
+            }
+          ],
+          "restSeconds": 90,
+          "timed": true,
+          "isTestWeek": false,
+          "deload": false
+        },
+        {
+          "week": 3,
+          "phase": "E90s 5x2 à 73 %",
+          "sets": [
+            {
+              "reps": 2,
+              "percent": 73
+            },
+            {
+              "reps": 2,
+              "percent": 73
+            },
+            {
+              "reps": 2,
+              "percent": 73
+            },
+            {
+              "reps": 2,
+              "percent": 73
+            },
+            {
+              "reps": 2,
+              "percent": 73
+            }
+          ],
+          "restSeconds": 90,
+          "timed": true,
+          "isTestWeek": false,
+          "deload": false
+        },
+        {
+          "week": 4,
+          "phase": "E90s 5x2 à 76 %",
+          "sets": [
+            {
+              "reps": 2,
+              "percent": 76
+            },
+            {
+              "reps": 2,
+              "percent": 76
+            },
+            {
+              "reps": 2,
+              "percent": 76
+            },
+            {
+              "reps": 2,
+              "percent": 76
+            },
+            {
+              "reps": 2,
+              "percent": 76
+            }
+          ],
+          "restSeconds": 90,
+          "timed": true,
+          "isTestWeek": false,
+          "deload": false
+        },
+        {
+          "week": 5,
+          "phase": "E90s 5x2 à 79 %",
+          "sets": [
+            {
+              "reps": 2,
+              "percent": 79
+            },
+            {
+              "reps": 2,
+              "percent": 79
+            },
+            {
+              "reps": 2,
+              "percent": 79
+            },
+            {
+              "reps": 2,
+              "percent": 79
+            },
+            {
+              "reps": 2,
+              "percent": 79
+            }
+          ],
+          "restSeconds": 90,
+          "timed": true,
+          "isTestWeek": false,
+          "deload": false
+        },
+        {
+          "week": 6,
+          "phase": "Allégée E90s 4x2 à 62 %",
+          "sets": [
+            {
+              "reps": 2,
+              "percent": 62
+            },
+            {
+              "reps": 2,
+              "percent": 62
+            },
+            {
+              "reps": 2,
+              "percent": 62
+            },
+            {
+              "reps": 2,
+              "percent": 62
+            }
+          ],
+          "restSeconds": 90,
+          "timed": true,
+          "isTestWeek": false,
+          "deload": true
+        },
+        {
+          "week": 7,
+          "phase": "Test 1RM séparé",
+          "sets": [
+            {
+              "reps": 5,
+              "percent": 40
+            },
+            {
+              "reps": 3,
+              "percent": 60
+            },
+            {
+              "reps": 1,
+              "percent": 75
+            },
+            {
+              "reps": 1,
+              "percent": 85
+            },
+            {
+              "reps": 1,
+              "percent": 92
+            },
+            {
+              "reps": 1,
+              "percent": 97
+            },
+            {
+              "reps": 1,
+              "percent": 100
+            }
+          ],
+          "restSeconds": 180,
+          "timed": false,
+          "isTestWeek": true,
+          "deload": false
+        }
+      ]
+    },
+    {
+      "id": "C8",
+      "nom": "Top single + back off",
+      "dans_le_tirage": true,
+      "type": "Intensité",
+      "explication": "Une seule série lourde d'1 rep, suivie de séries plus légères pour accumuler du volume. La série lourde grimpe de 3% par semaine. Les séries de back off consolident la technique sous charge.",
+      "duree_semaines": 7,
+      "test_1rm": "séparé en dernière semaine",
+      "semaines": [
+        {
+          "week": 1,
+          "phase": "1 rep à 78 % puis 3x3 à 68 %",
+          "sets": [
+            {
+              "reps": 1,
+              "percent": 78
+            },
+            {
+              "reps": 3,
+              "percent": 68
+            },
+            {
+              "reps": 3,
+              "percent": 68
+            },
+            {
+              "reps": 3,
+              "percent": 68
+            }
+          ],
+          "restSeconds": 120,
+          "timed": false,
+          "isTestWeek": false,
+          "deload": false
+        },
+        {
+          "week": 2,
+          "phase": "1 rep à 81 % puis 3x3 à 70 %",
+          "sets": [
+            {
+              "reps": 1,
+              "percent": 81
+            },
+            {
+              "reps": 3,
+              "percent": 70
+            },
+            {
+              "reps": 3,
+              "percent": 70
+            },
+            {
+              "reps": 3,
+              "percent": 70
+            }
+          ],
+          "restSeconds": 150,
+          "timed": false,
+          "isTestWeek": false,
+          "deload": false
+        },
+        {
+          "week": 3,
+          "phase": "1 rep à 84 % puis 3x2 à 75 %",
+          "sets": [
+            {
+              "reps": 1,
+              "percent": 84
+            },
+            {
+              "reps": 2,
+              "percent": 75
+            },
+            {
+              "reps": 2,
+              "percent": 75
+            },
+            {
+              "reps": 2,
+              "percent": 75
+            }
+          ],
+          "restSeconds": 150,
+          "timed": false,
+          "isTestWeek": false,
+          "deload": false
+        },
+        {
+          "week": 4,
+          "phase": "1 rep à 87 % puis 3x2 à 77 %",
+          "sets": [
+            {
+              "reps": 1,
+              "percent": 87
+            },
+            {
+              "reps": 2,
+              "percent": 77
+            },
+            {
+              "reps": 2,
+              "percent": 77
+            },
+            {
+              "reps": 2,
+              "percent": 77
+            }
+          ],
+          "restSeconds": 150,
+          "timed": false,
+          "isTestWeek": false,
+          "deload": false
+        },
+        {
+          "week": 5,
+          "phase": "1 rep à 90 % puis 2x2 à 78 %",
+          "sets": [
+            {
+              "reps": 1,
+              "percent": 90
+            },
+            {
+              "reps": 2,
+              "percent": 78
+            },
+            {
+              "reps": 2,
+              "percent": 78
+            }
+          ],
+          "restSeconds": 180,
+          "timed": false,
+          "isTestWeek": false,
+          "deload": false
+        },
+        {
+          "week": 6,
+          "phase": "Allégée 1 rep à 75 % puis 2x2 à 62 %",
+          "sets": [
+            {
+              "reps": 1,
+              "percent": 75
+            },
+            {
+              "reps": 2,
+              "percent": 62
+            },
+            {
+              "reps": 2,
+              "percent": 62
+            }
+          ],
+          "restSeconds": 120,
+          "timed": false,
+          "isTestWeek": false,
+          "deload": true
+        },
+        {
+          "week": 7,
+          "phase": "Test 1RM séparé",
+          "sets": [
+            {
+              "reps": 5,
+              "percent": 40
+            },
+            {
+              "reps": 3,
+              "percent": 60
+            },
+            {
+              "reps": 1,
+              "percent": 75
+            },
+            {
+              "reps": 1,
+              "percent": 85
+            },
+            {
+              "reps": 1,
+              "percent": 92
+            },
+            {
+              "reps": 1,
+              "percent": 97
+            },
+            {
+              "reps": 1,
+              "percent": 100
+            }
+          ],
+          "restSeconds": 180,
+          "timed": false,
+          "isTestWeek": true,
+          "deload": false
+        }
+      ]
+    },
+    {
+      "id": "C9",
+      "nom": "Clusters (1.1.1)",
+      "dans_le_tirage": true,
+      "type": "Intensité",
+      "explication": "Chaque cluster = 3 reps séparées de 15 s barre posée, 2 min entre clusters. Tu soulèves plus lourd qu'en série continue car tu récupères entre les reps. Idéal pour apprendre à tenir des charges proches du max.",
+      "duree_semaines": 7,
+      "test_1rm": "séparé en dernière semaine",
+      "semaines": [
+        {
+          "week": 1,
+          "phase": "4 clusters à 75 % (3 reps, 15 s entre les reps)",
+          "sets": [
+            {
+              "reps": 3,
+              "percent": 75
+            },
+            {
+              "reps": 3,
+              "percent": 75
+            },
+            {
+              "reps": 3,
+              "percent": 75
+            },
+            {
+              "reps": 3,
+              "percent": 75
+            }
+          ],
+          "restSeconds": 120,
+          "timed": false,
+          "isTestWeek": false,
+          "deload": false
+        },
+        {
+          "week": 2,
+          "phase": "4 clusters à 78 % (3 reps, 15 s entre les reps)",
+          "sets": [
+            {
+              "reps": 3,
+              "percent": 78
+            },
+            {
+              "reps": 3,
+              "percent": 78
+            },
+            {
+              "reps": 3,
+              "percent": 78
+            },
+            {
+              "reps": 3,
+              "percent": 78
+            }
+          ],
+          "restSeconds": 120,
+          "timed": false,
+          "isTestWeek": false,
+          "deload": false
+        },
+        {
+          "week": 3,
+          "phase": "4 clusters à 81 % (3 reps, 15 s entre les reps)",
+          "sets": [
+            {
+              "reps": 3,
+              "percent": 81
+            },
+            {
+              "reps": 3,
+              "percent": 81
+            },
+            {
+              "reps": 3,
+              "percent": 81
+            },
+            {
+              "reps": 3,
+              "percent": 81
+            }
+          ],
+          "restSeconds": 120,
+          "timed": false,
+          "isTestWeek": false,
+          "deload": false
+        },
+        {
+          "week": 4,
+          "phase": "4 clusters à 84 % (3 reps, 15 s entre les reps)",
+          "sets": [
+            {
+              "reps": 3,
+              "percent": 84
+            },
+            {
+              "reps": 3,
+              "percent": 84
+            },
+            {
+              "reps": 3,
+              "percent": 84
+            },
+            {
+              "reps": 3,
+              "percent": 84
+            }
+          ],
+          "restSeconds": 120,
+          "timed": false,
+          "isTestWeek": false,
+          "deload": false
+        },
+        {
+          "week": 5,
+          "phase": "3 clusters à 87 % (3 reps, 15 s entre les reps)",
+          "sets": [
+            {
+              "reps": 3,
+              "percent": 87
+            },
+            {
+              "reps": 3,
+              "percent": 87
+            },
+            {
+              "reps": 3,
+              "percent": 87
+            }
+          ],
+          "restSeconds": 120,
+          "timed": false,
+          "isTestWeek": false,
+          "deload": false
+        },
+        {
+          "week": 6,
+          "phase": "Allégée 3 clusters à 68 % (3 reps, 15 s entre les reps)",
+          "sets": [
+            {
+              "reps": 3,
+              "percent": 68
+            },
+            {
+              "reps": 3,
+              "percent": 68
+            },
+            {
+              "reps": 3,
+              "percent": 68
+            }
+          ],
+          "restSeconds": 120,
+          "timed": false,
+          "isTestWeek": false,
+          "deload": true
+        },
+        {
+          "week": 7,
+          "phase": "Test 1RM séparé",
+          "sets": [
+            {
+              "reps": 5,
+              "percent": 40
+            },
+            {
+              "reps": 3,
+              "percent": 60
+            },
+            {
+              "reps": 1,
+              "percent": 75
+            },
+            {
+              "reps": 1,
+              "percent": 85
+            },
+            {
+              "reps": 1,
+              "percent": 92
+            },
+            {
+              "reps": 1,
+              "percent": 97
+            },
+            {
+              "reps": 1,
+              "percent": 100
+            }
+          ],
+          "restSeconds": 180,
+          "timed": false,
+          "isTestWeek": true,
+          "deload": false
+        }
+      ]
+    },
+    {
+      "id": "C10",
+      "nom": "Échelles 1.2.3",
+      "dans_le_tirage": true,
+      "type": "Volume",
+      "explication": "Une échelle = 1 rep, 45 s de repos, 2 reps, 45 s, 3 reps, puis 2 min avant la suivante. Beaucoup de reps à charge modérée avec des repos courts pour garder la technique pendant la fatigue.",
+      "duree_semaines": 7,
+      "test_1rm": "séparé en dernière semaine",
+      "semaines": [
+        {
+          "week": 1,
+          "phase": "3 échelles 1, 2, 3 à 65 % (2 min après chaque échelle)",
+          "sets": [
+            {
+              "reps": 1,
+              "percent": 65
+            },
+            {
+              "reps": 2,
+              "percent": 65
+            },
+            {
+              "reps": 3,
+              "percent": 65
+            },
+            {
+              "reps": 1,
+              "percent": 65
+            },
+            {
+              "reps": 2,
+              "percent": 65
+            },
+            {
+              "reps": 3,
+              "percent": 65
+            },
+            {
+              "reps": 1,
+              "percent": 65
+            },
+            {
+              "reps": 2,
+              "percent": 65
+            },
+            {
+              "reps": 3,
+              "percent": 65
+            }
+          ],
+          "restSeconds": 45,
+          "timed": false,
+          "isTestWeek": false,
+          "deload": false
+        },
+        {
+          "week": 2,
+          "phase": "3 échelles 1, 2, 3 à 68 % (2 min après chaque échelle)",
+          "sets": [
+            {
+              "reps": 1,
+              "percent": 68
+            },
+            {
+              "reps": 2,
+              "percent": 68
+            },
+            {
+              "reps": 3,
+              "percent": 68
+            },
+            {
+              "reps": 1,
+              "percent": 68
+            },
+            {
+              "reps": 2,
+              "percent": 68
+            },
+            {
+              "reps": 3,
+              "percent": 68
+            },
+            {
+              "reps": 1,
+              "percent": 68
+            },
+            {
+              "reps": 2,
+              "percent": 68
+            },
+            {
+              "reps": 3,
+              "percent": 68
+            }
+          ],
+          "restSeconds": 45,
+          "timed": false,
+          "isTestWeek": false,
+          "deload": false
+        },
+        {
+          "week": 3,
+          "phase": "3 échelles 1, 2, 3 à 70 % (2 min après chaque échelle)",
+          "sets": [
+            {
+              "reps": 1,
+              "percent": 70
+            },
+            {
+              "reps": 2,
+              "percent": 70
+            },
+            {
+              "reps": 3,
+              "percent": 70
+            },
+            {
+              "reps": 1,
+              "percent": 70
+            },
+            {
+              "reps": 2,
+              "percent": 70
+            },
+            {
+              "reps": 3,
+              "percent": 70
+            },
+            {
+              "reps": 1,
+              "percent": 70
+            },
+            {
+              "reps": 2,
+              "percent": 70
+            },
+            {
+              "reps": 3,
+              "percent": 70
+            }
+          ],
+          "restSeconds": 45,
+          "timed": false,
+          "isTestWeek": false,
+          "deload": false
+        },
+        {
+          "week": 4,
+          "phase": "2 échelles 1, 2, 3 à 74 % (2 min après chaque échelle)",
+          "sets": [
+            {
+              "reps": 1,
+              "percent": 74
+            },
+            {
+              "reps": 2,
+              "percent": 74
+            },
+            {
+              "reps": 3,
+              "percent": 74
+            },
+            {
+              "reps": 1,
+              "percent": 74
+            },
+            {
+              "reps": 2,
+              "percent": 74
+            },
+            {
+              "reps": 3,
+              "percent": 74
+            }
+          ],
+          "restSeconds": 45,
+          "timed": false,
+          "isTestWeek": false,
+          "deload": false
+        },
+        {
+          "week": 5,
+          "phase": "2 échelles 1, 2, 3 à 77 % (2 min après chaque échelle)",
+          "sets": [
+            {
+              "reps": 1,
+              "percent": 77
+            },
+            {
+              "reps": 2,
+              "percent": 77
+            },
+            {
+              "reps": 3,
+              "percent": 77
+            },
+            {
+              "reps": 1,
+              "percent": 77
+            },
+            {
+              "reps": 2,
+              "percent": 77
+            },
+            {
+              "reps": 3,
+              "percent": 77
+            }
+          ],
+          "restSeconds": 45,
+          "timed": false,
+          "isTestWeek": false,
+          "deload": false
+        },
+        {
+          "week": 6,
+          "phase": "Allégée 2 échelles 1, 2, 3 à 60 % (2 min après chaque échelle)",
+          "sets": [
+            {
+              "reps": 1,
+              "percent": 60
+            },
+            {
+              "reps": 2,
+              "percent": 60
+            },
+            {
+              "reps": 3,
+              "percent": 60
+            },
+            {
+              "reps": 1,
+              "percent": 60
+            },
+            {
+              "reps": 2,
+              "percent": 60
+            },
+            {
+              "reps": 3,
+              "percent": 60
+            }
+          ],
+          "restSeconds": 45,
+          "timed": false,
+          "isTestWeek": false,
+          "deload": true
+        },
+        {
+          "week": 7,
+          "phase": "Test 1RM séparé",
+          "sets": [
+            {
+              "reps": 5,
+              "percent": 40
+            },
+            {
+              "reps": 3,
+              "percent": 60
+            },
+            {
+              "reps": 1,
+              "percent": 75
+            },
+            {
+              "reps": 1,
+              "percent": 85
+            },
+            {
+              "reps": 1,
+              "percent": 92
+            },
+            {
+              "reps": 1,
+              "percent": 97
+            },
+            {
+              "reps": 1,
+              "percent": 100
+            }
+          ],
+          "restSeconds": 180,
+          "timed": false,
+          "isTestWeek": true,
+          "deload": false
+        }
+      ]
+    },
+    {
+      "id": "C11",
+      "nom": "Bloc classique",
+      "dans_le_tirage": true,
+      "type": "Mixte",
+      "explication": "Le cycle de référence : trois semaines de construction, une de décharge, trois d'intensité, puis le test. Sert de base de comparaison avec les autres méthodes.",
+      "duree_semaines": 8,
+      "test_1rm": "dernière semaine",
+      "semaines": [
+        {
+          "week": 1,
+          "phase": "5x3 à 65 %",
+          "sets": [
+            {
+              "reps": 3,
+              "percent": 65
+            },
+            {
+              "reps": 3,
+              "percent": 65
+            },
+            {
+              "reps": 3,
+              "percent": 65
+            },
+            {
+              "reps": 3,
+              "percent": 65
+            },
+            {
+              "reps": 3,
+              "percent": 65
+            }
+          ],
+          "restSeconds": 90,
+          "timed": false,
+          "isTestWeek": false,
+          "deload": false
+        },
+        {
+          "week": 2,
+          "phase": "5x3 à 70 %",
+          "sets": [
+            {
+              "reps": 3,
+              "percent": 70
+            },
+            {
+              "reps": 3,
+              "percent": 70
+            },
+            {
+              "reps": 3,
+              "percent": 70
+            },
+            {
+              "reps": 3,
+              "percent": 70
+            },
+            {
+              "reps": 3,
+              "percent": 70
+            }
+          ],
+          "restSeconds": 120,
+          "timed": false,
+          "isTestWeek": false,
+          "deload": false
+        },
+        {
+          "week": 3,
+          "phase": "5x3 à 74 %",
+          "sets": [
+            {
+              "reps": 3,
+              "percent": 74
+            },
+            {
+              "reps": 3,
+              "percent": 74
+            },
+            {
+              "reps": 3,
+              "percent": 74
+            },
+            {
+              "reps": 3,
+              "percent": 74
+            },
+            {
+              "reps": 3,
+              "percent": 74
+            }
+          ],
+          "restSeconds": 120,
+          "timed": false,
+          "isTestWeek": false,
+          "deload": false
+        },
+        {
+          "week": 4,
+          "phase": "Allégée 3x2 à 60 %",
+          "sets": [
+            {
+              "reps": 2,
+              "percent": 60
+            },
+            {
+              "reps": 2,
+              "percent": 60
+            },
+            {
+              "reps": 2,
+              "percent": 60
+            }
+          ],
+          "restSeconds": 90,
+          "timed": false,
+          "isTestWeek": false,
+          "deload": true
+        },
+        {
+          "week": 5,
+          "phase": "5x2 à 80 %",
+          "sets": [
+            {
+              "reps": 2,
+              "percent": 80
+            },
+            {
+              "reps": 2,
+              "percent": 80
+            },
+            {
+              "reps": 2,
+              "percent": 80
+            },
+            {
+              "reps": 2,
+              "percent": 80
+            },
+            {
+              "reps": 2,
+              "percent": 80
+            }
+          ],
+          "restSeconds": 150,
+          "timed": false,
+          "isTestWeek": false,
+          "deload": false
+        },
+        {
+          "week": 6,
+          "phase": "4x2 à 84 %",
+          "sets": [
+            {
+              "reps": 2,
+              "percent": 84
+            },
+            {
+              "reps": 2,
+              "percent": 84
+            },
+            {
+              "reps": 2,
+              "percent": 84
+            },
+            {
+              "reps": 2,
+              "percent": 84
+            }
+          ],
+          "restSeconds": 150,
+          "timed": false,
+          "isTestWeek": false,
+          "deload": false
+        },
+        {
+          "week": 7,
+          "phase": "4x1 à 88 %",
+          "sets": [
+            {
+              "reps": 1,
+              "percent": 88
+            },
+            {
+              "reps": 1,
+              "percent": 88
+            },
+            {
+              "reps": 1,
+              "percent": 88
+            },
+            {
+              "reps": 1,
+              "percent": 88
+            }
+          ],
+          "restSeconds": 150,
+          "timed": false,
+          "isTestWeek": false,
+          "deload": false
+        },
+        {
+          "week": 8,
+          "phase": "Test 1RM : paliers puis 3 essais (+2 à 3 kg par essai)",
+          "sets": [
+            {
+              "reps": 5,
+              "percent": 40
+            },
+            {
+              "reps": 3,
+              "percent": 60
+            },
+            {
+              "reps": 1,
+              "percent": 75
+            },
+            {
+              "reps": 1,
+              "percent": 85
+            },
+            {
+              "reps": 1,
+              "percent": 92
+            },
+            {
+              "reps": 1,
+              "percent": 100
+            },
+            {
+              "reps": 1,
+              "percent": 100
+            },
+            {
+              "reps": 1,
+              "percent": 100
+            }
+          ],
+          "restSeconds": 180,
+          "timed": false,
+          "isTestWeek": true,
+          "deload": false
+        }
+      ]
+    },
+    {
+      "id": "C12",
+      "nom": "Ondulé",
+      "dans_le_tirage": true,
+      "type": "Mixte",
+      "explication": "Les semaines alternent moyen, léger puis lourd. Les semaines légères laissent récupérer, les lourdes poussent la force.",
+      "duree_semaines": 8,
+      "test_1rm": "dernière semaine",
+      "semaines": [
+        {
+          "week": 1,
+          "phase": "5x3 à 68 %",
+          "sets": [
+            {
+              "reps": 3,
+              "percent": 68
+            },
+            {
+              "reps": 3,
+              "percent": 68
+            },
+            {
+              "reps": 3,
+              "percent": 68
+            },
+            {
+              "reps": 3,
+              "percent": 68
+            },
+            {
+              "reps": 3,
+              "percent": 68
+            }
+          ],
+          "restSeconds": 90,
+          "timed": false,
+          "isTestWeek": false,
+          "deload": false
+        },
+        {
+          "week": 2,
+          "phase": "5x3 à 63 %",
+          "sets": [
+            {
+              "reps": 3,
+              "percent": 63
+            },
+            {
+              "reps": 3,
+              "percent": 63
+            },
+            {
+              "reps": 3,
+              "percent": 63
+            },
+            {
+              "reps": 3,
+              "percent": 63
+            },
+            {
+              "reps": 3,
+              "percent": 63
+            }
+          ],
+          "restSeconds": 90,
+          "timed": false,
+          "isTestWeek": false,
+          "deload": false
+        },
+        {
+          "week": 3,
+          "phase": "5x2 à 75 %",
+          "sets": [
+            {
+              "reps": 2,
+              "percent": 75
+            },
+            {
+              "reps": 2,
+              "percent": 75
+            },
+            {
+              "reps": 2,
+              "percent": 75
+            },
+            {
+              "reps": 2,
+              "percent": 75
+            },
+            {
+              "reps": 2,
+              "percent": 75
+            }
+          ],
+          "restSeconds": 120,
+          "timed": false,
+          "isTestWeek": false,
+          "deload": false
+        },
+        {
+          "week": 4,
+          "phase": "Allégée 3x2 à 60 %",
+          "sets": [
+            {
+              "reps": 2,
+              "percent": 60
+            },
+            {
+              "reps": 2,
+              "percent": 60
+            },
+            {
+              "reps": 2,
+              "percent": 60
+            }
+          ],
+          "restSeconds": 90,
+          "timed": false,
+          "isTestWeek": false,
+          "deload": true
+        },
+        {
+          "week": 5,
+          "phase": "5x1 à 84 %",
+          "sets": [
+            {
+              "reps": 1,
+              "percent": 84
+            },
+            {
+              "reps": 1,
+              "percent": 84
+            },
+            {
+              "reps": 1,
+              "percent": 84
+            },
+            {
+              "reps": 1,
+              "percent": 84
+            },
+            {
+              "reps": 1,
+              "percent": 84
+            }
+          ],
+          "restSeconds": 150,
+          "timed": false,
+          "isTestWeek": false,
+          "deload": false
+        },
+        {
+          "week": 6,
+          "phase": "4x3 à 70 %",
+          "sets": [
+            {
+              "reps": 3,
+              "percent": 70
+            },
+            {
+              "reps": 3,
+              "percent": 70
+            },
+            {
+              "reps": 3,
+              "percent": 70
+            },
+            {
+              "reps": 3,
+              "percent": 70
+            }
+          ],
+          "restSeconds": 120,
+          "timed": false,
+          "isTestWeek": false,
+          "deload": false
+        },
+        {
+          "week": 7,
+          "phase": "3x1 à 90 %",
+          "sets": [
+            {
+              "reps": 1,
+              "percent": 90
+            },
+            {
+              "reps": 1,
+              "percent": 90
+            },
+            {
+              "reps": 1,
+              "percent": 90
+            }
+          ],
+          "restSeconds": 180,
+          "timed": false,
+          "isTestWeek": false,
+          "deload": false
+        },
+        {
+          "week": 8,
+          "phase": "Test 1RM : paliers puis 3 essais (+2 à 3 kg par essai)",
+          "sets": [
+            {
+              "reps": 5,
+              "percent": 40
+            },
+            {
+              "reps": 3,
+              "percent": 60
+            },
+            {
+              "reps": 1,
+              "percent": 75
+            },
+            {
+              "reps": 1,
+              "percent": 85
+            },
+            {
+              "reps": 1,
+              "percent": 92
+            },
+            {
+              "reps": 1,
+              "percent": 100
+            },
+            {
+              "reps": 1,
+              "percent": 100
+            },
+            {
+              "reps": 1,
+              "percent": 100
+            }
+          ],
+          "restSeconds": 180,
+          "timed": false,
+          "isTestWeek": true,
+          "deload": false
+        }
+      ]
+    },
+    {
+      "id": "C13",
+      "nom": "Paliers fixes",
+      "dans_le_tirage": true,
+      "type": "Volume",
+      "explication": "Même charge pendant trois semaines, tu ajoutes une série à chaque fois. La progression vient du volume, pas de la charge. Même logique ensuite à une charge plus haute.",
+      "duree_semaines": 8,
+      "test_1rm": "dernière semaine",
+      "semaines": [
+        {
+          "week": 1,
+          "phase": "4x3 à 70 %",
+          "sets": [
+            {
+              "reps": 3,
+              "percent": 70
+            },
+            {
+              "reps": 3,
+              "percent": 70
+            },
+            {
+              "reps": 3,
+              "percent": 70
+            },
+            {
+              "reps": 3,
+              "percent": 70
+            }
+          ],
+          "restSeconds": 120,
+          "timed": false,
+          "isTestWeek": false,
+          "deload": false
+        },
+        {
+          "week": 2,
+          "phase": "5x3 à 70 %",
+          "sets": [
+            {
+              "reps": 3,
+              "percent": 70
+            },
+            {
+              "reps": 3,
+              "percent": 70
+            },
+            {
+              "reps": 3,
+              "percent": 70
+            },
+            {
+              "reps": 3,
+              "percent": 70
+            },
+            {
+              "reps": 3,
+              "percent": 70
+            }
+          ],
+          "restSeconds": 120,
+          "timed": false,
+          "isTestWeek": false,
+          "deload": false
+        },
+        {
+          "week": 3,
+          "phase": "6x3 à 70 %",
+          "sets": [
+            {
+              "reps": 3,
+              "percent": 70
+            },
+            {
+              "reps": 3,
+              "percent": 70
+            },
+            {
+              "reps": 3,
+              "percent": 70
+            },
+            {
+              "reps": 3,
+              "percent": 70
+            },
+            {
+              "reps": 3,
+              "percent": 70
+            },
+            {
+              "reps": 3,
+              "percent": 70
+            }
+          ],
+          "restSeconds": 120,
+          "timed": false,
+          "isTestWeek": false,
+          "deload": false
+        },
+        {
+          "week": 4,
+          "phase": "Allégée 3x2 à 60 %",
+          "sets": [
+            {
+              "reps": 2,
+              "percent": 60
+            },
+            {
+              "reps": 2,
+              "percent": 60
+            },
+            {
+              "reps": 2,
+              "percent": 60
+            }
+          ],
+          "restSeconds": 90,
+          "timed": false,
+          "isTestWeek": false,
+          "deload": true
+        },
+        {
+          "week": 5,
+          "phase": "3x2 à 80 %",
+          "sets": [
+            {
+              "reps": 2,
+              "percent": 80
+            },
+            {
+              "reps": 2,
+              "percent": 80
+            },
+            {
+              "reps": 2,
+              "percent": 80
+            }
+          ],
+          "restSeconds": 150,
+          "timed": false,
+          "isTestWeek": false,
+          "deload": false
+        },
+        {
+          "week": 6,
+          "phase": "4x2 à 80 %",
+          "sets": [
+            {
+              "reps": 2,
+              "percent": 80
+            },
+            {
+              "reps": 2,
+              "percent": 80
+            },
+            {
+              "reps": 2,
+              "percent": 80
+            },
+            {
+              "reps": 2,
+              "percent": 80
+            }
+          ],
+          "restSeconds": 150,
+          "timed": false,
+          "isTestWeek": false,
+          "deload": false
+        },
+        {
+          "week": 7,
+          "phase": "5x2 à 80 %",
+          "sets": [
+            {
+              "reps": 2,
+              "percent": 80
+            },
+            {
+              "reps": 2,
+              "percent": 80
+            },
+            {
+              "reps": 2,
+              "percent": 80
+            },
+            {
+              "reps": 2,
+              "percent": 80
+            },
+            {
+              "reps": 2,
+              "percent": 80
+            }
+          ],
+          "restSeconds": 150,
+          "timed": false,
+          "isTestWeek": false,
+          "deload": false
+        },
+        {
+          "week": 8,
+          "phase": "Test 1RM : paliers puis 3 essais (+2 à 3 kg par essai)",
+          "sets": [
+            {
+              "reps": 5,
+              "percent": 40
+            },
+            {
+              "reps": 3,
+              "percent": 60
+            },
+            {
+              "reps": 1,
+              "percent": 75
+            },
+            {
+              "reps": 1,
+              "percent": 85
+            },
+            {
+              "reps": 1,
+              "percent": 92
+            },
+            {
+              "reps": 1,
+              "percent": 100
+            },
+            {
+              "reps": 1,
+              "percent": 100
+            },
+            {
+              "reps": 1,
+              "percent": 100
+            }
+          ],
+          "restSeconds": 180,
+          "timed": false,
+          "isTestWeek": true,
+          "deload": false
+        }
+      ]
+    },
+    {
+      "id": "C14",
+      "nom": "Escalier EMOM",
+      "dans_le_tirage": true,
+      "type": "Intensité",
+      "explication": "Chaque minute, 1 rep, et la charge monte de 2% par minute. Le dernier palier est ton plus lourd du jour. Si tu rates un palier, tu arrêtes l'escalier là pour la séance.",
+      "duree_semaines": 8,
+      "test_1rm": "dernière semaine",
+      "semaines": [
+        {
+          "week": 1,
+          "phase": "Escalier EMOM 8 min, 1 rep de 64 à 78 %",
+          "sets": [
+            {
+              "reps": 1,
+              "percent": 64
+            },
+            {
+              "reps": 1,
+              "percent": 66
+            },
+            {
+              "reps": 1,
+              "percent": 68
+            },
+            {
+              "reps": 1,
+              "percent": 70
+            },
+            {
+              "reps": 1,
+              "percent": 72
+            },
+            {
+              "reps": 1,
+              "percent": 74
+            },
+            {
+              "reps": 1,
+              "percent": 76
+            },
+            {
+              "reps": 1,
+              "percent": 78
+            }
+          ],
+          "restSeconds": 60,
+          "timed": true,
+          "isTestWeek": false,
+          "deload": false
+        },
+        {
+          "week": 2,
+          "phase": "Escalier EMOM 8 min, 1 rep de 66 à 80 %",
+          "sets": [
+            {
+              "reps": 1,
+              "percent": 66
+            },
+            {
+              "reps": 1,
+              "percent": 68
+            },
+            {
+              "reps": 1,
+              "percent": 70
+            },
+            {
+              "reps": 1,
+              "percent": 72
+            },
+            {
+              "reps": 1,
+              "percent": 74
+            },
+            {
+              "reps": 1,
+              "percent": 76
+            },
+            {
+              "reps": 1,
+              "percent": 78
+            },
+            {
+              "reps": 1,
+              "percent": 80
+            }
+          ],
+          "restSeconds": 60,
+          "timed": true,
+          "isTestWeek": false,
+          "deload": false
+        },
+        {
+          "week": 3,
+          "phase": "Escalier EMOM 8 min, 1 rep de 68 à 82 %",
+          "sets": [
+            {
+              "reps": 1,
+              "percent": 68
+            },
+            {
+              "reps": 1,
+              "percent": 70
+            },
+            {
+              "reps": 1,
+              "percent": 72
+            },
+            {
+              "reps": 1,
+              "percent": 74
+            },
+            {
+              "reps": 1,
+              "percent": 76
+            },
+            {
+              "reps": 1,
+              "percent": 78
+            },
+            {
+              "reps": 1,
+              "percent": 80
+            },
+            {
+              "reps": 1,
+              "percent": 82
+            }
+          ],
+          "restSeconds": 60,
+          "timed": true,
+          "isTestWeek": false,
+          "deload": false
+        },
+        {
+          "week": 4,
+          "phase": "Allégée Escalier EMOM 6 min, 1 rep de 60 à 70 %",
+          "sets": [
+            {
+              "reps": 1,
+              "percent": 60
+            },
+            {
+              "reps": 1,
+              "percent": 62
+            },
+            {
+              "reps": 1,
+              "percent": 64
+            },
+            {
+              "reps": 1,
+              "percent": 66
+            },
+            {
+              "reps": 1,
+              "percent": 68
+            },
+            {
+              "reps": 1,
+              "percent": 70
+            }
+          ],
+          "restSeconds": 60,
+          "timed": true,
+          "isTestWeek": false,
+          "deload": true
+        },
+        {
+          "week": 5,
+          "phase": "Escalier EMOM 8 min, 1 rep de 72 à 86 %",
+          "sets": [
+            {
+              "reps": 1,
+              "percent": 72
+            },
+            {
+              "reps": 1,
+              "percent": 74
+            },
+            {
+              "reps": 1,
+              "percent": 76
+            },
+            {
+              "reps": 1,
+              "percent": 78
+            },
+            {
+              "reps": 1,
+              "percent": 80
+            },
+            {
+              "reps": 1,
+              "percent": 82
+            },
+            {
+              "reps": 1,
+              "percent": 84
+            },
+            {
+              "reps": 1,
+              "percent": 86
+            }
+          ],
+          "restSeconds": 60,
+          "timed": true,
+          "isTestWeek": false,
+          "deload": false
+        },
+        {
+          "week": 6,
+          "phase": "Escalier EMOM 8 min, 1 rep de 74 à 88 %",
+          "sets": [
+            {
+              "reps": 1,
+              "percent": 74
+            },
+            {
+              "reps": 1,
+              "percent": 76
+            },
+            {
+              "reps": 1,
+              "percent": 78
+            },
+            {
+              "reps": 1,
+              "percent": 80
+            },
+            {
+              "reps": 1,
+              "percent": 82
+            },
+            {
+              "reps": 1,
+              "percent": 84
+            },
+            {
+              "reps": 1,
+              "percent": 86
+            },
+            {
+              "reps": 1,
+              "percent": 88
+            }
+          ],
+          "restSeconds": 60,
+          "timed": true,
+          "isTestWeek": false,
+          "deload": false
+        },
+        {
+          "week": 7,
+          "phase": "Escalier EMOM 8 min, 1 rep de 76 à 90 %",
+          "sets": [
+            {
+              "reps": 1,
+              "percent": 76
+            },
+            {
+              "reps": 1,
+              "percent": 78
+            },
+            {
+              "reps": 1,
+              "percent": 80
+            },
+            {
+              "reps": 1,
+              "percent": 82
+            },
+            {
+              "reps": 1,
+              "percent": 84
+            },
+            {
+              "reps": 1,
+              "percent": 86
+            },
+            {
+              "reps": 1,
+              "percent": 88
+            },
+            {
+              "reps": 1,
+              "percent": 90
+            }
+          ],
+          "restSeconds": 60,
+          "timed": true,
+          "isTestWeek": false,
+          "deload": false
+        },
+        {
+          "week": 8,
+          "phase": "Test 1RM : paliers puis 3 essais (+2 à 3 kg par essai)",
+          "sets": [
+            {
+              "reps": 5,
+              "percent": 40
+            },
+            {
+              "reps": 3,
+              "percent": 60
+            },
+            {
+              "reps": 1,
+              "percent": 75
+            },
+            {
+              "reps": 1,
+              "percent": 85
+            },
+            {
+              "reps": 1,
+              "percent": 92
+            },
+            {
+              "reps": 1,
+              "percent": 100
+            },
+            {
+              "reps": 1,
+              "percent": 100
+            },
+            {
+              "reps": 1,
+              "percent": 100
+            }
+          ],
+          "restSeconds": 180,
+          "timed": false,
+          "isTestWeek": true,
+          "deload": false
+        }
+      ]
+    },
+    {
+      "id": "C15",
+      "nom": "Pyramide descendante",
+      "dans_le_tirage": true,
+      "type": "Mixte",
+      "explication": "Tu commences par la série la plus lourde, puis tu baisses la charge de 5% et tu fais plus de reps. La fraîcheur sert au lourd, le volume vient après.",
+      "duree_semaines": 8,
+      "test_1rm": "dernière semaine",
+      "semaines": [
+        {
+          "week": 1,
+          "phase": "3 à 74 %, 3 à 69 %, 3 à 64 %",
+          "sets": [
+            {
+              "reps": 3,
+              "percent": 74
+            },
+            {
+              "reps": 3,
+              "percent": 69
+            },
+            {
+              "reps": 3,
+              "percent": 64
+            }
+          ],
+          "restSeconds": 120,
+          "timed": false,
+          "isTestWeek": false,
+          "deload": false
+        },
+        {
+          "week": 2,
+          "phase": "3 à 76 %, 3 à 71 %, 3 à 66 %",
+          "sets": [
+            {
+              "reps": 3,
+              "percent": 76
+            },
+            {
+              "reps": 3,
+              "percent": 71
+            },
+            {
+              "reps": 3,
+              "percent": 66
+            }
+          ],
+          "restSeconds": 120,
+          "timed": false,
+          "isTestWeek": false,
+          "deload": false
+        },
+        {
+          "week": 3,
+          "phase": "3 à 78 %, 3 à 73 %, 3 à 68 %",
+          "sets": [
+            {
+              "reps": 3,
+              "percent": 78
+            },
+            {
+              "reps": 3,
+              "percent": 73
+            },
+            {
+              "reps": 3,
+              "percent": 68
+            }
+          ],
+          "restSeconds": 120,
+          "timed": false,
+          "isTestWeek": false,
+          "deload": false
+        },
+        {
+          "week": 4,
+          "phase": "Allégée 2 à 65 %, 2 à 60 %",
+          "sets": [
+            {
+              "reps": 2,
+              "percent": 65
+            },
+            {
+              "reps": 2,
+              "percent": 60
+            }
+          ],
+          "restSeconds": 90,
+          "timed": false,
+          "isTestWeek": false,
+          "deload": true
+        },
+        {
+          "week": 5,
+          "phase": "2 à 82 %, 3 à 74 %, 3 à 68 %",
+          "sets": [
+            {
+              "reps": 2,
+              "percent": 82
+            },
+            {
+              "reps": 3,
+              "percent": 74
+            },
+            {
+              "reps": 3,
+              "percent": 68
+            }
+          ],
+          "restSeconds": 150,
+          "timed": false,
+          "isTestWeek": false,
+          "deload": false
+        },
+        {
+          "week": 6,
+          "phase": "2 à 85 %, 3 à 77 %, 3 à 70 %",
+          "sets": [
+            {
+              "reps": 2,
+              "percent": 85
+            },
+            {
+              "reps": 3,
+              "percent": 77
+            },
+            {
+              "reps": 3,
+              "percent": 70
+            }
+          ],
+          "restSeconds": 150,
+          "timed": false,
+          "isTestWeek": false,
+          "deload": false
+        },
+        {
+          "week": 7,
+          "phase": "1 à 90 %, 2 à 82 %, 3 à 74 %",
+          "sets": [
+            {
+              "reps": 1,
+              "percent": 90
+            },
+            {
+              "reps": 2,
+              "percent": 82
+            },
+            {
+              "reps": 3,
+              "percent": 74
+            }
+          ],
+          "restSeconds": 180,
+          "timed": false,
+          "isTestWeek": false,
+          "deload": false
+        },
+        {
+          "week": 8,
+          "phase": "Test 1RM : paliers puis 3 essais (+2 à 3 kg par essai)",
+          "sets": [
+            {
+              "reps": 5,
+              "percent": 40
+            },
+            {
+              "reps": 3,
+              "percent": 60
+            },
+            {
+              "reps": 1,
+              "percent": 75
+            },
+            {
+              "reps": 1,
+              "percent": 85
+            },
+            {
+              "reps": 1,
+              "percent": 92
+            },
+            {
+              "reps": 1,
+              "percent": 100
+            },
+            {
+              "reps": 1,
+              "percent": 100
+            },
+            {
+              "reps": 1,
+              "percent": 100
+            }
+          ],
+          "restSeconds": 180,
+          "timed": false,
+          "isTestWeek": true,
+          "deload": false
+        }
+      ]
+    },
+    {
+      "id": "C16",
+      "nom": "Bloc technique puis force",
+      "dans_le_tirage": true,
+      "type": "Mixte",
+      "explication": "Un bloc EMOM de singles légers sert d'échauffement technique, puis le bloc de force enchaîne. Avec une seule séance par semaine, tu pratiques la technique à chaque fois. Le bloc EMOM ne compte pas dans les séries de travail.",
+      "duree_semaines": 8,
+      "test_1rm": "dernière semaine",
+      "semaines": [
+        {
+          "week": 1,
+          "phase": "EMOM 6x1 à 60 % puis 4x3 à 68 %",
+          "sets": [
+            {
+              "reps": 1,
+              "percent": 60,
+              "warmup": true
+            },
+            {
+              "reps": 1,
+              "percent": 60,
+              "warmup": true
+            },
+            {
+              "reps": 1,
+              "percent": 60,
+              "warmup": true
+            },
+            {
+              "reps": 1,
+              "percent": 60,
+              "warmup": true
+            },
+            {
+              "reps": 1,
+              "percent": 60,
+              "warmup": true
+            },
+            {
+              "reps": 1,
+              "percent": 60,
+              "warmup": true
+            },
+            {
+              "reps": 3,
+              "percent": 68
+            },
+            {
+              "reps": 3,
+              "percent": 68
+            },
+            {
+              "reps": 3,
+              "percent": 68
+            },
+            {
+              "reps": 3,
+              "percent": 68
+            }
+          ],
+          "restSeconds": 90,
+          "timed": false,
+          "isTestWeek": false,
+          "deload": false
+        },
+        {
+          "week": 2,
+          "phase": "EMOM 6x1 à 60 % puis 4x3 à 71 %",
+          "sets": [
+            {
+              "reps": 1,
+              "percent": 60,
+              "warmup": true
+            },
+            {
+              "reps": 1,
+              "percent": 60,
+              "warmup": true
+            },
+            {
+              "reps": 1,
+              "percent": 60,
+              "warmup": true
+            },
+            {
+              "reps": 1,
+              "percent": 60,
+              "warmup": true
+            },
+            {
+              "reps": 1,
+              "percent": 60,
+              "warmup": true
+            },
+            {
+              "reps": 1,
+              "percent": 60,
+              "warmup": true
+            },
+            {
+              "reps": 3,
+              "percent": 71
+            },
+            {
+              "reps": 3,
+              "percent": 71
+            },
+            {
+              "reps": 3,
+              "percent": 71
+            },
+            {
+              "reps": 3,
+              "percent": 71
+            }
+          ],
+          "restSeconds": 120,
+          "timed": false,
+          "isTestWeek": false,
+          "deload": false
+        },
+        {
+          "week": 3,
+          "phase": "EMOM 6x1 à 60 % puis 4x3 à 74 %",
+          "sets": [
+            {
+              "reps": 1,
+              "percent": 60,
+              "warmup": true
+            },
+            {
+              "reps": 1,
+              "percent": 60,
+              "warmup": true
+            },
+            {
+              "reps": 1,
+              "percent": 60,
+              "warmup": true
+            },
+            {
+              "reps": 1,
+              "percent": 60,
+              "warmup": true
+            },
+            {
+              "reps": 1,
+              "percent": 60,
+              "warmup": true
+            },
+            {
+              "reps": 1,
+              "percent": 60,
+              "warmup": true
+            },
+            {
+              "reps": 3,
+              "percent": 74
+            },
+            {
+              "reps": 3,
+              "percent": 74
+            },
+            {
+              "reps": 3,
+              "percent": 74
+            },
+            {
+              "reps": 3,
+              "percent": 74
+            }
+          ],
+          "restSeconds": 120,
+          "timed": false,
+          "isTestWeek": false,
+          "deload": false
+        },
+        {
+          "week": 4,
+          "phase": "Allégée EMOM 4x1 à 55 % puis 3x2 à 60 %",
+          "sets": [
+            {
+              "reps": 1,
+              "percent": 55,
+              "warmup": true
+            },
+            {
+              "reps": 1,
+              "percent": 55,
+              "warmup": true
+            },
+            {
+              "reps": 1,
+              "percent": 55,
+              "warmup": true
+            },
+            {
+              "reps": 1,
+              "percent": 55,
+              "warmup": true
+            },
+            {
+              "reps": 2,
+              "percent": 60
+            },
+            {
+              "reps": 2,
+              "percent": 60
+            },
+            {
+              "reps": 2,
+              "percent": 60
+            }
+          ],
+          "restSeconds": 90,
+          "timed": false,
+          "isTestWeek": false,
+          "deload": true
+        },
+        {
+          "week": 5,
+          "phase": "EMOM 6x1 à 62 % puis 4x2 à 80 %",
+          "sets": [
+            {
+              "reps": 1,
+              "percent": 62,
+              "warmup": true
+            },
+            {
+              "reps": 1,
+              "percent": 62,
+              "warmup": true
+            },
+            {
+              "reps": 1,
+              "percent": 62,
+              "warmup": true
+            },
+            {
+              "reps": 1,
+              "percent": 62,
+              "warmup": true
+            },
+            {
+              "reps": 1,
+              "percent": 62,
+              "warmup": true
+            },
+            {
+              "reps": 1,
+              "percent": 62,
+              "warmup": true
+            },
+            {
+              "reps": 2,
+              "percent": 80
+            },
+            {
+              "reps": 2,
+              "percent": 80
+            },
+            {
+              "reps": 2,
+              "percent": 80
+            },
+            {
+              "reps": 2,
+              "percent": 80
+            }
+          ],
+          "restSeconds": 150,
+          "timed": false,
+          "isTestWeek": false,
+          "deload": false
+        },
+        {
+          "week": 6,
+          "phase": "EMOM 6x1 à 62 % puis 4x2 à 83 %",
+          "sets": [
+            {
+              "reps": 1,
+              "percent": 62,
+              "warmup": true
+            },
+            {
+              "reps": 1,
+              "percent": 62,
+              "warmup": true
+            },
+            {
+              "reps": 1,
+              "percent": 62,
+              "warmup": true
+            },
+            {
+              "reps": 1,
+              "percent": 62,
+              "warmup": true
+            },
+            {
+              "reps": 1,
+              "percent": 62,
+              "warmup": true
+            },
+            {
+              "reps": 1,
+              "percent": 62,
+              "warmup": true
+            },
+            {
+              "reps": 2,
+              "percent": 83
+            },
+            {
+              "reps": 2,
+              "percent": 83
+            },
+            {
+              "reps": 2,
+              "percent": 83
+            },
+            {
+              "reps": 2,
+              "percent": 83
+            }
+          ],
+          "restSeconds": 150,
+          "timed": false,
+          "isTestWeek": false,
+          "deload": false
+        },
+        {
+          "week": 7,
+          "phase": "EMOM 4x1 à 65 % puis 4x1 à 88 %",
+          "sets": [
+            {
+              "reps": 1,
+              "percent": 65,
+              "warmup": true
+            },
+            {
+              "reps": 1,
+              "percent": 65,
+              "warmup": true
+            },
+            {
+              "reps": 1,
+              "percent": 65,
+              "warmup": true
+            },
+            {
+              "reps": 1,
+              "percent": 65,
+              "warmup": true
+            },
+            {
+              "reps": 1,
+              "percent": 88
+            },
+            {
+              "reps": 1,
+              "percent": 88
+            },
+            {
+              "reps": 1,
+              "percent": 88
+            },
+            {
+              "reps": 1,
+              "percent": 88
+            }
+          ],
+          "restSeconds": 150,
+          "timed": false,
+          "isTestWeek": false,
+          "deload": false
+        },
+        {
+          "week": 8,
+          "phase": "Test 1RM : paliers puis 3 essais (+2 à 3 kg par essai)",
+          "sets": [
+            {
+              "reps": 5,
+              "percent": 40
+            },
+            {
+              "reps": 3,
+              "percent": 60
+            },
+            {
+              "reps": 1,
+              "percent": 75
+            },
+            {
+              "reps": 1,
+              "percent": 85
+            },
+            {
+              "reps": 1,
+              "percent": 92
+            },
+            {
+              "reps": 1,
+              "percent": 100
+            },
+            {
+              "reps": 1,
+              "percent": 100
+            },
+            {
+              "reps": 1,
+              "percent": 100
+            }
+          ],
+          "restSeconds": 180,
+          "timed": false,
+          "isTestWeek": true,
+          "deload": false
+        }
+      ]
+    },
+    {
+      "id": "C17",
+      "nom": "Singles E2min",
+      "dans_le_tirage": true,
+      "type": "Intensité",
+      "explication": "Un single toutes les 2 minutes à charge lourde. Le repos long garde la qualité sur des charges proches du max. Peu de volume, beaucoup d'intensité. Arrête dès que la technique se dégrade.",
+      "duree_semaines": 8,
+      "test_1rm": "dernière semaine",
+      "semaines": [
+        {
+          "week": 1,
+          "phase": "E2min 8x1 à 76 %",
+          "sets": [
+            {
+              "reps": 1,
+              "percent": 76
+            },
+            {
+              "reps": 1,
+              "percent": 76
+            },
+            {
+              "reps": 1,
+              "percent": 76
+            },
+            {
+              "reps": 1,
+              "percent": 76
+            },
+            {
+              "reps": 1,
+              "percent": 76
+            },
+            {
+              "reps": 1,
+              "percent": 76
+            },
+            {
+              "reps": 1,
+              "percent": 76
+            },
+            {
+              "reps": 1,
+              "percent": 76
+            }
+          ],
+          "restSeconds": 120,
+          "timed": true,
+          "isTestWeek": false,
+          "deload": false
+        },
+        {
+          "week": 2,
+          "phase": "E2min 8x1 à 79 %",
+          "sets": [
+            {
+              "reps": 1,
+              "percent": 79
+            },
+            {
+              "reps": 1,
+              "percent": 79
+            },
+            {
+              "reps": 1,
+              "percent": 79
+            },
+            {
+              "reps": 1,
+              "percent": 79
+            },
+            {
+              "reps": 1,
+              "percent": 79
+            },
+            {
+              "reps": 1,
+              "percent": 79
+            },
+            {
+              "reps": 1,
+              "percent": 79
+            },
+            {
+              "reps": 1,
+              "percent": 79
+            }
+          ],
+          "restSeconds": 120,
+          "timed": true,
+          "isTestWeek": false,
+          "deload": false
+        },
+        {
+          "week": 3,
+          "phase": "E2min 6x1 à 82 %",
+          "sets": [
+            {
+              "reps": 1,
+              "percent": 82
+            },
+            {
+              "reps": 1,
+              "percent": 82
+            },
+            {
+              "reps": 1,
+              "percent": 82
+            },
+            {
+              "reps": 1,
+              "percent": 82
+            },
+            {
+              "reps": 1,
+              "percent": 82
+            },
+            {
+              "reps": 1,
+              "percent": 82
+            }
+          ],
+          "restSeconds": 120,
+          "timed": true,
+          "isTestWeek": false,
+          "deload": false
+        },
+        {
+          "week": 4,
+          "phase": "Allégée E2min 4x1 à 65 %",
+          "sets": [
+            {
+              "reps": 1,
+              "percent": 65
+            },
+            {
+              "reps": 1,
+              "percent": 65
+            },
+            {
+              "reps": 1,
+              "percent": 65
+            },
+            {
+              "reps": 1,
+              "percent": 65
+            }
+          ],
+          "restSeconds": 120,
+          "timed": true,
+          "isTestWeek": false,
+          "deload": true
+        },
+        {
+          "week": 5,
+          "phase": "E2min 5x1 à 85 %",
+          "sets": [
+            {
+              "reps": 1,
+              "percent": 85
+            },
+            {
+              "reps": 1,
+              "percent": 85
+            },
+            {
+              "reps": 1,
+              "percent": 85
+            },
+            {
+              "reps": 1,
+              "percent": 85
+            },
+            {
+              "reps": 1,
+              "percent": 85
+            }
+          ],
+          "restSeconds": 120,
+          "timed": true,
+          "isTestWeek": false,
+          "deload": false
+        },
+        {
+          "week": 6,
+          "phase": "E2min 4x1 à 87 %",
+          "sets": [
+            {
+              "reps": 1,
+              "percent": 87
+            },
+            {
+              "reps": 1,
+              "percent": 87
+            },
+            {
+              "reps": 1,
+              "percent": 87
+            },
+            {
+              "reps": 1,
+              "percent": 87
+            }
+          ],
+          "restSeconds": 120,
+          "timed": true,
+          "isTestWeek": false,
+          "deload": false
+        },
+        {
+          "week": 7,
+          "phase": "E2min 3x1 à 90 %",
+          "sets": [
+            {
+              "reps": 1,
+              "percent": 90
+            },
+            {
+              "reps": 1,
+              "percent": 90
+            },
+            {
+              "reps": 1,
+              "percent": 90
+            }
+          ],
+          "restSeconds": 120,
+          "timed": true,
+          "isTestWeek": false,
+          "deload": false
+        },
+        {
+          "week": 8,
+          "phase": "Test 1RM : paliers puis 3 essais (+2 à 3 kg par essai)",
+          "sets": [
+            {
+              "reps": 5,
+              "percent": 40
+            },
+            {
+              "reps": 3,
+              "percent": 60
+            },
+            {
+              "reps": 1,
+              "percent": 75
+            },
+            {
+              "reps": 1,
+              "percent": 85
+            },
+            {
+              "reps": 1,
+              "percent": 92
+            },
+            {
+              "reps": 1,
+              "percent": 100
+            },
+            {
+              "reps": 1,
+              "percent": 100
+            },
+            {
+              "reps": 1,
+              "percent": 100
+            }
+          ],
+          "restSeconds": 180,
+          "timed": false,
+          "isTestWeek": true,
+          "deload": false
+        }
+      ]
+    },
+    {
+      "id": "C18",
+      "nom": "Pyramide 3.2.1.2.3",
+      "dans_le_tirage": true,
+      "type": "Mixte",
+      "explication": "Les reps montent puis redescendent avec les charges : 3, 2, 1, puis 2 et 3 aux mêmes charges. Tu fais le lourd au milieu de la séance, quand tu es échauffé.",
+      "duree_semaines": 8,
+      "test_1rm": "dernière semaine",
+      "semaines": [
+        {
+          "week": 1,
+          "phase": "Pyramide 3, 2, 1, 2, 3 à 68, 72, 76 %",
+          "sets": [
+            {
+              "reps": 3,
+              "percent": 68
+            },
+            {
+              "reps": 2,
+              "percent": 72
+            },
+            {
+              "reps": 1,
+              "percent": 76
+            },
+            {
+              "reps": 2,
+              "percent": 72
+            },
+            {
+              "reps": 3,
+              "percent": 68
+            }
+          ],
+          "restSeconds": 120,
+          "timed": false,
+          "isTestWeek": false,
+          "deload": false
+        },
+        {
+          "week": 2,
+          "phase": "Pyramide 3, 2, 1, 2, 3 à 70, 74, 78 %",
+          "sets": [
+            {
+              "reps": 3,
+              "percent": 70
+            },
+            {
+              "reps": 2,
+              "percent": 74
+            },
+            {
+              "reps": 1,
+              "percent": 78
+            },
+            {
+              "reps": 2,
+              "percent": 74
+            },
+            {
+              "reps": 3,
+              "percent": 70
+            }
+          ],
+          "restSeconds": 120,
+          "timed": false,
+          "isTestWeek": false,
+          "deload": false
+        },
+        {
+          "week": 3,
+          "phase": "Pyramide 3, 2, 1, 2, 3 à 72, 76, 80 %",
+          "sets": [
+            {
+              "reps": 3,
+              "percent": 72
+            },
+            {
+              "reps": 2,
+              "percent": 76
+            },
+            {
+              "reps": 1,
+              "percent": 80
+            },
+            {
+              "reps": 2,
+              "percent": 76
+            },
+            {
+              "reps": 3,
+              "percent": 72
+            }
+          ],
+          "restSeconds": 150,
+          "timed": false,
+          "isTestWeek": false,
+          "deload": false
+        },
+        {
+          "week": 4,
+          "phase": "Allégée 2, 1, 2 à 60, 64 %",
+          "sets": [
+            {
+              "reps": 2,
+              "percent": 60
+            },
+            {
+              "reps": 1,
+              "percent": 64
+            },
+            {
+              "reps": 2,
+              "percent": 60
+            }
+          ],
+          "restSeconds": 90,
+          "timed": false,
+          "isTestWeek": false,
+          "deload": true
+        },
+        {
+          "week": 5,
+          "phase": "Pyramide 3, 2, 1, 2, 3 à 74, 78, 82 %",
+          "sets": [
+            {
+              "reps": 3,
+              "percent": 74
+            },
+            {
+              "reps": 2,
+              "percent": 78
+            },
+            {
+              "reps": 1,
+              "percent": 82
+            },
+            {
+              "reps": 2,
+              "percent": 78
+            },
+            {
+              "reps": 3,
+              "percent": 74
+            }
+          ],
+          "restSeconds": 150,
+          "timed": false,
+          "isTestWeek": false,
+          "deload": false
+        },
+        {
+          "week": 6,
+          "phase": "Pyramide 3, 2, 1, 2, 3 à 76, 80, 84 %",
+          "sets": [
+            {
+              "reps": 3,
+              "percent": 76
+            },
+            {
+              "reps": 2,
+              "percent": 80
+            },
+            {
+              "reps": 1,
+              "percent": 84
+            },
+            {
+              "reps": 2,
+              "percent": 80
+            },
+            {
+              "reps": 3,
+              "percent": 76
+            }
+          ],
+          "restSeconds": 150,
+          "timed": false,
+          "isTestWeek": false,
+          "deload": false
+        },
+        {
+          "week": 7,
+          "phase": "Pyramide 3, 2, 1, 2, 3 à 78, 82, 86 %",
+          "sets": [
+            {
+              "reps": 3,
+              "percent": 78
+            },
+            {
+              "reps": 2,
+              "percent": 82
+            },
+            {
+              "reps": 1,
+              "percent": 86
+            },
+            {
+              "reps": 2,
+              "percent": 82
+            },
+            {
+              "reps": 3,
+              "percent": 78
+            }
+          ],
+          "restSeconds": 150,
+          "timed": false,
+          "isTestWeek": false,
+          "deload": false
+        },
+        {
+          "week": 8,
+          "phase": "Test 1RM : paliers puis 3 essais (+2 à 3 kg par essai)",
+          "sets": [
+            {
+              "reps": 5,
+              "percent": 40
+            },
+            {
+              "reps": 3,
+              "percent": 60
+            },
+            {
+              "reps": 1,
+              "percent": 75
+            },
+            {
+              "reps": 1,
+              "percent": 85
+            },
+            {
+              "reps": 1,
+              "percent": 92
+            },
+            {
+              "reps": 1,
+              "percent": 100
+            },
+            {
+              "reps": 1,
+              "percent": 100
+            },
+            {
+              "reps": 1,
+              "percent": 100
+            }
+          ],
+          "restSeconds": 180,
+          "timed": false,
+          "isTestWeek": true,
+          "deload": false
+        }
+      ]
+    },
+    {
+      "id": "C19",
+      "nom": "Singles de précision",
+      "dans_le_tirage": true,
+      "type": "Technique",
+      "explication": "10 singles propres à charge modérée, repos libre de 60 à 90 s. Chaque rep doit être parfaite : une rep ratée se refait, 2 reprises maximum. Priorité à la qualité, pas à la charge.",
+      "duree_semaines": 8,
+      "test_1rm": "dernière semaine",
+      "semaines": [
+        {
+          "week": 1,
+          "phase": "10x1 à 70 %",
+          "sets": [
+            {
+              "reps": 1,
+              "percent": 70
+            },
+            {
+              "reps": 1,
+              "percent": 70
+            },
+            {
+              "reps": 1,
+              "percent": 70
+            },
+            {
+              "reps": 1,
+              "percent": 70
+            },
+            {
+              "reps": 1,
+              "percent": 70
+            },
+            {
+              "reps": 1,
+              "percent": 70
+            },
+            {
+              "reps": 1,
+              "percent": 70
+            },
+            {
+              "reps": 1,
+              "percent": 70
+            },
+            {
+              "reps": 1,
+              "percent": 70
+            },
+            {
+              "reps": 1,
+              "percent": 70
+            }
+          ],
+          "restSeconds": 75,
+          "timed": false,
+          "isTestWeek": false,
+          "deload": false
+        },
+        {
+          "week": 2,
+          "phase": "10x1 à 72 %",
+          "sets": [
+            {
+              "reps": 1,
+              "percent": 72
+            },
+            {
+              "reps": 1,
+              "percent": 72
+            },
+            {
+              "reps": 1,
+              "percent": 72
+            },
+            {
+              "reps": 1,
+              "percent": 72
+            },
+            {
+              "reps": 1,
+              "percent": 72
+            },
+            {
+              "reps": 1,
+              "percent": 72
+            },
+            {
+              "reps": 1,
+              "percent": 72
+            },
+            {
+              "reps": 1,
+              "percent": 72
+            },
+            {
+              "reps": 1,
+              "percent": 72
+            },
+            {
+              "reps": 1,
+              "percent": 72
+            }
+          ],
+          "restSeconds": 75,
+          "timed": false,
+          "isTestWeek": false,
+          "deload": false
+        },
+        {
+          "week": 3,
+          "phase": "10x1 à 74 %",
+          "sets": [
+            {
+              "reps": 1,
+              "percent": 74
+            },
+            {
+              "reps": 1,
+              "percent": 74
+            },
+            {
+              "reps": 1,
+              "percent": 74
+            },
+            {
+              "reps": 1,
+              "percent": 74
+            },
+            {
+              "reps": 1,
+              "percent": 74
+            },
+            {
+              "reps": 1,
+              "percent": 74
+            },
+            {
+              "reps": 1,
+              "percent": 74
+            },
+            {
+              "reps": 1,
+              "percent": 74
+            },
+            {
+              "reps": 1,
+              "percent": 74
+            },
+            {
+              "reps": 1,
+              "percent": 74
+            }
+          ],
+          "restSeconds": 75,
+          "timed": false,
+          "isTestWeek": false,
+          "deload": false
+        },
+        {
+          "week": 4,
+          "phase": "Allégée 6x1 à 62 %",
+          "sets": [
+            {
+              "reps": 1,
+              "percent": 62
+            },
+            {
+              "reps": 1,
+              "percent": 62
+            },
+            {
+              "reps": 1,
+              "percent": 62
+            },
+            {
+              "reps": 1,
+              "percent": 62
+            },
+            {
+              "reps": 1,
+              "percent": 62
+            },
+            {
+              "reps": 1,
+              "percent": 62
+            }
+          ],
+          "restSeconds": 75,
+          "timed": false,
+          "isTestWeek": false,
+          "deload": true
+        },
+        {
+          "week": 5,
+          "phase": "8x1 à 77 %",
+          "sets": [
+            {
+              "reps": 1,
+              "percent": 77
+            },
+            {
+              "reps": 1,
+              "percent": 77
+            },
+            {
+              "reps": 1,
+              "percent": 77
+            },
+            {
+              "reps": 1,
+              "percent": 77
+            },
+            {
+              "reps": 1,
+              "percent": 77
+            },
+            {
+              "reps": 1,
+              "percent": 77
+            },
+            {
+              "reps": 1,
+              "percent": 77
+            },
+            {
+              "reps": 1,
+              "percent": 77
+            }
+          ],
+          "restSeconds": 75,
+          "timed": false,
+          "isTestWeek": false,
+          "deload": false
+        },
+        {
+          "week": 6,
+          "phase": "8x1 à 80 %",
+          "sets": [
+            {
+              "reps": 1,
+              "percent": 80
+            },
+            {
+              "reps": 1,
+              "percent": 80
+            },
+            {
+              "reps": 1,
+              "percent": 80
+            },
+            {
+              "reps": 1,
+              "percent": 80
+            },
+            {
+              "reps": 1,
+              "percent": 80
+            },
+            {
+              "reps": 1,
+              "percent": 80
+            },
+            {
+              "reps": 1,
+              "percent": 80
+            },
+            {
+              "reps": 1,
+              "percent": 80
+            }
+          ],
+          "restSeconds": 75,
+          "timed": false,
+          "isTestWeek": false,
+          "deload": false
+        },
+        {
+          "week": 7,
+          "phase": "6x1 à 83 %",
+          "sets": [
+            {
+              "reps": 1,
+              "percent": 83
+            },
+            {
+              "reps": 1,
+              "percent": 83
+            },
+            {
+              "reps": 1,
+              "percent": 83
+            },
+            {
+              "reps": 1,
+              "percent": 83
+            },
+            {
+              "reps": 1,
+              "percent": 83
+            },
+            {
+              "reps": 1,
+              "percent": 83
+            }
+          ],
+          "restSeconds": 75,
+          "timed": false,
+          "isTestWeek": false,
+          "deload": false
+        },
+        {
+          "week": 8,
+          "phase": "Test 1RM : paliers puis 3 essais (+2 à 3 kg par essai)",
+          "sets": [
+            {
+              "reps": 5,
+              "percent": 40
+            },
+            {
+              "reps": 3,
+              "percent": 60
+            },
+            {
+              "reps": 1,
+              "percent": 75
+            },
+            {
+              "reps": 1,
+              "percent": 85
+            },
+            {
+              "reps": 1,
+              "percent": 92
+            },
+            {
+              "reps": 1,
+              "percent": 100
+            },
+            {
+              "reps": 1,
+              "percent": 100
+            },
+            {
+              "reps": 1,
+              "percent": 100
+            }
+          ],
+          "restSeconds": 180,
+          "timed": false,
+          "isTestWeek": true,
+          "deload": false
+        }
+      ]
+    },
+    {
+      "id": "C20",
+      "nom": "Doubles vitesse",
+      "dans_le_tirage": true,
+      "type": "Technique",
+      "explication": "Doubles à charge légère avec la barre la plus rapide possible. Travaille la vitesse sous la barre et le timing. Si la vitesse chute, la série s'arrête.",
+      "duree_semaines": 8,
+      "test_1rm": "dernière semaine",
+      "semaines": [
+        {
+          "week": 1,
+          "phase": "8x2 à 60 %",
+          "sets": [
+            {
+              "reps": 2,
+              "percent": 60
+            },
+            {
+              "reps": 2,
+              "percent": 60
+            },
+            {
+              "reps": 2,
+              "percent": 60
+            },
+            {
+              "reps": 2,
+              "percent": 60
+            },
+            {
+              "reps": 2,
+              "percent": 60
+            },
+            {
+              "reps": 2,
+              "percent": 60
+            },
+            {
+              "reps": 2,
+              "percent": 60
+            },
+            {
+              "reps": 2,
+              "percent": 60
+            }
+          ],
+          "restSeconds": 90,
+          "timed": false,
+          "isTestWeek": false,
+          "deload": false
+        },
+        {
+          "week": 2,
+          "phase": "8x2 à 63 %",
+          "sets": [
+            {
+              "reps": 2,
+              "percent": 63
+            },
+            {
+              "reps": 2,
+              "percent": 63
+            },
+            {
+              "reps": 2,
+              "percent": 63
+            },
+            {
+              "reps": 2,
+              "percent": 63
+            },
+            {
+              "reps": 2,
+              "percent": 63
+            },
+            {
+              "reps": 2,
+              "percent": 63
+            },
+            {
+              "reps": 2,
+              "percent": 63
+            },
+            {
+              "reps": 2,
+              "percent": 63
+            }
+          ],
+          "restSeconds": 90,
+          "timed": false,
+          "isTestWeek": false,
+          "deload": false
+        },
+        {
+          "week": 3,
+          "phase": "8x2 à 66 %",
+          "sets": [
+            {
+              "reps": 2,
+              "percent": 66
+            },
+            {
+              "reps": 2,
+              "percent": 66
+            },
+            {
+              "reps": 2,
+              "percent": 66
+            },
+            {
+              "reps": 2,
+              "percent": 66
+            },
+            {
+              "reps": 2,
+              "percent": 66
+            },
+            {
+              "reps": 2,
+              "percent": 66
+            },
+            {
+              "reps": 2,
+              "percent": 66
+            },
+            {
+              "reps": 2,
+              "percent": 66
+            }
+          ],
+          "restSeconds": 90,
+          "timed": false,
+          "isTestWeek": false,
+          "deload": false
+        },
+        {
+          "week": 4,
+          "phase": "Allégée 5x2 à 58 %",
+          "sets": [
+            {
+              "reps": 2,
+              "percent": 58
+            },
+            {
+              "reps": 2,
+              "percent": 58
+            },
+            {
+              "reps": 2,
+              "percent": 58
+            },
+            {
+              "reps": 2,
+              "percent": 58
+            },
+            {
+              "reps": 2,
+              "percent": 58
+            }
+          ],
+          "restSeconds": 90,
+          "timed": false,
+          "isTestWeek": false,
+          "deload": true
+        },
+        {
+          "week": 5,
+          "phase": "8x2 à 69 %",
+          "sets": [
+            {
+              "reps": 2,
+              "percent": 69
+            },
+            {
+              "reps": 2,
+              "percent": 69
+            },
+            {
+              "reps": 2,
+              "percent": 69
+            },
+            {
+              "reps": 2,
+              "percent": 69
+            },
+            {
+              "reps": 2,
+              "percent": 69
+            },
+            {
+              "reps": 2,
+              "percent": 69
+            },
+            {
+              "reps": 2,
+              "percent": 69
+            },
+            {
+              "reps": 2,
+              "percent": 69
+            }
+          ],
+          "restSeconds": 90,
+          "timed": false,
+          "isTestWeek": false,
+          "deload": false
+        },
+        {
+          "week": 6,
+          "phase": "8x2 à 72 %",
+          "sets": [
+            {
+              "reps": 2,
+              "percent": 72
+            },
+            {
+              "reps": 2,
+              "percent": 72
+            },
+            {
+              "reps": 2,
+              "percent": 72
+            },
+            {
+              "reps": 2,
+              "percent": 72
+            },
+            {
+              "reps": 2,
+              "percent": 72
+            },
+            {
+              "reps": 2,
+              "percent": 72
+            },
+            {
+              "reps": 2,
+              "percent": 72
+            },
+            {
+              "reps": 2,
+              "percent": 72
+            }
+          ],
+          "restSeconds": 120,
+          "timed": false,
+          "isTestWeek": false,
+          "deload": false
+        },
+        {
+          "week": 7,
+          "phase": "6x2 à 75 %",
+          "sets": [
+            {
+              "reps": 2,
+              "percent": 75
+            },
+            {
+              "reps": 2,
+              "percent": 75
+            },
+            {
+              "reps": 2,
+              "percent": 75
+            },
+            {
+              "reps": 2,
+              "percent": 75
+            },
+            {
+              "reps": 2,
+              "percent": 75
+            },
+            {
+              "reps": 2,
+              "percent": 75
+            }
+          ],
+          "restSeconds": 120,
+          "timed": false,
+          "isTestWeek": false,
+          "deload": false
+        },
+        {
+          "week": 8,
+          "phase": "Test 1RM : paliers puis 3 essais (+2 à 3 kg par essai)",
+          "sets": [
+            {
+              "reps": 5,
+              "percent": 40
+            },
+            {
+              "reps": 3,
+              "percent": 60
+            },
+            {
+              "reps": 1,
+              "percent": 75
+            },
+            {
+              "reps": 1,
+              "percent": 85
+            },
+            {
+              "reps": 1,
+              "percent": 92
+            },
+            {
+              "reps": 1,
+              "percent": 100
+            },
+            {
+              "reps": 1,
+              "percent": 100
+            },
+            {
+              "reps": 1,
+              "percent": 100
+            }
+          ],
+          "restSeconds": 180,
+          "timed": false,
+          "isTestWeek": true,
+          "deload": false
+        }
+      ]
+    },
     {
       "id": "1",
       "nom": "Volume long, pic à 90 %",
+      "dans_le_tirage": false,
+      "type": null,
+      "explication": null,
       "duree_semaines": 8,
       "test_1rm": "dernière semaine",
       "semaines": [
@@ -265,6 +5462,9 @@
     {
       "id": "2",
       "nom": "Single lourd puis séries",
+      "dans_le_tirage": false,
+      "type": null,
+      "explication": null,
       "duree_semaines": 8,
       "test_1rm": "dernière semaine",
       "semaines": [
@@ -521,6 +5721,9 @@
     {
       "id": "3",
       "nom": "Paliers, EMOM allégée, singles",
+      "dans_le_tirage": false,
+      "type": null,
+      "explication": null,
       "duree_semaines": 7,
       "test_1rm": "séparé en dernière semaine",
       "semaines": [
@@ -739,6 +5942,9 @@
     {
       "id": "4",
       "nom": "Pyramide, vagues et pic",
+      "dans_le_tirage": false,
+      "type": null,
+      "explication": null,
       "duree_semaines": 7,
       "test_1rm": "séparé en dernière semaine",
       "semaines": [
@@ -1005,6 +6211,9 @@
     {
       "id": "5",
       "nom": "Volume léger puis pic",
+      "dans_le_tirage": false,
+      "type": null,
+      "explication": null,
       "duree_semaines": 7,
       "test_1rm": "séparé en dernière semaine",
       "semaines": [
@@ -1319,6 +6528,9 @@
     {
       "id": "6",
       "nom": "Complexes, vagues et test",
+      "dans_le_tirage": false,
+      "type": null,
+      "explication": null,
       "duree_semaines": 8,
       "test_1rm": "dernière semaine",
       "semaines": [
@@ -1595,6 +6807,9 @@
     {
       "id": "7",
       "nom": "Volume vers vagues et test",
+      "dans_le_tirage": false,
+      "type": null,
+      "explication": null,
       "duree_semaines": 8,
       "test_1rm": "dernière semaine",
       "semaines": [
@@ -1875,6 +7090,9 @@
     {
       "id": "8",
       "nom": "Volume, force puis pic",
+      "dans_le_tirage": false,
+      "type": null,
+      "explication": null,
       "duree_semaines": 7,
       "test_1rm": "séparé en dernière semaine",
       "semaines": [
@@ -2173,6 +7391,9 @@
     {
       "id": "9",
       "nom": "Séries courtes, EMOM et pic",
+      "dans_le_tirage": false,
+      "type": null,
+      "explication": null,
       "duree_semaines": 7,
       "test_1rm": "séparé en dernière semaine",
       "semaines": [
@@ -2535,6 +7756,9 @@
     {
       "id": "10",
       "nom": "Force progressive, pic court",
+      "dans_le_tirage": false,
+      "type": null,
+      "explication": null,
       "duree_semaines": 7,
       "test_1rm": "séparé en dernière semaine",
       "semaines": [
@@ -2757,6 +7981,9 @@
     {
       "id": "11",
       "nom": "Montée régulière, singles",
+      "dans_le_tirage": false,
+      "type": null,
+      "explication": null,
       "duree_semaines": 7,
       "test_1rm": "séparé en dernière semaine",
       "semaines": [
@@ -2991,6 +8218,9 @@
     {
       "id": "12",
       "nom": "Vagues et test de pic",
+      "dans_le_tirage": false,
+      "type": null,
+      "explication": null,
       "duree_semaines": 6,
       "test_1rm": "inclus dans la semaine 6",
       "semaines": [

@@ -3840,6 +3840,9 @@
     margin: 0 0 var(--space-3); padding: 10px 12px;
     border-radius: var(--radius-card); background: var(--orange-fill);
   }
+  .cycle-explication-meta { margin: 6px 0 0; font-size: 12px; color: var(--blue); }
+  .cycle-explication { margin: 6px 0 8px; font-size: 13px; line-height: 1.5; color: var(--steel); }
+  .live-cycle-reminder { margin: 0 0 var(--space-3); font-size: 12px; line-height: 1.45; color: var(--blue); }
   .live-deload-notice-text { flex: 1; min-width: 0; margin: 0; font-size: 12px; line-height: 1.5; color: var(--orange-soft); }
   .live-deload-btn {
     flex-shrink: 0; min-height: 40px; padding: 0 12px;
@@ -6062,6 +6065,160 @@
     ]
   });
 
+  /* ============================================================
+     v161 : 20 cycles génériques (C1 à C20), seuls cycles du tirage.
+     10 cycles de 6 semaines (S6 allégée, puis test 1RM séparé en semaine
+     7, cycleLength = 7) et 10 cycles de 8 semaines (S4 allégée, S8 test
+     1RM : paliers puis 3 essais). Plafond 3 reps par série et 90 % hors
+     test (contrôlé par verifier-cycles.js). Les formats spéciaux restent
+     une liste plate { reps, percent } : le calcul des kg ne change pas,
+     le format est écrit dans la phase. warmup: true (C16, bloc EMOM)
+     marque une série hors séries de travail, exclue du bilan de cycle.
+     Les 17 anciens cycles restent définis pour les cycles en cours et
+     l'historique, affichés "Ancien cycle N" (cycleLabel).
+  ============================================================ */
+  function nx(count, reps, percent) { return repeatSet(reps, percent, count); }
+  function warmupSets(count, percent) {
+    return nx(count, 1, percent).map(function (s) { s.warmup = true; return s; });
+  }
+  function ladders(count, percent) {
+    var sets = [];
+    for (var i = 0; i < count; i++) sets.push({ reps: 1, percent: percent }, { reps: 2, percent: percent }, { reps: 3, percent: percent });
+    return sets;
+  }
+  function stairs(minutes, from, step) {
+    var sets = [];
+    for (var i = 0; i < minutes; i++) sets.push({ reps: 1, percent: from + i * step });
+    return sets;
+  }
+  function mkTestEssais(n) {
+    return mkWeek(n, 'Test 1RM : paliers puis 3 essais (+2 à 3 kg par essai)', [
+      { reps: 5, percent: 40 }, { reps: 3, percent: 60 }, { reps: 1, percent: 75 },
+      { reps: 1, percent: 85 }, { reps: 1, percent: 92 },
+      { reps: 1, percent: 100 }, { reps: 1, percent: 100 }, { reps: 1, percent: 100 }
+    ], { rest: 180, test: true });
+  }
+
+  var NEW_CYCLE_IDS = ['C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7', 'C8', 'C9', 'C10',
+    'C11', 'C12', 'C13', 'C14', 'C15', 'C16', 'C17', 'C18', 'C19', 'C20'];
+
+  var CYCLE_META = {
+    C1: { type: 'Volume', explication: 'Progression simple et régulière : même nombre de séries, la charge monte de 3% par semaine. Sert à accumuler du volume propre avant d\'attaquer plus lourd. Repos 2 min entre les séries.' },
+    C2: { type: 'Mixte', explication: 'Le volume baisse et la charge monte chaque semaine. Tu commences par beaucoup de doubles légers pour bâtir la technique, tu finis avec peu de reps sur du lourd.' },
+    C3: { type: 'Technique', explication: 'Une série de 2 reps au début de chaque minute, à charge légère. Le chrono t\'oblige à enchaîner des reps propres sans te précipiter. Objectif : régularité de la technique, pas de la force.' },
+    C4: { type: 'Technique', explication: 'Chaque série combine un tirage depuis les genoux et un mouvement complet. Le tirage corrige la trajectoire de la barre, le mouvement complet la remet en pratique. Sur un squat, le tirage devient 1 rep avec pause de 3 s en bas.' },
+    C5: { type: 'Mixte', explication: 'Trois séries de 3, 2 puis 1 rep à charge croissante, répétées deux fois. Tu t\'habitues à monter en charge en peu de reps tout en gardant une technique propre sur la dernière rep.' },
+    C6: { type: 'Technique', explication: 'Chaque rep s\'arrête 2 s en position basse (réception ou bas du squat). La pause supprime l\'élan : tu corriges positions et stabilité. Les charges sont plus basses que d\'habitude, c\'est voulu.' },
+    C7: { type: 'Volume', explication: 'Une série toutes les 90 secondes, beaucoup de volume à charge modérée. Travaille l\'endurance technique : garder des reps propres quand la fatigue arrive. Arrête dès que la technique se dégrade.' },
+    C8: { type: 'Intensité', explication: 'Une seule série lourde d\'1 rep, suivie de séries plus légères pour accumuler du volume. La série lourde grimpe de 3% par semaine. Les séries de back off consolident la technique sous charge.' },
+    C9: { type: 'Intensité', explication: 'Chaque cluster = 3 reps séparées de 15 s barre posée, 2 min entre clusters. Tu soulèves plus lourd qu\'en série continue car tu récupères entre les reps. Idéal pour apprendre à tenir des charges proches du max.' },
+    C10: { type: 'Volume', explication: 'Une échelle = 1 rep, 45 s de repos, 2 reps, 45 s, 3 reps, puis 2 min avant la suivante. Beaucoup de reps à charge modérée avec des repos courts pour garder la technique pendant la fatigue.' },
+    C11: { type: 'Mixte', explication: 'Le cycle de référence : trois semaines de construction, une de décharge, trois d\'intensité, puis le test. Sert de base de comparaison avec les autres méthodes.' },
+    C12: { type: 'Mixte', explication: 'Les semaines alternent moyen, léger puis lourd. Les semaines légères laissent récupérer, les lourdes poussent la force.' },
+    C13: { type: 'Volume', explication: 'Même charge pendant trois semaines, tu ajoutes une série à chaque fois. La progression vient du volume, pas de la charge. Même logique ensuite à une charge plus haute.' },
+    C14: { type: 'Intensité', explication: 'Chaque minute, 1 rep, et la charge monte de 2% par minute. Le dernier palier est ton plus lourd du jour. Si tu rates un palier, tu arrêtes l\'escalier là pour la séance.' },
+    C15: { type: 'Mixte', explication: 'Tu commences par la série la plus lourde, puis tu baisses la charge de 5% et tu fais plus de reps. La fraîcheur sert au lourd, le volume vient après.' },
+    C16: { type: 'Mixte', explication: 'Un bloc EMOM de singles légers sert d\'échauffement technique, puis le bloc de force enchaîne. Avec une seule séance par semaine, tu pratiques la technique à chaque fois. Le bloc EMOM ne compte pas dans les séries de travail.' },
+    C17: { type: 'Intensité', explication: 'Un single toutes les 2 minutes à charge lourde. Le repos long garde la qualité sur des charges proches du max. Peu de volume, beaucoup d\'intensité. Arrête dès que la technique se dégrade.' },
+    C18: { type: 'Mixte', explication: 'Les reps montent puis redescendent avec les charges : 3, 2, 1, puis 2 et 3 aux mêmes charges. Tu fais le lourd au milieu de la séance, quand tu es échauffé.' },
+    C19: { type: 'Technique', explication: '10 singles propres à charge modérée, repos libre de 60 à 90 s. Chaque rep doit être parfaite : une rep ratée se refait, 2 reprises maximum. Priorité à la qualité, pas à la charge.' },
+    C20: { type: 'Technique', explication: 'Doubles à charge légère avec la barre la plus rapide possible. Travaille la vitesse sous la barre et le timing. Si la vitesse chute, la série s\'arrête.' }
+  };
+
+  Object.assign(CYCLE_NAMES, {
+    C1: 'Linéaire simple',
+    C2: 'Volume décroissant, charge croissante',
+    C3: 'EMOM léger',
+    C4: 'Complexes (1+1)',
+    C5: 'Vagues 3.2.1',
+    C6: 'Pause 2 s',
+    C7: 'Densité E90s',
+    C8: 'Top single + back off',
+    C9: 'Clusters (1.1.1)',
+    C10: 'Échelles 1.2.3',
+    C11: 'Bloc classique',
+    C12: 'Ondulé',
+    C13: 'Paliers fixes',
+    C14: 'Escalier EMOM',
+    C15: 'Pyramide descendante',
+    C16: 'Bloc technique puis force',
+    C17: 'Singles E2min',
+    C18: 'Pyramide 3.2.1.2.3',
+    C19: 'Singles de précision',
+    C20: 'Doubles vitesse'
+  });
+
+  function nxPhase(count, reps, percent) { return count + 'x' + reps + ' à ' + percent + ' %'; }
+  function nxWeek(n, count, reps, percent, o) {
+    o = o || {};
+    return mkWeek(n, (o.deload ? 'Allégée ' : '') + (o.prefix || '') + nxPhase(count, reps, percent) + (o.suffix || ''), nx(count, reps, percent), o);
+  }
+  function waves321(n, count, p, o) {
+    var sets = [];
+    for (var i = 0; i < count; i++) sets = sets.concat(wave([[3, p[0]], [2, p[1]], [1, p[2]]]));
+    return mkWeek(n, ((o && o.deload) ? 'Allégée ' : '') + count + (count > 1 ? ' vagues' : ' vague') + ' 3, 2, 1 à ' + p.join(', ') + ' %', sets, o);
+  }
+  function clusterWeek(n, count, percent, o) {
+    return mkWeek(n, ((o && o.deload) ? 'Allégée ' : '') + count + ' clusters à ' + percent + ' % (3 reps, 15 s entre les reps)', nx(count, 3, percent), { rest: 120, deload: o && o.deload });
+  }
+  function ladderWeek(n, count, percent, o) {
+    return mkWeek(n, ((o && o.deload) ? 'Allégée ' : '') + count + ' échelles 1, 2, 3 à ' + percent + ' % (2 min après chaque échelle)', ladders(count, percent), { rest: 45, deload: o && o.deload });
+  }
+  function topBackOff(n, top, count, reps, percent, o) {
+    return mkWeek(n, ((o && o.deload) ? 'Allégée ' : '') + '1 rep à ' + top + ' % puis ' + nxPhase(count, reps, percent), [{ reps: 1, percent: top }].concat(nx(count, reps, percent)), o);
+  }
+  function stairsWeek(n, minutes, from, o) {
+    var to = from + (minutes - 1) * 2;
+    return mkWeek(n, ((o && o.deload) ? 'Allégée ' : '') + 'Escalier EMOM ' + minutes + ' min, 1 rep de ' + from + ' à ' + to + ' %', stairs(minutes, from, 2), { timed: true, rest: 60, deload: o && o.deload });
+  }
+  function listWeek(n, list, o) {
+    return mkWeek(n, ((o && o.deload) ? 'Allégée ' : '') + list.map(function (p) { return p[0] + ' à ' + p[1] + ' %'; }).join(', '), wave(list), o);
+  }
+  function emomForce(n, wCount, wPct, count, reps, percent, o) {
+    return mkWeek(n, ((o && o.deload) ? 'Allégée ' : '') + 'EMOM ' + wCount + 'x1 à ' + wPct + ' % puis ' + nxPhase(count, reps, percent),
+      warmupSets(wCount, wPct).concat(nx(count, reps, percent)), o);
+  }
+  function pyramid32123(n, p, o) {
+    var deload = o && o.deload;
+    var list = deload ? [[2, p[0]], [1, p[1]], [2, p[0]]] : [[3, p[0]], [2, p[1]], [1, p[2]], [2, p[1]], [3, p[0]]];
+    var pcts = deload ? [p[0], p[1]] : p;
+    return mkWeek(n, (deload ? 'Allégée 2, 1, 2' : 'Pyramide 3, 2, 1, 2, 3') + ' à ' + pcts.join(', ') + ' %', wave(list), o);
+  }
+  var EMOM = { timed: true, rest: 60 };
+  var E90 = { timed: true, rest: 90, prefix: 'E90s ' };
+  var E2 = { timed: true, rest: 120, prefix: 'E2min ' };
+  function withO(base, extra) { return Object.assign({}, base, extra); }
+  var DL = { deload: true };
+
+  Object.assign(FORCE_CYCLES, {
+    /* 6 semaines + test 1RM séparé en semaine 7 */
+    C1: [nxWeek(1, 5, 3, 68, { rest: 120 }), nxWeek(2, 5, 3, 71, { rest: 120 }), nxWeek(3, 5, 3, 74, { rest: 120 }), nxWeek(4, 5, 3, 77, { rest: 120 }), nxWeek(5, 4, 3, 80, { rest: 120 }), nxWeek(6, 3, 3, 65, { rest: 120, deload: true }), mkTestSeparate(7)],
+    C2: [nxWeek(1, 6, 2, 72), nxWeek(2, 5, 2, 76), nxWeek(3, 4, 2, 80), nxWeek(4, 3, 2, 84), nxWeek(5, 3, 1, 88), nxWeek(6, 3, 2, 65, DL), mkTestSeparate(7)],
+    C3: [nxWeek(1, 8, 2, 62, withO(EMOM, { prefix: 'EMOM ' })), nxWeek(2, 8, 2, 65, withO(EMOM, { prefix: 'EMOM ' })), nxWeek(3, 8, 2, 68, withO(EMOM, { prefix: 'EMOM ' })), nxWeek(4, 6, 2, 72, withO(EMOM, { prefix: 'EMOM ' })), nxWeek(5, 6, 2, 75, withO(EMOM, { prefix: 'EMOM ' })), nxWeek(6, 6, 1, 60, withO(EMOM, { prefix: 'EMOM ', deload: true })), mkTestSeparate(7)],
+    C4: [62, 65, 68, 71, 74].map(function (p, i) {
+      return mkWeek(i + 1, '5 complexes (1 tirage + 1 complet) à ' + p + ' %', nx(5, 2, p));
+    }).concat([mkWeek(6, 'Allégée 3 complexes (1 tirage + 1 complet) à 58 %', nx(3, 2, 58), DL), mkTestSeparate(7)]),
+    C5: [waves321(1, 2, [70, 75, 80]), waves321(2, 2, [72, 77, 82]), waves321(3, 2, [74, 79, 84]), waves321(4, 2, [76, 81, 85]), waves321(5, 2, [78, 83, 87]), waves321(6, 1, [65, 70, 75], DL), mkTestSeparate(7)],
+    C6: [nxWeek(1, 5, 3, 60, { suffix: ', pause 2 s' }), nxWeek(2, 5, 3, 63, { suffix: ', pause 2 s' }), nxWeek(3, 5, 2, 67, { suffix: ', pause 2 s' }), nxWeek(4, 5, 2, 70, { suffix: ', pause 2 s' }), nxWeek(5, 4, 2, 73, { suffix: ', pause 2 s' }), nxWeek(6, 3, 2, 58, { suffix: ', pause 2 s', deload: true }), mkTestSeparate(7)],
+    C7: [nxWeek(1, 5, 3, 65, E90), nxWeek(2, 5, 3, 68, E90), nxWeek(3, 5, 2, 73, E90), nxWeek(4, 5, 2, 76, E90), nxWeek(5, 5, 2, 79, E90), nxWeek(6, 4, 2, 62, withO(E90, DL)), mkTestSeparate(7)],
+    C8: [topBackOff(1, 78, 3, 3, 68), topBackOff(2, 81, 3, 3, 70), topBackOff(3, 84, 3, 2, 75), topBackOff(4, 87, 3, 2, 77), topBackOff(5, 90, 2, 2, 78), topBackOff(6, 75, 2, 2, 62, DL), mkTestSeparate(7)],
+    C9: [clusterWeek(1, 4, 75), clusterWeek(2, 4, 78), clusterWeek(3, 4, 81), clusterWeek(4, 4, 84), clusterWeek(5, 3, 87), clusterWeek(6, 3, 68, DL), mkTestSeparate(7)],
+    C10: [ladderWeek(1, 3, 65), ladderWeek(2, 3, 68), ladderWeek(3, 3, 70), ladderWeek(4, 2, 74), ladderWeek(5, 2, 77), ladderWeek(6, 2, 60, DL), mkTestSeparate(7)],
+    /* 8 semaines, S4 allégée, test 1RM en semaine 8 */
+    C11: [nxWeek(1, 5, 3, 65), nxWeek(2, 5, 3, 70), nxWeek(3, 5, 3, 74), nxWeek(4, 3, 2, 60, DL), nxWeek(5, 5, 2, 80), nxWeek(6, 4, 2, 84), nxWeek(7, 4, 1, 88), mkTestEssais(8)],
+    C12: [nxWeek(1, 5, 3, 68), nxWeek(2, 5, 3, 63), nxWeek(3, 5, 2, 75), nxWeek(4, 3, 2, 60, DL), nxWeek(5, 5, 1, 84), nxWeek(6, 4, 3, 70), nxWeek(7, 3, 1, 90), mkTestEssais(8)],
+    C13: [nxWeek(1, 4, 3, 70), nxWeek(2, 5, 3, 70), nxWeek(3, 6, 3, 70), nxWeek(4, 3, 2, 60, DL), nxWeek(5, 3, 2, 80), nxWeek(6, 4, 2, 80), nxWeek(7, 5, 2, 80), mkTestEssais(8)],
+    C14: [stairsWeek(1, 8, 64), stairsWeek(2, 8, 66), stairsWeek(3, 8, 68), stairsWeek(4, 6, 60, DL), stairsWeek(5, 8, 72), stairsWeek(6, 8, 74), stairsWeek(7, 8, 76), mkTestEssais(8)],
+    C15: [listWeek(1, [[3, 74], [3, 69], [3, 64]]), listWeek(2, [[3, 76], [3, 71], [3, 66]]), listWeek(3, [[3, 78], [3, 73], [3, 68]]), listWeek(4, [[2, 65], [2, 60]], DL),
+      listWeek(5, [[2, 82], [3, 74], [3, 68]]), listWeek(6, [[2, 85], [3, 77], [3, 70]]), listWeek(7, [[1, 90], [2, 82], [3, 74]]), mkTestEssais(8)],
+    C16: [emomForce(1, 6, 60, 4, 3, 68), emomForce(2, 6, 60, 4, 3, 71), emomForce(3, 6, 60, 4, 3, 74), emomForce(4, 4, 55, 3, 2, 60, DL),
+      emomForce(5, 6, 62, 4, 2, 80), emomForce(6, 6, 62, 4, 2, 83), emomForce(7, 4, 65, 4, 1, 88), mkTestEssais(8)],
+    C17: [nxWeek(1, 8, 1, 76, E2), nxWeek(2, 8, 1, 79, E2), nxWeek(3, 6, 1, 82, E2), nxWeek(4, 4, 1, 65, withO(E2, DL)), nxWeek(5, 5, 1, 85, E2), nxWeek(6, 4, 1, 87, E2), nxWeek(7, 3, 1, 90, E2), mkTestEssais(8)],
+    C18: [pyramid32123(1, [68, 72, 76]), pyramid32123(2, [70, 74, 78]), pyramid32123(3, [72, 76, 80]), pyramid32123(4, [60, 64, 68], DL), pyramid32123(5, [74, 78, 82]), pyramid32123(6, [76, 80, 84]), pyramid32123(7, [78, 82, 86]), mkTestEssais(8)],
+    C19: [nxWeek(1, 10, 1, 70, { rest: 75 }), nxWeek(2, 10, 1, 72, { rest: 75 }), nxWeek(3, 10, 1, 74, { rest: 75 }), nxWeek(4, 6, 1, 62, { rest: 75, deload: true }), nxWeek(5, 8, 1, 77, { rest: 75 }), nxWeek(6, 8, 1, 80, { rest: 75 }), nxWeek(7, 6, 1, 83, { rest: 75 }), mkTestEssais(8)],
+    C20: [nxWeek(1, 8, 2, 60), nxWeek(2, 8, 2, 63), nxWeek(3, 8, 2, 66), nxWeek(4, 5, 2, 58, DL), nxWeek(5, 8, 2, 69), nxWeek(6, 8, 2, 72), nxWeek(7, 6, 2, 75), mkTestEssais(8)]
+  });
+
   function cycleLength(cycleKey) {
     var weeks = FORCE_CYCLES[cycleKey];
     return weeks ? weeks.length : 6;
@@ -6103,14 +6260,37 @@
     return !!cycle && !cycle.en_attente_de_validation && !isBeforeForceCycleStart(exercise) && getCycleWeek(cycle).isTestWeek;
   }
 
-  /* lot 07 : les 17 cycles entrent dans le tirage (12 génériques + A à E,
-     affichés Cycle 13 à 17 — voir displayCycleNumber). Les identifiants
-     internes 'A' à 'E' ne changent jamais, seul le tirage s'étend. */
+  /* lot 07 : les 17 anciens cycles (12 génériques + A à E, affichés 13 à
+     17). Depuis v161 ils ne sont plus tirés (NEW_CYCLE_IDS) ; les
+     identifiants 'A' à 'E' ne changent jamais. */
   var ALL_CYCLE_IDS = GENERIC_CYCLE_IDS.concat(CYCLE_LETTERS);
 
   function displayCycleNumber(cycleId) {
+    if (CYCLE_META[cycleId]) return cycleId.slice(1);
     var letterIndex = CYCLE_LETTERS.indexOf(cycleId);
     return letterIndex === -1 ? cycleId : String(13 + letterIndex);
+  }
+
+  /* v161 : "Cycle 1" à "Cycle 20" pour C1 à C20, "Ancien cycle N" pour les
+     17 cycles d'avant, qui ne sont plus tirés mais restent lisibles. */
+  function cycleLabel(cycleId) {
+    return (CYCLE_META[cycleId] ? 'Cycle ' : 'Ancien cycle ') + displayCycleNumber(cycleId);
+  }
+
+  /* les cycles de 6 semaines gardent leur test séparé en semaine 7
+     (cycleLength = 7), affichés "6 semaines + test". */
+  function cycleDurationLabel(cycleId) {
+    var length = cycleLength(cycleId);
+    if (CYCLE_META[cycleId] && FORCE_CYCLES[cycleId][length - 1].phase === 'Test 1RM séparé') return (length - 1) + ' semaines + test';
+    return length + ' semaines';
+  }
+
+  /* type, durée et explication d'un cycle C1 à C20, vide pour un ancien. */
+  function buildCycleExplanationHtml(cycleId) {
+    var meta = CYCLE_META[cycleId];
+    if (!meta) return '';
+    return '<div class="cycle-explication-meta mono">' + escapeHTML(meta.type) + ' · ' + escapeHTML(cycleDurationLabel(cycleId)) + '</div>' +
+      '<p class="cycle-explication">' + escapeHTML(meta.explication) + '</p>';
   }
 
   /* cycle_actif de tous les mouvements qui ont un cycle actif en ce moment
@@ -6121,15 +6301,23 @@
     return Object.keys(cycles).map(function (exerciseId) { return cycles[exerciseId].cycle_actif; });
   }
 
-  /* Tire un nouveau cycle parmi les 17 (R4), en excluant celui qui vient de
+  /* Tire un nouveau cycle (R4, parmi les 20 depuis v161), en excluant celui qui vient de
      se terminer sur ce mouvement pour ne jamais l'enchaîner deux fois.
      Préfère un cycle qui n'est pas déjà actif sur un autre mouvement ; si
      tous le sont, autorise (DECISIONS-A-PRENDRE n°11). extraActifs (optionnel)
      ajoute des cycle_actif à éviter en plus de ceux déjà actifs en base —
      utilisé par le tirage groupé (lot 07, écran "Tirer mes cycles") pour
      qu'un même cycle ne soit pas proposé à deux mouvements du même lot. */
-  function tirerProchainCycle(cycleActuel, extraActifs) {
-    var candidates = ALL_CYCLE_IDS.filter(function (id) { return id !== cycleActuel; });
+  /* v161 : tirage parmi les 20 cycles C1 à C20 seulement. Après un cycle
+     de type Intensité, seuls Volume, Technique et Mixte sont tirés.
+     cyclePrecedent (optionnel) : cycle dont le type compte pour cette
+     règle, quand il diffère de cycleActuel (relance d'une carte). */
+  function tirerProchainCycle(cycleActuel, extraActifs, cyclePrecedent) {
+    var precedent = cyclePrecedent !== undefined ? cyclePrecedent : cycleActuel;
+    var apresIntensite = !!CYCLE_META[precedent] && CYCLE_META[precedent].type === 'Intensité';
+    var candidates = NEW_CYCLE_IDS.filter(function (id) {
+      return id !== cycleActuel && !(apresIntensite && CYCLE_META[id].type === 'Intensité');
+    });
     var actifs = getActiveCycleIds().concat(extraActifs || []);
     var preferes = candidates.filter(function (id) { return actifs.indexOf(id) === -1; });
     var pool = preferes.length ? preferes : candidates;
@@ -6167,7 +6355,7 @@
          comme avant (incluse), aucune migration rétroactive. */
       if (sex.isLightSession) return;
       sex.sets.forEach(function (set) {
-        if (!set.done || !set.reps) return;
+        if (!set.done || !set.reps || set.warmup) return;
         totalAttempted += set.reps;
         totalSucceeded += computeSuccessfulReps(set);
       });
@@ -7850,10 +8038,10 @@
      décalage posé par la coordination (R7). */
   function buildCycleStartMessage(freshExercise, cycle) {
     if (cycle && isBeforeForceCycleStart(freshExercise)) {
-      return 'Cycle ' + displayCycleNumber(cycle.cycle_actif) + ' démarre le ' + formatShortDate(freshExercise.forceCycleStartDate) + '.';
+      return cycleLabel(cycle.cycle_actif) + ' démarre le ' + formatShortDate(freshExercise.forceCycleStartDate) + '.';
     }
     if (cycle) {
-      return 'Cycle ' + displayCycleNumber(cycle.cycle_actif) + ' démarre maintenant.';
+      return cycleLabel(cycle.cycle_actif) + ' démarre maintenant.';
     }
     if (isBeforeForceCycleStart(freshExercise)) {
       var weeksUntil = getWeeksUntilForceCycleStart(freshExercise);
@@ -7898,7 +8086,7 @@
   /* "Back Squat, cycle 16, semaine 2 sur 6" */
   function describeCycleForRemoval(exercise, cycle) {
     var name = exercise ? exercise.name : 'Exercice';
-    return name + ', cycle ' + displayCycleNumber(cycle.cycle_actif) + ', semaine ' + cycle.semaine_actuelle +
+    return name + ', ' + cycleLabel(cycle.cycle_actif).toLowerCase() + ', semaine ' + cycle.semaine_actuelle +
       ' sur ' + cycleLength(cycle.cycle_actif);
   }
 
@@ -8029,14 +8217,14 @@
          de base jusqu'à sa date de départ — semaine_actuelle vaut 1 mais ne
          doit jamais s'afficher comme "en cours", ce serait trompeur. */
       var weeksUntilStart = getWeeksUntilForceCycleStart(exercise);
-      badge.innerHTML = '<span class="mono">Cycle ' + displayCycleNumber(cycle.cycle_actif) + '</span> · démarre dans ' +
+      badge.innerHTML = '<span class="mono">' + cycleLabel(cycle.cycle_actif) + '</span> · démarre dans ' +
         weeksUntilStart + (weeksUntilStart > 1 ? ' semaines' : ' semaine');
       badge.addEventListener('click', function () { openCycleDetailPage(exercise.id); });
       return badge;
     }
 
     var week = getCycleWeek(cycle);
-    badge.innerHTML = '<span class="mono">Cycle ' + displayCycleNumber(cycle.cycle_actif) + ' · S' + cycle.semaine_actuelle + '/' + cycleLength(cycle.cycle_actif) + '</span> · ' + escapeHTML(week.phase);
+    badge.innerHTML = '<span class="mono">' + cycleLabel(cycle.cycle_actif) + ' · S' + cycle.semaine_actuelle + '/' + cycleLength(cycle.cycle_actif) + '</span> · ' + escapeHTML(week.phase);
     badge.addEventListener('click', function () { openCycleDetailPage(exercise.id); });
     return badge;
   }
@@ -8139,7 +8327,8 @@
 
     var intro = document.createElement('div');
     intro.className = 'cycle-full-intro';
-    intro.innerHTML = '<div class="cycle-full-name">Cycle ' + displayCycleNumber(cycle.cycle_actif) + ' · ' + escapeHTML(CYCLE_NAMES[cycle.cycle_actif]) + '</div>' +
+    intro.innerHTML = '<div class="cycle-full-name">' + cycleLabel(cycle.cycle_actif) + ' · ' + escapeHTML(CYCLE_NAMES[cycle.cycle_actif]) + '</div>' +
+      buildCycleExplanationHtml(cycle.cycle_actif) +
       '<div class="cycle-full-1rm mono">1RM actuel · ' + (cycle.one_rm_actuel != null ? cycle.one_rm_actuel + 'kg' : 'non défini') + '</div>';
     /* lot 08 : indique clairement que ce cycle n'a pas encore commencé,
        sinon "Semaine 1 / N · ACTUELLE" plus bas pourrait laisser croire
@@ -8191,7 +8380,7 @@
       var maxPercent = Math.max.apply(null, percents);
       week.sets.forEach(function (s, sIdx) {
         var kg = computeWeightFromPercent(cycle.one_rm_actuel, s.percent);
-        var isLast = week.isTestWeek && sIdx === week.sets.length - 1;
+        var isLast = week.isTestWeek && (sIdx === week.sets.length - 1 || s.percent >= 100);
         var setLabel = isLast ? 'Max' : ('S' + (sIdx + 1));
         var text = (isLast ? 'Tentative' : (s.reps + ' reps')) + ' @ ' + s.percent + '%';
         setsWrap.appendChild(buildStackBarRow(setLabel, text, kg, hideKg, maxPercent, s.percent, isLast));
@@ -8823,7 +9012,7 @@
       var cellsByWeek = {};
       e.projection.forEach(function (entry) { cellsByWeek[entry.absoluteWeek] = entry.week; });
       html += '<tr class="coordination-data-row" data-exercise-id="' + escapeHTML(e.exerciseId) + '"><td class="coordination-row-label">' + escapeHTML(e.exercise.name) +
-        '<span class="mono">Cycle ' + displayCycleNumber(e.cycle.cycle_actif) + '</span></td>';
+        '<span class="mono">' + cycleLabel(e.cycle.cycle_actif) + '</span></td>';
       for (var col = 1; col <= COORDINATION_TABLE_WEEKS; col++) {
         var week = cellsByWeek[col];
         var cls = 'is-empty', label = '';
@@ -9114,7 +9303,7 @@
     var startRM = toFiniteNumberOrNaN(next.oneRepMax);
     showConfirmModal('Remplacer ' + finished.name + ' par ' + next.name + ' dans ' +
       joinQuotedNames(routines.map(function (r) { return r.name || 'Routine sans titre'; })) + ' ? ' +
-      next.name + ', cycle ' + displayCycleNumber(cycleId) + ', semaine 1, 1RM ' + String(startRM).replace('.', ',') + ' kg.',
+      next.name + ', ' + cycleLabel(cycleId).toLowerCase() + ', semaine 1, 1RM ' + String(startRM).replace('.', ',') + ' kg.',
       function () { applyNextMovement(finishedId, next.id, cycleId, routineIds, startRM); },
       null, 'Confirmer', 'Annuler');
   }
@@ -9254,7 +9443,7 @@
 
     var intro = document.createElement('div');
     intro.className = 'cycle-full-intro';
-    intro.innerHTML = '<div class="cycle-full-name">' + escapeHTML(exercise.name) + ' · Cycle ' + displayCycleNumber(closed.cycle) +
+    intro.innerHTML = '<div class="cycle-full-name">' + escapeHTML(exercise.name) + ' · ' + cycleLabel(closed.cycle) +
       ' · ' + cycleLength(closed.cycle) + ' semaines</div>';
     body.appendChild(intro);
 
@@ -9289,10 +9478,28 @@
     function renderNextCard() {
       var c = OvrykDB.getForceCycle(exerciseId);
       card.innerHTML = '<div class="cycle-end-next-top">' +
-        '<span class="cycle-full-name">Cycle ' + displayCycleNumber(c.prochain_cycle) + '</span>' +
-        '<span class="cycle-end-next-length mono">' + cycleLength(c.prochain_cycle) + ' semaines</span></div>' +
+        '<span class="cycle-full-name">' + cycleLabel(c.prochain_cycle) + ' · ' + escapeHTML(CYCLE_NAMES[c.prochain_cycle]) + '</span>' +
+        '<span class="cycle-end-next-length mono">' + escapeHTML(cycleDurationLabel(c.prochain_cycle)) + '</span></div>' +
+        buildCycleExplanationHtml(c.prochain_cycle) +
         '<div class="cycle-end-next-week1">' + escapeHTML(formatPendingCycleWeek1(c.prochain_cycle, closed.one_rm_apres)) + '</div>' +
         '<div class="cycle-end-next-1rm mono">1RM ' + closed.one_rm_apres + ' kg</div>';
+      /* v161 : détail semaine par semaine en kg, aperçu en lecture seule
+         (même page que le tirage du programme, rien n'est écrit). */
+      var detailBtn = document.createElement('button');
+      detailBtn.type = 'button';
+      detailBtn.className = 'cycle-week-edit-toggle';
+      detailBtn.textContent = 'Voir le détail semaine par semaine';
+      detailBtn.addEventListener('click', function () {
+        openCycleDetailPage(exerciseId, {
+          cycle_actif: c.prochain_cycle,
+          one_rm_actuel: closed.one_rm_apres,
+          semaine_actuelle: 1,
+          semaines_modifiees: {},
+          test_report_used: false,
+          en_attente_de_validation: false
+        });
+      });
+      card.appendChild(detailBtn);
     }
     renderNextCard();
 
@@ -9334,12 +9541,12 @@
     var chooseList = document.createElement('div');
     chooseList.className = 'exercise-list';
     chooseList.hidden = true;
-    ALL_CYCLE_IDS.forEach(function (cycleId) {
+    NEW_CYCLE_IDS.forEach(function (cycleId) {
       var row = document.createElement('button');
       row.type = 'button';
       row.className = 'picker-row';
-      row.innerHTML = '<span class="picker-row-name">Cycle ' + displayCycleNumber(cycleId) + ' · ' + escapeHTML(CYCLE_NAMES[cycleId]) + '</span>' +
-        '<span class="picker-row-right"><span class="picker-row-meta mono">' + cycleLength(cycleId) + ' sem.</span></span>';
+      row.innerHTML = '<span class="picker-row-name">' + cycleLabel(cycleId) + ' · ' + escapeHTML(CYCLE_NAMES[cycleId]) + '</span>' +
+        '<span class="picker-row-right"><span class="picker-row-meta mono">' + escapeHTML(cycleDurationLabel(cycleId)) + '</span></span>';
       row.addEventListener('click', function () {
         OvrykDB.setPendingCycle(exerciseId, cycleId);
         renderNextCard();
@@ -9659,7 +9866,8 @@
 
     var nameWrap = document.createElement('div');
     nameWrap.innerHTML = '<div class="cycles-drawn-card-name">' + escapeHTML(entry.exercise ? entry.exercise.name : entry.exerciseId) + '</div>' +
-      '<span class="cycles-drawn-card-tag mono">Cycle ' + displayCycleNumber(entry.cycleId) + ' · ' + cycleLength(entry.cycleId) + ' sem.</span>';
+      '<span class="cycles-drawn-card-tag mono">' + cycleLabel(entry.cycleId) + ' · ' + escapeHTML(CYCLE_NAMES[entry.cycleId]) + '</span>' +
+      buildCycleExplanationHtml(entry.cycleId);
     top.appendChild(nameWrap);
 
     var redrawBtn = document.createElement('button');
@@ -9728,7 +9936,8 @@
     var assignedSoFar = cyclesDrawnBatch
       .filter(function (e) { return e.exerciseId !== exerciseId; })
       .map(function (e) { return e.cycleId; });
-    entry.cycleId = tirerProchainCycle(entry.cycleId, assignedSoFar);
+    var existingForType = OvrykDB.getForceCycle(exerciseId);
+    entry.cycleId = tirerProchainCycle(entry.cycleId, assignedSoFar, existingForType ? existingForType.cycle_actif : null);
     renderCyclesDrawnCards();
   }
 
@@ -11658,7 +11867,7 @@
     var weekLine = document.createElement('button');
     weekLine.type = 'button';
     weekLine.className = 'cycle-week-line is-clickable';
-    weekLine.innerHTML = '<span class="cycle-week-num mono">Cycle ' + displayCycleNumber(cycle.cycle_actif) + ' · Semaine ' + cycle.semaine_actuelle + ' / ' + cycleLength(cycle.cycle_actif) + '</span>' +
+    weekLine.innerHTML = '<span class="cycle-week-num mono">' + cycleLabel(cycle.cycle_actif) + ' · Semaine ' + cycle.semaine_actuelle + ' / ' + cycleLength(cycle.cycle_actif) + '</span>' +
       '<span class="cycle-phase">' + escapeHTML(weekPrescription.phase) + '</span>';
     var weekLineChevron = document.createElement('span');
     weekLineChevron.className = 'rex-summary-chevron';
@@ -11679,7 +11888,7 @@
 
     weekPrescription.sets.forEach(function (s, idx) {
       var kg = computeWeightFromPercent(cycle.one_rm_actuel, s.percent);
-      var isLast = weekPrescription.isTestWeek && idx === weekPrescription.sets.length - 1;
+      var isLast = weekPrescription.isTestWeek && (idx === weekPrescription.sets.length - 1 || s.percent >= 100);
       var setLabel = isLast ? 'Max' : ('S' + (idx + 1));
       var text = (isLast ? 'Tentative' : (s.reps + ' reps')) + ' @ ' + s.percent + '%';
       setsWrap.appendChild(buildStackBarRow(setLabel, text, kg, hideKg, maxPercent, s.percent, isLast));
@@ -12377,6 +12586,8 @@
         repType: 'fixed',
         reps: s.reps,
         percent1rm: s.percent,
+        /* v161 : série d'échauffement (C16), hors bilan de cycle */
+        warmup: s.warmup ? true : undefined,
         done: false,
         rpe: null,
         result: null,
@@ -13181,7 +13392,7 @@
       var source = deloaded[0].deloadSource;
       if (source && typeof source === 'object' && source.cycleId) {
         var ex = OvrykDB.getExerciseById(source.exerciseId);
-        text.textContent = 'Séance allégée : semaine allégée du Cycle ' + displayCycleNumber(source.cycleId) +
+        text.textContent = 'Séance allégée : semaine allégée du ' + cycleLabel(source.cycleId) +
           (ex ? ' (' + ex.name + ')' : '') + '. Muscu : un tiers des séries en moins, charges inchangées.';
       } else {
         text.textContent = 'Séance allégée. Muscu : un tiers des séries en moins, charges inchangées.';
@@ -13327,7 +13538,7 @@
      des champs déjà posés par buildSessionFromRoutine. */
   function getLiveCardTag(sex) {
     if (sex.cycleIdUsed) {
-      var text = 'Cycle ' + displayCycleNumber(sex.cycleIdUsed) + (sex.cycleWeekUsed ? ', sem. ' + sex.cycleWeekUsed : '');
+      var text = cycleLabel(sex.cycleIdUsed) + (sex.cycleWeekUsed ? ', sem. ' + sex.cycleWeekUsed : '');
       if (sex.isLightSession) text += ', légère';
       return { text: text, isCycle: true };
     }
@@ -13397,6 +13608,14 @@
       var body = document.createElement('div');
       body.className = 'live-card-body';
       body.appendChild(buildLiveCardToolbar(sex, tag.isCycle));
+      /* v161 : rappel du cycle, de la semaine et du format du jour */
+      var cycleWeeks = sex.cycleIdUsed && CYCLE_META[sex.cycleIdUsed] ? FORCE_CYCLES[sex.cycleIdUsed] : null;
+      if (cycleWeeks && cycleWeeks[sex.cycleWeekUsed - 1]) {
+        var reminder = document.createElement('p');
+        reminder.className = 'live-cycle-reminder mono';
+        reminder.textContent = sex.cycleIdUsed + ', S' + sex.cycleWeekUsed + ' : ' + cycleWeeks[sex.cycleWeekUsed - 1].phase;
+        body.appendChild(reminder);
+      }
       /* livraison 5 : avis R12 dans l'en-tête de la carte, sous le
          compteur de séries (avant : dans le corps haltérophilie). */
       if (sex.isLightSession) body.appendChild(buildLightSessionNotice());
@@ -15426,7 +15645,7 @@
 
   function describeCycleLink(link) {
     var cycle = link.cycle;
-    var label = 'Cycle ' + displayCycleNumber(cycle.cycle_actif);
+    var label = cycleLabel(cycle.cycle_actif);
     if (cycle.en_attente_de_validation) return label + ', terminé';
     if (isBeforeForceCycleStart(link.exercise) && link.exercise.forceCycleStartDate) {
       return label + ', démarre le ' + formatShortDate(link.exercise.forceCycleStartDate);
@@ -16371,7 +16590,7 @@
     row.className = 'picker-row';
     var count = countSessionsForExercise(exercise.id);
     var cycle = OvrykDB.getForceCycle(exercise.id);
-    var cycleTag = cycle ? ' <span class="cycle-inline-tag mono">' + displayCycleNumber(cycle.cycle_actif) + ' S' + cycle.semaine_actuelle + '/' + cycleLength(cycle.cycle_actif) + '</span>' : '';
+    var cycleTag = cycle ? ' <span class="cycle-inline-tag mono">' + cycleLabel(cycle.cycle_actif) + ' S' + cycle.semaine_actuelle + '/' + cycleLength(cycle.cycle_actif) + '</span>' : '';
     row.innerHTML = '<span class="picker-row-name">' + escapeHTML(exercise.name) + '</span>' +
       '<span class="picker-row-meta mono">' + count + ' séance' + (count > 1 ? 's' : '') + '</span>' + cycleTag;
     row.addEventListener('click', function () {
@@ -16714,7 +16933,7 @@
       resultBox.className = 'exercise-type-result';
       if (cycle) {
         resultBox.innerHTML = '<span class="exercise-type-result-label">Résultat pour ce programme</span>' +
-          '<p class="exercise-type-result-note">Cycle ' + escapeHTML(displayCycleNumber(cycle.cycle_actif)) + ' en cours : il continue jusqu\'à sa fin, ce choix s\'appliquera ensuite.</p>';
+          '<p class="exercise-type-result-note">' + escapeHTML(cycleLabel(cycle.cycle_actif)) + ' en cours : il continue jusqu\'à sa fin, ce choix s\'appliquera ensuite.</p>';
       } else if (exercise.oneRepMax == null) {
         resultBox.innerHTML = '<span class="exercise-type-result-label">Résultat pour ce programme</span>' +
           '<p class="exercise-type-result-note">Renseigne le 1RM sur la fiche pour voir le résultat.</p>';
@@ -17513,7 +17732,7 @@
 
       var statusLine = document.createElement('div');
       statusLine.className = 'cycle-detail-status';
-      statusLine.innerHTML = 'Cycle actif ' + displayCycleNumber(cycle.cycle_actif) + ' · <span class="cycle-detail-phase">Semaine ' + cycle.semaine_actuelle +
+      statusLine.innerHTML = cycleLabel(cycle.cycle_actif) + ' actif · <span class="cycle-detail-phase">Semaine ' + cycle.semaine_actuelle +
         '/' + cycleLength(cycle.cycle_actif) + ' · ' + escapeHTML(getCycleWeek(cycle).phase) + '</span>';
       cycleBlock.appendChild(statusLine);
 
@@ -17758,7 +17977,8 @@
       if (cycle) {
         var week = getCycleWeek(cycle);
         var lastSet = week.sets[week.sets.length - 1];
-        valueHtml = '<span class="dash-session-ex-value is-cycle">' + escapeHTML(week.phase) + ' à ' + lastSet.percent + ' %</span>';
+        /* v161 : la phase des cycles C1 à C20 contient déjà ses % */
+        valueHtml = '<span class="dash-session-ex-value is-cycle">' + escapeHTML(week.phase) + (CYCLE_META[cycle.cycle_actif] ? '' : ' à ' + lastSet.percent + ' %') + '</span>';
       } else {
         var firstSet = rex.sets[0];
         var repsText = '-';

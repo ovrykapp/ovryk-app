@@ -4,6 +4,11 @@
     "ex-back-squat": { "exercise_id": "ex-back-squat", "cycle_actif": "2", "one_rm_actuel": 160, "semaine_actuelle": 6, "historique_1rm": [{ "date": "2026-09-01T00:00:00Z", "valeur": 160 }] },
     "ex-deadlift": { "exercise_id": "ex-deadlift", "cycle_actif": "3", "one_rm_actuel": 180, "semaine_actuelle": 7, "historique_1rm": [{ "date": "2026-09-01T00:00:00Z", "valeur": 180 }] },
     "ex-power-clean": { "exercise_id": "ex-power-clean", "cycle_actif": "A", "one_rm_actuel": 95, "semaine_actuelle": 4, "historique_1rm": [{ "date": "2026-09-01T00:00:00Z", "valeur": 95 }] },
-    "ex-front-squat": { "exercise_id": "ex-front-squat", "cycle_actif": "10", "one_rm_actuel": 120, "semaine_actuelle": 6, "historique_1rm": [{ "date": "2026-09-01T00:00:00Z", "valeur": 120 }] }
+    "ex-front-squat": { "exercise_id": "ex-front-squat", "cycle_actif": "10", "one_rm_actuel": 120, "semaine_actuelle": 6, "historique_1rm": [{ "date": "2026-09-01T00:00:00Z", "valeur": 120 }] },
+    "ex-clean-jerk": { "exercise_id": "ex-clean-jerk", "cycle_actif": "C16", "one_rm_actuel": 100, "semaine_actuelle": 1, "historique_1rm": [{ "date": "2026-09-01T00:00:00Z", "valeur": 100 }] },
+    "ex-push-press": { "exercise_id": "ex-push-press", "cycle_actif": "C8", "one_rm_actuel": 80, "semaine_actuelle": 3, "historique_1rm": [{ "date": "2026-09-01T00:00:00Z", "valeur": 80 }] },
+    "ex-squat-clean": { "exercise_id": "ex-squat-clean", "cycle_actif": "C14", "one_rm_actuel": 110, "semaine_actuelle": 8, "historique_1rm": [{ "date": "2026-09-01T00:00:00Z", "valeur": 110 }] },
+    "ex-strict-press": { "exercise_id": "ex-strict-press", "cycle_actif": "C10", "one_rm_actuel": 60, "semaine_actuelle": 6, "historique_1rm": [{ "date": "2026-09-01T00:00:00Z", "valeur": 60 }] },
+    "ex-zercher-squat": { "exercise_id": "ex-zercher-squat", "cycle_actif": "C1", "one_rm_actuel": 140, "semaine_actuelle": 7, "historique_1rm": [{ "date": "2026-09-01T00:00:00Z", "valeur": 140 }] }
   }
 }
