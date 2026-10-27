@@ -3840,6 +3840,8 @@
     margin: 0 0 var(--space-3); padding: 10px 12px;
     border-radius: var(--radius-card); background: var(--orange-fill);
   }
+  .cycle-adjust-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 0 0 var(--space-3); }
+  .cycle-adjust-text { font-size: 12px; color: var(--blue); }
   .cycle-explication-meta { margin: 6px 0 0; font-size: 12px; color: var(--blue); }
   .cycle-explication { margin: 6px 0 8px; font-size: 13px; line-height: 1.5; color: var(--steel); }
   .live-cycle-reminder { margin: 0 0 var(--space-3); font-size: 12px; line-height: 1.45; color: var(--blue); }
@@ -6277,6 +6279,53 @@
     });
   }
 
+  /* v165 : ajustement de charge accepté en fin de séance, stocké sur le
+     cycle (ajustement_pct, points de % du 1RM, à partir de la semaine
+     ajustement_depuis_semaine). Ajouté à chaque série des semaines
+     restantes, allégée comprise, jamais au test ni aux séries
+     d'échauffement. Plafond 95 % (un % du gabarit déjà plus haut n'est
+     jamais baissé), plancher 20 kg. Une semaine modifiée à la main ne passe
+     pas par ici (getCycleWeekAt). */
+  function applyCycleAdjustment(cycle, weekNumber, week, sets) {
+    var pct = cycle.ajustement_pct;
+    var rm = cycle.one_rm_actuel;
+    if (!pct || week.isTestWeek || !(rm > 0) || weekNumber < (cycle.ajustement_depuis_semaine || 1)) return sets;
+    var floorPct = 20 / rm * 100;
+    return sets.map(function (s) {
+      if (s.warmup) return s;
+      var copy = {};
+      for (var k in s) { if (s.hasOwnProperty(k)) copy[k] = s[k]; }
+      var p = s.percent + pct;
+      if (pct > 0) p = Math.min(p, Math.max(s.percent, 95));
+      else p = Math.max(p, Math.min(s.percent, floorPct));
+      copy.percent = Math.round(p * 100) / 100;
+      return copy;
+    });
+  }
+
+  /* v165 : charge changée en séance sur une série d'un mouvement de cycle.
+     La série index passe à newKg (arrondi 2,5 kg, plancher 20 kg) et
+     chaque série suivante non faite est décalée du même écart en kg, ce
+     qui garde les pas entre séries. Séries faites (validées ou ratées) et
+     séries d'échauffement jamais touchées, sauf l'échauffement que l'on
+     règle lui-même. plannedPercent1rm garde le % prévu à la première
+     modification (comparé en fin de séance). % réel = kg / 1RM. */
+  function shiftCycleSessionSets(sets, index, newKg, oneRM) {
+    var target = sets[index];
+    var currentKg = computeWeightFromPercent(oneRM, target.percent1rm) || 0;
+    var diff = Math.max(20, Math.round(newKg / 2.5) * 2.5) - currentKg;
+    if (!diff) return false;
+    sets.forEach(function (s, i) {
+      if (i < index || s.done) return;
+      if (i > index && (s.warmup || target.warmup)) return;
+      var kg = computeWeightFromPercent(oneRM, s.percent1rm) || 0;
+      var shifted = Math.max(20, Math.round((kg + diff) / 2.5) * 2.5);
+      if (s.plannedPercent1rm == null) s.plannedPercent1rm = s.percent1rm;
+      s.percent1rm = Math.round(shifted / oneRM * 10000) / 100;
+    });
+    return true;
+  }
+
   function cycleLength(cycleKey) {
     var weeks = FORCE_CYCLES[cycleKey];
     return weeks ? weeks.length : 6;
@@ -6292,8 +6341,9 @@
     var override = cycle.semaines_modifiees && cycle.semaines_modifiees[weekNumber];
     if (!override) {
       var ramped = applyCycleRamp(cycle.cycle_actif, template, cycle.one_rm_actuel);
-      if (ramped === template.sets) return template;
-      override = ramped;
+      var adjusted = applyCycleAdjustment(cycle, weekNumber, template, ramped);
+      if (adjusted === template.sets) return template;
+      override = adjusted;
     }
     return {
       week: template.week,
@@ -6766,6 +6816,8 @@
       /* lot 07 : les pourcentages modifiés appartiennent au cycle qui se
          termine, jamais reportés sur le suivant. */
       cycle.semaines_modifiees = {};
+      /* v165 : idem pour l'ajustement de charge (nouveau 1RM) */
+      if (cycle.ajustement_pct != null) { cycle.ajustement_pct = null; cycle.ajustement_depuis_semaine = null; }
       this.saveForceCycles(map);
       return cycle;
     },
@@ -6790,6 +6842,17 @@
       this.saveForceCycles(map);
       return cycle;
     },
+    /* v165 : ajustement de fin de séance. Un nouvel ajustement remplace le
+       précédent ; null le retire. */
+    setForceCycleAdjustment: function (exerciseId, pct, fromWeek) {
+      var map = this.getForceCycles();
+      var cycle = map[exerciseId];
+      if (!cycle) return;
+      cycle.ajustement_pct = pct;
+      cycle.ajustement_depuis_semaine = pct == null ? null : fromWeek;
+      this.saveForceCycles(map);
+      return cycle;
+    },
     /* "Lancer ce cycle" : seul moment où cycle_actif/semaine_actuelle
        bougent après closeCycleAndDrawNext. */
     launchPendingCycle: function (exerciseId) {
@@ -6807,6 +6870,8 @@
          terminer, jamais reporté sur le suivant (même logique que
          semaines_modifiees juste au-dessus). */
       cycle.test_report_used = false;
+      /* v165 : l'ajustement appartient au cycle terminé */
+      if (cycle.ajustement_pct != null) { cycle.ajustement_pct = null; cycle.ajustement_depuis_semaine = null; }
       /* lot 08 : décalage par défaut, remplacé juste après par
          coordinateAndApplyOffsets (appelé par l'appelant de launchPendingCycle) —
          jamais celui de l'ancien cycle. */
@@ -8407,6 +8472,27 @@
         ' (dans ' + weeksUntilStartDetail + (weeksUntilStartDetail > 1 ? ' semaines)' : ' semaine)') + '</div>';
     }
     body.appendChild(intro);
+
+    /* v165 : ajustement accepté en fin de séance, retirable ici */
+    if (!isPreview && cycle.ajustement_pct) {
+      var adjKg = computeWeightFromPercent(cycle.one_rm_actuel, cycle.ajustement_pct);
+      var adjRow = document.createElement('div');
+      adjRow.className = 'cycle-adjust-row';
+      var adjText = document.createElement('span');
+      adjText.className = 'cycle-adjust-text mono';
+      adjText.textContent = 'Ajustement actif : ' + (adjKg > 0 ? '+' : '−') + formatKgFr(Math.abs(adjKg)) + ' kg';
+      adjRow.appendChild(adjText);
+      var adjRemove = document.createElement('button');
+      adjRemove.type = 'button';
+      adjRemove.className = 'cycle-week-edit-toggle';
+      adjRemove.textContent = 'Retirer';
+      adjRemove.addEventListener('click', function () {
+        OvrykDB.setForceCycleAdjustment(exerciseId, null);
+        openCycleDetailPage(exerciseId, null, cycleDetailReturnRefresh);
+      });
+      adjRow.appendChild(adjRemove);
+      body.appendChild(adjRow);
+    }
 
     var weeksTemplate = FORCE_CYCLES[cycle.cycle_actif];
     var hideKg = cycle.one_rm_actuel == null;
@@ -13816,6 +13902,14 @@
     var oneRM = sex.oneRepMaxSnapshot;
     if (oneRM == null) return;
     var currentKg = computeWeightFromPercent(oneRM, set.percent1rm) || 0;
+    /* v165 : mouvement de cycle, les séries suivantes suivent le même écart */
+    if (sex.cycleIdUsed) {
+      if (shiftCycleSessionSets(sex.sets, sex.sets.indexOf(set), currentKg + delta, oneRM)) {
+        persistActiveSession();
+        renderSeanceActiveView();
+      }
+      return;
+    }
     var newKg = Math.max(0, currentKg + delta);
     set.percent1rm = Math.round((newKg / oneRM) * 100);
     persistActiveSession();
@@ -15488,9 +15582,28 @@
        départ, envoi en ligne) ni laisser la séance affichée après coup. */
     try { downloadOvrykExport(); } catch (e) { /* l'export est un bonus, jamais bloquant pour la séance */ }
 
+    /* v165 : dernière série faite à une charge différente de la charge
+       prévue (plannedPercent1rm, posé par shiftCycleSessionSets). Jamais
+       après un test soumis ni sur une semaine de test. */
+    var adjustPrompts = [];
+    var seenAdjust = {};
+    activeSession.exercises.forEach(function (sex) {
+      if (!sex.cycleIdUsed || seenAdjust[sex.exerciseId] || cycleTestSubmittedIds[sex.exerciseId]) return;
+      var weeks = FORCE_CYCLES[sex.cycleIdUsed];
+      if (!weeks || !weeks[sex.cycleWeekUsed - 1] || weeks[sex.cycleWeekUsed - 1].isTestWeek) return;
+      var doneSets = sex.sets.filter(function (s) { return s.done && !s.warmup; });
+      var last = doneSets[doneSets.length - 1];
+      if (!last || last.plannedPercent1rm == null) return;
+      var diffKg = computeWeightFromPercent(sex.oneRepMaxSnapshot, last.percent1rm) - computeWeightFromPercent(sex.oneRepMaxSnapshot, last.plannedPercent1rm);
+      if (!diffKg) return;
+      seenAdjust[sex.exerciseId] = true;
+      adjustPrompts.push({ exerciseId: sex.exerciseId, name: sex.exerciseName, cycleId: sex.cycleIdUsed, fromWeek: sex.cycleWeekUsed + 1, diffKg: diffKg });
+    });
+
     var finishedId = activeSession.id;
     activeSession = null;
     showSeanceStart();
+    askCycleAdjustments(adjustPrompts);
 
     /* lot 16, livraison 5 : envoi en ligne éventuel, après tout le reste
        (séance enregistrée, cycles avancés, écran affiché), hors de cette
@@ -15498,6 +15611,33 @@
     setTimeout(function () {
       try { maybeAutoCloudUpload(finishedId); } catch (e) { /* jamais bloquant pour la séance */ }
     }, 0);
+  }
+
+  /* v165 : une confirmation par mouvement, l'une après l'autre. Non : rien
+     ne change. Oui : écart en points de % du 1RM du cycle, à partir de la
+     semaine suivante. Ignoré si le cycle a changé entre temps ou s'il ne
+     reste que le test. */
+  function askCycleAdjustments(prompts) {
+    var next = prompts.shift();
+    if (!next) return;
+    var cycle = OvrykDB.getForceCycle(next.exerciseId);
+    var weeks = cycle ? FORCE_CYCLES[cycle.cycle_actif] : null;
+    var hasRemaining = !!weeks && weeks.slice(next.fromWeek - 1).some(function (w) { return !w.isTestWeek; });
+    if (!cycle || cycle.cycle_actif !== next.cycleId || cycle.en_attente_de_validation || !(cycle.one_rm_actuel > 0) || !hasRemaining) {
+      askCycleAdjustments(prompts);
+      return;
+    }
+    var label = (next.diffKg > 0 ? '+' : '−') + formatKgFr(Math.abs(next.diffKg)) + ' kg';
+    showConfirmModal(
+      next.name + ' : ' + label + ' sur la dernière série. Appliquer cet écart aux prochaines semaines de ce cycle ?',
+      function () {
+        OvrykDB.setForceCycleAdjustment(next.exerciseId, Math.round(next.diffKg / cycle.one_rm_actuel * 10000) / 100, next.fromWeek);
+        askCycleAdjustments(prompts);
+      },
+      function () { askCycleAdjustments(prompts); },
+      'Oui',
+      'Non'
+    );
   }
 
   document.getElementById('seance-cancel-btn').addEventListener('click', cancelActiveSession);
@@ -20306,7 +20446,7 @@
 </script>
 <script>
   /* v164 : à garder égal à CACHE_VERSION dans sw.js (contrôlé par smoke.py) */
-  var APP_VERSION = 'v164';
+  var APP_VERSION = 'v165';
   document.getElementById('app-version-value').textContent = 'Version ' + APP_VERSION;
 
   /* Désinscrit le service worker et vide ses caches (ovryk-static-*), puis

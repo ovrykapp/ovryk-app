@@ -165,5 +165,79 @@ with sync_playwright() as p:
     check([s['percent1rm'] for s in sx['sets']] == [70] * 10, 'T6 séance C19 S1 : 10 séries à 70 %, charge fixe')
     check(not errors, 'T6 aucune erreur JS ' + str(errors[:2]))
     ctx.close()
+
+    # T7 (v165) : charge changée en séance, confirmation en fin de séance, ajustement des semaines restantes
+    def kgs_live(page):
+        sx = live(page)['exercises'][0]
+        return [round(70 * x['percent1rm'] / 100 / 2.5) * 2.5 for x in sx['sets']], sx
+    def validate_current(page):
+        page.locator('.live-card.is-open button.live-set-circle.is-current').first.click(); page.wait_for_timeout(250)
+        if page.is_visible('#rest-timer-overlay') if page.query_selector('#rest-timer-overlay') else False: pass
+    def bump(page):
+        page.click('.haltero-charge-toggle'); page.wait_for_timeout(200)
+        page.locator('.haltero-charge-card .haltero-charge-step', has_text='+2,5').click(); page.wait_for_timeout(250)
+    def finish_with_adjust(page, answer):
+        page.click('#seance-finish-btn'); page.wait_for_timeout(200)
+        page.click('#confirm-modal-confirm'); page.wait_for_timeout(800)
+        msg = page.inner_text('#confirm-modal-message') if page.is_visible('#confirm-modal-overlay') else ''
+        if msg: page.click('#confirm-modal-confirm' if answer else '#confirm-modal-cancel'); page.wait_for_timeout(400)
+        return msg
+    d = dataset(base, [routine('r-a', 'Jambes fab', [BS])], {BS: cycle(BS, 70, 'C11', 1)})
+    ctx, page, errors = fresh(b, d)
+    start_routine(page, 'Jambes fab')
+    k0, _ = kgs_live(page)
+    validate_current(page)
+    bump(page)
+    k1, sx = kgs_live(page)
+    check(k1[0] == k0[0] and k1[1:] == [k + 2.5 for k in k0[1:]], 'T7 C11 S1 1RM 70 : série 2 +2,5 kg, suivantes décalées, série 1 validée intacte (%s puis %s)' % (k0, k1))
+    check(all(abs(70 * x['percent1rm'] / 100 - k) < 0.01 for x, k in zip(sx['sets'][1:], k1[1:])), 'T7 % réel stocké (kg / 1RM)')
+    for _ in range(4): validate_current(page)
+    msg = finish_with_adjust(page, True)
+    check(msg == 'Back Squat fab : +2,5 kg sur la dernière série. Appliquer cet écart aux prochaines semaines de ce cycle ?', 'T7 confirmation de fin : "%s"' % msg)
+    fc = cycles(page)[BS]
+    check(abs(fc.get('ajustement_pct', 0) - 3.57) < 0.001 and fc.get('ajustement_depuis_semaine') == 2 and fc['semaine_actuelle'] == 2, 'T7 Oui : ajustement %s points à partir de S%s' % (fc.get('ajustement_pct'), fc.get('ajustement_depuis_semaine')))
+    past = last_done(page)['exercises'][0]['sets']
+    def open_detail_programme(page):
+        nav(page, 'routine'); page.locator('.programme-cycle-row').first.click(); page.wait_for_timeout(500)
+    open_detail_programme(page)
+    det = page.inner_text('#cycle-detail-page')
+    check('Ajustement actif : +2,5 kg' in det, 'T7 ligne "Ajustement actif : +2,5 kg" dans le détail')
+    check(all(x in det for x in ['70% → 47.5kg', '67% → 47.5kg']) or det.count('47.5kg') >= 1, 'T7 S2 recalculée dans le détail')
+    page.screenshot(path=str(SP / 't7-detail-ajustement.png'), full_page=True)
+    # deuxième séance (même semaine civile : séance légère de S1) à +5 kg : l'ajustement est remplacé, pas additionné
+    page.click('#cycle-detail-back-btn'); page.wait_for_timeout(300)
+    start_routine(page, 'Jambes fab')
+    k2, _ = kgs_live(page)
+    bump(page); page.locator('.haltero-charge-card .haltero-charge-step', has_text='+2,5').click(); page.wait_for_timeout(250)
+    for _ in range(len(k2)): validate_current(page)
+    msg2 = finish_with_adjust(page, True)
+    fc = cycles(page)[BS]
+    check(msg2.startswith('Back Squat fab : +5 kg') and abs(fc['ajustement_pct'] - 7.14) < 0.001, 'T7 nouvel ajustement +5 kg remplace le précédent (%s points, pas 10,71)' % fc['ajustement_pct'])
+    check(json.dumps(last_done(page) and [x for x in json.loads(ls(page)['ovryk.sessions']) if x['status'] == 'completed'][0]['exercises'][0]['sets']) == json.dumps(past), 'T7 séance passée jamais réécrite')
+    open_detail_programme(page)
+    page.locator('#cycle-detail-page button', has_text='Retirer').click(); page.wait_for_timeout(300)
+    fc = cycles(page)[BS]
+    check(fc.get('ajustement_pct') is None and 'Ajustement actif' not in page.inner_text('#cycle-detail-page'), 'T7 Retirer supprime l\'ajustement')
+    check(not errors, 'T7 aucune erreur JS ' + str(errors[:2]))
+    ctx.close()
+
+    # T8 (v165) : Non ne change rien ; ancien cycle D : décalage en séance proposé aussi
+    d = dataset(base, [routine('r-a', 'Jambes fab', [BS])], {BS: cycle(BS, 100, 'D', 2)})
+    ctx, page, errors = fresh(b, d)
+    fc0 = raw_cycles(page)
+    start_routine(page, 'Jambes fab')
+    sx0 = live(page)['exercises'][0]
+    k0 = [round(100 * x['percent1rm'] / 100 / 2.5) * 2.5 for x in sx0['sets']]
+    bump(page)
+    sx1 = live(page)['exercises'][0]
+    k1 = [round(100 * x['percent1rm'] / 100 / 2.5) * 2.5 for x in sx1['sets']]
+    check(k1 == [k + 2.5 for k in k0], 'T8 ancien cycle D : toutes les séries non faites décalées de +2,5 kg (%s puis %s)' % (k0, k1))
+    for _ in range(len(k1)): validate_current(page)
+    msg = finish_with_adjust(page, False)
+    fc = cycles(page)[BS]
+    check(msg.startswith('Back Squat fab : +2,5 kg') and fc.get('ajustement_pct') is None, 'T8 Non : aucun ajustement stocké')
+    check({k: v for k, v in fc.items() if k != 'semaine_actuelle'} == {k: v for k, v in json.loads(fc0)[BS].items() if k != 'semaine_actuelle'}, 'T8 cycle D inchangé hors avancée de semaine')
+    check(not errors, 'T8 aucune erreur JS ' + str(errors[:2]))
+    ctx.close()
     b.close()
 print('\n%d/%d' % (sum(res), len(res)))

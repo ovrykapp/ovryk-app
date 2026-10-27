@@ -11,7 +11,7 @@
    d'une série à la suivante, plancher 20 kg, échauffement et test
    inchangés, une échelle garde une seule charge. Les 8 autres cycles et les
    anciens restent exactement leur gabarit. */
-const { FORCE_CYCLES, GENERIC_CYCLE_IDS, CYCLE_LETTERS, NEW_CYCLE_IDS, CYCLE_META, CYCLE_NAMES, RAMP_CYCLE_IDS, getCycleWeekAt, computeWeightFromPercent } = require('./extraire-cycles.js')();
+const { FORCE_CYCLES, GENERIC_CYCLE_IDS, CYCLE_LETTERS, NEW_CYCLE_IDS, CYCLE_META, CYCLE_NAMES, RAMP_CYCLE_IDS, getCycleWeekAt, computeWeightFromPercent, shiftCycleSessionSets } = require('./extraire-cycles.js')();
 const ANCIENS = GENERIC_CYCLE_IDS.concat(CYCLE_LETTERS);
 const TYPES = ['Volume', 'Technique', 'Mixte', 'Intensité'];
 let erreurs = 0;
@@ -113,5 +113,54 @@ if (NEW_CYCLE_IDS.length !== 20) { console.log('ERREUR ' + NEW_CYCLE_IDS.length 
 NEW_CYCLE_IDS.forEach(function (id) {
   if (ANCIENS.indexOf(id) !== -1) { console.log('ERREUR id ' + id + ' en collision avec un ancien cycle'); erreurs++; }
 });
+/* v165 : charge changée en séance (shiftCycleSessionSets) et ajustement
+   de fin de séance (ajustement_pct dans getCycleWeekAt). */
+function controle(ok, message) {
+  console.log((ok ? 'ok     ' : 'ERREUR ') + message);
+  if (!ok) erreurs++;
+}
+function kgDe(rm, sets) { return sets.map(function (s) { return computeWeightFromPercent(rm, s.percent1rm); }); }
+function seriesSeance(rm, kgs, faites) {
+  return kgs.map(function (kg, i) { return { percent1rm: Math.round(kg / rm * 10000) / 100, done: i < faites }; });
+}
+(function () {
+  let sets = seriesSeance(70, [40, 42.5, 45, 47.5, 50], 1);
+  shiftCycleSessionSets(sets, 1, 45, 70);
+  controle(kgDe(70, sets).join() === '40,45,47.5,50,52.5', 'séance : série 2 de 42,5 à 45 kg décale les suivantes du même écart (' + kgDe(70, sets).join(', ') + ')');
+  controle(sets[0].plannedPercent1rm === undefined && sets[1].plannedPercent1rm != null && sets[4].plannedPercent1rm != null, 'séance : série validée intacte, % prévu gardé sur les séries décalées');
+  sets.forEach(function (s, i) { if (i) controle(Math.abs(computeWeightFromPercent(70, s.percent1rm) - s.percent1rm * 70 / 100) < 0.01, 'séance : série ' + (i + 1) + ' garde son % réel (kg / 1RM)'); });
+  sets = seriesSeance(70, [25, 27.5, 30, 32.5], 0);
+  sets[2].done = true; sets[2].result = 'fail';
+  shiftCycleSessionSets(sets, 0, 20, 70);
+  controle(kgDe(70, sets).join() === '20,22.5,30,27.5', 'séance : plancher 20 kg, série ratée intacte (' + kgDe(70, sets).join(', ') + ')');
+  sets = seriesSeance(100, [60, 60, 60, 60, 62.5], 0);
+  sets[0].warmup = sets[1].warmup = true; sets[0].done = true;
+  shiftCycleSessionSets(sets, 2, 65, 100);
+  controle(kgDe(100, sets).join() === '60,60,65,65,67.5', 'séance : échauffement C16 intact, bloc de force décalé (' + kgDe(100, sets).join(', ') + ')');
+  shiftCycleSessionSets(sets, 1, 62.5, 100);
+  controle(kgDe(100, sets).join() === '60,62.5,65,65,67.5', 'séance : régler un échauffement ne décale rien d\'autre');
+
+  const base = { cycle_actif: 'C11', one_rm_actuel: 70, semaines_modifiees: {}, ajustement_pct: Math.round(2.5 / 70 * 10000) / 100, ajustement_depuis_semaine: 2 };
+  const sans = Object.assign({}, base, { ajustement_pct: null });
+  const s1 = getCycleWeekAt(base, 1).sets, s1sans = getCycleWeekAt(sans, 1).sets;
+  controle(JSON.stringify(s1) === JSON.stringify(s1sans), 'ajustement : semaine déjà faite (S1) intacte');
+  [2, 3, 4, 5, 6, 7].forEach(function (w) {
+    const a = getCycleWeekAt(base, w).sets.map(function (s) { return computeWeightFromPercent(70, s.percent); });
+    const b = getCycleWeekAt(sans, w).sets.map(function (s) { return computeWeightFromPercent(70, s.percent); });
+    controle(a.every(function (kg, i) { return kg === b[i] + 2.5 || (kg === b[i] && b[i] >= 70 * 0.95); }), 'ajustement : S' + w + ' (' + (FORCE_CYCLES.C11[w - 1].deload ? 'allégée' : 'travail') + ') +2,5 kg sur chaque série');
+  });
+  controle(JSON.stringify(getCycleWeekAt(base, 8)) === JSON.stringify(FORCE_CYCLES.C11[7]), 'ajustement : semaine de test intacte');
+  const manuel = Object.assign({}, base, { semaines_modifiees: { 3: [{ reps: 3, percent: 50 }] } });
+  controle(JSON.stringify(getCycleWeekAt(manuel, 3).sets) === JSON.stringify([{ reps: 3, percent: 50 }]), 'ajustement : semaine modifiée à la main intacte');
+  const haut = Object.assign({}, base, { ajustement_pct: 20 });
+  controle(getCycleWeekAt(haut, 7).sets.every(function (s) { return s.percent <= 95; }), 'ajustement : plafond 95 % (S7 de C11 à +20 points)');
+  const ancien = { cycle_actif: 'B', one_rm_actuel: 100, semaines_modifiees: {}, ajustement_pct: 5, ajustement_depuis_semaine: 1 };
+  controle(getCycleWeekAt(ancien, 5).sets.every(function (s, i) { return s.percent >= FORCE_CYCLES.B[4].sets[i].percent; }), 'ajustement : un % du gabarit déjà au dessus de 95 n\'est jamais baissé (ancien cycle B, S5)');
+  const bas = { cycle_actif: 'C1', one_rm_actuel: 40, semaines_modifiees: {}, ajustement_pct: -30, ajustement_depuis_semaine: 1 };
+  controle(getCycleWeekAt(bas, 2).sets.every(function (s) { return computeWeightFromPercent(40, s.percent) >= 20; }), 'ajustement : plancher 20 kg (C1, 1RM 40 kg, -30 points)');
+  const c16 = { cycle_actif: 'C16', one_rm_actuel: 100, semaines_modifiees: {}, ajustement_pct: 5, ajustement_depuis_semaine: 1 };
+  controle(getCycleWeekAt(c16, 1).sets.filter(function (s) { return s.warmup; }).every(function (s) { return s.percent === 60; }), 'ajustement : échauffement C16 intact');
+})();
+
 console.log(erreurs ? '\n' + erreurs + ' cycle(s) à corriger' : '\nTous les cycles sont valides');
 process.exit(erreurs ? 1 : 0);
