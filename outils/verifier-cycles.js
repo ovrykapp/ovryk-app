@@ -6,7 +6,7 @@
    test), une seule semaine allégée, aucun pourcentage au dessus de 90 ni
    série au dessus de 3 reps hors test, type et explication présents,
    aucun tiret long ou moyen, charges calculables depuis un 1RM.
-   v162, pour 12 cycles à montée de charge (RAMP_CYCLE_IDS), sur plusieurs
+   v162, pour les 11 cycles à montée de charge (RAMP_CYCLE_IDS, C19 retiré en v163), sur plusieurs
    1RM : la dernière série garde le % du gabarit, les kg ne baissent jamais
    d'une série à la suivante, plancher 20 kg, échauffement et test
    inchangés, une échelle garde une seule charge. Les 8 autres cycles et les
@@ -71,6 +71,7 @@ function verifierMontee(id, semaines, problemes) {
   if (montee !== !!(CYCLE_META[id] && CYCLE_META[id].montee)) problemes.push('drapeau montee incohérent');
   semaines.forEach(function (w) {
     if (montee && !w.isTestWeek && !/jusqu'à \d+ %/.test(w.phase)) problemes.push('semaine ' + w.week + ' : phase sans "jusqu\'à"');
+    if (!montee && /jusqu'à \d+ %/.test(w.phase)) problemes.push('semaine ' + w.week + ' : "jusqu\'à" sur un cycle à charge fixe');
     UN_RM.forEach(function (rm) {
       const sets = getCycleWeekAt({ cycle_actif: id, one_rm_actuel: rm, semaines_modifiees: {} }, w.week).sets;
       const ou = 'semaine ' + w.week + ', 1RM ' + rm + ' : ';
@@ -106,6 +107,8 @@ ANCIENS.concat(NEW_CYCLE_IDS).forEach(function (id) {
   console.log((problemes.length ? 'ERREUR ' : 'ok     ') + 'cycle ' + id + ' (' + semaines.length + ' sem.) ' + CYCLE_NAMES[id] + (problemes.length ? ' : ' + problemes.join(', ') : ''));
   if (problemes.length) erreurs++;
 });
+const MONTEE_ATTENDUE = ['C1', 'C2', 'C3', 'C4', 'C6', 'C7', 'C10', 'C11', 'C12', 'C16', 'C20'];
+if (RAMP_CYCLE_IDS.join() !== MONTEE_ATTENDUE.join()) { console.log('ERREUR cycles à montée : ' + RAMP_CYCLE_IDS.join(', ') + ' au lieu de ' + MONTEE_ATTENDUE.join(', ')); erreurs++; }
 if (NEW_CYCLE_IDS.length !== 20) { console.log('ERREUR ' + NEW_CYCLE_IDS.length + ' cycles dans le tirage au lieu de 20'); erreurs++; }
 NEW_CYCLE_IDS.forEach(function (id) {
   if (ANCIENS.indexOf(id) !== -1) { console.log('ERREUR id ' + id + ' en collision avec un ancien cycle'); erreurs++; }

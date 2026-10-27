@@ -149,5 +149,21 @@ with sync_playwright() as p:
     page.screenshot(path=str(SP / 't5-detail-c1.png'), full_page=True)
     check(not errors, 'T5 aucune erreur JS ' + str(errors[:2]))
     ctx.close()
+
+    # T6 (v163) : C19 revenu à charge fixe, sans ligne de montée
+    d = dataset(base, [routine('r-a', 'Jambes fab', [BS])], {BS: cycle(BS, 140, 'C19', 1)})
+    ctx, page, errors = fresh(b, d)
+    page.evaluate("() => { const r = JSON.parse(localStorage.getItem('ovryk.routines')); r[0].weekdays = [0,1,2,3,4,5,6]; localStorage.setItem('ovryk.routines', JSON.stringify(r)); }")
+    page.reload(); page.wait_for_timeout(500)
+    page.locator('.dash-session-ex-value.is-cycle').first.click(); page.wait_for_timeout(500)
+    det = page.inner_text('#cycle-detail-page')
+    check('La charge monte à chaque série' not in det and 'jusqu' not in det.lower(), 'T6 C19 : ni ligne de montée ni "jusqu\'à" dans le détail')
+    check(det.count('70% → 97.5kg') == 10, 'T6 C19 S1 : 10 singles à 70 %% = 97,5 kg pour 1RM 140 (%d trouvés)' % det.count('70% → 97.5kg'))
+    page.click('#cycle-detail-back-btn'); page.wait_for_timeout(300)
+    start_routine(page, 'Jambes fab')
+    sx = live(page)['exercises'][0]
+    check([s['percent1rm'] for s in sx['sets']] == [70] * 10, 'T6 séance C19 S1 : 10 séries à 70 %, charge fixe')
+    check(not errors, 'T6 aucune erreur JS ' + str(errors[:2]))
+    ctx.close()
     b.close()
 print('\n%d/%d' % (sum(res), len(res)))

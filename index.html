@@ -6219,10 +6219,11 @@
     C20: [nxWeek(1, 8, 2, 60), nxWeek(2, 8, 2, 63), nxWeek(3, 8, 2, 66), nxWeek(4, 5, 2, 58, DL), nxWeek(5, 8, 2, 69), nxWeek(6, 8, 2, 72), nxWeek(7, 6, 2, 75), mkTestEssais(8)]
   });
 
-  /* v162 : sur ces 12 cycles la charge monte à chaque série (voir
+  /* v162 : sur ces cycles la charge monte à chaque série (voir
      applyCycleRamp). La phase dit "jusqu'à P %" : P reste le % de la
-     dernière série de travail. Le test n'est pas concerné. */
-  var RAMP_CYCLE_IDS = ['C1', 'C2', 'C3', 'C4', 'C6', 'C7', 'C10', 'C11', 'C12', 'C16', 'C19', 'C20'];
+     dernière série de travail. Le test n'est pas concerné. v163 : C19
+     retiré, revenu à charge fixe sur toutes ses séries. */
+  var RAMP_CYCLE_IDS = ['C1', 'C2', 'C3', 'C4', 'C6', 'C7', 'C10', 'C11', 'C12', 'C16', 'C20'];
   RAMP_CYCLE_IDS.forEach(function (id) {
     CYCLE_META[id].montee = true;
     FORCE_CYCLES[id].forEach(function (w) {

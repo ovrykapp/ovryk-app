@@ -266,17 +266,17 @@ Les reps montent puis redescendent avec les charges : 3, 2, 1, puis 2 et 3 aux m
 
 ## Cycle 19 (C19) : Singles de précision (Technique, 8 semaines)
 
-10 singles propres à charge modérée, repos libre de 60 à 90 s. Chaque rep doit être parfaite : une rep ratée se refait, 2 reprises maximum. Priorité à la qualité, pas à la charge. La charge monte à chaque série, la dernière série correspond au pourcentage de la semaine.
+10 singles propres à charge modérée, repos libre de 60 à 90 s. Chaque rep doit être parfaite : une rep ratée se refait, 2 reprises maximum. Priorité à la qualité, pas à la charge.
 
 | Semaine | Phase | Séries (reps à % du 1RM) | Repos |
 |---|---|---|---|
-| 1 | 10x1 jusqu'à 70 % | 10 x 1 à 70 % | 75 s |
-| 2 | 10x1 jusqu'à 72 % | 10 x 1 à 72 % | 75 s |
-| 3 | 10x1 jusqu'à 74 % | 10 x 1 à 74 % | 75 s |
-| 4 | Allégée 6x1 jusqu'à 62 % | 6 x 1 à 62 % | 75 s |
-| 5 | 8x1 jusqu'à 77 % | 8 x 1 à 77 % | 75 s |
-| 6 | 8x1 jusqu'à 80 % | 8 x 1 à 80 % | 75 s |
-| 7 | 6x1 jusqu'à 83 % | 6 x 1 à 83 % | 75 s |
+| 1 | 10x1 à 70 % | 10 x 1 à 70 % | 75 s |
+| 2 | 10x1 à 72 % | 10 x 1 à 72 % | 75 s |
+| 3 | 10x1 à 74 % | 10 x 1 à 74 % | 75 s |
+| 4 | Allégée 6x1 à 62 % | 6 x 1 à 62 % | 75 s |
+| 5 | 8x1 à 77 % | 8 x 1 à 77 % | 75 s |
+| 6 | 8x1 à 80 % | 8 x 1 à 80 % | 75 s |
+| 7 | 6x1 à 83 % | 6 x 1 à 83 % | 75 s |
 | 8 | Test 1RM : paliers puis 3 essais (+2 à 3 kg par essai) | 5 à 40 %, 3 à 60 %, 1 à 75 %, 1 à 85 %, 1 à 92 %, 3 x 1 à 100 % | 180 s |
 
 ## Cycle 20 (C20) : Doubles vitesse (Technique, 8 semaines)
