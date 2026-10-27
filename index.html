@@ -4785,6 +4785,19 @@
         </div>
         <p class="settings-note">Supprime définitivement toutes les données de l'app (exercices, routines, séances, réglages, cycles de force) et repart de zéro. Pense à exporter une sauvegarde avant si besoin.</p>
       </div>
+
+      <!-- v164 : version du code en cours (APP_VERSION, identique à
+           CACHE_VERSION de sw.js) et mise à jour forcée de l'app. -->
+      <div class="settings-section">
+        <span class="settings-eyebrow">Application</span>
+        <div class="settings-group">
+          <button type="button" id="app-update-btn" class="settings-row is-button">
+            <span class="settings-row-label">Mettre à jour l'app</span>
+            <span class="settings-row-value mono" id="app-version-value"></span>
+          </button>
+        </div>
+        <p class="settings-note" id="app-update-note">Recharge la dernière version en ligne. Tes données restent sur ce téléphone, elles ne sont pas touchées.</p>
+      </div>
     </section>
 
   </main>
@@ -20292,6 +20305,42 @@
 })();
 </script>
 <script>
+  /* v164 : à garder égal à CACHE_VERSION dans sw.js (contrôlé par smoke.py) */
+  var APP_VERSION = 'v164';
+  document.getElementById('app-version-value').textContent = 'Version ' + APP_VERSION;
+
+  /* Désinscrit le service worker et vide ses caches (ovryk-static-*), puis
+     recharge : la page suivante vient du réseau. localStorage n'est jamais
+     touché. Hors connexion, rien n'est fait : sans cache ni réseau l'app ne
+     pourrait plus s'ouvrir. */
+  document.getElementById('app-update-btn').addEventListener('click', function () {
+    var btn = this;
+    var note = document.getElementById('app-update-note');
+    if (!navigator.onLine) {
+      note.textContent = 'Pas de connexion : réessaie quand le téléphone est en ligne. Rien n\'a été modifié.';
+      return;
+    }
+    btn.disabled = true;
+    note.textContent = 'Mise à jour en cours…';
+    var unregister = 'serviceWorker' in navigator
+      ? navigator.serviceWorker.getRegistrations().then(function (regs) {
+          return Promise.all(regs.map(function (r) { return r.unregister(); }));
+        })
+      : Promise.resolve();
+    var clearCaches = 'caches' in window
+      ? caches.keys().then(function (keys) {
+          return Promise.all(keys.filter(function (k) { return k.indexOf('ovryk-static-') === 0; })
+            .map(function (k) { return caches.delete(k); }));
+        })
+      : Promise.resolve();
+    Promise.all([unregister, clearCaches]).then(function () {
+      window.location.reload();
+    }, function () {
+      btn.disabled = false;
+      note.textContent = 'La mise à jour n\'a pas pu se faire. Ferme l\'app et rouvre la.';
+    });
+  });
+
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', function () {
       navigator.serviceWorker.register('sw.js').catch(function () { /* offline caching is a bonus, never block the app on it */ });

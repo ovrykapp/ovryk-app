@@ -1,7 +1,7 @@
 /* Ovryk — service worker: cache-first for the app shell so it loads with no
    network after the first visit. Bump CACHE_VERSION whenever a static asset
    listed in PRECACHE_URLS changes shape; the old cache is dropped on activate. */
-var CACHE_VERSION = 'v163';
+var CACHE_VERSION = 'v164';
 var CACHE_NAME = 'ovryk-static-' + CACHE_VERSION;
 
 var PRECACHE_URLS = [
@@ -17,7 +17,13 @@ var PRECACHE_URLS = [
 self.addEventListener('install', function (event) {
   event.waitUntil(
     caches.open(CACHE_NAME)
-      .then(function (cache) { return cache.addAll(PRECACHE_URLS); })
+      /* v164 : cache 'reload' contourne le cache HTTP du navigateur
+         (GitHub Pages : max-age=600), sinon un index.html encore frais dans
+         ce cache pouvait être copié dans la nouvelle version du cache et
+         l'ancienne app continuait de s'ouvrir. */
+      .then(function (cache) {
+        return cache.addAll(PRECACHE_URLS.map(function (url) { return new Request(url, { cache: 'reload' }); }));
+      })
       .then(function () { return self.skipWaiting(); })
   );
 });

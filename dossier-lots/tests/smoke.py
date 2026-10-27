@@ -31,6 +31,13 @@ captures = here / "captures"
 captures.mkdir(exist_ok=True)
 seed = json.loads((here / "donnees-exemple.json").read_text(encoding="utf-8"))
 
+# v164 : la version affichée dans les Réglages (APP_VERSION) suit CACHE_VERSION de sw.js
+import re
+_html = index.read_text(encoding="utf-8")
+_sw = (index.parent / "sw.js").read_text(encoding="utf-8")
+_app_v = re.search(r"var APP_VERSION = '([^']+)'", _html)
+_cache_v = re.search(r"var CACHE_VERSION = '([^']+)'", _sw)
+
 erreurs = []
 echecs = []
 
@@ -38,6 +45,8 @@ def verifier(condition, message):
     print(("ok     " if condition else "ECHEC  ") + message)
     if not condition:
         echecs.append(message)
+
+verifier(bool(_app_v and _cache_v and _app_v.group(1) == _cache_v.group(1)), "APP_VERSION de index.html égale à CACHE_VERSION de sw.js (" + (_app_v.group(1) if _app_v else "?") + " / " + (_cache_v.group(1) if _cache_v else "?") + ")")
 
 with sync_playwright() as p:
     navigateur = p.chromium.launch()
