@@ -6083,7 +6083,7 @@
   }
   function ladders(count, percent) {
     var sets = [];
-    for (var i = 0; i < count; i++) sets.push({ reps: 1, percent: percent }, { reps: 2, percent: percent }, { reps: 3, percent: percent });
+    for (var i = 0; i < count; i++) sets.push({ reps: 1, percent: percent, ladder: i }, { reps: 2, percent: percent, ladder: i }, { reps: 3, percent: percent, ladder: i });
     return sets;
   }
   function stairs(minutes, from, step) {
@@ -6219,6 +6219,50 @@
     C20: [nxWeek(1, 8, 2, 60), nxWeek(2, 8, 2, 63), nxWeek(3, 8, 2, 66), nxWeek(4, 5, 2, 58, DL), nxWeek(5, 8, 2, 69), nxWeek(6, 8, 2, 72), nxWeek(7, 6, 2, 75), mkTestEssais(8)]
   });
 
+  /* v162 : sur ces 12 cycles la charge monte à chaque série (voir
+     applyCycleRamp). La phase dit "jusqu'à P %" : P reste le % de la
+     dernière série de travail. Le test n'est pas concerné. */
+  var RAMP_CYCLE_IDS = ['C1', 'C2', 'C3', 'C4', 'C6', 'C7', 'C10', 'C11', 'C12', 'C16', 'C19', 'C20'];
+  RAMP_CYCLE_IDS.forEach(function (id) {
+    CYCLE_META[id].montee = true;
+    FORCE_CYCLES[id].forEach(function (w) {
+      if (!w.isTestWeek) w.phase = w.phase.replace(/^(.*) à (\d+) %/, '$1 jusqu\'à $2 %');
+    });
+  });
+
+  /* v162 : montée de charge série après série. La dernière série de
+     travail garde son % du gabarit ; chaque série précédente vaut la
+     suivante moins un pas : 2 % du 1RM (1 % à partir de 6 séries) arrondi
+     à 2,5 kg, au moins 2,5 kg, plancher 20 kg. Les échelles (ladder)
+     montent d'une échelle à l'autre, les séries d'échauffement (warmup)
+     ne bougent pas. Chaque série reçoit son % réel (kg / 1RM), le calcul
+     des kg reste computeWeightFromPercent. Sans 1RM, gabarit inchangé. */
+  function applyCycleRamp(cycleId, week, oneRM) {
+    var meta = CYCLE_META[cycleId];
+    if (!meta || !meta.montee || week.isTestWeek || !(oneRM > 0)) return week.sets;
+    var units = [];
+    week.sets.forEach(function (s, i) {
+      if (s.warmup) return;
+      var key = s.ladder != null ? 'l' + s.ladder : 's' + i;
+      if (units.indexOf(key) === -1) units.push(key);
+    });
+    var n = units.length;
+    if (n < 2) return week.sets;
+    var lastPercent = week.sets[week.sets.length - 1].percent;
+    var lastKg = computeWeightFromPercent(oneRM, lastPercent);
+    var step = Math.max(2.5, Math.round(oneRM * (n >= 6 ? 1 : 2) / 100 / 2.5) * 2.5);
+    return week.sets.map(function (s, i) {
+      var copy = {};
+      for (var k in s) { if (s.hasOwnProperty(k)) copy[k] = s[k]; }
+      if (s.warmup) return copy;
+      var rank = units.indexOf(s.ladder != null ? 'l' + s.ladder : 's' + i);
+      if (rank === n - 1) return copy;
+      var kg = Math.min(lastKg, Math.max(20, lastKg - (n - 1 - rank) * step));
+      copy.percent = Math.round(kg / oneRM * 10000) / 100;
+      return copy;
+    });
+  }
+
   function cycleLength(cycleKey) {
     var weeks = FORCE_CYCLES[cycleKey];
     return weeks ? weeks.length : 6;
@@ -6232,7 +6276,11 @@
   function getCycleWeekAt(cycle, weekNumber) {
     var template = FORCE_CYCLES[cycle.cycle_actif][weekNumber - 1];
     var override = cycle.semaines_modifiees && cycle.semaines_modifiees[weekNumber];
-    if (!override) return template;
+    if (!override) {
+      var ramped = applyCycleRamp(cycle.cycle_actif, template, cycle.one_rm_actuel);
+      if (ramped === template.sets) return template;
+      override = ramped;
+    }
     return {
       week: template.week,
       phase: template.phase,
@@ -6290,7 +6338,8 @@
     var meta = CYCLE_META[cycleId];
     if (!meta) return '';
     return '<div class="cycle-explication-meta mono">' + escapeHTML(meta.type) + ' · ' + escapeHTML(cycleDurationLabel(cycleId)) + '</div>' +
-      '<p class="cycle-explication">' + escapeHTML(meta.explication) + '</p>';
+      '<p class="cycle-explication">' + escapeHTML(meta.explication) + '</p>' +
+      (meta.montee ? '<p class="cycle-explication">La charge monte à chaque série, la dernière série correspond au pourcentage de la semaine.</p>' : '');
   }
 
   /* cycle_actif de tous les mouvements qui ont un cycle actif en ce moment
@@ -8293,7 +8342,9 @@
         var raw = parseFloat(inputs[idx].value);
         if (isNaN(raw)) raw = s.percent;
         var clamped = Math.min(105, Math.max(30, raw));
-        return { reps: s.reps, percent: clamped };
+        var edited = { reps: s.reps, percent: clamped };
+        if (s.warmup) edited.warmup = true;
+        return edited;
       });
       OvrykDB.updateForceCycleWeekOverride(exerciseId, weekNum, newSets);
       cycleDetailEditingWeek = null;
@@ -8382,7 +8433,7 @@
         var kg = computeWeightFromPercent(cycle.one_rm_actuel, s.percent);
         var isLast = week.isTestWeek && (sIdx === week.sets.length - 1 || s.percent >= 100);
         var setLabel = isLast ? 'Max' : ('S' + (sIdx + 1));
-        var text = (isLast ? 'Tentative' : (s.reps + ' reps')) + ' @ ' + s.percent + '%';
+        var text = (isLast ? 'Tentative' : (s.reps + ' reps')) + ' @ ' + Math.round(s.percent) + '%';
         setsWrap.appendChild(buildStackBarRow(setLabel, text, kg, hideKg, maxPercent, s.percent, isLast));
       });
       block.appendChild(setsWrap);
@@ -11890,7 +11941,7 @@
       var kg = computeWeightFromPercent(cycle.one_rm_actuel, s.percent);
       var isLast = weekPrescription.isTestWeek && (idx === weekPrescription.sets.length - 1 || s.percent >= 100);
       var setLabel = isLast ? 'Max' : ('S' + (idx + 1));
-      var text = (isLast ? 'Tentative' : (s.reps + ' reps')) + ' @ ' + s.percent + '%';
+      var text = (isLast ? 'Tentative' : (s.reps + ' reps')) + ' @ ' + Math.round(s.percent) + '%';
       setsWrap.appendChild(buildStackBarRow(setLabel, text, kg, hideKg, maxPercent, s.percent, isLast));
     });
     wrap.appendChild(setsWrap);
@@ -11929,7 +11980,7 @@
 
     prescription.sets.forEach(function (s, idx) {
       var kg = computeWeightFromPercent(exercise.oneRepMax, s.percent);
-      var text = s.reps + ' reps @ ' + s.percent + '%';
+      var text = s.reps + ' reps @ ' + Math.round(s.percent) + '%';
       setsWrap.appendChild(buildStackBarRow('S' + (idx + 1), text, kg, hideKg, maxPercent, s.percent, false));
     });
     wrap.appendChild(setsWrap);
@@ -12704,7 +12755,9 @@
     var settings = OvrykDB.getSettings();
     var offset = settings.j2OffsetPoints != null ? settings.j2OffsetPoints : 10;
     return sets.map(function (s) {
-      return { reps: s.reps, percent: Math.max(50, s.percent - offset) };
+      var light = { reps: s.reps, percent: Math.max(50, s.percent - offset) };
+      if (s.warmup) light.warmup = true;
+      return light;
     });
   }
 
@@ -13794,7 +13847,7 @@
     var sub = document.createElement('div');
     sub.className = 'haltero-charge-sub';
     sub.textContent = sex.oneRepMaxSnapshot != null
-      ? (set.percent1rm + ' % de ton 1RM de ' + sex.oneRepMaxSnapshot + ' kg')
+      ? (Math.round(set.percent1rm) + ' % de ton 1RM de ' + sex.oneRepMaxSnapshot + ' kg')
       : '1RM non défini';
     card.appendChild(sub);
 
@@ -13867,7 +13920,7 @@
     var kg = computeWeightFromPercent(sex.oneRepMaxSnapshot, set.percent1rm);
     label.innerHTML = '<span class="haltero-set-name">Série ' + (setIndex + 1) + '</span>' +
       '<span class="haltero-set-kg mono">' + (kg != null ? formatKgFr(kg) + ' kg' : '-') +
-      (set.percent1rm != null ? ', ' + set.percent1rm + ' %' : '') + '</span>';
+      (set.percent1rm != null ? ', ' + Math.round(set.percent1rm) + ' %' : '') + '</span>';
     row.appendChild(label);
 
     /* R6 : à partir de 4 reps, pas de détail par rep même dans

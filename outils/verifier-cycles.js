@@ -5,8 +5,13 @@
    (S6 allégée, test séparé en semaine 7) ou 8 semaines (S4 allégée, S8
    test), une seule semaine allégée, aucun pourcentage au dessus de 90 ni
    série au dessus de 3 reps hors test, type et explication présents,
-   aucun tiret long ou moyen, charges calculables depuis un 1RM. */
-const { FORCE_CYCLES, GENERIC_CYCLE_IDS, CYCLE_LETTERS, NEW_CYCLE_IDS, CYCLE_META, CYCLE_NAMES } = require('./extraire-cycles.js')();
+   aucun tiret long ou moyen, charges calculables depuis un 1RM.
+   v162, pour 12 cycles à montée de charge (RAMP_CYCLE_IDS), sur plusieurs
+   1RM : la dernière série garde le % du gabarit, les kg ne baissent jamais
+   d'une série à la suivante, plancher 20 kg, échauffement et test
+   inchangés, une échelle garde une seule charge. Les 8 autres cycles et les
+   anciens restent exactement leur gabarit. */
+const { FORCE_CYCLES, GENERIC_CYCLE_IDS, CYCLE_LETTERS, NEW_CYCLE_IDS, CYCLE_META, CYCLE_NAMES, RAMP_CYCLE_IDS, getCycleWeekAt, computeWeightFromPercent } = require('./extraire-cycles.js')();
 const ANCIENS = GENERIC_CYCLE_IDS.concat(CYCLE_LETTERS);
 const TYPES = ['Volume', 'Technique', 'Mixte', 'Intensité'];
 let erreurs = 0;
@@ -60,11 +65,44 @@ function verifierNouveau(id, semaines, problemes) {
   });
 }
 
+const UN_RM = [40, 70, 100, 137.5, 250];
+function verifierMontee(id, semaines, problemes) {
+  const montee = RAMP_CYCLE_IDS.indexOf(id) !== -1;
+  if (montee !== !!(CYCLE_META[id] && CYCLE_META[id].montee)) problemes.push('drapeau montee incohérent');
+  semaines.forEach(function (w) {
+    if (montee && !w.isTestWeek && !/jusqu'à \d+ %/.test(w.phase)) problemes.push('semaine ' + w.week + ' : phase sans "jusqu\'à"');
+    UN_RM.forEach(function (rm) {
+      const sets = getCycleWeekAt({ cycle_actif: id, one_rm_actuel: rm, semaines_modifiees: {} }, w.week).sets;
+      const ou = 'semaine ' + w.week + ', 1RM ' + rm + ' : ';
+      if (sets.length !== w.sets.length) { problemes.push(ou + 'nombre de séries changé'); return; }
+      if (!montee || w.isTestWeek) {
+        if (JSON.stringify(sets) !== JSON.stringify(w.sets)) problemes.push(ou + 'séries modifiées hors montée');
+        return;
+      }
+      if (sets[sets.length - 1].percent !== w.sets[w.sets.length - 1].percent) problemes.push(ou + 'dernière série hors % du gabarit');
+      let precedent = null;
+      sets.forEach(function (s, i) {
+        const kg = computeWeightFromPercent(rm, s.percent);
+        if (s.warmup) {
+          if (s.percent !== w.sets[i].percent) problemes.push(ou + 'échauffement modifié');
+          return;
+        }
+        if (s.reps !== w.sets[i].reps) problemes.push(ou + 'reps modifiées');
+        if (kg < Math.min(20, computeWeightFromPercent(rm, w.sets[w.sets.length - 1].percent))) problemes.push(ou + 'sous le plancher de 20 kg');
+        if (precedent !== null && kg < precedent) problemes.push(ou + 'kg en baisse série ' + (i + 1));
+        if (w.sets[i].ladder != null && i > 0 && w.sets[i - 1].ladder === w.sets[i].ladder && kg !== precedent) problemes.push(ou + 'charge qui change dans une échelle');
+        precedent = kg;
+      });
+    });
+  });
+}
+
 ANCIENS.concat(NEW_CYCLE_IDS).forEach(function (id) {
   const semaines = FORCE_CYCLES[id];
   const problemes = [];
   verifierBase(id, semaines, problemes);
   if (NEW_CYCLE_IDS.indexOf(id) !== -1) verifierNouveau(id, semaines, problemes);
+  verifierMontee(id, semaines, problemes);
   console.log((problemes.length ? 'ERREUR ' : 'ok     ') + 'cycle ' + id + ' (' + semaines.length + ' sem.) ' + CYCLE_NAMES[id] + (problemes.length ? ' : ' + problemes.join(', ') : ''));
   if (problemes.length) erreurs++;
 });

@@ -6,58 +6,58 @@ Après un cycle de type Intensité, le tirage ne propose que Volume, Technique o
 
 ## Cycle 1 (C1) : Linéaire simple (Volume, 6 semaines + test)
 
-Progression simple et régulière : même nombre de séries, la charge monte de 3% par semaine. Sert à accumuler du volume propre avant d'attaquer plus lourd. Repos 2 min entre les séries.
+Progression simple et régulière : même nombre de séries, la charge monte de 3% par semaine. Sert à accumuler du volume propre avant d'attaquer plus lourd. Repos 2 min entre les séries. La charge monte à chaque série, la dernière série correspond au pourcentage de la semaine.
 
 | Semaine | Phase | Séries (reps à % du 1RM) | Repos |
 |---|---|---|---|
-| 1 | 5x3 à 68 % | 5 x 3 à 68 % | 120 s |
-| 2 | 5x3 à 71 % | 5 x 3 à 71 % | 120 s |
-| 3 | 5x3 à 74 % | 5 x 3 à 74 % | 120 s |
-| 4 | 5x3 à 77 % | 5 x 3 à 77 % | 120 s |
-| 5 | 4x3 à 80 % | 4 x 3 à 80 % | 120 s |
-| 6 | Allégée 3x3 à 65 % | 3 x 3 à 65 % | 120 s |
+| 1 | 5x3 jusqu'à 68 % | 5 x 3 à 68 % | 120 s |
+| 2 | 5x3 jusqu'à 71 % | 5 x 3 à 71 % | 120 s |
+| 3 | 5x3 jusqu'à 74 % | 5 x 3 à 74 % | 120 s |
+| 4 | 5x3 jusqu'à 77 % | 5 x 3 à 77 % | 120 s |
+| 5 | 4x3 jusqu'à 80 % | 4 x 3 à 80 % | 120 s |
+| 6 | Allégée 3x3 jusqu'à 65 % | 3 x 3 à 65 % | 120 s |
 | 7 | Test 1RM séparé | 5 à 40 %, 3 à 60 %, 1 à 75 %, 1 à 85 %, 1 à 92 %, 1 à 97 %, 1 à 100 % | 180 s |
 
 ## Cycle 2 (C2) : Volume décroissant, charge croissante (Mixte, 6 semaines + test)
 
-Le volume baisse et la charge monte chaque semaine. Tu commences par beaucoup de doubles légers pour bâtir la technique, tu finis avec peu de reps sur du lourd.
+Le volume baisse et la charge monte chaque semaine. Tu commences par beaucoup de doubles légers pour bâtir la technique, tu finis avec peu de reps sur du lourd. La charge monte à chaque série, la dernière série correspond au pourcentage de la semaine.
 
 | Semaine | Phase | Séries (reps à % du 1RM) | Repos |
 |---|---|---|---|
-| 1 | 6x2 à 72 % | 6 x 2 à 72 % | 120 s |
-| 2 | 5x2 à 76 % | 5 x 2 à 76 % | 120 s |
-| 3 | 4x2 à 80 % | 4 x 2 à 80 % | 150 s |
-| 4 | 3x2 à 84 % | 3 x 2 à 84 % | 150 s |
-| 5 | 3x1 à 88 % | 3 x 1 à 88 % | 150 s |
-| 6 | Allégée 3x2 à 65 % | 3 x 2 à 65 % | 90 s |
+| 1 | 6x2 jusqu'à 72 % | 6 x 2 à 72 % | 120 s |
+| 2 | 5x2 jusqu'à 76 % | 5 x 2 à 76 % | 120 s |
+| 3 | 4x2 jusqu'à 80 % | 4 x 2 à 80 % | 150 s |
+| 4 | 3x2 jusqu'à 84 % | 3 x 2 à 84 % | 150 s |
+| 5 | 3x1 jusqu'à 88 % | 3 x 1 à 88 % | 150 s |
+| 6 | Allégée 3x2 jusqu'à 65 % | 3 x 2 à 65 % | 90 s |
 | 7 | Test 1RM séparé | 5 à 40 %, 3 à 60 %, 1 à 75 %, 1 à 85 %, 1 à 92 %, 1 à 97 %, 1 à 100 % | 180 s |
 
 ## Cycle 3 (C3) : EMOM léger (Technique, 6 semaines + test)
 
-Une série de 2 reps au début de chaque minute, à charge légère. Le chrono t'oblige à enchaîner des reps propres sans te précipiter. Objectif : régularité de la technique, pas de la force.
+Une série de 2 reps au début de chaque minute, à charge légère. Le chrono t'oblige à enchaîner des reps propres sans te précipiter. Objectif : régularité de la technique, pas de la force. La charge monte à chaque série, la dernière série correspond au pourcentage de la semaine.
 
 | Semaine | Phase | Séries (reps à % du 1RM) | Repos |
 |---|---|---|---|
-| 1 | EMOM 8x2 à 62 % | 8 x 2 à 62 % | chronométré |
-| 2 | EMOM 8x2 à 65 % | 8 x 2 à 65 % | chronométré |
-| 3 | EMOM 8x2 à 68 % | 8 x 2 à 68 % | chronométré |
-| 4 | EMOM 6x2 à 72 % | 6 x 2 à 72 % | chronométré |
-| 5 | EMOM 6x2 à 75 % | 6 x 2 à 75 % | chronométré |
-| 6 | Allégée EMOM 6x1 à 60 % | 6 x 1 à 60 % | chronométré |
+| 1 | EMOM 8x2 jusqu'à 62 % | 8 x 2 à 62 % | chronométré |
+| 2 | EMOM 8x2 jusqu'à 65 % | 8 x 2 à 65 % | chronométré |
+| 3 | EMOM 8x2 jusqu'à 68 % | 8 x 2 à 68 % | chronométré |
+| 4 | EMOM 6x2 jusqu'à 72 % | 6 x 2 à 72 % | chronométré |
+| 5 | EMOM 6x2 jusqu'à 75 % | 6 x 2 à 75 % | chronométré |
+| 6 | Allégée EMOM 6x1 jusqu'à 60 % | 6 x 1 à 60 % | chronométré |
 | 7 | Test 1RM séparé | 5 à 40 %, 3 à 60 %, 1 à 75 %, 1 à 85 %, 1 à 92 %, 1 à 97 %, 1 à 100 % | 180 s |
 
 ## Cycle 4 (C4) : Complexes (1+1) (Technique, 6 semaines + test)
 
-Chaque série combine un tirage depuis les genoux et un mouvement complet. Le tirage corrige la trajectoire de la barre, le mouvement complet la remet en pratique. Sur un squat, le tirage devient 1 rep avec pause de 3 s en bas.
+Chaque série combine un tirage depuis les genoux et un mouvement complet. Le tirage corrige la trajectoire de la barre, le mouvement complet la remet en pratique. Sur un squat, le tirage devient 1 rep avec pause de 3 s en bas. La charge monte à chaque série, la dernière série correspond au pourcentage de la semaine.
 
 | Semaine | Phase | Séries (reps à % du 1RM) | Repos |
 |---|---|---|---|
-| 1 | 5 complexes (1 tirage + 1 complet) à 62 % | 5 x 2 à 62 % | 90 s |
-| 2 | 5 complexes (1 tirage + 1 complet) à 65 % | 5 x 2 à 65 % | 90 s |
-| 3 | 5 complexes (1 tirage + 1 complet) à 68 % | 5 x 2 à 68 % | 90 s |
-| 4 | 5 complexes (1 tirage + 1 complet) à 71 % | 5 x 2 à 71 % | 120 s |
-| 5 | 5 complexes (1 tirage + 1 complet) à 74 % | 5 x 2 à 74 % | 120 s |
-| 6 | Allégée 3 complexes (1 tirage + 1 complet) à 58 % | 3 x 2 à 58 % | 90 s |
+| 1 | 5 complexes (1 tirage + 1 complet) jusqu'à 62 % | 5 x 2 à 62 % | 90 s |
+| 2 | 5 complexes (1 tirage + 1 complet) jusqu'à 65 % | 5 x 2 à 65 % | 90 s |
+| 3 | 5 complexes (1 tirage + 1 complet) jusqu'à 68 % | 5 x 2 à 68 % | 90 s |
+| 4 | 5 complexes (1 tirage + 1 complet) jusqu'à 71 % | 5 x 2 à 71 % | 120 s |
+| 5 | 5 complexes (1 tirage + 1 complet) jusqu'à 74 % | 5 x 2 à 74 % | 120 s |
+| 6 | Allégée 3 complexes (1 tirage + 1 complet) jusqu'à 58 % | 3 x 2 à 58 % | 90 s |
 | 7 | Test 1RM séparé | 5 à 40 %, 3 à 60 %, 1 à 75 %, 1 à 85 %, 1 à 92 %, 1 à 97 %, 1 à 100 % | 180 s |
 
 ## Cycle 5 (C5) : Vagues 3.2.1 (Mixte, 6 semaines + test)
@@ -76,30 +76,30 @@ Trois séries de 3, 2 puis 1 rep à charge croissante, répétées deux fois. Tu
 
 ## Cycle 6 (C6) : Pause 2 s (Technique, 6 semaines + test)
 
-Chaque rep s'arrête 2 s en position basse (réception ou bas du squat). La pause supprime l'élan : tu corriges positions et stabilité. Les charges sont plus basses que d'habitude, c'est voulu.
+Chaque rep s'arrête 2 s en position basse (réception ou bas du squat). La pause supprime l'élan : tu corriges positions et stabilité. Les charges sont plus basses que d'habitude, c'est voulu. La charge monte à chaque série, la dernière série correspond au pourcentage de la semaine.
 
 | Semaine | Phase | Séries (reps à % du 1RM) | Repos |
 |---|---|---|---|
-| 1 | 5x3 à 60 %, pause 2 s | 5 x 3 à 60 % | 90 s |
-| 2 | 5x3 à 63 %, pause 2 s | 5 x 3 à 63 % | 90 s |
-| 3 | 5x2 à 67 %, pause 2 s | 5 x 2 à 67 % | 90 s |
-| 4 | 5x2 à 70 %, pause 2 s | 5 x 2 à 70 % | 120 s |
-| 5 | 4x2 à 73 %, pause 2 s | 4 x 2 à 73 % | 120 s |
-| 6 | Allégée 3x2 à 58 %, pause 2 s | 3 x 2 à 58 % | 90 s |
+| 1 | 5x3 jusqu'à 60 %, pause 2 s | 5 x 3 à 60 % | 90 s |
+| 2 | 5x3 jusqu'à 63 %, pause 2 s | 5 x 3 à 63 % | 90 s |
+| 3 | 5x2 jusqu'à 67 %, pause 2 s | 5 x 2 à 67 % | 90 s |
+| 4 | 5x2 jusqu'à 70 %, pause 2 s | 5 x 2 à 70 % | 120 s |
+| 5 | 4x2 jusqu'à 73 %, pause 2 s | 4 x 2 à 73 % | 120 s |
+| 6 | Allégée 3x2 jusqu'à 58 %, pause 2 s | 3 x 2 à 58 % | 90 s |
 | 7 | Test 1RM séparé | 5 à 40 %, 3 à 60 %, 1 à 75 %, 1 à 85 %, 1 à 92 %, 1 à 97 %, 1 à 100 % | 180 s |
 
 ## Cycle 7 (C7) : Densité E90s (Volume, 6 semaines + test)
 
-Une série toutes les 90 secondes, beaucoup de volume à charge modérée. Travaille l'endurance technique : garder des reps propres quand la fatigue arrive. Arrête dès que la technique se dégrade.
+Une série toutes les 90 secondes, beaucoup de volume à charge modérée. Travaille l'endurance technique : garder des reps propres quand la fatigue arrive. Arrête dès que la technique se dégrade. La charge monte à chaque série, la dernière série correspond au pourcentage de la semaine.
 
 | Semaine | Phase | Séries (reps à % du 1RM) | Repos |
 |---|---|---|---|
-| 1 | E90s 5x3 à 65 % | 5 x 3 à 65 % | chronométré |
-| 2 | E90s 5x3 à 68 % | 5 x 3 à 68 % | chronométré |
-| 3 | E90s 5x2 à 73 % | 5 x 2 à 73 % | chronométré |
-| 4 | E90s 5x2 à 76 % | 5 x 2 à 76 % | chronométré |
-| 5 | E90s 5x2 à 79 % | 5 x 2 à 79 % | chronométré |
-| 6 | Allégée E90s 4x2 à 62 % | 4 x 2 à 62 % | chronométré |
+| 1 | E90s 5x3 jusqu'à 65 % | 5 x 3 à 65 % | chronométré |
+| 2 | E90s 5x3 jusqu'à 68 % | 5 x 3 à 68 % | chronométré |
+| 3 | E90s 5x2 jusqu'à 73 % | 5 x 2 à 73 % | chronométré |
+| 4 | E90s 5x2 jusqu'à 76 % | 5 x 2 à 76 % | chronométré |
+| 5 | E90s 5x2 jusqu'à 79 % | 5 x 2 à 79 % | chronométré |
+| 6 | Allégée E90s 4x2 jusqu'à 62 % | 4 x 2 à 62 % | chronométré |
 | 7 | Test 1RM séparé | 5 à 40 %, 3 à 60 %, 1 à 75 %, 1 à 85 %, 1 à 92 %, 1 à 97 %, 1 à 100 % | 180 s |
 
 ## Cycle 8 (C8) : Top single + back off (Intensité, 6 semaines + test)
@@ -132,46 +132,46 @@ Chaque cluster = 3 reps séparées de 15 s barre posée, 2 min entre clusters. T
 
 ## Cycle 10 (C10) : Échelles 1.2.3 (Volume, 6 semaines + test)
 
-Une échelle = 1 rep, 45 s de repos, 2 reps, 45 s, 3 reps, puis 2 min avant la suivante. Beaucoup de reps à charge modérée avec des repos courts pour garder la technique pendant la fatigue.
+Une échelle = 1 rep, 45 s de repos, 2 reps, 45 s, 3 reps, puis 2 min avant la suivante. Beaucoup de reps à charge modérée avec des repos courts pour garder la technique pendant la fatigue. La charge monte à chaque série, la dernière série correspond au pourcentage de la semaine.
 
 | Semaine | Phase | Séries (reps à % du 1RM) | Repos |
 |---|---|---|---|
-| 1 | 3 échelles 1, 2, 3 à 65 % (2 min après chaque échelle) | 1 à 65 %, 2 à 65 %, 3 à 65 %, 1 à 65 %, 2 à 65 %, 3 à 65 %, 1 à 65 %, 2 à 65 %, 3 à 65 % | 45 s |
-| 2 | 3 échelles 1, 2, 3 à 68 % (2 min après chaque échelle) | 1 à 68 %, 2 à 68 %, 3 à 68 %, 1 à 68 %, 2 à 68 %, 3 à 68 %, 1 à 68 %, 2 à 68 %, 3 à 68 % | 45 s |
-| 3 | 3 échelles 1, 2, 3 à 70 % (2 min après chaque échelle) | 1 à 70 %, 2 à 70 %, 3 à 70 %, 1 à 70 %, 2 à 70 %, 3 à 70 %, 1 à 70 %, 2 à 70 %, 3 à 70 % | 45 s |
-| 4 | 2 échelles 1, 2, 3 à 74 % (2 min après chaque échelle) | 1 à 74 %, 2 à 74 %, 3 à 74 %, 1 à 74 %, 2 à 74 %, 3 à 74 % | 45 s |
-| 5 | 2 échelles 1, 2, 3 à 77 % (2 min après chaque échelle) | 1 à 77 %, 2 à 77 %, 3 à 77 %, 1 à 77 %, 2 à 77 %, 3 à 77 % | 45 s |
-| 6 | Allégée 2 échelles 1, 2, 3 à 60 % (2 min après chaque échelle) | 1 à 60 %, 2 à 60 %, 3 à 60 %, 1 à 60 %, 2 à 60 %, 3 à 60 % | 45 s |
+| 1 | 3 échelles 1, 2, 3 jusqu'à 65 % (2 min après chaque échelle) | 1 à 65 %, 2 à 65 %, 3 à 65 %, 1 à 65 %, 2 à 65 %, 3 à 65 %, 1 à 65 %, 2 à 65 %, 3 à 65 % | 45 s |
+| 2 | 3 échelles 1, 2, 3 jusqu'à 68 % (2 min après chaque échelle) | 1 à 68 %, 2 à 68 %, 3 à 68 %, 1 à 68 %, 2 à 68 %, 3 à 68 %, 1 à 68 %, 2 à 68 %, 3 à 68 % | 45 s |
+| 3 | 3 échelles 1, 2, 3 jusqu'à 70 % (2 min après chaque échelle) | 1 à 70 %, 2 à 70 %, 3 à 70 %, 1 à 70 %, 2 à 70 %, 3 à 70 %, 1 à 70 %, 2 à 70 %, 3 à 70 % | 45 s |
+| 4 | 2 échelles 1, 2, 3 jusqu'à 74 % (2 min après chaque échelle) | 1 à 74 %, 2 à 74 %, 3 à 74 %, 1 à 74 %, 2 à 74 %, 3 à 74 % | 45 s |
+| 5 | 2 échelles 1, 2, 3 jusqu'à 77 % (2 min après chaque échelle) | 1 à 77 %, 2 à 77 %, 3 à 77 %, 1 à 77 %, 2 à 77 %, 3 à 77 % | 45 s |
+| 6 | Allégée 2 échelles 1, 2, 3 jusqu'à 60 % (2 min après chaque échelle) | 1 à 60 %, 2 à 60 %, 3 à 60 %, 1 à 60 %, 2 à 60 %, 3 à 60 % | 45 s |
 | 7 | Test 1RM séparé | 5 à 40 %, 3 à 60 %, 1 à 75 %, 1 à 85 %, 1 à 92 %, 1 à 97 %, 1 à 100 % | 180 s |
 
 ## Cycle 11 (C11) : Bloc classique (Mixte, 8 semaines)
 
-Le cycle de référence : trois semaines de construction, une de décharge, trois d'intensité, puis le test. Sert de base de comparaison avec les autres méthodes.
+Le cycle de référence : trois semaines de construction, une de décharge, trois d'intensité, puis le test. Sert de base de comparaison avec les autres méthodes. La charge monte à chaque série, la dernière série correspond au pourcentage de la semaine.
 
 | Semaine | Phase | Séries (reps à % du 1RM) | Repos |
 |---|---|---|---|
-| 1 | 5x3 à 65 % | 5 x 3 à 65 % | 90 s |
-| 2 | 5x3 à 70 % | 5 x 3 à 70 % | 120 s |
-| 3 | 5x3 à 74 % | 5 x 3 à 74 % | 120 s |
-| 4 | Allégée 3x2 à 60 % | 3 x 2 à 60 % | 90 s |
-| 5 | 5x2 à 80 % | 5 x 2 à 80 % | 150 s |
-| 6 | 4x2 à 84 % | 4 x 2 à 84 % | 150 s |
-| 7 | 4x1 à 88 % | 4 x 1 à 88 % | 150 s |
+| 1 | 5x3 jusqu'à 65 % | 5 x 3 à 65 % | 90 s |
+| 2 | 5x3 jusqu'à 70 % | 5 x 3 à 70 % | 120 s |
+| 3 | 5x3 jusqu'à 74 % | 5 x 3 à 74 % | 120 s |
+| 4 | Allégée 3x2 jusqu'à 60 % | 3 x 2 à 60 % | 90 s |
+| 5 | 5x2 jusqu'à 80 % | 5 x 2 à 80 % | 150 s |
+| 6 | 4x2 jusqu'à 84 % | 4 x 2 à 84 % | 150 s |
+| 7 | 4x1 jusqu'à 88 % | 4 x 1 à 88 % | 150 s |
 | 8 | Test 1RM : paliers puis 3 essais (+2 à 3 kg par essai) | 5 à 40 %, 3 à 60 %, 1 à 75 %, 1 à 85 %, 1 à 92 %, 3 x 1 à 100 % | 180 s |
 
 ## Cycle 12 (C12) : Ondulé (Mixte, 8 semaines)
 
-Les semaines alternent moyen, léger puis lourd. Les semaines légères laissent récupérer, les lourdes poussent la force.
+Les semaines alternent moyen, léger puis lourd. Les semaines légères laissent récupérer, les lourdes poussent la force. La charge monte à chaque série, la dernière série correspond au pourcentage de la semaine.
 
 | Semaine | Phase | Séries (reps à % du 1RM) | Repos |
 |---|---|---|---|
-| 1 | 5x3 à 68 % | 5 x 3 à 68 % | 90 s |
-| 2 | 5x3 à 63 % | 5 x 3 à 63 % | 90 s |
-| 3 | 5x2 à 75 % | 5 x 2 à 75 % | 120 s |
-| 4 | Allégée 3x2 à 60 % | 3 x 2 à 60 % | 90 s |
-| 5 | 5x1 à 84 % | 5 x 1 à 84 % | 150 s |
-| 6 | 4x3 à 70 % | 4 x 3 à 70 % | 120 s |
-| 7 | 3x1 à 90 % | 3 x 1 à 90 % | 180 s |
+| 1 | 5x3 jusqu'à 68 % | 5 x 3 à 68 % | 90 s |
+| 2 | 5x3 jusqu'à 63 % | 5 x 3 à 63 % | 90 s |
+| 3 | 5x2 jusqu'à 75 % | 5 x 2 à 75 % | 120 s |
+| 4 | Allégée 3x2 jusqu'à 60 % | 3 x 2 à 60 % | 90 s |
+| 5 | 5x1 jusqu'à 84 % | 5 x 1 à 84 % | 150 s |
+| 6 | 4x3 jusqu'à 70 % | 4 x 3 à 70 % | 120 s |
+| 7 | 3x1 jusqu'à 90 % | 3 x 1 à 90 % | 180 s |
 | 8 | Test 1RM : paliers puis 3 essais (+2 à 3 kg par essai) | 5 à 40 %, 3 à 60 %, 1 à 75 %, 1 à 85 %, 1 à 92 %, 3 x 1 à 100 % | 180 s |
 
 ## Cycle 13 (C13) : Paliers fixes (Volume, 8 semaines)
@@ -221,17 +221,17 @@ Tu commences par la série la plus lourde, puis tu baisses la charge de 5% et tu
 
 ## Cycle 16 (C16) : Bloc technique puis force (Mixte, 8 semaines)
 
-Un bloc EMOM de singles légers sert d'échauffement technique, puis le bloc de force enchaîne. Avec une seule séance par semaine, tu pratiques la technique à chaque fois. Le bloc EMOM ne compte pas dans les séries de travail.
+Un bloc EMOM de singles légers sert d'échauffement technique, puis le bloc de force enchaîne. Avec une seule séance par semaine, tu pratiques la technique à chaque fois. Le bloc EMOM ne compte pas dans les séries de travail. La charge monte à chaque série, la dernière série correspond au pourcentage de la semaine.
 
 | Semaine | Phase | Séries (reps à % du 1RM) | Repos |
 |---|---|---|---|
-| 1 | EMOM 6x1 à 60 % puis 4x3 à 68 % | 6 x 1 à 60 %, 4 x 3 à 68 % | 90 s |
-| 2 | EMOM 6x1 à 60 % puis 4x3 à 71 % | 6 x 1 à 60 %, 4 x 3 à 71 % | 120 s |
-| 3 | EMOM 6x1 à 60 % puis 4x3 à 74 % | 6 x 1 à 60 %, 4 x 3 à 74 % | 120 s |
-| 4 | Allégée EMOM 4x1 à 55 % puis 3x2 à 60 % | 4 x 1 à 55 %, 3 x 2 à 60 % | 90 s |
-| 5 | EMOM 6x1 à 62 % puis 4x2 à 80 % | 6 x 1 à 62 %, 4 x 2 à 80 % | 150 s |
-| 6 | EMOM 6x1 à 62 % puis 4x2 à 83 % | 6 x 1 à 62 %, 4 x 2 à 83 % | 150 s |
-| 7 | EMOM 4x1 à 65 % puis 4x1 à 88 % | 4 x 1 à 65 %, 4 x 1 à 88 % | 150 s |
+| 1 | EMOM 6x1 à 60 % puis 4x3 jusqu'à 68 % | 6 x 1 à 60 %, 4 x 3 à 68 % | 90 s |
+| 2 | EMOM 6x1 à 60 % puis 4x3 jusqu'à 71 % | 6 x 1 à 60 %, 4 x 3 à 71 % | 120 s |
+| 3 | EMOM 6x1 à 60 % puis 4x3 jusqu'à 74 % | 6 x 1 à 60 %, 4 x 3 à 74 % | 120 s |
+| 4 | Allégée EMOM 4x1 à 55 % puis 3x2 jusqu'à 60 % | 4 x 1 à 55 %, 3 x 2 à 60 % | 90 s |
+| 5 | EMOM 6x1 à 62 % puis 4x2 jusqu'à 80 % | 6 x 1 à 62 %, 4 x 2 à 80 % | 150 s |
+| 6 | EMOM 6x1 à 62 % puis 4x2 jusqu'à 83 % | 6 x 1 à 62 %, 4 x 2 à 83 % | 150 s |
+| 7 | EMOM 4x1 à 65 % puis 4x1 jusqu'à 88 % | 4 x 1 à 65 %, 4 x 1 à 88 % | 150 s |
 | 8 | Test 1RM : paliers puis 3 essais (+2 à 3 kg par essai) | 5 à 40 %, 3 à 60 %, 1 à 75 %, 1 à 85 %, 1 à 92 %, 3 x 1 à 100 % | 180 s |
 
 ## Cycle 17 (C17) : Singles E2min (Intensité, 8 semaines)
@@ -266,32 +266,32 @@ Les reps montent puis redescendent avec les charges : 3, 2, 1, puis 2 et 3 aux m
 
 ## Cycle 19 (C19) : Singles de précision (Technique, 8 semaines)
 
-10 singles propres à charge modérée, repos libre de 60 à 90 s. Chaque rep doit être parfaite : une rep ratée se refait, 2 reprises maximum. Priorité à la qualité, pas à la charge.
+10 singles propres à charge modérée, repos libre de 60 à 90 s. Chaque rep doit être parfaite : une rep ratée se refait, 2 reprises maximum. Priorité à la qualité, pas à la charge. La charge monte à chaque série, la dernière série correspond au pourcentage de la semaine.
 
 | Semaine | Phase | Séries (reps à % du 1RM) | Repos |
 |---|---|---|---|
-| 1 | 10x1 à 70 % | 10 x 1 à 70 % | 75 s |
-| 2 | 10x1 à 72 % | 10 x 1 à 72 % | 75 s |
-| 3 | 10x1 à 74 % | 10 x 1 à 74 % | 75 s |
-| 4 | Allégée 6x1 à 62 % | 6 x 1 à 62 % | 75 s |
-| 5 | 8x1 à 77 % | 8 x 1 à 77 % | 75 s |
-| 6 | 8x1 à 80 % | 8 x 1 à 80 % | 75 s |
-| 7 | 6x1 à 83 % | 6 x 1 à 83 % | 75 s |
+| 1 | 10x1 jusqu'à 70 % | 10 x 1 à 70 % | 75 s |
+| 2 | 10x1 jusqu'à 72 % | 10 x 1 à 72 % | 75 s |
+| 3 | 10x1 jusqu'à 74 % | 10 x 1 à 74 % | 75 s |
+| 4 | Allégée 6x1 jusqu'à 62 % | 6 x 1 à 62 % | 75 s |
+| 5 | 8x1 jusqu'à 77 % | 8 x 1 à 77 % | 75 s |
+| 6 | 8x1 jusqu'à 80 % | 8 x 1 à 80 % | 75 s |
+| 7 | 6x1 jusqu'à 83 % | 6 x 1 à 83 % | 75 s |
 | 8 | Test 1RM : paliers puis 3 essais (+2 à 3 kg par essai) | 5 à 40 %, 3 à 60 %, 1 à 75 %, 1 à 85 %, 1 à 92 %, 3 x 1 à 100 % | 180 s |
 
 ## Cycle 20 (C20) : Doubles vitesse (Technique, 8 semaines)
 
-Doubles à charge légère avec la barre la plus rapide possible. Travaille la vitesse sous la barre et le timing. Si la vitesse chute, la série s'arrête.
+Doubles à charge légère avec la barre la plus rapide possible. Travaille la vitesse sous la barre et le timing. Si la vitesse chute, la série s'arrête. La charge monte à chaque série, la dernière série correspond au pourcentage de la semaine.
 
 | Semaine | Phase | Séries (reps à % du 1RM) | Repos |
 |---|---|---|---|
-| 1 | 8x2 à 60 % | 8 x 2 à 60 % | 90 s |
-| 2 | 8x2 à 63 % | 8 x 2 à 63 % | 90 s |
-| 3 | 8x2 à 66 % | 8 x 2 à 66 % | 90 s |
-| 4 | Allégée 5x2 à 58 % | 5 x 2 à 58 % | 90 s |
-| 5 | 8x2 à 69 % | 8 x 2 à 69 % | 90 s |
-| 6 | 8x2 à 72 % | 8 x 2 à 72 % | 120 s |
-| 7 | 6x2 à 75 % | 6 x 2 à 75 % | 120 s |
+| 1 | 8x2 jusqu'à 60 % | 8 x 2 à 60 % | 90 s |
+| 2 | 8x2 jusqu'à 63 % | 8 x 2 à 63 % | 90 s |
+| 3 | 8x2 jusqu'à 66 % | 8 x 2 à 66 % | 90 s |
+| 4 | Allégée 5x2 jusqu'à 58 % | 5 x 2 à 58 % | 90 s |
+| 5 | 8x2 jusqu'à 69 % | 8 x 2 à 69 % | 90 s |
+| 6 | 8x2 jusqu'à 72 % | 8 x 2 à 72 % | 120 s |
+| 7 | 6x2 jusqu'à 75 % | 6 x 2 à 75 % | 120 s |
 | 8 | Test 1RM : paliers puis 3 essais (+2 à 3 kg par essai) | 5 à 40 %, 3 à 60 %, 1 à 75 %, 1 à 85 %, 1 à 92 %, 3 x 1 à 100 % | 180 s |
 
 # Les 12 anciens cycles génériques (hors tirage, affichés Ancien cycle 1 à 12)

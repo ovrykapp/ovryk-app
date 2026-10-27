@@ -13,7 +13,7 @@
       "semaines": [
         {
           "week": 1,
-          "phase": "5x3 à 68 %",
+          "phase": "5x3 jusqu'à 68 %",
           "sets": [
             {
               "reps": 3,
@@ -43,7 +43,7 @@
         },
         {
           "week": 2,
-          "phase": "5x3 à 71 %",
+          "phase": "5x3 jusqu'à 71 %",
           "sets": [
             {
               "reps": 3,
@@ -73,7 +73,7 @@
         },
         {
           "week": 3,
-          "phase": "5x3 à 74 %",
+          "phase": "5x3 jusqu'à 74 %",
           "sets": [
             {
               "reps": 3,
@@ -103,7 +103,7 @@
         },
         {
           "week": 4,
-          "phase": "5x3 à 77 %",
+          "phase": "5x3 jusqu'à 77 %",
           "sets": [
             {
               "reps": 3,
@@ -133,7 +133,7 @@
         },
         {
           "week": 5,
-          "phase": "4x3 à 80 %",
+          "phase": "4x3 jusqu'à 80 %",
           "sets": [
             {
               "reps": 3,
@@ -159,7 +159,7 @@
         },
         {
           "week": 6,
-          "phase": "Allégée 3x3 à 65 %",
+          "phase": "Allégée 3x3 jusqu'à 65 %",
           "sets": [
             {
               "reps": 3,
@@ -230,7 +230,7 @@
       "semaines": [
         {
           "week": 1,
-          "phase": "6x2 à 72 %",
+          "phase": "6x2 jusqu'à 72 %",
           "sets": [
             {
               "reps": 2,
@@ -264,7 +264,7 @@
         },
         {
           "week": 2,
-          "phase": "5x2 à 76 %",
+          "phase": "5x2 jusqu'à 76 %",
           "sets": [
             {
               "reps": 2,
@@ -294,7 +294,7 @@
         },
         {
           "week": 3,
-          "phase": "4x2 à 80 %",
+          "phase": "4x2 jusqu'à 80 %",
           "sets": [
             {
               "reps": 2,
@@ -320,7 +320,7 @@
         },
         {
           "week": 4,
-          "phase": "3x2 à 84 %",
+          "phase": "3x2 jusqu'à 84 %",
           "sets": [
             {
               "reps": 2,
@@ -342,7 +342,7 @@
         },
         {
           "week": 5,
-          "phase": "3x1 à 88 %",
+          "phase": "3x1 jusqu'à 88 %",
           "sets": [
             {
               "reps": 1,
@@ -364,7 +364,7 @@
         },
         {
           "week": 6,
-          "phase": "Allégée 3x2 à 65 %",
+          "phase": "Allégée 3x2 jusqu'à 65 %",
           "sets": [
             {
               "reps": 2,
@@ -435,7 +435,7 @@
       "semaines": [
         {
           "week": 1,
-          "phase": "EMOM 8x2 à 62 %",
+          "phase": "EMOM 8x2 jusqu'à 62 %",
           "sets": [
             {
               "reps": 2,
@@ -477,7 +477,7 @@
         },
         {
           "week": 2,
-          "phase": "EMOM 8x2 à 65 %",
+          "phase": "EMOM 8x2 jusqu'à 65 %",
           "sets": [
             {
               "reps": 2,
@@ -519,7 +519,7 @@
         },
         {
           "week": 3,
-          "phase": "EMOM 8x2 à 68 %",
+          "phase": "EMOM 8x2 jusqu'à 68 %",
           "sets": [
             {
               "reps": 2,
@@ -561,7 +561,7 @@
         },
         {
           "week": 4,
-          "phase": "EMOM 6x2 à 72 %",
+          "phase": "EMOM 6x2 jusqu'à 72 %",
           "sets": [
             {
               "reps": 2,
@@ -595,7 +595,7 @@
         },
         {
           "week": 5,
-          "phase": "EMOM 6x2 à 75 %",
+          "phase": "EMOM 6x2 jusqu'à 75 %",
           "sets": [
             {
               "reps": 2,
@@ -629,7 +629,7 @@
         },
         {
           "week": 6,
-          "phase": "Allégée EMOM 6x1 à 60 %",
+          "phase": "Allégée EMOM 6x1 jusqu'à 60 %",
           "sets": [
             {
               "reps": 1,
@@ -712,7 +712,7 @@
       "semaines": [
         {
           "week": 1,
-          "phase": "5 complexes (1 tirage + 1 complet) à 62 %",
+          "phase": "5 complexes (1 tirage + 1 complet) jusqu'à 62 %",
           "sets": [
             {
               "reps": 2,
@@ -742,7 +742,7 @@
         },
         {
           "week": 2,
-          "phase": "5 complexes (1 tirage + 1 complet) à 65 %",
+          "phase": "5 complexes (1 tirage + 1 complet) jusqu'à 65 %",
           "sets": [
             {
               "reps": 2,
@@ -772,7 +772,7 @@
         },
         {
           "week": 3,
-          "phase": "5 complexes (1 tirage + 1 complet) à 68 %",
+          "phase": "5 complexes (1 tirage + 1 complet) jusqu'à 68 %",
           "sets": [
             {
               "reps": 2,
@@ -802,7 +802,7 @@
         },
         {
           "week": 4,
-          "phase": "5 complexes (1 tirage + 1 complet) à 71 %",
+          "phase": "5 complexes (1 tirage + 1 complet) jusqu'à 71 %",
           "sets": [
             {
               "reps": 2,
@@ -832,7 +832,7 @@
         },
         {
           "week": 5,
-          "phase": "5 complexes (1 tirage + 1 complet) à 74 %",
+          "phase": "5 complexes (1 tirage + 1 complet) jusqu'à 74 %",
           "sets": [
             {
               "reps": 2,
@@ -862,7 +862,7 @@
         },
         {
           "week": 6,
-          "phase": "Allégée 3 complexes (1 tirage + 1 complet) à 58 %",
+          "phase": "Allégée 3 complexes (1 tirage + 1 complet) jusqu'à 58 %",
           "sets": [
             {
               "reps": 2,
@@ -1174,7 +1174,7 @@
       "semaines": [
         {
           "week": 1,
-          "phase": "5x3 à 60 %, pause 2 s",
+          "phase": "5x3 jusqu'à 60 %, pause 2 s",
           "sets": [
             {
               "reps": 3,
@@ -1204,7 +1204,7 @@
         },
         {
           "week": 2,
-          "phase": "5x3 à 63 %, pause 2 s",
+          "phase": "5x3 jusqu'à 63 %, pause 2 s",
           "sets": [
             {
               "reps": 3,
@@ -1234,7 +1234,7 @@
         },
         {
           "week": 3,
-          "phase": "5x2 à 67 %, pause 2 s",
+          "phase": "5x2 jusqu'à 67 %, pause 2 s",
           "sets": [
             {
               "reps": 2,
@@ -1264,7 +1264,7 @@
         },
         {
           "week": 4,
-          "phase": "5x2 à 70 %, pause 2 s",
+          "phase": "5x2 jusqu'à 70 %, pause 2 s",
           "sets": [
             {
               "reps": 2,
@@ -1294,7 +1294,7 @@
         },
         {
           "week": 5,
-          "phase": "4x2 à 73 %, pause 2 s",
+          "phase": "4x2 jusqu'à 73 %, pause 2 s",
           "sets": [
             {
               "reps": 2,
@@ -1320,7 +1320,7 @@
         },
         {
           "week": 6,
-          "phase": "Allégée 3x2 à 58 %, pause 2 s",
+          "phase": "Allégée 3x2 jusqu'à 58 %, pause 2 s",
           "sets": [
             {
               "reps": 2,
@@ -1391,7 +1391,7 @@
       "semaines": [
         {
           "week": 1,
-          "phase": "E90s 5x3 à 65 %",
+          "phase": "E90s 5x3 jusqu'à 65 %",
           "sets": [
             {
               "reps": 3,
@@ -1421,7 +1421,7 @@
         },
         {
           "week": 2,
-          "phase": "E90s 5x3 à 68 %",
+          "phase": "E90s 5x3 jusqu'à 68 %",
           "sets": [
             {
               "reps": 3,
@@ -1451,7 +1451,7 @@
         },
         {
           "week": 3,
-          "phase": "E90s 5x2 à 73 %",
+          "phase": "E90s 5x2 jusqu'à 73 %",
           "sets": [
             {
               "reps": 2,
@@ -1481,7 +1481,7 @@
         },
         {
           "week": 4,
-          "phase": "E90s 5x2 à 76 %",
+          "phase": "E90s 5x2 jusqu'à 76 %",
           "sets": [
             {
               "reps": 2,
@@ -1511,7 +1511,7 @@
         },
         {
           "week": 5,
-          "phase": "E90s 5x2 à 79 %",
+          "phase": "E90s 5x2 jusqu'à 79 %",
           "sets": [
             {
               "reps": 2,
@@ -1541,7 +1541,7 @@
         },
         {
           "week": 6,
-          "phase": "Allégée E90s 4x2 à 62 %",
+          "phase": "Allégée E90s 4x2 jusqu'à 62 %",
           "sets": [
             {
               "reps": 2,
@@ -2010,43 +2010,52 @@
       "semaines": [
         {
           "week": 1,
-          "phase": "3 échelles 1, 2, 3 à 65 % (2 min après chaque échelle)",
+          "phase": "3 échelles 1, 2, 3 jusqu'à 65 % (2 min après chaque échelle)",
           "sets": [
             {
               "reps": 1,
-              "percent": 65
+              "percent": 65,
+              "ladder": 0
             },
             {
               "reps": 2,
-              "percent": 65
+              "percent": 65,
+              "ladder": 0
             },
             {
               "reps": 3,
-              "percent": 65
+              "percent": 65,
+              "ladder": 0
             },
             {
               "reps": 1,
-              "percent": 65
+              "percent": 65,
+              "ladder": 1
             },
             {
               "reps": 2,
-              "percent": 65
+              "percent": 65,
+              "ladder": 1
             },
             {
               "reps": 3,
-              "percent": 65
+              "percent": 65,
+              "ladder": 1
             },
             {
               "reps": 1,
-              "percent": 65
+              "percent": 65,
+              "ladder": 2
             },
             {
               "reps": 2,
-              "percent": 65
+              "percent": 65,
+              "ladder": 2
             },
             {
               "reps": 3,
-              "percent": 65
+              "percent": 65,
+              "ladder": 2
             }
           ],
           "restSeconds": 45,
@@ -2056,43 +2065,52 @@
         },
         {
           "week": 2,
-          "phase": "3 échelles 1, 2, 3 à 68 % (2 min après chaque échelle)",
+          "phase": "3 échelles 1, 2, 3 jusqu'à 68 % (2 min après chaque échelle)",
           "sets": [
             {
               "reps": 1,
-              "percent": 68
+              "percent": 68,
+              "ladder": 0
             },
             {
               "reps": 2,
-              "percent": 68
+              "percent": 68,
+              "ladder": 0
             },
             {
               "reps": 3,
-              "percent": 68
+              "percent": 68,
+              "ladder": 0
             },
             {
               "reps": 1,
-              "percent": 68
+              "percent": 68,
+              "ladder": 1
             },
             {
               "reps": 2,
-              "percent": 68
+              "percent": 68,
+              "ladder": 1
             },
             {
               "reps": 3,
-              "percent": 68
+              "percent": 68,
+              "ladder": 1
             },
             {
               "reps": 1,
-              "percent": 68
+              "percent": 68,
+              "ladder": 2
             },
             {
               "reps": 2,
-              "percent": 68
+              "percent": 68,
+              "ladder": 2
             },
             {
               "reps": 3,
-              "percent": 68
+              "percent": 68,
+              "ladder": 2
             }
           ],
           "restSeconds": 45,
@@ -2102,43 +2120,52 @@
         },
         {
           "week": 3,
-          "phase": "3 échelles 1, 2, 3 à 70 % (2 min après chaque échelle)",
+          "phase": "3 échelles 1, 2, 3 jusqu'à 70 % (2 min après chaque échelle)",
           "sets": [
             {
               "reps": 1,
-              "percent": 70
+              "percent": 70,
+              "ladder": 0
             },
             {
               "reps": 2,
-              "percent": 70
+              "percent": 70,
+              "ladder": 0
             },
             {
               "reps": 3,
-              "percent": 70
+              "percent": 70,
+              "ladder": 0
             },
             {
               "reps": 1,
-              "percent": 70
+              "percent": 70,
+              "ladder": 1
             },
             {
               "reps": 2,
-              "percent": 70
+              "percent": 70,
+              "ladder": 1
             },
             {
               "reps": 3,
-              "percent": 70
+              "percent": 70,
+              "ladder": 1
             },
             {
               "reps": 1,
-              "percent": 70
+              "percent": 70,
+              "ladder": 2
             },
             {
               "reps": 2,
-              "percent": 70
+              "percent": 70,
+              "ladder": 2
             },
             {
               "reps": 3,
-              "percent": 70
+              "percent": 70,
+              "ladder": 2
             }
           ],
           "restSeconds": 45,
@@ -2148,31 +2175,37 @@
         },
         {
           "week": 4,
-          "phase": "2 échelles 1, 2, 3 à 74 % (2 min après chaque échelle)",
+          "phase": "2 échelles 1, 2, 3 jusqu'à 74 % (2 min après chaque échelle)",
           "sets": [
             {
               "reps": 1,
-              "percent": 74
+              "percent": 74,
+              "ladder": 0
             },
             {
               "reps": 2,
-              "percent": 74
+              "percent": 74,
+              "ladder": 0
             },
             {
               "reps": 3,
-              "percent": 74
+              "percent": 74,
+              "ladder": 0
             },
             {
               "reps": 1,
-              "percent": 74
+              "percent": 74,
+              "ladder": 1
             },
             {
               "reps": 2,
-              "percent": 74
+              "percent": 74,
+              "ladder": 1
             },
             {
               "reps": 3,
-              "percent": 74
+              "percent": 74,
+              "ladder": 1
             }
           ],
           "restSeconds": 45,
@@ -2182,31 +2215,37 @@
         },
         {
           "week": 5,
-          "phase": "2 échelles 1, 2, 3 à 77 % (2 min après chaque échelle)",
+          "phase": "2 échelles 1, 2, 3 jusqu'à 77 % (2 min après chaque échelle)",
           "sets": [
             {
               "reps": 1,
-              "percent": 77
+              "percent": 77,
+              "ladder": 0
             },
             {
               "reps": 2,
-              "percent": 77
+              "percent": 77,
+              "ladder": 0
             },
             {
               "reps": 3,
-              "percent": 77
+              "percent": 77,
+              "ladder": 0
             },
             {
               "reps": 1,
-              "percent": 77
+              "percent": 77,
+              "ladder": 1
             },
             {
               "reps": 2,
-              "percent": 77
+              "percent": 77,
+              "ladder": 1
             },
             {
               "reps": 3,
-              "percent": 77
+              "percent": 77,
+              "ladder": 1
             }
           ],
           "restSeconds": 45,
@@ -2216,31 +2255,37 @@
         },
         {
           "week": 6,
-          "phase": "Allégée 2 échelles 1, 2, 3 à 60 % (2 min après chaque échelle)",
+          "phase": "Allégée 2 échelles 1, 2, 3 jusqu'à 60 % (2 min après chaque échelle)",
           "sets": [
             {
               "reps": 1,
-              "percent": 60
+              "percent": 60,
+              "ladder": 0
             },
             {
               "reps": 2,
-              "percent": 60
+              "percent": 60,
+              "ladder": 0
             },
             {
               "reps": 3,
-              "percent": 60
+              "percent": 60,
+              "ladder": 0
             },
             {
               "reps": 1,
-              "percent": 60
+              "percent": 60,
+              "ladder": 1
             },
             {
               "reps": 2,
-              "percent": 60
+              "percent": 60,
+              "ladder": 1
             },
             {
               "reps": 3,
-              "percent": 60
+              "percent": 60,
+              "ladder": 1
             }
           ],
           "restSeconds": 45,
@@ -2299,7 +2344,7 @@
       "semaines": [
         {
           "week": 1,
-          "phase": "5x3 à 65 %",
+          "phase": "5x3 jusqu'à 65 %",
           "sets": [
             {
               "reps": 3,
@@ -2329,7 +2374,7 @@
         },
         {
           "week": 2,
-          "phase": "5x3 à 70 %",
+          "phase": "5x3 jusqu'à 70 %",
           "sets": [
             {
               "reps": 3,
@@ -2359,7 +2404,7 @@
         },
         {
           "week": 3,
-          "phase": "5x3 à 74 %",
+          "phase": "5x3 jusqu'à 74 %",
           "sets": [
             {
               "reps": 3,
@@ -2389,7 +2434,7 @@
         },
         {
           "week": 4,
-          "phase": "Allégée 3x2 à 60 %",
+          "phase": "Allégée 3x2 jusqu'à 60 %",
           "sets": [
             {
               "reps": 2,
@@ -2411,7 +2456,7 @@
         },
         {
           "week": 5,
-          "phase": "5x2 à 80 %",
+          "phase": "5x2 jusqu'à 80 %",
           "sets": [
             {
               "reps": 2,
@@ -2441,7 +2486,7 @@
         },
         {
           "week": 6,
-          "phase": "4x2 à 84 %",
+          "phase": "4x2 jusqu'à 84 %",
           "sets": [
             {
               "reps": 2,
@@ -2467,7 +2512,7 @@
         },
         {
           "week": 7,
-          "phase": "4x1 à 88 %",
+          "phase": "4x1 jusqu'à 88 %",
           "sets": [
             {
               "reps": 1,
@@ -2546,7 +2591,7 @@
       "semaines": [
         {
           "week": 1,
-          "phase": "5x3 à 68 %",
+          "phase": "5x3 jusqu'à 68 %",
           "sets": [
             {
               "reps": 3,
@@ -2576,7 +2621,7 @@
         },
         {
           "week": 2,
-          "phase": "5x3 à 63 %",
+          "phase": "5x3 jusqu'à 63 %",
           "sets": [
             {
               "reps": 3,
@@ -2606,7 +2651,7 @@
         },
         {
           "week": 3,
-          "phase": "5x2 à 75 %",
+          "phase": "5x2 jusqu'à 75 %",
           "sets": [
             {
               "reps": 2,
@@ -2636,7 +2681,7 @@
         },
         {
           "week": 4,
-          "phase": "Allégée 3x2 à 60 %",
+          "phase": "Allégée 3x2 jusqu'à 60 %",
           "sets": [
             {
               "reps": 2,
@@ -2658,7 +2703,7 @@
         },
         {
           "week": 5,
-          "phase": "5x1 à 84 %",
+          "phase": "5x1 jusqu'à 84 %",
           "sets": [
             {
               "reps": 1,
@@ -2688,7 +2733,7 @@
         },
         {
           "week": 6,
-          "phase": "4x3 à 70 %",
+          "phase": "4x3 jusqu'à 70 %",
           "sets": [
             {
               "reps": 3,
@@ -2714,7 +2759,7 @@
         },
         {
           "week": 7,
-          "phase": "3x1 à 90 %",
+          "phase": "3x1 jusqu'à 90 %",
           "sets": [
             {
               "reps": 1,
@@ -3574,7 +3619,7 @@
       "semaines": [
         {
           "week": 1,
-          "phase": "EMOM 6x1 à 60 % puis 4x3 à 68 %",
+          "phase": "EMOM 6x1 à 60 % puis 4x3 jusqu'à 68 %",
           "sets": [
             {
               "reps": 1,
@@ -3630,7 +3675,7 @@
         },
         {
           "week": 2,
-          "phase": "EMOM 6x1 à 60 % puis 4x3 à 71 %",
+          "phase": "EMOM 6x1 à 60 % puis 4x3 jusqu'à 71 %",
           "sets": [
             {
               "reps": 1,
@@ -3686,7 +3731,7 @@
         },
         {
           "week": 3,
-          "phase": "EMOM 6x1 à 60 % puis 4x3 à 74 %",
+          "phase": "EMOM 6x1 à 60 % puis 4x3 jusqu'à 74 %",
           "sets": [
             {
               "reps": 1,
@@ -3742,7 +3787,7 @@
         },
         {
           "week": 4,
-          "phase": "Allégée EMOM 4x1 à 55 % puis 3x2 à 60 %",
+          "phase": "Allégée EMOM 4x1 à 55 % puis 3x2 jusqu'à 60 %",
           "sets": [
             {
               "reps": 1,
@@ -3784,7 +3829,7 @@
         },
         {
           "week": 5,
-          "phase": "EMOM 6x1 à 62 % puis 4x2 à 80 %",
+          "phase": "EMOM 6x1 à 62 % puis 4x2 jusqu'à 80 %",
           "sets": [
             {
               "reps": 1,
@@ -3840,7 +3885,7 @@
         },
         {
           "week": 6,
-          "phase": "EMOM 6x1 à 62 % puis 4x2 à 83 %",
+          "phase": "EMOM 6x1 à 62 % puis 4x2 jusqu'à 83 %",
           "sets": [
             {
               "reps": 1,
@@ -3896,7 +3941,7 @@
         },
         {
           "week": 7,
-          "phase": "EMOM 4x1 à 65 % puis 4x1 à 88 %",
+          "phase": "EMOM 4x1 à 65 % puis 4x1 jusqu'à 88 %",
           "sets": [
             {
               "reps": 1,
@@ -4525,7 +4570,7 @@
       "semaines": [
         {
           "week": 1,
-          "phase": "10x1 à 70 %",
+          "phase": "10x1 jusqu'à 70 %",
           "sets": [
             {
               "reps": 1,
@@ -4575,7 +4620,7 @@
         },
         {
           "week": 2,
-          "phase": "10x1 à 72 %",
+          "phase": "10x1 jusqu'à 72 %",
           "sets": [
             {
               "reps": 1,
@@ -4625,7 +4670,7 @@
         },
         {
           "week": 3,
-          "phase": "10x1 à 74 %",
+          "phase": "10x1 jusqu'à 74 %",
           "sets": [
             {
               "reps": 1,
@@ -4675,7 +4720,7 @@
         },
         {
           "week": 4,
-          "phase": "Allégée 6x1 à 62 %",
+          "phase": "Allégée 6x1 jusqu'à 62 %",
           "sets": [
             {
               "reps": 1,
@@ -4709,7 +4754,7 @@
         },
         {
           "week": 5,
-          "phase": "8x1 à 77 %",
+          "phase": "8x1 jusqu'à 77 %",
           "sets": [
             {
               "reps": 1,
@@ -4751,7 +4796,7 @@
         },
         {
           "week": 6,
-          "phase": "8x1 à 80 %",
+          "phase": "8x1 jusqu'à 80 %",
           "sets": [
             {
               "reps": 1,
@@ -4793,7 +4838,7 @@
         },
         {
           "week": 7,
-          "phase": "6x1 à 83 %",
+          "phase": "6x1 jusqu'à 83 %",
           "sets": [
             {
               "reps": 1,
@@ -4880,7 +4925,7 @@
       "semaines": [
         {
           "week": 1,
-          "phase": "8x2 à 60 %",
+          "phase": "8x2 jusqu'à 60 %",
           "sets": [
             {
               "reps": 2,
@@ -4922,7 +4967,7 @@
         },
         {
           "week": 2,
-          "phase": "8x2 à 63 %",
+          "phase": "8x2 jusqu'à 63 %",
           "sets": [
             {
               "reps": 2,
@@ -4964,7 +5009,7 @@
         },
         {
           "week": 3,
-          "phase": "8x2 à 66 %",
+          "phase": "8x2 jusqu'à 66 %",
           "sets": [
             {
               "reps": 2,
@@ -5006,7 +5051,7 @@
         },
         {
           "week": 4,
-          "phase": "Allégée 5x2 à 58 %",
+          "phase": "Allégée 5x2 jusqu'à 58 %",
           "sets": [
             {
               "reps": 2,
@@ -5036,7 +5081,7 @@
         },
         {
           "week": 5,
-          "phase": "8x2 à 69 %",
+          "phase": "8x2 jusqu'à 69 %",
           "sets": [
             {
               "reps": 2,
@@ -5078,7 +5123,7 @@
         },
         {
           "week": 6,
-          "phase": "8x2 à 72 %",
+          "phase": "8x2 jusqu'à 72 %",
           "sets": [
             {
               "reps": 2,
@@ -5120,7 +5165,7 @@
         },
         {
           "week": 7,
-          "phase": "6x2 à 75 %",
+          "phase": "6x2 jusqu'à 75 %",
           "sets": [
             {
               "reps": 2,

@@ -102,9 +102,13 @@ with sync_playwright() as p:
     start_routine(page, 'Jambes fab')
     sx = live(page)['exercises'][0]
     check(len(sx['sets']) == 10 and [s.get('warmup', False) for s in sx['sets']] == [True] * 6 + [False] * 4
-          and [s['percent1rm'] for s in sx['sets']] == [60] * 6 + [68] * 4, 'T3 séance C16 S1 : 6 singles EMOM marqués échauffement puis 4x3 à 68 %')
+          and [s['percent1rm'] for s in sx['sets']] == [60] * 6 + [60, 62.5, 65, 68], 'T3 séance C16 S1 : 6 singles EMOM fixes à 60 %, puis 4x3 qui monte jusqu\'à 68 % (v162)')
+    kgs = [round(100 * s['percent1rm'] / 100 / 2.5) * 2.5 for s in sx['sets'] if not s.get('warmup')]
+    check(kgs == sorted(kgs) and kgs[-1] == 67.5, 'T3 kg du bloc de force jamais en baisse, dernière série à la charge du gabarit : %s' % kgs)
     rem = page.inner_text('.live-card.is-open .live-cycle-reminder') if page.query_selector('.live-card.is-open .live-cycle-reminder') else ''
-    check(rem == 'C16, S1 : EMOM 6x1 à 60 % puis 4x3 à 68 %', 'T3 rappel en séance : "%s"' % rem)
+    check(rem == 'C16, S1 : EMOM 6x1 à 60 % puis 4x3 jusqu\'à 68 %', 'T3 rappel en séance : "%s"' % rem)
+    live_txt = page.inner_text('.live-card.is-open')
+    check(all(x in live_txt for x in ['60 kg, 60 %', '62,5 kg, 63 %', '67,5 kg, 68 %']) or all(x in live_txt for x in ['60 kg', '62.5 kg', '67.5 kg']), 'T3 chaque série affiche sa propre charge en kg')
     tag = page.inner_text('.live-card .live-card-tag')
     check(tag.lower().startswith('cycle 16'), 'T3 étiquette : "%s"' % tag)
     page.screenshot(path=str(SP / 't3-seance-c16.png'), full_page=True)
@@ -131,6 +135,19 @@ with sync_playwright() as p:
     check('–' not in det and '—' not in det, 'T4 aucun tiret long ou moyen dans la page détail')
     page.screenshot(path=str(SP / 't4-detail-c8.png'), full_page=True)
     check(not errors, 'T4 aucune erreur JS ' + str(errors[:2]))
+    ctx.close()
+
+    # T5 (v162) : page détail C1, montée série par série, ligne d'explication
+    d = dataset(base, [routine('r-a', 'Jambes fab', [BS])], {BS: cycle(BS, 100, 'C1', 5)})
+    ctx, page, errors = fresh(b, d)
+    page.evaluate("() => { const r = JSON.parse(localStorage.getItem('ovryk.routines')); r[0].weekdays = [0,1,2,3,4,5,6]; localStorage.setItem('ovryk.routines', JSON.stringify(r)); }")
+    page.reload(); page.wait_for_timeout(500)
+    page.locator('.dash-session-ex-value.is-cycle').first.click(); page.wait_for_timeout(500)
+    det = page.inner_text('#cycle-detail-page')
+    check('La charge monte à chaque série, la dernière série correspond au pourcentage de la semaine.' in det, 'T5 ligne de montée sous l\'explication')
+    check(all(x in det for x in ['73% → 72.5kg', '75% → 75kg', '78% → 77.5kg', '80% → 80kg']), 'T5 S5 de C1 : 72,5, 75, 77,5 puis 80 kg')
+    page.screenshot(path=str(SP / 't5-detail-c1.png'), full_page=True)
+    check(not errors, 'T5 aucune erreur JS ' + str(errors[:2]))
     ctx.close()
     b.close()
 print('\n%d/%d' % (sum(res), len(res)))

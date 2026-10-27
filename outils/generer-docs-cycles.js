@@ -22,7 +22,7 @@ let md = '# Les 20 cycles du tirage (C1 à C20)\n\n' +
 NEW_CYCLE_IDS.forEach(function (id) {
   const semaines = FORCE_CYCLES[id];
   md += '\n## Cycle ' + id.slice(1) + ' (' + id + ') : ' + CYCLE_NAMES[id] + ' (' + CYCLE_META[id].type + ', ' + (semaines.length === 7 ? '6 semaines + test' : semaines.length + ' semaines') + ')\n\n';
-  md += CYCLE_META[id].explication + '\n\n';
+  md += CYCLE_META[id].explication + (CYCLE_META[id].montee ? ' La charge monte à chaque série, la dernière série correspond au pourcentage de la semaine.' : '') + '\n\n';
   md += '| Semaine | Phase | Séries (reps à % du 1RM) | Repos |\n|---|---|---|---|\n';
   semaines.forEach(function (w) {
     md += '| ' + w.week + ' | ' + w.phase + ' | ' + resume(w.sets) + ' | ' + (w.timed ? 'chronométré' : w.restSeconds + ' s') + ' |\n';
