@@ -5613,7 +5613,7 @@
   var LIFTING_DEFS = [
     'Back Squat', 'Front Squat', 'Zercher Squat', 'Deadlift', 'Sumo Deadlift',
     'Squat Clean', 'Power Clean', 'Hang Power Clean', 'Clean Pull', 'Clean & Jerk',
-    'Power Clean & Jerk', 'Power Snatch', 'Snatch', 'Squat Snatch', 'Push Jerk',
+    'Power Clean & Jerk', 'Power Snatch', 'Squat Snatch', 'Push Jerk',
     'Split Jerk', 'Push Press', 'Strict Press', 'Overhead Squat'
   ].map(function (name) {
     return { name: name, category: 'Lifting', equipment: 'Barre' };
@@ -5645,6 +5645,102 @@
     { oldName: 'Tirage vertical (lat pulldown)', newName: 'Tirage vertical' }
   ];
 
+  /* v160 : 'Snatch' et 'Squat Snatch' étaient le même mouvement. L'ancien id
+     est fusionné dans le nouveau partout où un exercice est référencé
+     (routines, séances, cycles, équivalent de salle), puis retiré du
+     catalogue. Rejouée à chaque démarrage, donc aussi après un import ou une
+     restauration en ligne (qui rechargent la page) : un ancien backup ne
+     réintroduit pas l'ancien id. Idempotente : sans référence à fromId,
+     rien n'est écrit. Charges, reps et oneRepMaxSnapshot ne sont jamais
+     touchés. */
+  var EXERCISE_MERGES = [
+    { fromId: 'ex-snatch', toId: 'ex-squat-snatch', toName: 'Squat Snatch' }
+  ];
+
+  function migrateExerciseMerges(stored) {
+    var exChanged = false;
+    EXERCISE_MERGES.forEach(function (m) {
+      var from = stored.filter(function (e) { return e.id === m.fromId; })[0];
+      var to = stored.filter(function (e) { return e.id === m.toId; })[0];
+      var counts = { routines: 0, seances: 0, series: 0, cycle: '' };
+
+      var routines = OvrykDB.getRoutines();
+      var routinesChanged = false;
+      routines.forEach(function (r) {
+        var touched = false;
+        (r.exercises || []).forEach(function (rex) {
+          if (rex.exerciseId === m.fromId) { rex.exerciseId = m.toId; touched = true; }
+          if (rex.onairExerciseId === m.fromId) { rex.onairExerciseId = m.toId; touched = true; }
+        });
+        if (touched) { counts.routines++; routinesChanged = true; }
+      });
+
+      var sessions = OvrykDB.getSessions();
+      var sessionsChanged = false;
+      sessions.forEach(function (session) {
+        var touched = false;
+        (session.exercises || []).forEach(function (sex) {
+          if (sex.exerciseId === m.fromId) {
+            sex.exerciseId = m.toId;
+            if (sex.exerciseName != null) sex.exerciseName = m.toName;
+            counts.series += (sex.sets || []).length;
+            touched = true;
+          }
+          if (sex.replacesExerciseId === m.fromId) { sex.replacesExerciseId = m.toId; touched = true; }
+        });
+        if (touched) { counts.seances++; sessionsChanged = true; }
+      });
+
+      /* un seul cycle par mouvement : celui de toId est gardé s'il existe,
+         sinon celui de fromId lui est rattaché. */
+      var cycles = OvrykDB.getForceCycles();
+      var cyclesChanged = false;
+      if (cycles[m.fromId]) {
+        if (cycles[m.toId]) {
+          counts.cycle = 'abandonné (cycle ' + cycles[m.fromId].cycle_actif + ')';
+        } else {
+          cycles[m.toId] = cycles[m.fromId];
+          cycles[m.toId].exercise_id = m.toId;
+          counts.cycle = 'déplacé';
+          if (from && from.forceCycleStartDate && to && !to.forceCycleStartDate) {
+            to.forceCycleStartDate = from.forceCycleStartDate;
+            exChanged = true;
+          }
+        }
+        delete cycles[m.fromId];
+        cyclesChanged = true;
+      }
+
+      stored.forEach(function (ex) {
+        if (ex.gymEquivalentId === m.fromId) {
+          ex.gymEquivalentId = ex.id === m.toId ? null : m.toId;
+          exChanged = true;
+        }
+      });
+
+      if (from) {
+        if (to) {
+          /* 1RM : le plus élevé des deux est gardé */
+          if (from.oneRepMax != null && (to.oneRepMax == null || from.oneRepMax > to.oneRepMax)) to.oneRepMax = from.oneRepMax;
+          stored.splice(stored.indexOf(from), 1);
+        } else {
+          from.id = m.toId;
+          from.name = m.toName;
+        }
+        exChanged = true;
+      }
+
+      if (routinesChanged) OvrykDB.saveRoutines(routines);
+      if (sessionsChanged) OvrykDB.saveSessions(sessions);
+      if (cyclesChanged) OvrykDB.saveForceCycles(cycles);
+      if (from || routinesChanged || sessionsChanged || cyclesChanged) {
+        console.info('Ovryk : fusion ' + m.fromId + ' -> ' + m.toId + ' : ' + counts.routines + ' routine(s), ' +
+          counts.seances + ' séance(s), ' + counts.series + ' série(s), cycle ' + (counts.cycle || 'aucun'));
+      }
+    });
+    return exChanged;
+  }
+
   /* the two poulie pulling movements gained a grip choice after some
      installs had already seeded their catalog — backfill the flag onto
      whatever's already stored, matched by name like the renames above */
@@ -5657,7 +5753,7 @@
      pattern as GRIP_VARIANT_EXERCISE_NAMES above. */
   var OLY_LIFT_NAMES = [
     'Squat Clean', 'Power Clean', 'Hang Power Clean', 'Clean Pull', 'Clean & Jerk',
-    'Power Clean & Jerk', 'Power Snatch', 'Snatch', 'Squat Snatch', 'Push Jerk',
+    'Power Clean & Jerk', 'Power Snatch', 'Squat Snatch', 'Push Jerk',
     'Split Jerk', 'Overhead Squat'
   ];
 
@@ -5677,7 +5773,7 @@
 
   function migrateExerciseCatalog() {
     var stored = OvrykDB.getExercises();
-    var changed = false;
+    var changed = migrateExerciseMerges(stored);
 
     EXERCISE_RENAMES.forEach(function (r) {
       stored.forEach(function (ex) {
