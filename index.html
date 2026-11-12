@@ -18600,6 +18600,7 @@
     document.getElementById('dash-session-title').textContent = session.routineName || 'Séance libre';
     var exCount = session.exercises.length;
     document.getElementById('dash-session-meta').textContent = exCount + ' exercice' + (exCount > 1 ? 's' : '');
+    document.getElementById('dash-session-meta').hidden = false;
     document.getElementById('dash-session-exercises').innerHTML = '';
     /* livraison 4 : pas de pilule ici, la salle se change dans l'en-tête
        de la séance en cours */
@@ -18868,12 +18869,15 @@
     if (cycleSex) {
       document.getElementById('dash-session-title').textContent = cycleSex.exerciseName || 'Exercice';
       document.getElementById('dash-session-meta').textContent = routine.name || 'Routine sans titre';
+      document.getElementById('dash-session-meta').hidden = false;
       setDashHeroBubble('1RM', cycleSex.oneRepMaxSnapshot != null ? formatKgFr(cycleSex.oneRepMaxSnapshot) : null);
       renderDashHeroCycle(cycleSex);
       document.getElementById('dash-next-session').hidden = true;
     } else {
       document.getElementById('dash-session-title').textContent = routine.name || 'Routine sans titre';
-      document.getElementById('dash-session-meta').textContent = hasLifting ? 'Haltéro hors cycle aujourd\'hui' : 'Pas de haltéro aujourd\'hui';
+      /* état B : pas de sous-titre sous le titre de la séance */
+      document.getElementById('dash-session-meta').textContent = '';
+      document.getElementById('dash-session-meta').hidden = true;
       setDashHeroBubble('Min', routine.exercises.length ? estimateRoutineDurationMinutes(routine) : null);
       /* hero sans bloc central : le bouton suit le sous-titre */
       var center = document.getElementById('dash-hero-center');
@@ -21140,7 +21144,7 @@
 </script>
 <script>
   /* v164 : à garder égal à CACHE_VERSION dans sw.js (contrôlé par smoke.py) */
-  var APP_VERSION = 'v168';
+  var APP_VERSION = 'v169';
   document.getElementById('app-version-value').textContent = 'Version ' + APP_VERSION;
 
   /* Désinscrit le service worker et vide ses caches (ovryk-static-*), puis
