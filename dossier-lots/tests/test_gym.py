@@ -286,12 +286,12 @@ with sync_playwright() as p:
     ctx, page, errors = fresh(b, salle_dataset(hist, weekdays=[today]))
     page.click('.nav-btn[data-target="dashboard"]'); page.wait_for_timeout(400)
     starts = page.locator('#dash-session-cta')
-    if starts.count() and starts.is_visible() and 'commencer' in starts.inner_text().lower():   # capitales (CSS)
+    if starts.count() and starts.is_visible() and 'démarrer' in starts.inner_text().lower():   # capitales (CSS)
         starts.click(); page.wait_for_timeout(700)
         lv = live(page); head = page.inner_text('#seance-gym-label') if page.is_visible('#seance-gym-label') else ''
-        check(lv and lv.get('gym') == 'inde' and lv['exercises'][0]['exerciseId'] == 'ex-y' and head == 'Salle : Indé', 'G13 Accueil "Commencer la séance" : salle "inde" enregistrée, remplacement fait, en-tête "%s"' % head)
+        check(lv and lv.get('gym') == 'inde' and lv['exercises'][0]['exerciseId'] == 'ex-y' and head == 'Salle : Indé', 'G13 Accueil "Démarrer la séance" : salle "inde" enregistrée, remplacement fait, en-tête "%s"' % head)
     else:
-        check(False, 'G13 Accueil : bouton "Commencer la séance" introuvable')
+        check(False, 'G13 Accueil : bouton "Démarrer la séance" introuvable')
     ctx.close()
 
     # G14 : continuité dans les deux sens : On Air reprend la dernière séance avec X (pas la séance indé), Indé reprend la dernière avec Y
