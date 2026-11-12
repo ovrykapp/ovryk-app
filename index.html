@@ -4414,6 +4414,7 @@
   #view-dashboard .dash-hero,
   #view-dashboard .dash-prog-card,
   #view-dashboard .dash-next-session,
+  #view-dashboard .dash-volume-card,
   #view-dashboard .dash-tile,
   #view-dashboard .dash-next-test,
   #view-dashboard .view-header-back {
@@ -4426,6 +4427,7 @@
     #view-dashboard .dash-hero,
     #view-dashboard .dash-prog-card,
     #view-dashboard .dash-next-session,
+    #view-dashboard .dash-volume-card,
     #view-dashboard .dash-tile,
     #view-dashboard .dash-next-test,
     #view-dashboard .view-header-back {
@@ -4662,6 +4664,13 @@
   #view-dashboard .dash-volume-value { text-align: right; font-size: 16px; font-weight: 700; color: var(--home-text); white-space: nowrap; }
   #view-dashboard .dash-volume-plus { color: var(--home-accent); }
   #view-dashboard .dash-hero-center { margin-bottom: 18px; }
+  #view-dashboard .dash-volume-card {
+    margin: 0 0 22px;
+    padding: 16px;
+    border-radius: var(--home-r-card);
+  }
+  #view-dashboard .dash-volume-card[hidden] { display: none; }
+  #view-dashboard .dash-volume-card .dash-volume-row:last-child { margin-bottom: 0; }
 
   /* salle et boutons */
   #view-dashboard #dash-gym-wrap { margin-bottom: 4px; }
@@ -4934,6 +4943,9 @@
         </span>
         <svg class="dash-next-session-chevron" viewBox="0 0 24 24" aria-hidden="true"><polyline points="9,6 15,12 9,18"/></svg>
       </button>
+
+      <!-- état B : volume de la semaine, sorti du hero, en dernier -->
+      <section class="dash-volume-card" id="dash-volume-card" aria-label="Volume de la semaine" hidden></section>
 
       <div id="dash-day-panel" hidden></div>
 
@@ -18624,9 +18636,10 @@
 
   /* volume de la semaine des groupes travaillés aujourd'hui : séries
      validées cette semaine (computeWeeklySeriesCounts, comme Progrès)
-     plus les séries de la séance construite. Échelle fixe de 20 séries. */
-  function renderDashHeroVolume(session) {
-    var center = document.getElementById('dash-hero-center');
+     plus les séries de la séance construite. Échelle fixe de 20 séries.
+     État B seulement, dans sa propre carte sous "Prochaine séance". */
+  function renderDashVolumeCard(session) {
+    var card = document.getElementById('dash-volume-card');
     var added = {}, order = [];
     session.exercises.forEach(function (sex) {
       var group = getProgressionGroup(OvrykDB.getExerciseById(sex.exerciseId));
@@ -18634,7 +18647,7 @@
       if (!(group in added)) { added[group] = 0; order.push(group); }
       added[group] += getDashWorkSets(sex).length;
     });
-    if (!order.length) { center.hidden = true; center.innerHTML = ''; return; }
+    if (!order.length) { card.hidden = true; card.innerHTML = ''; return; }
     var counts = computeWeeklySeriesCounts();
     var wk = weekKeyOf(new Date());
     var rows = order.map(function (group) {
@@ -18650,8 +18663,8 @@
         '<span class="dash-volume-value" aria-hidden="true">' + doneCount + ' <span class="dash-volume-plus">+' + added[group] + '</span></span>' +
         '</div>';
     }).join('');
-    center.innerHTML = '<div class="dash-volume-head"><span class="dash-volume-title">Volume de la semaine</span><span class="dash-volume-unit">séries</span></div>' + rows;
-    center.hidden = false;
+    card.innerHTML = '<div class="dash-volume-head"><span class="dash-volume-title">Volume de la semaine</span><span class="dash-volume-unit">séries</span></div>' + rows;
+    card.hidden = false;
   }
 
   /* cartes "Au programme" : mêmes classes que l'ancienne liste
@@ -18750,8 +18763,12 @@
       document.getElementById('dash-session-title').textContent = routine.name || 'Routine sans titre';
       document.getElementById('dash-session-meta').textContent = hasLifting ? 'Haltéro hors cycle aujourd\'hui' : 'Pas de haltéro aujourd\'hui';
       setDashHeroBubble('Min', routine.exercises.length ? estimateRoutineDurationMinutes(routine) : null);
-      renderDashHeroVolume(session);
+      /* hero sans bloc central : le bouton suit le sous-titre */
+      var center = document.getElementById('dash-hero-center');
+      center.hidden = true;
+      center.innerHTML = '';
       renderDashNextSession();
+      renderDashVolumeCard(session);
     }
 
     renderDashProgramme(routine, session);
@@ -18803,10 +18820,11 @@
     var cardEl = document.getElementById('dash-session-card');
     var panelEl = document.getElementById('dash-day-panel');
     var routines = OvrykDB.getRoutines();
-    /* "Au programme" et "Prochaine séance" n'existent qu'avec la carte du
-       jour (renderDashboardSessionCardPlan les réaffiche) */
+    /* "Au programme", "Prochaine séance" et le volume n'existent qu'avec la
+       carte du jour (renderDashboardSessionCardPlan les réaffiche) */
     document.getElementById('dash-programme').hidden = true;
     document.getElementById('dash-next-session').hidden = true;
+    document.getElementById('dash-volume-card').hidden = true;
 
     if (routines.length === 0) {
       emptyEl.hidden = false;
@@ -21004,7 +21022,7 @@
 </script>
 <script>
   /* v164 : à garder égal à CACHE_VERSION dans sw.js (contrôlé par smoke.py) */
-  var APP_VERSION = 'v165';
+  var APP_VERSION = 'v166';
   document.getElementById('app-version-value').textContent = 'Version ' + APP_VERSION;
 
   /* Désinscrit le service worker et vide ses caches (ovryk-static-*), puis
