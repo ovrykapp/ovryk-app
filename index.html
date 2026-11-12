@@ -4389,6 +4389,9 @@
     --home-glass-border: rgba(var(--home-glass-rgb), 0.12);
     --home-glass-strong: rgba(var(--home-glass-rgb), 0.14);
     --home-glass-faint: rgba(var(--home-glass-rgb), 0.18);
+    --home-card-in-hero: rgba(var(--home-glass-rgb), 0.06);
+    --home-card-in-hero-border: rgba(var(--home-glass-rgb), 0.1);
+    --home-hero-pad: 22px;
     --home-hero-inset: inset 0 1px 0 rgba(var(--home-glass-rgb), 0.1);
     --home-hero-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
     --home-cta-shadow: 0 12px 32px rgba(var(--home-accent-rgb), 0.45);
@@ -4540,7 +4543,7 @@
   #view-dashboard .dash-session-card,
   #view-dashboard .dash-hero {
     border-radius: var(--home-r-hero);
-    padding: 22px 22px 24px;
+    padding: var(--home-hero-pad) var(--home-hero-pad) 24px;
     box-shadow: var(--home-hero-inset), var(--home-hero-shadow);
     margin-bottom: 26px;
   }
@@ -4664,6 +4667,24 @@
   #view-dashboard .dash-volume-value { text-align: right; font-size: 16px; font-weight: 700; color: var(--home-text); white-space: nowrap; }
   #view-dashboard .dash-volume-plus { color: var(--home-accent); }
   #view-dashboard .dash-hero-center { margin-bottom: 18px; }
+
+  /* état B : "Au programme" dans le hero, carrousel jusqu'aux bords de la
+     carte, cartes sans flou (déjà sur un fond verre) */
+  #view-dashboard .dash-session-card .dash-programme { margin: 0 0 16px; }
+  #view-dashboard .dash-session-card .dash-programme-title { font-size: 18px; font-weight: 800; }
+  #view-dashboard .dash-session-card .dash-session-exercises {
+    margin: 0 calc(-1 * var(--home-hero-pad));
+    padding: 2px var(--home-hero-pad) 6px;
+    scroll-padding: 0 var(--home-hero-pad);
+  }
+  #view-dashboard .dash-session-card .dash-prog-card {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+  #view-dashboard .dash-session-card .dash-prog-card:not(.is-first) {
+    background: var(--home-card-in-hero);
+    border-color: var(--home-card-in-hero-border);
+  }
   #view-dashboard .dash-volume-card {
     margin: 0 0 22px;
     padding: 16px;
@@ -18772,6 +18793,12 @@
     }
 
     renderDashProgramme(routine, session);
+    /* état B : "Au programme" entre dans le hero, juste avant la pilule de
+       salle ; état A : il reste sous le hero. Même nœud déplacé, rien
+       n'est recréé. */
+    var programmeEl = document.getElementById('dash-programme');
+    if (cycleSex) cardEl.parentNode.insertBefore(programmeEl, cardEl.nextSibling);
+    else cardEl.insertBefore(programmeEl, document.getElementById('dash-gym-wrap'));
 
     /* livraison 4 : même pilule que l'écran de départ, même état partagé
        (setSeanceStartGym). Aucune écriture avant le lancement. */
@@ -21022,7 +21049,7 @@
 </script>
 <script>
   /* v164 : à garder égal à CACHE_VERSION dans sw.js (contrôlé par smoke.py) */
-  var APP_VERSION = 'v166';
+  var APP_VERSION = 'v167';
   document.getElementById('app-version-value').textContent = 'Version ' + APP_VERSION;
 
   /* Désinscrit le service worker et vide ses caches (ovryk-static-*), puis
