@@ -2,6 +2,9 @@
 Livraison 1 : champ exercise.gymEquivalentId et écran de la fiche exercice,
 sans aucun changement des séances.
 Données FABRIQUÉES ici : aucun vrai export, aucun appel réseau.
+v170 : une seule salle à l'écran (On Air). Aucune pilule, aucune ligne "Équivalent en salle indé" sur la fiche, ni
+"N remplacé(s)" ni "Remplace X" hors du détail de l'historique, étiquette de salle seulement pour Indé. La logique
+des deux salles et l'écran d'équivalent restent en place : ils sont appelés avec 'inde' par window.__ovrykTest.
 Usage : python3 test_gym.py <dossier de travail>, site servi sur http://127.0.0.1:8765."""
 import sys, json, re, subprocess
 from datetime import datetime, timezone, timedelta
@@ -42,12 +45,16 @@ def fresh(b, d=None):
     # deux démarrages : la migration existante complète le catalogue au premier, liftBaseMode au second
     page.reload(); page.wait_for_timeout(300); page.reload(); page.wait_for_timeout(300)
     return ctx, page, errors
+CUR = {}
 def fiche(page, name):
     page.click('.nav-btn[data-target="exercices"]'); page.wait_for_timeout(250)
     page.locator('.exercise-row-name', has_text=name).first.click(); page.wait_for_timeout(300)
+    CUR['name'] = name
 def equiv_row(page): return page.inner_text('#exercise-detail-equiv-btn') if page.locator('#exercise-detail-equiv-btn').count() and page.is_visible('#exercise-detail-equiv-btn') else ''
 def open_equiv(page):
-    page.click('#exercise-detail-equiv-btn'); page.wait_for_timeout(250)
+    """v170 : plus de ligne sur la fiche, l'écran d'équivalent (gardé) est ouvert par l'accès de test"""
+    eid = [e['id'] for e in exs(page).values() if e['name'] == CUR['name']][0]
+    page.evaluate("id => window.__ovrykTest.openExerciseEquivPage(id)", eid); page.wait_for_timeout(250)
 def option(page, name): return page.locator('#exercise-equiv-list .equiv-option', has_text=name).first
 def search(page, text):
     page.fill('#exercise-equiv-search', text); page.wait_for_timeout(150)
@@ -71,7 +78,8 @@ with sync_playwright() as p:
     row_x = equiv_row(page)
     fiche(page, 'Squat fabrique lifting')
     row_l = equiv_row(page)
-    check('Équivalent en salle indé · Aucun' in row_x and row_l == '', 'G1 fiche : "%s" pour la muscu, aucune ligne pour Lifting' % row_x)
+    check(row_x == '' and row_l == '' and page.locator('#exercise-detail-equiv-btn').count() == 0,
+          'G1 fiche (v170, une seule salle) : aucune ligne "Équivalent en salle indé", ni pour la muscu ni pour Lifting')
     ctx.close()
 
     # G2 : choisir un équivalent : rien écrit avant Enregistrer, puis seul ex-x reçoit gymEquivalentId
@@ -89,10 +97,9 @@ with sync_playwright() as p:
     others_same = all(data(page)[k] == before[k] for k in DATA_KEYS if k != 'ovryk.exercises')
     check(changed == ['ex-x'] and after['ex-x'].get('gymEquivalentId') == 'ex-y' and others_same,
           'G2 Enregistrer : seul ex-x modifié (gymEquivalentId = ex-y), autres clés intactes (%s)' % changed)
-    check('Hack squat fabrique' in equiv_row(page) and page.is_hidden('#exercise-equiv-page'), 'G2 fiche : "%s"' % equiv_row(page))
+    check(equiv_row(page) == '' and page.is_hidden('#exercise-equiv-page'), 'G2 écran refermé après Enregistrer, fiche sans ligne d\'équivalent (v170)')
     fiche(page, 'Hack squat fabrique')
-    note = page.inner_text('#exercise-detail-equiv-sources') if page.locator('#exercise-detail-equiv-sources').count() else ''
-    check('Presse fabriquee' in note, 'G2 fiche de la cible : "%s"' % note)
+    check(page.locator('#exercise-detail-equiv-sources').count() == 0, 'G2 fiche de la cible : aucune note "Fait en salle indé" (v170)')
 
     # G3 : refus : la cible ne peut plus avoir d'équivalent ; pour un autre exercice, la cible qui a déjà un équivalent est refusée
     open_equiv(page)
@@ -111,7 +118,7 @@ with sync_playwright() as p:
     # G4 : retirer l'équivalent (champ mis à null), puis "Aucun" sur un exercice qui n'en a jamais eu : aucune écriture
     fiche(page, 'Presse fabriquee'); open_equiv(page)
     option(page, 'Aucun équivalent').click(); page.click('#exercise-equiv-save-btn'); page.wait_for_timeout(300)
-    check(exs(page)['ex-x'].get('gymEquivalentId', 'absent') is None and 'Aucun' in equiv_row(page), 'G4 retrait : gymEquivalentId = null, fiche "Aucun"')
+    check(exs(page)['ex-x'].get('gymEquivalentId', 'absent') is None, 'G4 retrait : gymEquivalentId = null')
     fiche(page, 'Fente fabriquee'); open_equiv(page); before = ls(page)
     page.click('#exercise-equiv-save-btn'); page.wait_for_timeout(300)
     check(ls(page) == before and 'gymEquivalentId' not in exs(page)['ex-z'], 'G4 "Aucun" sur un exercice sans équivalent : rien écrit, champ toujours absent')
@@ -121,7 +128,8 @@ with sync_playwright() as p:
     d = dataset(); d['exercises'][0]['gymEquivalentId'] = 'ex-absent'
     ctx, page, errors = fresh(b, d); before = ls(page)
     fiche(page, 'Presse fabriquee')
-    check('Équivalent introuvable' in equiv_row(page) and ls(page) == before, 'G5 cible absente : "%s", rien écrit' % equiv_row(page))
+    open_equiv(page)
+    check(page.is_visible('#exercise-equiv-page') and ls(page) == before and not errors, 'G5 cible absente : fiche et écran d\'équivalent ouverts sans erreur, rien écrit')
     ctx.close()
 
     # G6 : l'état change entre le choix et Enregistrer (la cible reçoit un équivalent) : refus, rien écrit
@@ -165,7 +173,7 @@ with sync_playwright() as p:
     restored = {x['id']: x for x in json.loads(ls(page)['ovryk.exercises'])}
     check('ex-x' in restored and 'gymEquivalentId' not in restored['ex-x'] and not errors, 'G8 ancien fichier sans le champ : restauré, champ absent, aucune erreur (%s)' % errors[:1])
     fiche(page, 'Presse fabriquee')
-    check('Aucun' in equiv_row(page), 'G8 après restauration : fiche "%s"' % equiv_row(page))
+    check(equiv_row(page) == '' and not errors, 'G8 après restauration : fiche sans ligne d\'équivalent, aucune erreur')
     env2 = json.loads(path.read_text())
     imp2 = F / 'fab-gym-recent.json'; imp2.write_text(json.dumps(env2))
     page.click('.nav-btn[data-target="dashboard"]'); page.wait_for_timeout(150); page.click('#dash-settings-btn'); page.wait_for_timeout(300)
@@ -216,37 +224,24 @@ with sync_playwright() as p:
     def launch_start(page):
         seance(page); page.locator('#seance-routine-list .routine-row-main', has_text='Routine salle').first.click(); page.wait_for_timeout(600)
     def pill(page): return page.locator('#seance-gym-wrap .gym-switch')
+    def launch_gym(page, gym_):
+        """v170 : plus de pilule ; logique des deux salles appelée directement"""
+        seance(page); page.evaluate("g => window.__ovrykTest.launchRoutine('r-salle', g)", gym_); page.wait_for_timeout(700)
     SHOTS = F
 
-    # G10 : pilule de l'écran de départ : On Air par défaut, ARIA, 44 px, aucune écriture à la bascule, styles demandés
+    # G10 (v170) : écran de départ On Air seul : aucune pilule, aucune ligne "N remplacé(s)", aucune écriture
     ctx, page, errors = fresh(b, salle_dataset())
-    seance(page)
-    pl = pill(page)
-    check(pl.get_attribute('role') == 'switch' and pl.get_attribute('aria-label') == 'Salle' and pl.get_attribute('aria-checked') == 'true' and pl.get_attribute('data-gym') == 'onair',
-          'G10 pilule : role=switch, aria-label "Salle", On Air par défaut (aucune séance avec salle)')
-    page.screenshot(path=str(SHOTS / 'depart-onair.png'))
     before = ls(page)
-    pl.click(); page.wait_for_timeout(350)
-    pl = pill(page)
+    seance(page)
     meta = page.locator('#seance-routine-list .routine-row-meta').first.inner_text()
-    check(pl.get_attribute('aria-checked') == 'false' and pl.get_attribute('data-gym') == 'inde' and ls(page) == before and '1 remplacé en indé' in meta,
-          'G10 bascule en Indé : aucune écriture, ligne de routine "%s"' % meta)
-    page.screenshot(path=str(SHOTS / 'depart-inde.png'))
-    st = page.evaluate("""() => { const b = document.querySelector('#seance-gym-wrap .gym-switch'); const t = b.querySelector('.gym-switch-thumb');
-      const act = b.querySelector('.gym-switch-option[data-for="' + b.dataset.gym + '"]'); const ina = b.querySelector('.gym-switch-option:not([data-for="' + b.dataset.gym + '"])');
-      const r = b.getBoundingClientRect(); const cs = getComputedStyle(b), ts = getComputedStyle(t);
-      return {h: r.height, right: r.right, sw: document.documentElement.scrollWidth, bg: cs.backgroundColor, border: cs.borderTopColor, bw: cs.borderTopWidth,
-              thumb: ts.backgroundColor, act: getComputedStyle(act).color, ina: getComputedStyle(ina).color,
-              shadow: [cs.boxShadow, ts.boxShadow], img: [cs.backgroundImage, ts.backgroundImage],
-              fits: Array.from(b.querySelectorAll('.gym-switch-option')).every(o => o.scrollWidth <= o.clientWidth)}; }""")
-    check(st['h'] >= 44 and st['right'] <= 390 and st['sw'] <= 390 and st['fits'], 'G10 390 px : hauteur %s px, bord droit %s, noms lisibles %s' % (round(st['h']), round(st['right']), st['fits']))
-    check(st['bg'] == 'rgb(17, 17, 16)' and st['border'] == 'rgb(58, 58, 53)' and st['bw'] == '1px' and st['thumb'] == 'rgb(255, 106, 43)'
-          and st['act'] == 'rgb(17, 17, 16)' and st['shadow'] == ['none', 'none'] and st['img'] == ['none', 'none'],
-          'G10 couleurs : fond Graphite, bordure --neutral-400, pastille Rouille, nom actif Graphite (%s), inactif %s, sans ombre ni dégradé' % (st['act'], st['ina']))
+    page.screenshot(path=str(SHOTS / 'depart-onair.png'))
+    check(pill(page).count() == 0 and not page.is_visible('#seance-gym-wrap'), 'G10 écran de départ : aucune pilule de salle')
+    check('remplacé' not in meta and ls(page) == before and not errors, 'G10 ligne de routine "%s" : aucune ligne de remplacement, aucune écriture' % meta)
+    ctx.close()
 
-    # G11 : lancement en Indé depuis l'écran de départ : remplacement, salle enregistrée, en-tête et carte
-    pill(page).click() if pill(page).get_attribute('data-gym') != 'inde' else None
-    page.locator('#seance-routine-list .routine-row-main', has_text='Routine salle').first.click(); page.wait_for_timeout(600)
+    # G11 : logique Indé (accès de test) : remplacement, salle enregistrée ; écran sans "Salle" ni "Remplace" (v170)
+    ctx, page, errors = fresh(b, salle_dataset())
+    launch_gym(page, 'inde')
     lv = live(page)
     exs_ = lv['exercises'] if lv else []
     check(lv and lv.get('gym') == 'inde' and [x['exerciseId'] for x in exs_] == ['ex-y', 'ex-z'] and exs_[0].get('replacesExerciseId') == 'ex-x'
@@ -258,7 +253,8 @@ with sync_playwright() as p:
           'G11 sans historique de l\'équivalent : structure du créneau (3 séries, plage 8-10, repos 90 s), charges vides')
     head = page.inner_text('#seance-gym-label') if page.is_visible('#seance-gym-label') else ''
     card = page.locator('.live-card').first.inner_text()
-    check(head == 'Salle : Indé' and 'Remplace Presse fabriquee (salle indé)' in card, 'G11 en-tête "%s", carte "remplace"' % head)
+    check(head == '' and 'Remplace' not in card and page.locator('#seance-active-gym-wrap .gym-switch').count() == 0,
+          'G11 écran (v170) : ni "Salle : …" ni pilule en en-tête, aucune mention "Remplace" sur la carte')
     ctx.close()
 
     # G12 : lancement en On Air : aucun remplacement, salle "onair"
@@ -268,20 +264,20 @@ with sync_playwright() as p:
           'G12 On Air : aucun remplacement, salle "onair" enregistrée')
     ctx.close()
 
-    # G13 : dernière salle déduite (aucune clé) ; lancements depuis le Programme et l'Accueil : dernière salle enregistrée et affichée
+    # G13 (v170) : la dernière séance faite en Indé ne change plus rien : lancements depuis le Programme et l'Accueil en On Air
     today = datetime.now().isoweekday()
     hist = [sess2('s-old', '2026-09-01', 'onair', [('ex-x', 'Presse fabriquee', [rset(100, 10, True)])]),
             sess2('s-last', '2026-09-08', 'inde', [('ex-y', 'Hack squat fabrique', [rset(50, 8, True)], 'ex-x')])]
     ctx, page, errors = fresh(b, salle_dataset(hist, weekdays=[today]))
     keys0 = set(ls(page))
     seance(page)
-    check(pill(page).get_attribute('data-gym') == 'inde', 'G13 écran de départ : dernière salle utilisée (Indé) présélectionnée')
+    check(pill(page).count() == 0, 'G13 écran de départ : aucune pilule, même après une séance indé')
     page.click('.nav-btn[data-target="routine"]'); page.wait_for_timeout(400)
     page.locator('.routine-row-start:visible', has_text='Démarrer').first.click(); page.wait_for_timeout(700)
     lv = live(page)
     head = page.inner_text('#seance-gym-label') if page.is_visible('#seance-gym-label') else ''
-    check(lv and lv.get('gym') == 'inde' and lv['exercises'][0]['exerciseId'] == 'ex-y' and head == 'Salle : Indé' and set(ls(page)) == keys0,
-          'G13 Programme "Démarrer" : salle "inde" enregistrée, remplacement fait, en-tête "%s", aucune nouvelle clé' % head)
+    check(lv and lv.get('gym') == 'onair' and lv['exercises'][0]['exerciseId'] == 'ex-x' and 'replacesExerciseId' not in lv['exercises'][0] and head == '' and set(ls(page)) == keys0,
+          'G13 Programme "Démarrer" après une séance indé : salle "onair", aucun remplacement, aucun libellé, aucune nouvelle clé')
     ctx.close()
     ctx, page, errors = fresh(b, salle_dataset(hist, weekdays=[today]))
     page.click('.nav-btn[data-target="dashboard"]'); page.wait_for_timeout(400)
@@ -289,7 +285,7 @@ with sync_playwright() as p:
     if starts.count() and starts.is_visible() and 'démarrer' in starts.inner_text().lower():   # capitales (CSS)
         starts.click(); page.wait_for_timeout(700)
         lv = live(page); head = page.inner_text('#seance-gym-label') if page.is_visible('#seance-gym-label') else ''
-        check(lv and lv.get('gym') == 'inde' and lv['exercises'][0]['exerciseId'] == 'ex-y' and head == 'Salle : Indé', 'G13 Accueil "Démarrer la séance" : salle "inde" enregistrée, remplacement fait, en-tête "%s"' % head)
+        check(lv and lv.get('gym') == 'onair' and lv['exercises'][0]['exerciseId'] == 'ex-x' and head == '', 'G13 Accueil "Démarrer la séance" après une séance indé : salle "onair", aucun remplacement')
     else:
         check(False, 'G13 Accueil : bouton "Démarrer la séance" introuvable')
     ctx.close()
@@ -298,17 +294,13 @@ with sync_playwright() as p:
     hist = [sess2('s-a', '2026-08-01', 'onair', [('ex-x', 'Presse fabriquee', [rset(100, 10, True), rset(100, 10, True), rset(100, 10, True)])]),
             sess2('s-b', '2026-08-08', 'inde', [('ex-y', 'Hack squat fabrique', [rset(50, 8, True), rset(50, 8, True)], 'ex-x')])]
     ctx, page, errors = fresh(b, salle_dataset(hist))
-    seance(page)
-    if pill(page).get_attribute('data-gym') != 'onair': pill(page).click(); page.wait_for_timeout(200)
-    page.locator('#seance-routine-list .routine-row-main', has_text='Routine salle').first.click(); page.wait_for_timeout(600)
+    launch_start(page)   # v170 : On Air, seule salle à l'écran
     x = live(page)['exercises'][0]
     check(x['exerciseId'] == 'ex-x' and len(x['sets']) == 3 and all(abs(st_['weightKg'] - 102.5) < 0.01 for st_ in x['sets']),
           'G14 On Air après une séance indé : X reprend sa dernière séance (100 kg, haut de plage atteint, 102,5 kg) (%s)' % [st_['weightKg'] for st_ in x['sets']])
     ctx.close()
     ctx, page, errors = fresh(b, salle_dataset(hist))
-    seance(page)
-    if pill(page).get_attribute('data-gym') != 'inde': pill(page).click(); page.wait_for_timeout(200)
-    page.locator('#seance-routine-list .routine-row-main', has_text='Routine salle').first.click(); page.wait_for_timeout(600)
+    launch_gym(page, 'inde')
     y = live(page)['exercises'][0]
     check(y['exerciseId'] == 'ex-y' and len(y['sets']) == 2 and all(st_['weightKg'] == 50 and st_.get('targetReps') == 9 for st_ in y['sets']),
           'G14 Indé : Y reprend sa dernière séance (2 séries, 50 kg, cible 9 reps) (%s)' % [(st_['weightKg'], st_.get('targetReps')) for st_ in y['sets']])
@@ -318,9 +310,7 @@ with sync_playwright() as p:
     d = salle_dataset(extra_rex=[{'exerciseId': 'ex-l', 'restSeconds': 120, 'sets': [{'reps': 5, 'weightKg': 80}]}])
     d['exercises'][4]['gymEquivalentId'] = 'ex-z'
     ctx, page, errors = fresh(b, d)
-    seance(page)
-    if pill(page).get_attribute('data-gym') != 'inde': pill(page).click(); page.wait_for_timeout(200)
-    page.locator('#seance-routine-list .routine-row-main', has_text='Routine salle').first.click(); page.wait_for_timeout(600)
+    launch_gym(page, 'inde')
     ids = [x['exerciseId'] for x in live(page)['exercises']]
     check(ids == ['ex-y', 'ex-z', 'ex-l'] and not errors, 'G15 Indé : Lifting gardé tel quel (%s)' % ids)
     ctx.close()
@@ -333,9 +323,7 @@ with sync_playwright() as p:
     d['settings']['deloadMuscuMode'] = 'auto'
     d['routines'].append({'id': 'r-force', 'name': 'Force fabriquee', 'weekdays': [], 'updatedAt': '2026-06-01T00:00:00.000Z', 'exercises': [{'exerciseId': 'ex-c', 'restSeconds': 120, 'sets': [rset(0)]}]})  # cycles liés au programme : ex-c doit être dans une routine pour compter
     ctx, page, errors = fresh(b, d)
-    seance(page)
-    if pill(page).get_attribute('data-gym') != 'inde': pill(page).click(); page.wait_for_timeout(200)
-    page.locator('#seance-routine-list .routine-row-main', has_text='Routine salle').first.click(); page.wait_for_timeout(600)
+    launch_gym(page, 'inde')
     y = live(page)['exercises'][0]
     check(y['exerciseId'] == 'ex-y' and y.get('deload') is True and len(y['sets']) == 2 and len(y.get('deloadRemovedSets') or []) == 1,
           'G16 semaine allégée : la carte remplacée est allégée comme les autres (3 séries vers 2, 1 retirée)')
@@ -343,9 +331,7 @@ with sync_playwright() as p:
     hist = [sess2('s-dl', '2026-09-08', 'inde', [('ex-y', 'Hack squat fabrique', [rset(50, 10, True), rset(50, 10, True)], 'ex-x')])]
     hist[0]['exercises'][0].update({'deload': True, 'deloadRemovedSets': [rset(50)], 'deloadSource': {'exerciseId': 'ex-c', 'cycleId': '6', 'weekNumber': 4}})
     ctx, page, errors = fresh(b, salle_dataset(hist))
-    seance(page)
-    if pill(page).get_attribute('data-gym') != 'inde': pill(page).click(); page.wait_for_timeout(200)
-    page.locator('#seance-routine-list .routine-row-main', has_text='Routine salle').first.click(); page.wait_for_timeout(600)
+    launch_gym(page, 'inde')
     y = live(page)['exercises'][0]
     check(len(y['sets']) == 3 and all(st_['weightKg'] == 50 for st_ in y['sets']) and not y.get('deload'),
           'G16 séance suivante en Indé : séries retirées remises (3), charge figée (50 kg), pas de progression sur une séance allégée')
@@ -354,9 +340,7 @@ with sync_playwright() as p:
     # G17 : retour en Indé après une absence (1 séance indé, 3 séances On Air sur plusieurs semaines) : ce que prend la carte Y
     def observe(label, hist_):
         c, pg, err = fresh(b, salle_dataset(hist_))
-        seance(pg)
-        if pill(pg).get_attribute('data-gym') != 'inde': pill(pg).click(); pg.wait_for_timeout(200)
-        pg.locator('#seance-routine-list .routine-row-main', has_text='Routine salle').first.click(); pg.wait_for_timeout(700)
+        launch_gym(pg, 'inde')
         yy = live(pg)['exercises'][0]
         body = pg.locator('.live-card').first.inner_text()
         sugg = 'Deux dernières séances sous la plage' in body
@@ -394,14 +378,17 @@ with sync_playwright() as p:
     page.locator('#history-list .history-row').first.click(); page.wait_for_timeout(400)
     check('Salle' not in page.inner_text('#history-detail-date') and 'Remplace' not in page.inner_text('#history-detail-body'), 'G18 séance d\'avant le lot (sans salle) : rien d\'affiché')
     ctx.close()
+    ctx, page, errors = fresh(b, salle_dataset([sess2('s-on', '2026-09-08', 'onair', [('ex-x', 'Presse fabriquee', [rset(100, 8, True)])])]))
+    page.click('.nav-btn[data-target="progression"]'); page.wait_for_timeout(300); page.click('#history-open-btn'); page.wait_for_timeout(400)
+    row = page.locator('#history-list .history-row').first.inner_text()
+    page.locator('#history-list .history-row').first.click(); page.wait_for_timeout(400)
+    check('On Air' not in row and page.locator('#history-list .history-gym-tag').count() == 0 and 'Salle' not in page.inner_text('#history-detail-date') and not errors,
+          'G18 (v170) séance On Air : aucune étiquette de salle dans la liste ni dans le détail')
+    ctx.close()
 
     # ================= Livraison 2b : doublon, statistiques, charges vides, prévisionnel =================
     def cur_kg(page): return page.locator('.live-card.is-open .muscu-set-row.is-current input').first
     def cur_circle(page): return page.locator('.live-card.is-open .muscu-set-row.is-current .live-set-col-check button').first
-    def launch_gym(page, gym_):
-        seance(page)
-        if pill(page).get_attribute('data-gym') != gym_: pill(page).click(); page.wait_for_timeout(200)
-        page.locator('#seance-routine-list .routine-row-main', has_text='Routine salle').first.click(); page.wait_for_timeout(700)
 
     # G19 : charges vides pour un équivalent sans historique dans la routine ; une série se valide avec un poids saisi ; Z non concerné inchangé
     hist = [sess2('s-z', '2026-09-01', 'onair', [('ex-x', 'Presse fabriquee', [rset(100, 9, True)] * 3), ('ex-z', 'Fente fabriquee', [rset(42.5, 10, True), rset(42.5, 10, True)])])]
@@ -421,14 +408,15 @@ with sync_playwright() as p:
     # G20 : prévisionnel de la charge de la semaine (lot 13) : en Indé, la carte remplacée est prévue à la place de l'exercice d'origine
     today = datetime.now().isoweekday()
     # l'écran n'affiche que des nombres de séries : la carte remplacée a 2 séries (son historique), l'exercice d'origine 3 (sa ligne de routine)
-    for gym_, expected in [('inde', 4), ('onair', 5)]:
+    # v170 : prévisionnel toujours construit en On Air, quelle que soit la dernière salle (avant : 4 après une séance indé)
+    for gym_, expected in [('inde', 5), ('onair', 5)]:
         hist = [sess2('s-w1', '2026-09-01', 'inde', [('ex-y', 'Hack squat fabrique', [rset(50, 10, True)] * 2, 'ex-x')])]
         if gym_ == 'onair': hist.append(sess2('s-w2', '2026-09-08', 'onair', [('ex-w', 'Leg extension fabrique', [rset(30, 10, True)])], routine='r-autre'))
         ctx, page, errors = fresh(b, salle_dataset(hist, weekdays=[today]))
         page.click('.nav-btn[data-target="routine"]'); page.wait_for_timeout(400)
         sub = page.inner_text('#programme-week-load-sub')
         check(('%d séries' % expected) in sub and not errors,
-              'G20 charge de la semaine, dernière salle %s : "%s" (attendu %d : %s)' % (gym_, sub, expected, 'Y 2 + Z 2' if gym_ == 'inde' else 'X 3 + Z 2'))
+              'G20 charge de la semaine, dernière séance %s : "%s" (attendu %d : X 3 + Z 2, On Air)' % (gym_, sub, expected))
         ctx.close()
 
     # G21 : doublon X vers Y alors que Y est aussi dans la routine
@@ -536,6 +524,11 @@ with sync_playwright() as p:
 
     # ================= Livraison 3 : changement de salle pendant la séance, verrou =================
     def head_pill(page): return page.locator('#seance-active-gym-wrap .gym-switch')
+    def switch(page, gym_):
+        """v170 : plus de pilule en séance ; changement de salle (logique gardée) par l'accès de test"""
+        page.evaluate("g => window.__ovrykTest.switchActiveSessionGym(g)", gym_); page.wait_for_timeout(500)
+    def no_head_ui(page):
+        return head_pill(page).count() == 0 and not page.is_visible('#seance-gym-label') and 'Remplace' not in page.inner_text('#seance-active-view')
     COUNT_WRITES = """() => { window.__w = 0; const orig = Storage.prototype.setItem;
       Storage.prototype.setItem = function (k, v) { if (k === 'ovryk.sessions') window.__w++; return orig.call(this, k, v); }; }"""
     def open_card(page, card_index):
@@ -555,10 +548,9 @@ with sync_playwright() as p:
     edit_kg(page, 0, 120); edit_kg(page, 1, 47)
     page.fill('#seance-notes-input', 'note fabriquee'); page.locator('#seance-notes-input').press('Tab'); page.wait_for_timeout(200)
     s1 = live(page)
-    check(head_pill(page).get_attribute('data-gym') == 'onair' and head_pill(page).get_attribute('aria-disabled') is None and not page.is_visible('#seance-gym-note'),
-          'G23 en-tête : pilule On Air, active (aucune série validée)')
+    check(no_head_ui(page) and not page.is_visible('#seance-gym-note'), 'G23 en-tête (v170) : ni pilule, ni "Salle : …", ni "Remplace"')
     page.evaluate(COUNT_WRITES)
-    head_pill(page).click(); page.wait_for_timeout(500)
+    switch(page, 'inde')
     s2 = live(page); writes = page.evaluate('() => window.__w')
     same_keys = all(s2[k] == s1[k] for k in ('id', 'startedAt', 'date', 'notes', 'routineId'))
     c = s2['exercises']
@@ -566,8 +558,8 @@ with sync_playwright() as p:
           'G23 Indé : seule la carte X devient Y (remplace X), id, début, date, notes et ordre gardés, une seule écriture (%d)' % writes)
     check(c[1] == s1['exercises'][1] and c[2] == s1['exercises'][2] and c[2]['groupId'] == 'g-1' and c[1]['sets'][0]['weightKg'] == 47,
           'G23 cartes non concernées identiques (Z à 47 kg saisi à la main, superset de W gardé)')
-    check(page.inner_text('#seance-gym-label') == 'Salle : Indé' and head_pill(page).get_attribute('data-gym') == 'inde', 'G23 en-tête mis à jour : "Salle : Indé"')
-    head_pill(page).click(); page.wait_for_timeout(500)
+    check(no_head_ui(page), 'G23 après le passage en Indé (logique) : écran toujours sans pilule, libellé ni "Remplace"')
+    switch(page, 'onair')
     s3 = live(page); c = s3['exercises']
     check(s3['gym'] == 'onair' and [x['exerciseId'] for x in c] == ['ex-x', 'ex-z', 'ex-w'] and 'replacesExerciseId' not in c[0]
           and c[1] == s1['exercises'][1] and c[2] == s1['exercises'][2] and s3['notes'] == 'note fabriquee',
@@ -581,15 +573,15 @@ with sync_playwright() as p:
     ctx, page, errors = fresh(b, salle_dataset(extra_rex=dup_rex))
     launch_gym(page, 'onair')
     edit_kg(page, 2, 71); s1 = live(page)
-    head_pill(page).click(); page.wait_for_timeout(500)
+    switch(page, 'inde')
     c = live(page)['exercises']
     check([x['exerciseId'] for x in c] == ['ex-y', 'ex-z', 'ex-y'] and c[0].get('replacesExerciseId') == 'ex-x' and c[2] == s1['exercises'][2] and c[2]['sets'][0]['weightKg'] == 71,
           'G25 vers Indé : X devient la carte Y de remplacement, la carte Y normale (71 kg saisi) intacte')
-    head_pill(page).click(); page.wait_for_timeout(500)
+    switch(page, 'onair')
     c = live(page)['exercises']
     check([x['exerciseId'] for x in c] == ['ex-x', 'ex-z', 'ex-y'] and c[2] == s1['exercises'][2],
           'G25 vers On Air : seule la carte de remplacement redevient X, la carte Y normale intacte')
-    head_pill(page).click(); page.wait_for_timeout(500)
+    switch(page, 'inde')
     c = live(page)['exercises']
     check([x['exerciseId'] for x in c] == ['ex-y', 'ex-z', 'ex-y'] and c[0].get('replacesExerciseId') == 'ex-x' and c[2] == s1['exercises'][2],
           'G25 retour en Indé : la carte de remplacement est recréée, l\'autre carte Y toujours intacte')
@@ -601,20 +593,15 @@ with sync_playwright() as p:
     open_card(page, 1)
     cur_kg(page).fill('40'); cur_kg(page).press('Tab'); page.wait_for_timeout(100); cur_circle(page).click(); page.wait_for_timeout(400)
     before = ls(page)
-    hp = head_pill(page)
-    locked_ok = hp.get_attribute('aria-disabled') == 'true' and 'is-locked' in hp.get_attribute('class') and 'Salle fixée après la première série' in page.inner_text('#seance-gym-note')
-    page.evaluate("() => { const m = document.querySelector('main'); if (m) m.scrollTop = 0; window.scrollTo(0, 0); document.getElementById('seance-active-gym-wrap').scrollIntoView({block: 'center'}); }"); page.wait_for_timeout(200)
-    page.screenshot(path=str(SHOTS / 'entete-verrouillee.png'))
-    hp.click(force=True); page.wait_for_timeout(300)
-    check(locked_ok and ls(page) == before and live(page)['gym'] == 'onair', 'G26 série validée : pilule verrouillée (aria-disabled, atténuée, texte), un tap ne change rien')
+    switch(page, 'inde')
+    check(no_head_ui(page) and ls(page) == before and live(page)['gym'] == 'onair', 'G26 série validée : changement de salle refusé (logique), rien écrit, aucune pilule à l\'écran')
     timer_on = page.evaluate("() => document.body.classList.contains('rest-timer-active')")
     page.locator('.live-card.is-open .live-set-circle.is-done').first.click(); page.wait_for_timeout(400)
-    hp = head_pill(page)
-    unlocked = hp.get_attribute('aria-disabled') is None and not page.is_visible('#seance-gym-note')
-    hp.click(); page.wait_for_timeout(500)
+    unlocked = not page.is_visible('#seance-gym-note')
+    switch(page, 'inde')
     timer_after = page.evaluate("() => document.body.classList.contains('rest-timer-active')")
     check(unlocked and live(page)['gym'] == 'inde' and timer_on and timer_after,
-          'G26 série dé-validée : la pilule se déverrouille et le changement est permis ; minuteur de repos toujours en cours (%s puis %s)' % (timer_on, timer_after))
+          'G26 série dé-validée : le changement de salle est de nouveau permis ; minuteur de repos toujours en cours (%s puis %s)' % (timer_on, timer_after))
     ctx.close()
 
     # G27 : exception pendant la reconstruction : séance intacte, rien d'écrit, message
@@ -623,13 +610,13 @@ with sync_playwright() as p:
     s1 = live(page)
     rts = json.loads(ls(page)['ovryk.routines']); rts[0]['exercises'][0]['sets'] = None   # ligne de routine abîmée après le lancement
     jset(page, 'ovryk.routines', rts); before = ls(page)
-    head_pill(page).click(); page.wait_for_timeout(400)
+    switch(page, 'inde')
     msg = page.inner_text('#seance-gym-note') if page.is_visible('#seance-gym-note') else ''
-    check(ls(page) == before and live(page) == s1 and 'La séance n’a pas été modifiée' in msg and head_pill(page).get_attribute('data-gym') == 'onair',
+    check(ls(page) == before and live(page) == s1 and 'La séance n’a pas été modifiée' in msg and live(page)['gym'] == 'onair',
           'G27 exception simulée : séance identique en mémoire et en stockage, aucune écriture, message "%s"' % msg[:60])
     page.locator('.live-card-header').nth(1).click(); page.wait_for_timeout(250)
-    check(live(page) == s1 and page.inner_text('#seance-gym-label') == 'Salle : On Air' and 'presse fabriquee' in page.locator('.live-card').first.inner_text().lower()
-          and 'Cannot' not in msg, 'G27 l\'écran affiche toujours On Air et la carte d\'origine (X), message en français')
+    check(live(page) == s1 and not page.is_visible('#seance-gym-label') and 'presse fabriquee' in page.locator('.live-card').first.inner_text().lower()
+          and 'Cannot' not in msg, 'G27 l\'écran affiche toujours la carte d\'origine (X), sans libellé de salle, message en français')
     ctx.close()
 
     # G28 : séance en cours sans salle (créée avant la mise à jour) : aucune pilule, aucun remplacement
@@ -653,86 +640,63 @@ with sync_playwright() as p:
     ctx, page, errors = fresh(b, d)
     launch_gym(page, 'onair')
     s1 = live(page)
-    head_pill(page).click(); page.wait_for_timeout(500)
+    switch(page, 'inde')
     c = live(page)['exercises']
     check(s1['exercises'][0].get('deload') and c[0]['exerciseId'] == 'ex-y' and c[0].get('deload') is True and len(c[0]['sets']) == 2
           and c[0].get('deloadSource') == s1['exercises'][0].get('deloadSource') and c[1] == s1['exercises'][1],
           'G30 allègement : la carte Y de remplacement est allégée avec la même source, la carte Z allégée reste identique')
     ctx.close()
 
-    # G31 : pilule de l'en-tête à 390 px : On Air, Indé (captures) et styles identiques à l'écran de départ
+    # G31 (v170) : séance à 390 px, en On Air puis en Indé (logique) : aucune pilule, aucun libellé, aucun débordement
     ctx, page, errors = fresh(b, salle_dataset())
     launch_gym(page, 'onair')
     page.screenshot(path=str(SHOTS / 'entete-onair.png'))
-    head_pill(page).click(); page.wait_for_timeout(400)
+    ok_on = no_head_ui(page)
+    switch(page, 'inde')
     page.screenshot(path=str(SHOTS / 'entete-inde.png'))
-    st = page.evaluate("""() => { const b = document.querySelector('#seance-active-gym-wrap .gym-switch'); const t = b.querySelector('.gym-switch-thumb');
-      const r = b.getBoundingClientRect(); const cs = getComputedStyle(b), ts = getComputedStyle(t);
-      return {h: r.height, right: r.right, sw: document.documentElement.scrollWidth, bg: cs.backgroundColor, border: cs.borderTopColor, thumb: ts.backgroundColor,
-              shadow: [cs.boxShadow, ts.boxShadow], img: [cs.backgroundImage, ts.backgroundImage], role: b.getAttribute('role'), label: b.getAttribute('aria-label')}; }""")
-    check(st['h'] >= 44 and st['right'] <= 390 and st['sw'] <= 390 and st['bg'] == 'rgb(17, 17, 16)' and st['border'] == 'rgb(58, 58, 53)' and st['thumb'] == 'rgb(255, 106, 43)'
-          and st['shadow'] == ['none', 'none'] and st['img'] == ['none', 'none'] and st['role'] == 'switch' and st['label'] == 'Salle',
-          'G31 pilule de l\'en-tête à 390 px : %s px de haut, même style que l\'écran de départ, sans ombre ni dégradé' % round(st['h']))
+    sw = page.evaluate("() => document.documentElement.scrollWidth")
+    check(ok_on and no_head_ui(page) and live(page)['gym'] == 'inde' and sw <= 390 and not errors,
+          'G31 séance à 390 px : ni pilule ni libellé ni "Remplace" en On Air comme en Indé, largeur %s' % sw)
     ctx.close()
 
-    # ================= Livraison 4 : pilule sur l'Accueil, choix partagé par tous les points de lancement =================
+    # ================= Livraison 4 : Accueil. v170 : une seule salle, plus de pilule ni de choix partagé =================
     def dash(page): page.click('.nav-btn[data-target="dashboard"]'); page.wait_for_timeout(350)
     def dpill(page): return page.locator('#dash-gym-wrap .gym-switch')
-    def dnote(page):
-        n = page.locator('#dash-gym-wrap .seance-gym-note')
-        return n.first.inner_text() if n.count() and n.first.is_visible() else ''
     def prog(page): page.click('.nav-btn[data-target="routine"]'); page.wait_for_timeout(400)
     def row_note(page):
         n = page.locator('#routine-list .gym-pending-note')
         return n.first.inner_text() if n.count() else ''
+    def no_dash_ui(page):
+        t = page.inner_text('#dash-session-card') + ' ' + page.inner_text('#dash-programme')
+        return dpill(page).count() == 0 and not page.is_visible('#dash-gym-wrap') and 'remplacé' not in t and 'Remplace' not in t
     onair1 = [sess2('s-on', '2026-09-01', 'onair', [('ex-x', 'Presse fabriquee', [rset(100, 10, True)])])]
     inde1 = [sess2('s-in', '2026-09-08', 'inde', [('ex-y', 'Hack squat fabrique', [rset(50, 8, True)], 'ex-x')])]
 
-    # G32 : pilule de l'Accueil présente près du bouton, défaut = dernière salle utilisée (On Air sans historique, Indé après une séance indé)
+    # G32 : Accueil sans pilule, sans historique comme après une séance indé
     ctx, page, errors = fresh(b, salle_dataset())
-    dash(page)
-    pl = dpill(page)
-    order = page.evaluate("() => { const w = document.getElementById('dash-gym-wrap'); return w.nextElementSibling && w.nextElementSibling.id; }")
-    ok_a = pl.count() == 1 and pl.get_attribute('role') == 'switch' and pl.get_attribute('aria-label') == 'Salle' and pl.get_attribute('data-gym') == 'onair' and order == 'dash-session-cta'
+    dash(page); ok_a = no_dash_ui(page)
     ctx.close()
     ctx, page, errors = fresh(b, salle_dataset(onair1 + inde1))
     dash(page)
-    check(ok_a and dpill(page).get_attribute('data-gym') == 'inde' and not errors,
-          'G32 Accueil : pilule juste avant "Commencer la séance", On Air sans historique, Indé quand la dernière séance est indé')
+    check(ok_a and no_dash_ui(page) and not errors, 'G32 Accueil : aucune pilule ni ligne de remplacement, sans historique et après une séance indé')
     ctx.close()
 
-    # G33 : bascules sur l'Accueil : aucune écriture (ni avant, ni après un aller-retour d'onglets), ligne "N remplacé(s) en indé"
-    ctx, page, errors = fresh(b, salle_dataset(onair1))
-    dash(page)
+    # G33 : affichage de l'Accueil et aller-retour d'onglets : aucune écriture
+    ctx, page, errors = fresh(b, salle_dataset(onair1 + inde1))
     before = ls(page)
-    dpill(page).click(); page.wait_for_timeout(300)
-    n_inde = dnote(page); g1 = dpill(page).get_attribute('data-gym')
-    focused = page.evaluate("() => !!document.activeElement && document.activeElement.matches('#dash-gym-wrap .gym-switch')")
-    prog(page); seance(page); dash(page)
-    g2 = dpill(page).get_attribute('data-gym')
-    dpill(page).click(); page.wait_for_timeout(300)
-    n_onair = dnote(page)
-    check(g1 == 'inde' and g2 == 'inde' and '1 remplacé en indé' in n_inde and 'remplacé' not in n_onair and focused and ls(page) == before and not errors,
-          'G33 Accueil : bascule Indé ("%s"), choix gardé après Programme et Séance, retour On Air sans ligne, focus gardé, aucune écriture' % n_inde.strip())
+    dash(page); prog(page); seance(page); dash(page)
+    check(no_dash_ui(page) and ls(page) == before and not errors, 'G33 Accueil, Programme, Séance puis Accueil : aucune écriture, toujours sans pilule')
     ctx.close()
 
-    # G34 : état partagé : Accueil vers Séance et Séance vers Accueil, rappel "Salle : X" dans Programme seulement si un choix est en attente
-    ctx, page, errors = fresh(b, salle_dataset(onair1))
+    # G34 : Programme sans rappel "Salle : X", écran de départ sans pilule ni ligne de remplacement
+    ctx, page, errors = fresh(b, salle_dataset(onair1 + inde1))
     prog(page); note0 = row_note(page)
-    dash(page); dpill(page).click(); page.wait_for_timeout(300)
-    seance(page); s1 = pill(page).get_attribute('data-gym')
-    meta1 = page.locator('#seance-routine-list .routine-row-meta').first.inner_text()
-    pill(page).click(); page.wait_for_timeout(300)
-    dash(page); d1 = dpill(page).get_attribute('data-gym')
-    dpill(page).click(); page.wait_for_timeout(300)
-    prog(page); note1 = row_note(page)
-    seance(page); s2 = pill(page).get_attribute('data-gym')
-    hidden_ok = page.evaluate("() => { const a = document.querySelector('#seance-gym-wrap .gym-switch'), b = document.querySelector('#dash-gym-wrap .gym-switch'); return a.dataset.gym === b.dataset.gym; }")
-    check(note0 == '' and s1 == 'inde' and '1 remplacé en indé' in meta1 and d1 == 'onair' and note1 == 'Salle : Indé' and s2 == 'inde' and hidden_ok and not errors,
-          'G34 état partagé : Accueil Indé vu sur Séance, Séance On Air vu sur l\'Accueil, pilule masquée identique, Programme "%s" (rien sans choix)' % note1)
+    seance(page); meta1 = page.locator('#seance-routine-list .routine-row-meta').first.inner_text()
+    check(note0 == '' and pill(page).count() == 0 and 'remplacé' not in meta1 and not errors,
+          'G34 Programme sans rappel de salle, écran de départ sans pilule ("%s")' % meta1)
     ctx.close()
 
-    # G35 : le choix fait sur l'Accueil est repris au lancement depuis chaque point (Accueil, Programme, écran de départ, Refaire)
+    # G35 : chaque point de lancement (Accueil, Programme, écran de départ, Refaire) lance en On Air, même après une séance indé
     def from_dash(page): page.click('#dash-session-cta'); page.wait_for_timeout(700)
     def from_prog(page):
         prog(page); page.locator('#routine-list .routine-row-start', has_text='Démarrer').first.click(); page.wait_for_timeout(700)
@@ -746,81 +710,59 @@ with sync_playwright() as p:
         page.click('.history-redo-btn'); page.wait_for_timeout(700)
     got = []
     for name_, fn in [('Accueil', from_dash), ('Programme', from_prog), ('écran de départ', from_start), ('Refaire', from_redo)]:
-        ctx, page, errors = fresh(b, salle_dataset(onair1))
-        dash(page); dpill(page).click(); page.wait_for_timeout(300)
+        ctx, page, errors = fresh(b, salle_dataset(onair1 + inde1))
+        dash(page)
         before = data(page)
         fn(page)
         lv = live(page)
         sessions_before = json.loads(before['ovryk.sessions'])
         others_same = all(data(page)[k] == before[k] for k in DATA_KEYS if k != 'ovryk.sessions' and k in before)
-        ok_ = (lv and lv.get('gym') == 'inde' and lv['exercises'][0]['exerciseId'] == 'ex-y' and lv['exercises'][0].get('replacesExerciseId') == 'ex-x'
+        ok_ = (lv and lv.get('gym') == 'onair' and lv['exercises'][0]['exerciseId'] == 'ex-x' and 'replacesExerciseId' not in lv['exercises'][0]
                and json.loads(data(page)['ovryk.sessions'])[:len(sessions_before)] == sessions_before and others_same and not errors)
         got.append(name_ if ok_ else name_ + ' ECHEC')
         ctx.close()
-    check(all('ECHEC' not in g for g in got) and 'Salle : Indé' in redo_note.get('t', ''),
-          'G35 choix Indé de l\'Accueil repris à chaque lancement (%s), seule la nouvelle séance est écrite, Refaire affiche "Salle : Indé"' % ', '.join(got))
+    check(all('ECHEC' not in g for g in got) and 'Salle' not in redo_note.get('t', ''),
+          'G35 lancement en On Air depuis chaque point (%s), seule la nouvelle séance est écrite, Refaire sans rappel de salle' % ', '.join(got))
 
-    # G36 : Lifting jamais remplacé ni compté depuis l'Accueil, routine sans équivalent : pilule présente, aucune ligne de remplacement
+    # G36 : Lifting jamais remplacé (logique Indé), Accueil sans ligne de remplacement
     d = salle_dataset(extra_rex=[{'exerciseId': 'ex-l', 'restSeconds': 120, 'sets': [{'reps': 5, 'weightKg': 80}]}])
     d['exercises'][4]['gymEquivalentId'] = 'ex-z'
     ctx, page, errors = fresh(b, d)
-    dash(page); dpill(page).click(); page.wait_for_timeout(300)
-    n_ = dnote(page)
-    from_dash(page)
-    ids = [x['exerciseId'] for x in live(page)['exercises']]
-    ctx.close()
-    d = salle_dataset(); d['exercises'][0].pop('gymEquivalentId')
-    ctx, page, errors = fresh(b, d)
-    dash(page); dpill(page).click(); page.wait_for_timeout(300)
-    check('1 remplacé en indé' in n_ and ids == ['ex-y', 'ex-z', 'ex-l'] and dpill(page).get_attribute('data-gym') == 'inde' and 'remplacé' not in dnote(page) and not errors,
-          'G36 Lifting non compté ("%s") ni remplacé (%s) ; routine sans équivalent : pilule Indé, aucune ligne' % (n_.strip(), ids))
+    dash(page)
+    cards_in = page.evaluate("() => window.__ovrykTest.buildSessionCards('r-salle', 'inde').map(c => c.exerciseId)")
+    check(cards_in == ['ex-y', 'ex-z', 'ex-l'] and no_dash_ui(page) and not errors,
+          'G36 logique Indé : Lifting jamais remplacé (%s) ; Accueil sans ligne de remplacement' % cards_in)
     ctx.close()
 
-    # G37 : séance en cours : Accueil sans pilule (Reprendre), Programme sans rappel de salle
+    # G37 : séance en cours : Accueil "Reprendre" sans pilule, Programme sans rappel de salle
     ctx, page, errors = fresh(b, salle_dataset(onair1))
-    dash(page); dpill(page).click(); page.wait_for_timeout(300)
-    from_dash(page); dash(page)
+    dash(page); from_dash(page); dash(page)
     cta = page.inner_text('#dash-session-cta').lower()
     prog(page)
     check(dpill(page).count() == 0 and not page.is_visible('#dash-gym-wrap') and 'reprendre' in cta and page.locator('.gym-pending-note').count() == 0 and not errors,
           'G37 séance en cours : Accueil sans pilule ("%s"), aucun rappel "Salle" dans Programme' % cta)
     ctx.close()
 
-    # G38 : 390 px : pilule de l'Accueil (captures On Air et Indé), 44 px, sans débordement, mêmes styles que l'écran de départ
+    # G38 : Accueil à 390 px : carte du jour sans débordement, bouton principal visible
     ctx, page, errors = fresh(b, salle_dataset(onair1))
     dash(page)
     page.locator('#dash-session-card').screenshot(path=str(SHOTS / 'accueil-onair.png'))
-    dpill(page).click(); page.wait_for_timeout(400)
-    page.locator('#dash-session-card').screenshot(path=str(SHOTS / 'accueil-inde.png'))
-    st = page.evaluate("""() => { const b = document.querySelector('#dash-gym-wrap .gym-switch'); const t = b.querySelector('.gym-switch-thumb');
-      const r = b.getBoundingClientRect(); const cs = getComputedStyle(b), ts = getComputedStyle(t);
-      const n = document.querySelector('#dash-gym-wrap .seance-gym-note'); const cta = document.getElementById('dash-session-cta').getBoundingClientRect();
-      let over = []; document.querySelectorAll('#dash-session-card *').forEach(x => { const q = x.getBoundingClientRect(); if (q.width && q.right > 390.5) over.push(x.id || x.className); });
-      return {h: r.height, right: r.right, bottom: r.bottom, sw: document.documentElement.scrollWidth, bg: cs.backgroundColor, border: cs.borderTopColor, bw: cs.borderTopWidth,
-              thumb: ts.backgroundColor, shadow: [cs.boxShadow, ts.boxShadow], img: [cs.backgroundImage, ts.backgroundImage],
-              noteBottom: n ? n.getBoundingClientRect().bottom : null, ctaTop: cta.top, over: over,
-              hit: [r.top - 1, r.bottom + 1].every(y => { const e = document.elementFromPoint(r.left + r.width / 2, y); return !!e && b.contains(e); }),
-              fits: Array.from(b.querySelectorAll('.gym-switch-option')).every(o => o.scrollWidth <= o.clientWidth)}; }""")
-    # refonte de l'accueil (état B tenu sans défilement) : pilule de 42 px à l'œil, zone tactile étendue de 2 px en haut et en bas (46 px)
-    check(st['h'] >= 42 and (st['h'] >= 44 or st['hit']) and st['right'] <= 390 and st['sw'] <= 390 and not st['over'] and st['fits'] and st['noteBottom'] is not None and st['noteBottom'] <= st['ctaTop']
-          and st['bg'] == 'rgb(17, 17, 16)' and st['border'] == 'rgb(58, 58, 53)' and st['bw'] == '1px' and st['thumb'] == 'rgb(255, 106, 43)'
-          and st['shadow'] == ['none', 'none'] and st['img'] == ['none', 'none'],
-          'G38 Accueil 390 px : %s px de haut, zone tactile d\'au moins 44 px, aucun débordement, ligne de remplacement au-dessus du bouton, même style que l\'écran de départ' % round(st['h']))
+    st = page.evaluate("""() => { let over = []; document.querySelectorAll('#dash-session-card *').forEach(x => { const q = x.getBoundingClientRect(); if (q.width && q.right > 390.5 && !x.closest('.dash-session-exercises')) over.push(x.id || x.className); });
+      const cta = document.getElementById('dash-session-cta').getBoundingClientRect();
+      return {sw: document.documentElement.scrollWidth, over: over, cta: cta.height}; }""")
+    check(st['sw'] <= 390 and not st['over'] and st['cta'] >= 44 and no_dash_ui(page),
+          'G38 Accueil 390 px : aucun débordement hors carrousel (%s), bouton principal de %s px, aucune pilule' % (st['over'][:2], round(st['cta'])))
     ctx.close()
 
-    # G39 : le choix vit en mémoire seulement : remis à zéro par le lancement (séance annulée : retour à la dernière salle) et par un rechargement
-    ctx, page, errors = fresh(b, salle_dataset(onair1))
-    dash(page); dpill(page).click(); page.wait_for_timeout(300)
-    from_dash(page)
+    # G39 : rechargement et séance annulée : toujours On Air, rien en mémoire ni dans Programme
+    ctx, page, errors = fresh(b, salle_dataset(onair1 + inde1))
+    dash(page); from_dash(page)
+    g_launch = live(page)['gym']
     page.click('#seance-cancel-btn'); page.wait_for_timeout(200); page.click('#confirm-modal-confirm'); page.wait_for_timeout(400)
-    after_cancel = pill(page).get_attribute('data-gym')
-    dash(page); after_cancel_d = dpill(page).get_attribute('data-gym')
-    dpill(page).click(); page.wait_for_timeout(300)
     page.reload(); page.wait_for_timeout(500); dash(page)
-    after_reload = dpill(page).get_attribute('data-gym')
     prog(page)
-    check(after_cancel == 'onair' and after_cancel_d == 'onair' and after_reload == 'onair' and row_note(page) == '' and live(page) is None and not errors,
-          'G39 après lancement puis annulation : On Air partout ; après rechargement : On Air, aucun rappel dans Programme')
+    check(g_launch == 'onair' and row_note(page) == '' and live(page) is None and not errors,
+          'G39 lancement depuis l\'Accueil en On Air ; après annulation et rechargement, aucun rappel dans Programme')
     ctx.close()
 
     b.close()

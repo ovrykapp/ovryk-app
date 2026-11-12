@@ -10,6 +10,8 @@ O5 conservation du champ par chaque chemin de l'éditeur (nom, jours, monter, de
 O6 export puis restauration gardent le champ ; ancien export sans le champ : aucun champ ajouté.
 Livraison 2 : S1 à S9 (séance : remplacement à On Air, créneau gagne en indé, retrait du choix = comportement actuel,
    machine introuvable, cycle, progression, changement de salle et verrou, choix modifié pendant la séance, historique).
+v170 : une seule salle à l'écran (On Air, aucune pilule). La logique des deux salles reste en place : les séances
+   et le changement de salle sont lancés par window.__ovrykTest avec 'onair' ou 'inde' ; S1 vérifie l'écran On Air seul.
 O8 390 px : réglages et écran de choix sans débordement horizontal.
 Données FABRIQUÉES ici. Usage : python3 test_onair.py <dossier de travail>, site servi sur http://127.0.0.1:8765."""
 import json, copy
@@ -59,10 +61,9 @@ def no_overflow(page, sel):
 def choose(page, eid, name='Presse inde fab'):
     open_slot(page, name); open_choice(page); option(page, eid).click(); page.wait_for_timeout(150); save(page); close_slot(page)
 def launch(page, gym):
+    """v170 : plus de pilule ; logique des deux salles appelée directement"""
     page.click('.nav-btn[data-target="seance"]'); page.wait_for_timeout(300)
-    pill = page.locator('#seance-gym-wrap .gym-switch')
-    if pill.get_attribute('data-gym') != gym: pill.click(); page.wait_for_timeout(200)
-    page.locator('#seance-routine-list .routine-row-main', has_text='Routine A fab').first.click(); page.wait_for_timeout(700)
+    page.evaluate("g => window.__ovrykTest.launchRoutine('r-a', g)", gym); page.wait_for_timeout(700)
     live = [x for x in jget(page, 'ovryk.sessions') if x['status'] == 'in_progress'][0]
     return [(c['exerciseId'], c.get('replacesExerciseId')) for c in live['exercises']]
 
@@ -277,9 +278,13 @@ with sync_playwright() as p:
     ctx, page, errors = fresh(b, with_choice)
     page.click('.nav-btn[data-target="seance"]'); page.wait_for_timeout(300)
     meta = page.locator('#seance-routine-list .routine-row', has_text='Routine A fab').first.inner_text()
-    launch(page, 'onair')
+    no_pill = page.locator('#seance-gym-wrap .gym-switch').count() == 0
+    page.locator('#seance-routine-list .routine-row-main', has_text='Routine A fab').first.click(); page.wait_for_timeout(700)
+    lv_ui = [x for x in jget(page, 'ovryk.sessions') if x['status'] == 'in_progress'][0]
     card = page.locator('.live-card', has_text='Presse onair fab').first.inner_text()
-    check('1 remplacé à On Air' in meta and 'Remplace Presse inde fab (On Air)' in card and not errors, 'S1 libellés : "1 remplacé à On Air", carte "Remplace Presse inde fab (On Air)"')
+    check(no_pill and 'remplacé' not in meta and 'Remplace' not in card and lv_ui['gym'] == 'onair' and lv_ui['exercises'][0]['exerciseId'] == Y
+          and page.locator('#seance-active-gym-wrap .gym-switch').count() == 0 and not page.is_visible('#seance-gym-label') and not errors,
+          'S1 écran On Air seul : aucune pilule, ni "N remplacé(s)" ni "Remplace" sur la carte, lancement depuis la liste en On Air avec la machine')
     ctx.close()
 
     # S3 : ajouter puis retirer un choix redonne exactement le comportement actuel (avec et sans équivalent dans la fiche)
@@ -319,22 +324,23 @@ with sync_playwright() as p:
           'S6 progression : On Air reprend la machine (40 -> %s), indé reprend Presse inde (60 -> %s), malgré la séance de l\'autre salle entre les deux' % (wy, wx))
 
     # S7 : changement de salle pendant la séance, dans les deux sens, puis verrou après la première série
-    def gym_pill(page): return page.locator('#seance-active-gym-wrap .gym-switch')
+    def switch(page, gym):
+        page.evaluate("g => window.__ovrykTest.switchActiveSessionGym(g)", gym); page.wait_for_timeout(300)
     ctx, page, errors = fresh(b, with_choice)
     launch(page, 'inde')
-    gym_pill(page).click(); page.wait_for_timeout(300)
+    switch(page, 'onair')
     lv = live_session(page)
     check(lv['gym'] == 'onair' and [(c['exerciseId'], c.get('replacesExerciseId')) for c in lv['exercises']] == [(Y, X), (Z, None), (L, None)],
           'S7 indé -> On Air avant la première série : la carte devient Presse onair')
-    gym_pill(page).click(); page.wait_for_timeout(300)
+    switch(page, 'inde')
     lv = live_session(page)
     check(lv['gym'] == 'inde' and [(c['exerciseId'], c.get('replacesExerciseId')) for c in lv['exercises']] == [(X, None), (Z, None), (L, None)] and not errors,
           'S7 On Air -> indé : Presse inde revient (pas l\'équivalent de la fiche)')
     page.locator('.live-card.is-open .muscu-set-row.is-current input').first.fill('50')
     page.locator('.live-card.is-open .muscu-set-row.is-current .live-set-col-check button').first.click(); page.wait_for_timeout(300)
     before_sess = live_session(page)
-    page.evaluate("() => document.querySelector('#seance-active-gym-wrap .gym-switch').click()"); page.wait_for_timeout(300)
-    check(gym_pill(page).get_attribute('aria-disabled') == 'true' and live_session(page) == before_sess, 'S7 après la première série : salle verrouillée, séance inchangée')
+    switch(page, 'onair')
+    check(live_session(page) == before_sess and before_sess['gym'] == 'inde', 'S7 après la première série : salle verrouillée (changement refusé), séance inchangée')
     ctx.close()
 
     # S8 : choix ajouté puis retiré pendant une séance (éditeur simulé par une écriture du créneau) : séance non modifiée,
@@ -347,15 +353,15 @@ with sync_playwright() as p:
     set_choice(page, Y); page.wait_for_timeout(100)
     page.click('.nav-btn[data-target="dashboard"]'); page.wait_for_timeout(200); page.click('.nav-btn[data-target="seance"]'); page.wait_for_timeout(300)
     check(live_session(page) == start, 'S8 choix ajouté pendant la séance : séance en cours inchangée')
-    gym_pill(page).click(); page.wait_for_timeout(300)
+    switch(page, 'inde')
     c1 = [(c['exerciseId'], c.get('replacesExerciseId')) for c in live_session(page)['exercises']]
-    gym_pill(page).click(); page.wait_for_timeout(300)
+    switch(page, 'onair')
     c2 = [(c['exerciseId'], c.get('replacesExerciseId')) for c in live_session(page)['exercises']]
     check(c1[0] == (X, None) and c2[0] == (Y, X), 'S8 bascules après l\'ajout : indé %s (créneau gagne), On Air %s (machine)' % (c1[0], c2[0]))
     set_choice(page, None)
-    gym_pill(page).click(); page.wait_for_timeout(300)
+    switch(page, 'inde')
     c3 = [(c['exerciseId'], c.get('replacesExerciseId')) for c in live_session(page)['exercises']]
-    gym_pill(page).click(); page.wait_for_timeout(300)
+    switch(page, 'onair')
     c4 = [(c['exerciseId'], c.get('replacesExerciseId')) for c in live_session(page)['exercises']]
     check(c3[0] == (E, X) and c4[0] == (X, None) and not errors, 'S8 bascules après le retrait : indé %s (lot 18), On Air %s (exercice du créneau)' % (c3[0], c4[0]))
     page.locator('.live-card.is-open .muscu-set-row.is-current input').first.fill('50')
@@ -363,8 +369,8 @@ with sync_playwright() as p:
     locked = live_session(page)
     set_choice(page, Y)
     page.click('.nav-btn[data-target="dashboard"]'); page.wait_for_timeout(200); page.click('.nav-btn[data-target="seance"]'); page.wait_for_timeout(300)
-    page.evaluate("() => document.querySelector('#seance-active-gym-wrap .gym-switch').click()"); page.wait_for_timeout(300)
-    check(live_session(page) == locked and gym_pill(page).get_attribute('aria-disabled') == 'true', 'S8 après la première série : ajout du choix sans effet, salle toujours verrouillée')
+    switch(page, 'inde')
+    check(live_session(page) == locked, 'S8 après la première série : ajout du choix sans effet, salle toujours verrouillée (changement refusé)')
     ctx.close()
 
     # S9 : historique : une séance faite avec la machine reste à la machine, avant comme après le retrait du choix

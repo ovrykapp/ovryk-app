@@ -13834,15 +13834,10 @@
     var listEl = document.getElementById('seance-routine-list');
     listEl.innerHTML = '';
 
-    /* lot 18 : pilule de salle, choix en mémoire jusqu'au lancement. */
-    var startGym = getSeanceStartGym();
+    /* v170 : une seule salle, plus de pilule sur l'écran de départ */
     var gymWrap = document.getElementById('seance-gym-wrap');
     gymWrap.innerHTML = '';
-    gymWrap.appendChild(buildGymSwitch(startGym, function (next) {
-      setSeanceStartGym(next);
-      var again = gymWrap.querySelector('.gym-switch');
-      if (again) again.focus();
-    }));
+    gymWrap.hidden = true;
 
     if (routines.length === 0) {
       listEl.innerHTML = '<div class="empty-state"><span class="empty-tag">Vide</span>' +
@@ -13866,10 +13861,8 @@
       var last = getLastCompletedSessionForRoutine(routine.id);
       var meta = document.createElement('div');
       meta.className = 'routine-row-meta mono';
-      var replacedCount = countRoutineGymReplacements(routine, startGym);
       meta.textContent = estimateRoutineDuration(routine) + ' · ' +
-        (last ? ('Dernière fois ' + formatRelativeDate(last.date)) : 'Jamais faite') +
-        (replacedCount ? ' · ' + formatGymReplacedCount(replacedCount, startGym) : '');
+        (last ? ('Dernière fois ' + formatRelativeDate(last.date)) : 'Jamais faite');
       wrap.appendChild(meta);
 
       listEl.appendChild(wrap);
@@ -13973,25 +13966,16 @@
   function renderSeanceActiveView() {
     if (!activeSession) return;
     document.getElementById('seance-name-label').textContent = activeSession.routineName || 'Séance libre';
-    /* lot 18 : salle de la séance, lecture seule (absente avant ce lot) */
+    /* v170 : une seule salle, ni "Salle : X" ni pilule en séance */
     var gymEl = document.getElementById('seance-gym-label');
-    gymEl.textContent = isKnownGym(activeSession.gym) ? 'Salle : ' + gymLabel(activeSession.gym) : '';
-    gymEl.hidden = !isKnownGym(activeSession.gym);
-    /* livraison 3 : pilule de la séance en cours (aucune pour une séance
-       sans salle, d'avant ce lot), verrouillée dès une série validée. */
+    gymEl.textContent = '';
+    gymEl.hidden = true;
     var activeGymWrap = document.getElementById('seance-active-gym-wrap');
     var gymNote = document.getElementById('seance-gym-note');
     activeGymWrap.innerHTML = '';
     gymNote.classList.remove('is-error');
-    if (isKnownGym(activeSession.gym)) {
-      var gymLocked = isSessionGymLocked(activeSession);
-      activeGymWrap.appendChild(buildGymSwitch(activeSession.gym, switchActiveSessionGym, gymLocked));
-      gymNote.textContent = gymLocked ? 'Salle fixée après la première série.' : '';
-      gymNote.hidden = !gymLocked;
-    } else {
-      gymNote.textContent = '';
-      gymNote.hidden = true;
-    }
+    gymNote.textContent = '';
+    gymNote.hidden = true;
 
     var notesInput = document.getElementById('seance-notes-input');
     if (document.activeElement !== notesInput) notesInput.value = activeSession.notes || '';
@@ -14282,7 +14266,6 @@
       : '<span class="live-card-count">' + doneCount + '/' + sex.sets.length + '</span>';
     header.innerHTML = '<span class="live-card-main">' +
       '<span class="live-card-name" style="display:block">' + escapeHTML(sex.exerciseName) + (sex.grip ? ' · ' + escapeHTML(sex.grip) : '') + '</span>' +
-      (sex.replacesExerciseId ? '<span class="live-card-replaces">' + escapeHTML(describeReplacedExercise(sex, activeSession && activeSession.gym)) + '</span>' : '') +
       '<span class="live-card-meta"><span class="live-card-tag' + (tag.isCycle ? ' is-cycle' : '') + '">' + escapeHTML(tag.text) + '</span>' +
       '<span>' + escapeHTML(summarizeLiveExercise(sex)) + '</span></span></span>' + right;
     header.addEventListener('click', function () { toggleLiveCard(index); });
@@ -16492,7 +16475,7 @@
       (kinds.haltero ? '<span class="day-badge-tag is-halterophilie">Haltéro</span>' : '') +
       (kinds.muscu ? '<span class="day-badge-tag is-muscu">Muscu</span>' : '') +
       (historyExercises(session).some(function (sex) { return sex && sex.deload; }) ? '<span class="day-badge-tag is-allegee">Allégée</span>' : '') +
-      (isKnownGym(session.gym) ? '<span class="history-gym-tag mono">' + escapeHTML(gymLabel(session.gym)) + '</span>' : '') +
+      (session.gym === 'inde' ? '<span class="history-gym-tag mono">' + escapeHTML(gymLabel(session.gym)) + '</span>' : '') +
       (meta.length ? '<span class="history-row-stats">' + escapeHTML(meta.join(' · ')) + '</span>' : '') +
       '</span></span>' +
       '<svg class="history-row-chevron" viewBox="0 0 24 24" aria-hidden="true"><polyline points="9,6 15,12 9,18"/></svg>';
@@ -16702,7 +16685,7 @@
     document.getElementById('history-detail-title').textContent = session.routineName || 'Séance libre';
     document.getElementById('history-detail-date').textContent = WEEKDAY_NAMES_FR[(d.getDay() + 6) % 7] + ' ' + formatDayMonthFr(d) +
       (d.getFullYear() !== new Date().getFullYear() ? ' ' + d.getFullYear() : '') +
-      (isKnownGym(session.gym) ? ' · Salle : ' + gymLabel(session.gym) : '');
+      (session.gym === 'inde' ? ' · Salle : ' + gymLabel(session.gym) : '');
 
     var body = document.getElementById('history-detail-body');
     body.innerHTML = '';
@@ -17726,12 +17709,23 @@
      ============================================================ */
   function isKnownGym(id) { return id === 'inde' || id === 'onair'; }
 
+  /* v170 : une seule salle, On Air. Le choix Indé / On Air est masqué ;
+     les données Indé (séances, équivalents des fiches, machines On Air des
+     créneaux) restent stockées telles quelles, et la logique des deux
+     salles reste en place (appelée avec 'inde' par les tests). */
+  var SINGLE_GYM = 'onair';
+  var SHOW_GYM_EQUIVALENT = false;
+
   function gymLabel(id) {
     for (var i = 0; i < GYMS.length; i++) { if (GYMS[i].id === id) return GYMS[i].label; }
     return '';
   }
 
-  function getLastUsedGym() {
+  function getLastUsedGym() { return SINGLE_GYM; }
+
+  /* salle de la séance la plus récente : n'est plus utilisée depuis v170
+     (une seule salle), gardée pour revenir aux deux salles. */
+  function getLastRecordedGym() {
     var best = null;
     OvrykDB.getSessions().forEach(function (s) {
       if (!s || !isKnownGym(s.gym)) return;
@@ -17746,7 +17740,7 @@
      salle utilisée). */
   var seanceStartGym = null;
 
-  function getSeanceStartGym() { return isKnownGym(seanceStartGym) ? seanceStartGym : getLastUsedGym(); }
+  function getSeanceStartGym() { return SINGLE_GYM; }
 
   /* livraison 4 : seul point d'écriture du choix, partagé par les pilules
      de l'Accueil et de l'écran de départ. Une pilule n'est jamais la
@@ -17952,6 +17946,28 @@
     var again = document.querySelector('#seance-active-gym-wrap .gym-switch');
     if (again) again.focus();
   }
+
+  /* v170 : accès réservé aux tests (dossier-lots/tests). Une seule salle
+     à l'écran, mais la logique des deux salles reste en place : les tests
+     la vérifient avec 'inde' par ici. Seulement des actions qui existent
+     déjà dans l'app, avec leurs propres gardes : construire une séance
+     sans l'écrire, lancer une routine, changer la salle de la séance en
+     cours (refusé après une série validée), ouvrir l'écran d'équivalent. */
+  window.__ovrykTest = Object.freeze({
+    buildSessionCards: function (routineId, gym) {
+      var routine = OvrykDB.getRoutineById(routineId);
+      if (!routine) return null;
+      return buildSessionFromRoutine(routine, gym).exercises.map(function (sex) {
+        return { exerciseId: sex.exerciseId, exerciseName: sex.exerciseName, replacesExerciseId: sex.replacesExerciseId || null, sets: sex.sets.length };
+      });
+    },
+    launchRoutine: function (routineId, gym) {
+      var routine = OvrykDB.getRoutineById(routineId);
+      if (routine) launchRoutineSession(routine, function () { setActiveView('seance'); }, gym);
+    },
+    switchActiveSessionGym: function (gym) { switchActiveSessionGym(gym); },
+    openExerciseEquivPage: function (exerciseId) { openExerciseEquivPage(exerciseId); }
+  });
 
   /* ============================================================
      MACHINE À ON AIR PAR CRÉNEAU (lot 19, livraison 1). Champ optionnel
@@ -18294,8 +18310,9 @@
     container.appendChild(typeBtn);
 
     /* lot 18 : équivalent en salle indé, jamais pour un mouvement (Lifting).
-       Lecture seule ici : l'écran de choix n'écrit qu'à "Enregistrer". */
-    if (exercise.category !== 'Lifting') {
+       Lecture seule ici : l'écran de choix n'écrit qu'à "Enregistrer".
+       v170 : masqué (une seule salle), gymEquivalentId reste stocké. */
+    if (SHOW_GYM_EQUIVALENT && exercise.category !== 'Lifting') {
       var equiv = getGymEquivalent(exercise);
       var equivLabel = equiv ? equiv.name
         : (typeof exercise.gymEquivalentId === 'string' && exercise.gymEquivalentId ? 'Équivalent introuvable' : 'Aucun');
@@ -18782,7 +18799,6 @@
     var totalSets = 0;
     session.exercises.forEach(function (sex, index) {
       var exercise = OvrykDB.getExerciseById(sex.exerciseId);
-      var slotExercise = sex.replacesExerciseId ? OvrykDB.getExerciseById(sex.replacesExerciseId) : null;
       var isCycle = sex.cycleWeekUsed != null;
       var d = describeDashSex(sex);
       totalSets += sex.sets.length;
@@ -18796,7 +18812,7 @@
         (badge ? '<span class="dash-prog-badge">' + escapeHTML(badge.text) + '</span>' : '') + '</span>' +
         '<span class="dash-session-ex-value' + (isCycle ? ' is-cycle' : '') + '">' + escapeHTML(d.value) + '</span>' +
         '<span class="dash-session-ex-name">' + escapeHTML(sex.exerciseName || 'Exercice supprimé') +
-        (slotExercise ? '<span class="dash-session-ex-sub">Remplace ' + escapeHTML(slotExercise.name) + '</span>' : '') + '</span>' +
+'</span>' +
         '<span class="dash-prog-load">' + escapeHTML(load) + '</span>';
       if (isCycle) {
         card.type = 'button';
@@ -18897,21 +18913,10 @@
 
     /* livraison 4 : même pilule que l'écran de départ, même état partagé
        (setSeanceStartGym). Aucune écriture avant le lancement. */
+    /* v170 : une seule salle, ni pilule ni "N remplacés à On Air" */
     var gymWrap = document.getElementById('dash-gym-wrap');
     gymWrap.innerHTML = '';
-    gymWrap.hidden = false;
-    gymWrap.appendChild(buildGymSwitch(startGym, function (next) {
-      setSeanceStartGym(next);
-      var again = document.querySelector('#dash-gym-wrap .gym-switch');
-      if (again) again.focus();
-    }));
-    var replacedCount = countRoutineGymReplacements(routine, startGym);
-    if (replacedCount) {
-      var replacedNote = document.createElement('p');
-      replacedNote.className = 'seance-gym-note mono';
-      replacedNote.textContent = formatGymReplacedCount(replacedCount, startGym);
-      gymWrap.appendChild(replacedNote);
-    }
+    gymWrap.hidden = true;
 
     var ctaBtn = document.getElementById('dash-session-cta');
     setDashCtaLabel(ctaBtn, 'Démarrer la séance');
@@ -21144,7 +21149,7 @@
 </script>
 <script>
   /* v164 : à garder égal à CACHE_VERSION dans sw.js (contrôlé par smoke.py) */
-  var APP_VERSION = 'v169';
+  var APP_VERSION = 'v170';
   document.getElementById('app-version-value').textContent = 'Version ' + APP_VERSION;
 
   /* Désinscrit le service worker et vide ses caches (ovryk-static-*), puis
