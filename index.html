@@ -4675,8 +4675,8 @@
   #view-dashboard .dash-session-card .dash-session-exercises {
     margin: 0 calc(-1 * var(--home-hero-pad));
     padding: 2px var(--home-hero-pad) 6px;
-    scroll-padding: 0 var(--home-hero-pad);
   }
+  #view-dashboard .dash-session-card .dash-prog-card { scroll-margin-left: var(--home-hero-pad); }
   #view-dashboard .dash-session-card .dash-prog-card {
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
@@ -4754,8 +4754,10 @@
     margin: 0 -20px;
     padding: 2px 20px 6px;
     overflow-x: auto;
-    scroll-snap-type: x mandatory;
-    scroll-padding: 0 20px;
+    /* accroche par la marge des cartes (scroll-margin), pas par le
+       scroll-padding du conteneur, que Safari iOS applique mal avec une
+       marge négative : la première carte se retrouvait coupée à gauche */
+    scroll-snap-type: x proximity;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
   }
@@ -4773,6 +4775,7 @@
     font-family: var(--home-font);
     color: var(--home-text);
     scroll-snap-align: start;
+    scroll-margin-left: 20px;
   }
   #view-dashboard .dash-session-ex-row.dash-prog-card { border-bottom: 1px solid var(--home-glass-border); }
   #view-dashboard .dash-prog-card.is-first {
@@ -4862,6 +4865,87 @@
   #view-dashboard .dash-next-test-eyebrow { font-family: var(--home-font); color: var(--home-text-2); }
   #view-dashboard .dash-tile-value,
   #view-dashboard .dash-next-test-name { font-family: var(--home-font); font-weight: 800; color: var(--home-text); }
+
+  /* état B tenu sur un écran sans défilement : bande, hero, Au programme,
+     salle, Démarrer et Autre séance au-dessus de la barre d'onglets.
+     Cartes compactes en grille (même DOM : numéro et badge, séries x reps
+     et charge sur une ligne, nom sur une ligne). */
+  #view-dashboard .dash-session-card.is-muscu-day .dash-session-meta { margin-bottom: 0; }
+  #view-dashboard .dash-session-card.is-muscu-day .dash-programme { margin: 16px 0 0; }
+  #view-dashboard .dash-session-card.is-muscu-day .dash-programme-head { margin-bottom: 8px; }
+  #view-dashboard .dash-session-card.is-muscu-day .dash-session-exercises { gap: 8px; padding-bottom: 2px; }
+  #view-dashboard .dash-session-card.is-muscu-day .dash-prog-card {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-areas: "top top" "value load" "name name";
+    align-items: baseline;
+    column-gap: 6px;
+    row-gap: 1px;
+    width: 140px;
+    height: 76px;
+    min-height: 76px;
+    padding: 10px 12px;
+    border-radius: 20px;
+    overflow: hidden;
+  }
+  #view-dashboard .dash-session-card.is-muscu-day .dash-prog-top { grid-area: top; margin: 0; align-self: center; }
+  #view-dashboard .dash-session-card.is-muscu-day .dash-prog-num { font-size: 12px; font-weight: 700; line-height: 16px; }
+  #view-dashboard .dash-session-card.is-muscu-day .dash-prog-badge { font-size: 11px; font-weight: 700; line-height: 14px; padding: 2px 7px; }
+  #view-dashboard .dash-session-card.is-muscu-day .dash-prog-card .dash-session-ex-value {
+    grid-area: value;
+    font-size: 20px;
+    font-weight: 800;
+    line-height: 22px;
+    white-space: nowrap;
+  }
+  #view-dashboard .dash-session-card.is-muscu-day .dash-prog-load {
+    grid-area: load;
+    margin: 0;
+    padding: 0;
+    font-size: 12px;
+    line-height: 16px;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  #view-dashboard .dash-session-card.is-muscu-day .dash-prog-card .dash-session-ex-name {
+    grid-area: name;
+    display: block;
+    margin: 0;
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 16px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  #view-dashboard .dash-session-card.is-muscu-day .dash-prog-card .dash-session-ex-sub { display: none; }
+  #view-dashboard .dash-session-card.is-muscu-day #dash-gym-wrap { margin: 14px 0 0; }
+  #view-dashboard .dash-session-card.is-muscu-day #dash-gym-wrap .gym-switch { min-height: 42px; height: 42px; margin: 0; }
+  /* 42 px à l'œil, zone tactile de 46 px (règle des 44 px du lot 18) ;
+     décalage compté depuis l'intérieur de la bordure de 1 px */
+  #view-dashboard .dash-session-card.is-muscu-day #dash-gym-wrap .gym-switch::before {
+    content: '';
+    position: absolute;
+    top: -3px;
+    bottom: -3px;
+    left: -1px;
+    right: -1px;
+  }
+  #view-dashboard .dash-session-card.is-muscu-day .btn-primary { margin-top: 14px; }
+  #view-dashboard .dash-session-card.is-muscu-day .dash-session-secondary {
+    min-height: 32px;
+    height: 32px;
+    margin-top: 6px;
+    padding: 0;
+    border: 0;
+    background: none;
+    box-shadow: none;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--home-text-2);
+  }
 </style>
 </head>
 <body>
@@ -18523,7 +18607,7 @@
     gymWrap.innerHTML = '';
     gymWrap.hidden = true;
 
-    document.getElementById('dash-session-card').classList.remove('is-cycle-day');
+    document.getElementById('dash-session-card').classList.remove('is-cycle-day', 'is-muscu-day');
     setDashHeroBubble('', null);
     document.getElementById('dash-hero-center').hidden = true;
 
@@ -18720,6 +18804,12 @@
       }
       listEl.appendChild(card);
     });
+    /* carrousel toujours affiché depuis la première carte : le même nœud
+       est réutilisé (changement de salle, déplacement dans le hero) et
+       garderait sinon l'ancien défilement ; second passage après la mise
+       en page, où Safari peut réappliquer l'accroche. */
+    listEl.scrollLeft = 0;
+    requestAnimationFrame(function () { listEl.scrollLeft = 0; });
     var n = session.exercises.length;
     document.getElementById('dash-programme-count').textContent =
       n + ' exercice' + (n > 1 ? 's' : '') + ' · ' + totalSets + ' série' + (totalSets > 1 ? 's' : '');
@@ -18767,6 +18857,7 @@
     var hasLifting = session.exercises.some(function (sex) { return sex.category === 'Lifting'; });
     var cardEl = document.getElementById('dash-session-card');
     cardEl.classList.toggle('is-cycle-day', !!cycleSex);
+    cardEl.classList.toggle('is-muscu-day', !cycleSex);
 
     var badgesEl = document.getElementById('dash-session-badges');
     var chip = cycleSex
@@ -21049,7 +21140,7 @@
 </script>
 <script>
   /* v164 : à garder égal à CACHE_VERSION dans sw.js (contrôlé par smoke.py) */
-  var APP_VERSION = 'v167';
+  var APP_VERSION = 'v168';
   document.getElementById('app-version-value').textContent = 'Version ' + APP_VERSION;
 
   /* Désinscrit le service worker et vide ses caches (ovryk-static-*), puis

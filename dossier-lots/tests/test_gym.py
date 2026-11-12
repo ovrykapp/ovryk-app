@@ -799,11 +799,13 @@ with sync_playwright() as p:
       return {h: r.height, right: r.right, bottom: r.bottom, sw: document.documentElement.scrollWidth, bg: cs.backgroundColor, border: cs.borderTopColor, bw: cs.borderTopWidth,
               thumb: ts.backgroundColor, shadow: [cs.boxShadow, ts.boxShadow], img: [cs.backgroundImage, ts.backgroundImage],
               noteBottom: n ? n.getBoundingClientRect().bottom : null, ctaTop: cta.top, over: over,
+              hit: [r.top - 1, r.bottom + 1].every(y => { const e = document.elementFromPoint(r.left + r.width / 2, y); return !!e && b.contains(e); }),
               fits: Array.from(b.querySelectorAll('.gym-switch-option')).every(o => o.scrollWidth <= o.clientWidth)}; }""")
-    check(st['h'] >= 44 and st['right'] <= 390 and st['sw'] <= 390 and not st['over'] and st['fits'] and st['noteBottom'] is not None and st['noteBottom'] <= st['ctaTop']
+    # refonte de l'accueil (état B tenu sans défilement) : pilule de 42 px à l'œil, zone tactile étendue de 2 px en haut et en bas (46 px)
+    check(st['h'] >= 42 and (st['h'] >= 44 or st['hit']) and st['right'] <= 390 and st['sw'] <= 390 and not st['over'] and st['fits'] and st['noteBottom'] is not None and st['noteBottom'] <= st['ctaTop']
           and st['bg'] == 'rgb(17, 17, 16)' and st['border'] == 'rgb(58, 58, 53)' and st['bw'] == '1px' and st['thumb'] == 'rgb(255, 106, 43)'
           and st['shadow'] == ['none', 'none'] and st['img'] == ['none', 'none'],
-          'G38 Accueil 390 px : %s px de haut, aucun débordement, ligne de remplacement au-dessus du bouton, même style que l\'écran de départ' % round(st['h']))
+          'G38 Accueil 390 px : %s px de haut, zone tactile d\'au moins 44 px, aucun débordement, ligne de remplacement au-dessus du bouton, même style que l\'écran de départ' % round(st['h']))
     ctx.close()
 
     # G39 : le choix vit en mémoire seulement : remis à zéro par le lancement (séance annulée : retour à la dernière salle) et par un rechargement
