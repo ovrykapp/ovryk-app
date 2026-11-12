@@ -4,6 +4,7 @@ A2 créneau sans choix et sans équivalent : même nom dans les deux salles, sé
 A3 créneau sans choix avec équivalent de la fiche (lot 18) : En indé = équivalent + "Remplace", On Air = exercice du créneau.
 A4 la liste se redessine à chaque bascule, lecture seule (aucune écriture à la bascule), séries et reps toujours ceux du créneau.
 A5 le créneau avec cycle garde son affichage de cycle (jamais remplacé) ; 390 px sans débordement.
+Refonte de l'accueil : cartes "Au programme", valeur "séries × reps visées", charge et % dans .dash-prog-load.
 Données FABRIQUÉES ici. Usage : python3 test_accueil_salle.py <dossier de travail>, site servi sur http://127.0.0.1:8765."""
 import json
 from playwright.sync_api import sync_playwright
@@ -31,7 +32,8 @@ def dset(cycle=False):
 def rows(page):
     return page.evaluate("""() => Array.from(document.querySelectorAll('#dash-session-exercises .dash-session-ex-row')).map(r => ({
       name: (r.querySelector('.dash-session-ex-name').childNodes[0] || {}).textContent || '',
-      sub: (r.querySelector('.dash-session-ex-sub') || {}).textContent || '', value: r.querySelector('.dash-session-ex-value').textContent.trim() }))""")
+      sub: (r.querySelector('.dash-session-ex-sub') || {}).textContent || '', value: r.querySelector('.dash-session-ex-value').textContent.trim(),
+      load: (r.querySelector('.dash-prog-load') || {}).textContent || '' }))""")
 def pill(page): return page.locator('#dash-gym-wrap .gym-switch')
 def set_gym(page, gym):
     if pill(page).get_attribute('data-gym') != gym: pill(page).click(); page.wait_for_timeout(250)
@@ -49,14 +51,14 @@ with sync_playwright() as p:
     set_gym(page, 'inde'); ind = rows(page)
     set_gym(page, 'onair'); on2 = rows(page)
     names_on = [r['name'] for r in on[:3]]; names_in = [r['name'] for r in ind[:3]]
-    check(on[0]['name'] == 'Presse onair fab' and on[0]['sub'] == 'Remplace Presse inde fab' and on[0]['value'] == '3 x 8-10',
-          'A1 On Air : machine "Presse onair fab" + "Remplace Presse inde fab", série du créneau 3 x 8-10 (%s)' % on[0])
-    check(ind[0]['name'] == 'Presse inde fab' and ind[0]['sub'] == '' and ind[0]['value'] == '3 x 8-10', 'A1 Indé : exercice du créneau, aucune sous-ligne (%s)' % ind[0])
-    check(on[1] == ind[1] == {'name': 'Leg extension fab', 'sub': '', 'value': '4 x 8-10'}, 'A2 créneau sans choix ni équivalent : identique dans les deux salles (%s)' % on[1])
-    check(on[2]['name'] == 'Curl fab' and on[2]['sub'] == '' and ind[2]['name'] == 'Fente fab' and ind[2]['sub'] == 'Remplace Curl fab' and on[2]['value'] == ind[2]['value'] == '2 x 8-10',
+    check(on[0]['name'] == 'Presse onair fab' and on[0]['sub'] == 'Remplace Presse inde fab' and on[0]['value'] == '3 × 8',
+          'A1 On Air : machine "Presse onair fab" + "Remplace Presse inde fab", série du créneau 3 × 8 (%s)' % on[0])
+    check(ind[0]['name'] == 'Presse inde fab' and ind[0]['sub'] == '' and ind[0]['value'] == '3 × 8', 'A1 Indé : exercice du créneau, aucune sous-ligne (%s)' % ind[0])
+    check(on[1] == ind[1] and {k: on[1][k] for k in ('name', 'sub', 'value')} == {'name': 'Leg extension fab', 'sub': '', 'value': '4 × 8'}, 'A2 créneau sans choix ni équivalent : identique dans les deux salles (%s)' % on[1])
+    check(on[2]['name'] == 'Curl fab' and on[2]['sub'] == '' and ind[2]['name'] == 'Fente fab' and ind[2]['sub'] == 'Remplace Curl fab' and on[2]['value'] == ind[2]['value'] == '2 × 8',
           'A3 équivalent de la fiche (lot 18) : indé = Fente fab + "Remplace Curl fab" (l\'affichage change aussi en indé), On Air = Curl fab')
     check(on2 == on and ls(page) == before and not errors, 'A4 aller-retour de pastille : liste identique, aucune écriture')
-    check(on[3]['name'] == 'Squat fab' and ind[3] == on[3] and ' %' in on[3]['value'] and on[3]['sub'] == '', 'A5 créneau avec cycle : affichage de cycle inchangé dans les deux salles (%s)' % on[3])
+    check(on[3]['name'] == 'Squat fab' and ind[3] == on[3] and ' %' in on[3]['load'] and on[3]['sub'] == '', 'A5 créneau avec cycle : affichage de cycle inchangé dans les deux salles (%s)' % on[3])
     check(no_overflow(page), 'A5 carte à 390 px sans débordement')
     set_gym(page, 'onair')
     page.screenshot(path=str(F / 'accueil-onair-390.png'))

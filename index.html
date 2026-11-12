@@ -4362,6 +4362,476 @@
   .cloud-status-line.is-error { color: var(--rust); font-weight: 700; }
   .cloud-home-line { display: block; width: 100%; margin: 0 0 var(--space-4); padding: 4px 2px; background: none; border: none; text-align: left; font: inherit; font-size: 13px; line-height: 1.4; color: var(--rust); cursor: pointer; }
   .cloud-home-line[hidden] { display: none; }
+
+  /* ============================================================
+     ACCUEIL (refonte-accueil)
+     Tout est limité à l'accueil : les tokens --home-* ne sont posés que
+     sur #view-dashboard, et sur body tant que l'accueil est la vue active
+     (fond). Aucun style global ni aucun autre écran n'est touché. La
+     barre de navigation, partagée, reste celle de la SKIN MAQUETTE.
+  ============================================================ */
+  #view-dashboard,
+  body:has(#view-dashboard.view-active) {
+    --home-bg-base: #060607;
+    --home-accent-rgb: 255, 90, 38;
+    --home-glass-rgb: 255, 255, 255;
+    --home-bg: radial-gradient(60% 40% at 88% 0%, rgba(var(--home-accent-rgb), 0.5), rgba(var(--home-accent-rgb), 0) 70%),
+      radial-gradient(70% 36% at 0% 62%, rgba(var(--home-accent-rgb), 0.16), rgba(var(--home-accent-rgb), 0) 70%),
+      var(--home-bg-base);
+    --home-text: #FFFFFF;
+    --home-text-2: #B4B4BA;
+    --home-nav-inactive: #C8C8CE;
+    --home-accent: #FF5A26;
+    --home-on-accent: #060607;
+    --home-glass: rgba(var(--home-glass-rgb), 0.07);
+    --home-glass-solid: #1A1A1D;
+    --home-done-fill: #3A3A3F;
+    --home-glass-border: rgba(var(--home-glass-rgb), 0.12);
+    --home-glass-strong: rgba(var(--home-glass-rgb), 0.14);
+    --home-glass-faint: rgba(var(--home-glass-rgb), 0.18);
+    --home-hero-inset: inset 0 1px 0 rgba(var(--home-glass-rgb), 0.1);
+    --home-hero-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
+    --home-cta-shadow: 0 12px 32px rgba(var(--home-accent-rgb), 0.45);
+    --home-today-halo: 0 0 18px rgba(var(--home-accent-rgb), 0.7);
+    --home-r-hero: 32px;
+    --home-r-card: 24px;
+    --home-r-tile: 22px;
+    --home-r-chip: 14px;
+    --home-r-cta: 28px;
+    --home-font: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  }
+  body:has(#view-dashboard.view-active) { background: var(--home-bg); }
+
+  #view-dashboard { color: var(--home-text); font-family: var(--home-font); }
+  #view-dashboard h1, #view-dashboard h2 {
+    font-family: var(--home-font);
+    text-transform: none;
+  }
+
+  /* carte verre : fond plein si le flou n'est pas pris en charge */
+  #view-dashboard .dash-week-strip,
+  #view-dashboard .dash-session-card,
+  #view-dashboard .dash-hero,
+  #view-dashboard .dash-prog-card,
+  #view-dashboard .dash-next-session,
+  #view-dashboard .dash-tile,
+  #view-dashboard .dash-next-test,
+  #view-dashboard .view-header-back {
+    background: var(--home-glass-solid);
+    border: 1px solid var(--home-glass-border);
+  }
+  @supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    #view-dashboard .dash-week-strip,
+    #view-dashboard .dash-session-card,
+    #view-dashboard .dash-hero,
+    #view-dashboard .dash-prog-card,
+    #view-dashboard .dash-next-session,
+    #view-dashboard .dash-tile,
+    #view-dashboard .dash-next-test,
+    #view-dashboard .view-header-back {
+      background: var(--home-glass);
+      -webkit-backdrop-filter: blur(24px);
+      backdrop-filter: blur(24px);
+    }
+  }
+
+  /* en-tête */
+  #view-dashboard .dash-top-row { align-items: center; margin-bottom: 18px; }
+  #view-dashboard .dash-header-sub {
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--home-text-2);
+  }
+  #view-dashboard .dash-header-title {
+    font-size: 36px;
+    font-weight: 800;
+    letter-spacing: -0.025em;
+    line-height: 1.05;
+    color: var(--home-text);
+  }
+  #view-dashboard .view-header-back {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    color: var(--home-text);
+  }
+  #view-dashboard .view-header-back svg { stroke: var(--home-text); }
+
+  /* bande de la semaine */
+  #view-dashboard .dash-week-strip {
+    border-radius: var(--home-r-card);
+    padding: 10px 8px;
+    gap: 2px;
+    margin-bottom: 18px;
+  }
+  #view-dashboard .dash-week-day {
+    position: relative;
+    min-height: 66px;
+    padding: 6px 0;
+    gap: 6px;
+    border: 0;
+    border-radius: var(--home-r-chip);
+    background: transparent;
+  }
+  #view-dashboard .dash-week-day-label {
+    font-family: var(--home-font);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--home-text-2);
+  }
+  #view-dashboard .dash-week-day-num {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    font-family: var(--home-font);
+    font-size: 17px;
+    font-weight: 600;
+    color: var(--home-text-2);
+  }
+  #view-dashboard .dash-week-day.is-rest .dash-week-day-label,
+  #view-dashboard .dash-week-day.is-rest .dash-week-day-num { opacity: 1; }
+  #view-dashboard .dash-week-day.is-today { background: transparent; }
+  #view-dashboard .dash-week-day.is-today .dash-week-day-label { color: var(--home-text); }
+  #view-dashboard .dash-week-day.is-today .dash-week-day-num {
+    background: var(--home-accent);
+    color: var(--home-on-accent);
+    font-weight: 800;
+    box-shadow: var(--home-today-halo);
+  }
+  #view-dashboard .dash-week-day.is-selected:not(.is-today) .dash-week-day-num {
+    box-shadow: inset 0 0 0 2px var(--home-text);
+    color: var(--home-text);
+  }
+  #view-dashboard .dash-week-day.is-selected:not(.is-today) .dash-week-day-label { color: var(--home-text); }
+  /* séance faite : cercle avec une coche, posé sur le numéro (fond plein
+     pour le masquer, teinte de la carte verre) */
+  #view-dashboard .dash-week-day-dot {
+    position: absolute;
+    left: 50%;
+    bottom: 6px;
+    width: 38px;
+    height: 38px;
+    margin: 0 0 0 -19px;
+    border-radius: 50%;
+    background: var(--home-done-fill);
+  }
+  #view-dashboard .dash-week-day-dot::after {
+    content: '';
+    position: absolute;
+    left: 13px;
+    top: 11px;
+    width: 11px;
+    height: 6px;
+    border-left: 2.5px solid var(--home-text);
+    border-bottom: 2.5px solid var(--home-text);
+    transform: rotate(-45deg);
+  }
+  #view-dashboard .dash-week-day.is-today .dash-week-day-dot { display: none; }
+  #view-dashboard .dash-week-day:focus-visible { outline: 2px solid var(--home-text); outline-offset: 2px; }
+
+  /* hero */
+  #view-dashboard .dash-session-card,
+  #view-dashboard .dash-hero {
+    border-radius: var(--home-r-hero);
+    padding: 22px 22px 24px;
+    box-shadow: var(--home-hero-inset), var(--home-hero-shadow);
+    margin-bottom: 26px;
+  }
+  #view-dashboard .dash-hero-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 4px;
+  }
+  #view-dashboard .dash-session-badges { margin: 0; flex-wrap: wrap; }
+  #view-dashboard .dash-hero-chip {
+    display: inline-flex;
+    align-items: center;
+    min-height: 30px;
+    padding: 5px 12px;
+    border-radius: var(--home-r-chip);
+    background: var(--home-glass-strong);
+    color: var(--home-text);
+    font-family: var(--home-font);
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0;
+    text-transform: none;
+  }
+  #view-dashboard .dash-hero-bubble {
+    flex: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 58px;
+    height: 58px;
+    border-radius: 50%;
+    border: 1px solid var(--home-glass-border);
+    background: var(--home-glass);
+  }
+  #view-dashboard .dash-hero-bubble[hidden] { display: none; }
+  #view-dashboard .dash-hero-bubble-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: var(--home-text-2);
+    line-height: 1;
+  }
+  #view-dashboard .dash-hero-bubble-value { font-size: 20px; font-weight: 800; color: var(--home-text); line-height: 1.1; }
+  #view-dashboard .dash-session-title,
+  #view-dashboard .dash-hero-title {
+    font-size: 34px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    line-height: 1.05;
+    color: var(--home-text);
+    margin: 10px 0 4px;
+  }
+  #view-dashboard .dash-session-meta,
+  #view-dashboard .dash-hero-sub {
+    font-size: 17px;
+    color: var(--home-text-2);
+    margin: 0 0 18px;
+  }
+  #view-dashboard .dash-hero-eyebrow { color: var(--home-text-2); }
+  #view-dashboard .dash-hero-center[hidden] { display: none; }
+
+  /* état A : jauge en arc */
+  #view-dashboard .dash-gauge { position: relative; width: 100%; max-width: 300px; margin: 0 auto 8px; }
+  #view-dashboard .dash-gauge-svg { display: block; width: 100%; height: auto; overflow: visible; }
+  #view-dashboard .dash-gauge-seg { fill: none; stroke-width: 11; stroke-linecap: round; }
+  #view-dashboard .dash-gauge-seg.is-done { stroke: var(--home-accent); }
+  #view-dashboard .dash-gauge-seg.is-current { stroke: var(--home-text); filter: drop-shadow(0 0 6px var(--home-text)); }
+  #view-dashboard .dash-gauge-seg.is-next { stroke: var(--home-glass-faint); }
+  #view-dashboard .dash-gauge-center {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 34%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+  #view-dashboard .dash-gauge-value { font-size: 62px; font-weight: 800; letter-spacing: -0.03em; line-height: 1; color: var(--home-text); }
+  #view-dashboard .dash-gauge-load { margin-top: 8px; font-size: 16px; color: var(--home-text-2); }
+  #view-dashboard .dash-gauge-phase { margin: 0 0 14px; text-align: center; font-size: 14px; color: var(--home-text-2); }
+
+  /* état B : volume de la semaine */
+  #view-dashboard .dash-volume-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 12px;
+  }
+  #view-dashboard .dash-volume-title {
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--home-text-2);
+  }
+  #view-dashboard .dash-volume-unit { font-size: 14px; color: var(--home-text-2); }
+  #view-dashboard .dash-volume-row {
+    display: grid;
+    grid-template-columns: 86px 1fr 60px;
+    align-items: center;
+    gap: 10px;
+    min-height: 32px;
+    margin-bottom: 8px;
+  }
+  #view-dashboard .dash-volume-label { font-size: 16px; font-weight: 600; color: var(--home-text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #view-dashboard .dash-volume-bar {
+    position: relative;
+    height: 10px;
+    border-radius: 5px;
+    background: var(--home-glass);
+    overflow: hidden;
+  }
+  #view-dashboard .dash-volume-done,
+  #view-dashboard .dash-volume-add { position: absolute; top: 0; bottom: 0; }
+  #view-dashboard .dash-volume-done { left: 0; background: var(--home-glass-faint); }
+  #view-dashboard .dash-volume-add { background: var(--home-accent); }
+  #view-dashboard .dash-volume-value { text-align: right; font-size: 16px; font-weight: 700; color: var(--home-text); white-space: nowrap; }
+  #view-dashboard .dash-volume-plus { color: var(--home-accent); }
+  #view-dashboard .dash-hero-center { margin-bottom: 18px; }
+
+  /* salle et boutons */
+  #view-dashboard #dash-gym-wrap { margin-bottom: 4px; }
+  #view-dashboard .dash-session-card .btn-primary,
+  #view-dashboard .dash-hero .btn-primary {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    width: 100%;
+    min-height: 56px;
+    height: 56px;
+    margin-top: 14px;
+    padding: 0 7px 0 24px;
+    border: 0;
+    border-radius: var(--home-r-cta);
+    background: var(--home-accent);
+    color: var(--home-on-accent);
+    font-family: var(--home-font);
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: 0;
+    text-transform: none;
+    box-shadow: var(--home-cta-shadow);
+  }
+  #view-dashboard .dash-cta-label { flex: 1; text-align: left; }
+  #view-dashboard .dash-cta-arrow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: var(--home-on-accent);
+  }
+  #view-dashboard .dash-cta-arrow svg { width: 20px; height: 20px; fill: none; stroke: var(--home-text); stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+  #view-dashboard .dash-session-secondary {
+    min-height: 44px;
+    color: var(--home-text-2);
+    font-family: var(--home-font);
+    text-transform: none;
+    letter-spacing: 0;
+  }
+
+  /* Au programme */
+  #view-dashboard .dash-programme { margin-bottom: 22px; }
+  #view-dashboard .dash-programme[hidden] { display: none; }
+  #view-dashboard .dash-programme-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+  #view-dashboard .dash-programme-title { font-size: 20px; font-weight: 800; letter-spacing: -0.01em; color: var(--home-text); }
+  #view-dashboard .dash-programme-count { font-size: 14px; color: var(--home-text-2); white-space: nowrap; }
+  #view-dashboard .dash-session-exercises {
+    flex-direction: row;
+    gap: 12px;
+    margin: 0 -20px;
+    padding: 2px 20px 6px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scroll-padding: 0 20px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  #view-dashboard .dash-session-exercises::-webkit-scrollbar { display: none; }
+  #view-dashboard .dash-prog-card {
+    flex: none;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    width: 160px;
+    min-height: 138px;
+    padding: 14px 16px;
+    border-radius: var(--home-r-tile);
+    text-align: left;
+    font-family: var(--home-font);
+    color: var(--home-text);
+    scroll-snap-align: start;
+  }
+  #view-dashboard .dash-session-ex-row.dash-prog-card { border-bottom: 1px solid var(--home-glass-border); }
+  #view-dashboard .dash-prog-card.is-first {
+    background: var(--home-text);
+    border-color: var(--home-text);
+    color: var(--home-on-accent);
+  }
+  #view-dashboard .dash-prog-top { display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 10px; gap: 6px; }
+  #view-dashboard .dash-prog-num { font-size: 14px; font-weight: 700; color: var(--home-text-2); }
+  #view-dashboard .dash-prog-badge {
+    padding: 3px 9px;
+    border-radius: var(--home-r-chip);
+    background: var(--home-glass-strong);
+    color: var(--home-text);
+    font-size: 13px;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+  #view-dashboard .dash-prog-card.is-first .dash-prog-badge { background: var(--home-on-accent); color: var(--home-text); }
+  #view-dashboard .dash-prog-card.is-gain .dash-prog-badge { background: var(--home-accent); color: var(--home-on-accent); }
+  #view-dashboard .dash-prog-card .dash-session-ex-value,
+  #view-dashboard .dash-prog-card .dash-session-ex-value.is-cycle {
+    font-family: var(--home-font);
+    font-size: 30px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    line-height: 1.05;
+    color: inherit;
+  }
+  #view-dashboard .dash-prog-card .dash-session-ex-name {
+    margin-top: 4px;
+    font-size: 16px;
+    font-weight: 700;
+    line-height: 1.2;
+    color: inherit;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  #view-dashboard .dash-prog-card .dash-session-ex-sub { font-size: 12px; font-weight: 500; color: var(--home-text-2); }
+  #view-dashboard .dash-prog-load { margin-top: auto; padding-top: 4px; font-size: 14px; color: var(--home-text-2); }
+  #view-dashboard .dash-prog-card.is-first .dash-prog-num,
+  #view-dashboard .dash-prog-card.is-first .dash-prog-load,
+  #view-dashboard .dash-prog-card.is-first .dash-session-ex-sub { color: var(--home-on-accent); opacity: 0.6; }
+  #view-dashboard .dash-prog-card .cycle-link-chevron { display: none; }
+
+  /* prochaine séance */
+  #view-dashboard .dash-next-session {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    width: 100%;
+    min-height: 76px;
+    margin: 0 0 22px;
+    padding: 14px 18px 14px 14px;
+    border-radius: var(--home-r-card);
+    color: var(--home-text);
+    font-family: var(--home-font);
+    text-align: left;
+    cursor: pointer;
+  }
+  #view-dashboard .dash-next-session[hidden] { display: none; }
+  #view-dashboard .dash-next-session-day {
+    flex: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 56px;
+    height: 56px;
+    border-radius: 16px;
+    background: var(--home-glass-strong);
+  }
+  #view-dashboard .dash-next-session-dow { font-size: 12px; font-weight: 700; text-transform: uppercase; color: var(--home-text-2); }
+  #view-dashboard .dash-next-session-num { font-size: 22px; font-weight: 800; line-height: 1; }
+  #view-dashboard .dash-next-session-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+  #view-dashboard .dash-next-session-eyebrow { font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--home-text-2); }
+  #view-dashboard .dash-next-session-title { font-size: 18px; font-weight: 800; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #view-dashboard .dash-next-session-meta { font-size: 14px; color: var(--home-text-2); }
+  #view-dashboard .dash-next-session-chevron { flex: none; width: 20px; height: 20px; fill: none; stroke: var(--home-text-2); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+  /* tuiles existantes, gardées sous la refonte */
+  #view-dashboard .dash-tile,
+  #view-dashboard .dash-next-test { border-radius: var(--home-r-card); }
+  #view-dashboard .dash-tile-label,
+  #view-dashboard .dash-next-test-eyebrow { font-family: var(--home-font); color: var(--home-text-2); }
+  #view-dashboard .dash-tile-value,
+  #view-dashboard .dash-next-test-name { font-family: var(--home-font); font-weight: 800; color: var(--home-text); }
 </style>
 </head>
 <body>
@@ -4385,7 +4855,7 @@
       <div class="dash-top-row">
         <div>
           <span class="dash-header-sub" id="dash-header-date"></span>
-          <h1 class="dash-header-title">Séance du jour</h1>
+          <h1 class="dash-header-title">Aujourd'hui</h1>
         </div>
         <button type="button" id="dash-settings-btn" class="view-header-back" aria-label="Réglages">
           <svg viewBox="0 0 24 24" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg>
@@ -4425,15 +4895,45 @@
         <button type="button" class="btn-primary" id="dash-hero-cta">Créer une routine</button>
       </div>
 
+      <!-- refonte de l'accueil : la carte du jour devient le hero (état
+           cycle haltéro ou muscu pure, renderDashboardSessionCardPlan),
+           la liste des exercices passe dans "Au programme" en dessous. -->
       <div class="dash-session-card" id="dash-session-card" hidden>
-        <div class="dash-session-badges" id="dash-session-badges"></div>
+        <div class="dash-hero-head">
+          <div class="dash-session-badges" id="dash-session-badges"></div>
+          <div class="dash-hero-bubble" id="dash-hero-bubble" hidden>
+            <span class="dash-hero-bubble-label" id="dash-hero-bubble-label"></span>
+            <span class="dash-hero-bubble-value" id="dash-hero-bubble-value"></span>
+          </div>
+        </div>
         <h1 class="dash-session-title" id="dash-session-title"></h1>
         <p class="dash-session-meta" id="dash-session-meta"></p>
-        <div class="dash-session-exercises" id="dash-session-exercises"></div>
+        <div class="dash-hero-center" id="dash-hero-center" hidden></div>
         <div id="dash-gym-wrap" hidden></div>
         <button type="button" class="btn-primary" id="dash-session-cta"></button>
         <button type="button" class="routine-action-btn dash-session-secondary" id="dash-session-secondary-cta" hidden>Autre séance</button>
       </div>
+
+      <section class="dash-programme" id="dash-programme" hidden>
+        <div class="dash-programme-head">
+          <h2 class="dash-programme-title">Au programme</h2>
+          <span class="dash-programme-count" id="dash-programme-count"></span>
+        </div>
+        <div class="dash-session-exercises" id="dash-session-exercises"></div>
+      </section>
+
+      <button type="button" class="dash-next-session" id="dash-next-session" hidden>
+        <span class="dash-next-session-day">
+          <span class="dash-next-session-dow" id="dash-next-session-dow"></span>
+          <span class="dash-next-session-num" id="dash-next-session-num"></span>
+        </span>
+        <span class="dash-next-session-body">
+          <span class="dash-next-session-eyebrow">Prochaine séance</span>
+          <span class="dash-next-session-title" id="dash-next-session-title"></span>
+          <span class="dash-next-session-meta" id="dash-next-session-meta"></span>
+        </span>
+        <svg class="dash-next-session-chevron" viewBox="0 0 24 24" aria-hidden="true"><polyline points="9,6 15,12 9,18"/></svg>
+      </button>
 
       <div id="dash-day-panel" hidden></div>
 
@@ -17973,7 +18473,7 @@
   function renderDashboardSessionCardResume(session) {
     var badgesEl = document.getElementById('dash-session-badges');
     var sourceRoutine = session.routineId ? OvrykDB.getRoutineById(session.routineId) : null;
-    badgesEl.innerHTML = '<span class="dash-session-resume-tag">Séance en cours</span>';
+    badgesEl.innerHTML = '<span class="dash-session-resume-tag dash-hero-chip">Séance en cours</span>';
     if (sourceRoutine) {
       var badges = getRoutineCycleBadges(sourceRoutine);
       if (badges.halterophile) badgesEl.innerHTML += '<span class="day-badge-tag is-halterophilie">Haltéro</span>';
@@ -17990,8 +18490,12 @@
     gymWrap.innerHTML = '';
     gymWrap.hidden = true;
 
+    document.getElementById('dash-session-card').classList.remove('is-cycle-day');
+    setDashHeroBubble('', null);
+    document.getElementById('dash-hero-center').hidden = true;
+
     var ctaBtn = document.getElementById('dash-session-cta');
-    ctaBtn.textContent = 'Reprendre la séance';
+    setDashCtaLabel(ctaBtn, 'Reprendre la séance');
     ctaBtn.onclick = function () { setActiveView('seance'); };
 
     /* point 8 : jamais de "Autre séance" pendant une séance en cours —
@@ -18000,80 +18504,257 @@
     document.getElementById('dash-session-secondary-cta').hidden = true;
   }
 
-  /* Routine du jour ou prochaine routine en rotation : la carte complète de
-     la maquette, avec la prescription de chaque exercice. */
-  function renderDashboardSessionCardPlan(routine) {
-    var badgesEl = document.getElementById('dash-session-badges');
-    var badges = getRoutineCycleBadges(routine);
-    badgesEl.innerHTML = '';
-    if (badges.halterophile) badgesEl.innerHTML += '<span class="day-badge-tag is-halterophilie">Haltéro</span>';
-    if (badges.muscu) badgesEl.innerHTML += '<span class="day-badge-tag is-muscu">Muscu</span>';
+  /* ---- refonte de l'accueil : hero en deux états, "Au programme",
+     "Prochaine séance". Tout part de la séance que buildSessionFromRoutine
+     construirait maintenant (même calcul que getPlannedSessionItems :
+     cycle, mode de base, reprise et double progression, allègement,
+     salle), sans rien écrire. État A : au moins un mouvement piloté par
+     un cycle (cycleWeekUsed). État B : muscu pure. ---- */
+  var DASH_VOLUME_SCALE = 20;
+  var DASH_ARROW_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="13,6 19,12 13,18"/></svg>';
 
-    document.getElementById('dash-session-title').textContent = routine.name || 'Routine sans titre';
+  function setDashCtaLabel(btn, label) {
+    btn.innerHTML = '<span class="dash-cta-label">' + escapeHTML(label) + '</span><span class="dash-cta-arrow">' + DASH_ARROW_SVG + '</span>';
+  }
 
-    var exCount = routine.exercises.length;
-    var metaParts = [exCount + ' exercice' + (exCount > 1 ? 's' : ''), formatDurationHM(estimateRoutineDurationMinutes(routine))];
-    var principalCycle = null;
-    for (var i = 0; i < routine.exercises.length && !principalCycle; i++) {
-      var rex0 = routine.exercises[i];
-      var exercise0 = OvrykDB.getExerciseById(rex0.exerciseId);
-      if (exercise0 && exercise0.category === 'Lifting') {
-        var c = OvrykDB.getForceCycle(rex0.exerciseId);
-        if (c) principalCycle = c;
-      }
-    }
-    if (principalCycle) {
-      metaParts.push('Semaine ' + principalCycle.semaine_actuelle + ' sur ' + cycleLength(principalCycle.cycle_actif));
-    }
-    document.getElementById('dash-session-meta').textContent = metaParts.join(' · ');
+  function setDashHeroBubble(label, value) {
+    var bubble = document.getElementById('dash-hero-bubble');
+    bubble.hidden = value == null;
+    document.getElementById('dash-hero-bubble-label').textContent = label;
+    document.getElementById('dash-hero-bubble-value').textContent = value == null ? '' : value;
+  }
 
-    /* salle choisie avec la pilule (livraison 4) : la liste montre
-       l'exercice réellement fait dans cette salle, comme le fera la séance
-       (getRoutineSlotReplacement). Affichage seulement : séries et reps
-       restent celles du créneau, aucune écriture. */
-    var startGym = getSeanceStartGym();
-    var exercisesEl = document.getElementById('dash-session-exercises');
-    exercisesEl.innerHTML = '';
-    routine.exercises.forEach(function (rex) {
-      var slotExercise = OvrykDB.getExerciseById(rex.exerciseId);
-      var replacement = getRoutineSlotReplacement(rex, startGym);
-      var exercise = replacement || slotExercise;
-      var cycle = slotExercise && slotExercise.category === 'Lifting' ? OvrykDB.getForceCycle(rex.exerciseId) : null;
+  /* séries de travail (échauffements de C16 à part, sauf s'il n'y a qu'eux) */
+  function getDashWorkSets(sex) {
+    var work = sex.sets.filter(function (s) { return s && !s.warmup; });
+    return work.length ? work : sex.sets.filter(Boolean);
+  }
 
-      var valueHtml;
-      if (cycle) {
-        var week = getCycleWeek(cycle);
-        var lastSet = week.sets[week.sets.length - 1];
-        /* v161 : la phase des cycles C1 à C20 contient déjà ses % */
-        valueHtml = '<span class="dash-session-ex-value is-cycle">' + escapeHTML(week.phase) + (CYCLE_META[cycle.cycle_actif] ? '' : ' à ' + lastSet.percent + ' %') + '</span>';
-      } else {
-        var firstSet = rex.sets[0];
-        var repsText = '-';
-        if (firstSet) {
-          if (firstSet.repType === 'range') {
-            repsText = (firstSet.repsMin != null ? firstSet.repsMin : '-') + '-' + (firstSet.repsMax != null ? firstSet.repsMax : '-');
-          } else {
-            repsText = firstSet.reps != null ? firstSet.reps : '-';
-          }
-        }
-        valueHtml = '<span class="dash-session-ex-value">' + rex.sets.length + ' x ' + repsText + '</span>';
-      }
-
-      /* lot 12 : une ligne de mouvement piloté par un cycle ouvre le détail
-         du cycle (openCycleDetailPage), lecture seule à l'ouverture ; les
-         autres lignes restent inertes. */
-      var row = document.createElement(cycle ? 'button' : 'div');
-      row.className = 'dash-session-ex-row' + (cycle ? ' is-link' : '');
-      row.innerHTML = '<span class="dash-session-ex-name">' + escapeHTML(exercise ? exercise.name : 'Exercice supprimé') +
-        (replacement && slotExercise ? '<span class="dash-session-ex-sub">Remplace ' + escapeHTML(slotExercise.name) + '</span>' : '') + '</span>' + valueHtml +
-        (cycle ? '<svg class="cycle-link-chevron" viewBox="0 0 24 24" aria-hidden="true"><polyline points="9,6 15,12 9,18"/></svg>' : '');
-      if (cycle) {
-        row.type = 'button';
-        row.setAttribute('aria-label', 'Voir le cycle de ' + (exercise ? exercise.name : 'ce mouvement'));
-        row.addEventListener('click', function () { openCycleDetailPage(rex.exerciseId, null, renderDashboardHome); });
-      }
-      exercisesEl.appendChild(row);
+  /* prescription affichable d'un exercice de la séance construite :
+     reps (null si elles varient d'une série à l'autre), charge et % de la
+     série la plus lourde. */
+  function describeDashSex(sex) {
+    var sets = getDashWorkSets(sex);
+    var isCycle = sex.cycleWeekUsed != null;
+    var repsOf = function (s) {
+      if (s.repType === 'range') return s.targetReps != null ? s.targetReps : s.repsMin;
+      return s.reps;
+    };
+    var reps = sets.length ? repsOf(sets[0]) : null;
+    if (sets.some(function (s) { return repsOf(s) !== reps; })) reps = null;
+    var top = null, topWeight = null;
+    sets.forEach(function (s) {
+      var w = isCycle ? computeWeightFromPercent(sex.oneRepMaxSnapshot, s.percent1rm) : s.weightKg;
+      if (typeof w === 'number' && (topWeight === null || w >= topWeight)) { topWeight = w; top = s; }
     });
+    return {
+      count: sets.length,
+      reps: reps,
+      value: sets.length + (reps != null ? ' × ' + reps : (sets.length > 1 ? ' séries' : ' série')),
+      weight: topWeight,
+      percent: isCycle && top ? top.percent1rm : null
+    };
+  }
+
+  /* badge de progression d'une carte muscu, par comparaison avec ce que
+     la dernière séance de cette routine a réellement fait sur ce créneau.
+     Aucune décision recalculée ici : la séance construite porte déjà la
+     double progression (cloneSetsFromPastSex). null sans historique. */
+  function getDashProgressBadge(routine, sex) {
+    if (sex.deload) return { text: 'Allégée', gain: false };
+    var past = getLastCompletedRoutineSessionWithSlot(routine.id, sex.exerciseId, sex.replacesExerciseId || null);
+    var pastSex = past ? findSexForSlot(past, sex.exerciseId, sex.replacesExerciseId || null) : null;
+    var done = pastSex && Array.isArray(pastSex.sets) ? pastSex.sets.filter(function (s) { return s && s.done; }) : [];
+    if (!done.length) return null;
+    var maxOf = function (sets) {
+      return sets.reduce(function (m, s) { return typeof s.weightKg === 'number' && (m === null || s.weightKg > m) ? s.weightKg : m; }, null);
+    };
+    var nowTop = maxOf(sex.sets), pastTop = maxOf(done);
+    if (nowTop !== null && pastTop !== null && nowTop > pastTop) {
+      return { text: '+' + formatKgFr(round05(nowTop - pastTop)) + ' kg', gain: true };
+    }
+    var target = sex.sets[0] && sex.sets[0].repType === 'range' ? sex.sets[0].targetReps : null;
+    var pastReps = done.filter(function (s) { return s.repsActual != null; }).map(function (s) { return s.repsActual; });
+    if (target != null && pastReps.length) {
+      var diff = target - Math.min.apply(null, pastReps);
+      if (diff > 0) return { text: '+' + diff + (diff > 1 ? ' reps' : ' rep'), gain: false };
+    }
+    return { text: 'Stable', gain: false };
+  }
+
+  /* jauge en arc : un segment par semaine du cycle, sur 220 degrés */
+  function buildDashCycleGauge(totalWeeks, currentWeek) {
+    var cx = 120, cy = 116, r = 100, sweep = 220, start = 200;
+    var gap = totalWeeks > 1 ? Math.min(8, 60 / totalWeeks) : 0;
+    var step = sweep / totalWeeks;
+    var point = function (deg) {
+      var rad = deg * Math.PI / 180;
+      return (cx + r * Math.cos(rad)).toFixed(2) + ' ' + (cy - r * Math.sin(rad)).toFixed(2);
+    };
+    var paths = '';
+    for (var i = 0; i < totalWeeks; i++) {
+      var a0 = start - i * step - gap / 2;
+      var a1 = start - (i + 1) * step + gap / 2;
+      var state = i + 1 < currentWeek ? 'is-done' : (i + 1 === currentWeek ? 'is-current' : 'is-next');
+      paths += '<path class="dash-gauge-seg ' + state + '" d="M ' + point(a0) + ' A ' + r + ' ' + r + ' 0 0 1 ' + point(a1) + '"/>';
+    }
+    return '<svg class="dash-gauge-svg" viewBox="0 0 240 164" aria-hidden="true">' + paths + '</svg>';
+  }
+
+  function renderDashHeroCycle(sex) {
+    var center = document.getElementById('dash-hero-center');
+    var total = cycleLength(sex.cycleIdUsed);
+    var d = describeDashSex(sex);
+    var cycle = OvrykDB.getForceCycle(sex.exerciseId);
+    var week = cycle ? getCycleWeekAt(cycle, sex.cycleWeekUsed) : null;
+    var loadParts = [];
+    if (d.weight != null) loadParts.push(formatKgFr(d.weight) + ' kg');
+    if (d.percent != null) loadParts.push(formatKgFr(d.percent) + ' % du 1RM');
+    if (sex.isLightSession) loadParts.push('séance légère');
+    var done = sex.cycleWeekUsed - 1;
+    center.innerHTML = '<div class="dash-gauge" role="img" aria-label="' + escapeHTML(cycleLabel(sex.cycleIdUsed) + ', semaine ' + sex.cycleWeekUsed + ' sur ' + total + ', ' + done + (done > 1 ? ' semaines faites' : ' semaine faite')) + '">' +
+      buildDashCycleGauge(total, sex.cycleWeekUsed) +
+      '<div class="dash-gauge-center">' +
+      '<span class="dash-gauge-value">' + escapeHTML(d.value) + '</span>' +
+      (loadParts.length ? '<span class="dash-gauge-load">' + escapeHTML(loadParts.join(' · ')) + '</span>' : '') +
+      '</div></div>' +
+      (d.reps == null && week ? '<p class="dash-gauge-phase">' + escapeHTML(week.phase) + '</p>' : '');
+    center.hidden = false;
+  }
+
+  /* volume de la semaine des groupes travaillés aujourd'hui : séries
+     validées cette semaine (computeWeeklySeriesCounts, comme Progrès)
+     plus les séries de la séance construite. Échelle fixe de 20 séries. */
+  function renderDashHeroVolume(session) {
+    var center = document.getElementById('dash-hero-center');
+    var added = {}, order = [];
+    session.exercises.forEach(function (sex) {
+      var group = getProgressionGroup(OvrykDB.getExerciseById(sex.exerciseId));
+      if (!group) return;
+      if (!(group in added)) { added[group] = 0; order.push(group); }
+      added[group] += getDashWorkSets(sex).length;
+    });
+    if (!order.length) { center.hidden = true; center.innerHTML = ''; return; }
+    var counts = computeWeeklySeriesCounts();
+    var wk = weekKeyOf(new Date());
+    var rows = order.map(function (group) {
+      var label = (PROGRESSION_GROUPS.filter(function (g) { return g.key === group; })[0] || { label: group }).label;
+      var doneCount = (counts[group] && counts[group][wk]) || 0;
+      var donePct = Math.min(100, doneCount / DASH_VOLUME_SCALE * 100);
+      var addPct = Math.min(100 - donePct, added[group] / DASH_VOLUME_SCALE * 100);
+      return '<div class="dash-volume-row">' +
+        '<span class="dash-volume-label">' + escapeHTML(label) + '</span>' +
+        '<span class="dash-volume-bar" role="img" aria-label="' + escapeHTML(label + ' : ' + doneCount + ' séries faites cette semaine, ' + added[group] + ' de plus aujourd\'hui') + '">' +
+        '<span class="dash-volume-done" style="width:' + donePct.toFixed(1) + '%"></span>' +
+        '<span class="dash-volume-add" style="left:' + donePct.toFixed(1) + '%;width:' + addPct.toFixed(1) + '%"></span></span>' +
+        '<span class="dash-volume-value" aria-hidden="true">' + doneCount + ' <span class="dash-volume-plus">+' + added[group] + '</span></span>' +
+        '</div>';
+    }).join('');
+    center.innerHTML = '<div class="dash-volume-head"><span class="dash-volume-title">Volume de la semaine</span><span class="dash-volume-unit">séries</span></div>' + rows;
+    center.hidden = false;
+  }
+
+  /* cartes "Au programme" : mêmes classes que l'ancienne liste
+     (dash-session-ex-row, -name, -sub, -value). Une carte de cycle ouvre
+     le détail du cycle (lot 12), lecture seule ; les autres sont inertes. */
+  function renderDashProgramme(routine, session) {
+    var listEl = document.getElementById('dash-session-exercises');
+    listEl.innerHTML = '';
+    var totalSets = 0;
+    session.exercises.forEach(function (sex, index) {
+      var exercise = OvrykDB.getExerciseById(sex.exerciseId);
+      var slotExercise = sex.replacesExerciseId ? OvrykDB.getExerciseById(sex.replacesExerciseId) : null;
+      var isCycle = sex.cycleWeekUsed != null;
+      var d = describeDashSex(sex);
+      totalSets += sex.sets.length;
+      var badge = isCycle ? { text: 'Haltéro', gain: false } : getDashProgressBadge(routine, sex);
+      var load = d.weight != null ? formatKgFr(d.weight) + ' kg' + (d.percent != null ? ' · ' + formatKgFr(d.percent) + ' %' : '')
+        : (exercise && exercise.equipment === 'Poids du corps' ? 'Poids du corps' : 'Charge à saisir');
+
+      var card = document.createElement(isCycle ? 'button' : 'div');
+      card.className = 'dash-session-ex-row dash-prog-card' + (index === 0 ? ' is-first' : '') + (badge && badge.gain ? ' is-gain' : '');
+      card.innerHTML = '<span class="dash-prog-top"><span class="dash-prog-num">' + pad2(index + 1) + '</span>' +
+        (badge ? '<span class="dash-prog-badge">' + escapeHTML(badge.text) + '</span>' : '') + '</span>' +
+        '<span class="dash-session-ex-value' + (isCycle ? ' is-cycle' : '') + '">' + escapeHTML(d.value) + '</span>' +
+        '<span class="dash-session-ex-name">' + escapeHTML(sex.exerciseName || 'Exercice supprimé') +
+        (slotExercise ? '<span class="dash-session-ex-sub">Remplace ' + escapeHTML(slotExercise.name) + '</span>' : '') + '</span>' +
+        '<span class="dash-prog-load">' + escapeHTML(load) + '</span>';
+      if (isCycle) {
+        card.type = 'button';
+        card.setAttribute('aria-label', 'Voir le cycle de ' + (sex.exerciseName || 'ce mouvement'));
+        card.addEventListener('click', function () { openCycleDetailPage(sex.exerciseId, null, renderDashboardHome); });
+      }
+      listEl.appendChild(card);
+    });
+    var n = session.exercises.length;
+    document.getElementById('dash-programme-count').textContent =
+      n + ' exercice' + (n > 1 ? 's' : '') + ' · ' + totalSets + ' série' + (totalSets > 1 ? 's' : '');
+    document.getElementById('dash-programme').hidden = n === 0;
+  }
+
+  /* prochain jour programmé après aujourd'hui (routine.weekdays), sur les
+     7 jours à venir. Masquée si aucune routine n'a de jour. */
+  function renderDashNextSession() {
+    var card = document.getElementById('dash-next-session');
+    var routines = OvrykDB.getRoutines();
+    var todayNum = currentWeekdayNum();
+    var found = null;
+    for (var offset = 1; offset <= 7 && !found; offset++) {
+      var day = ((todayNum - 1 + offset) % 7) + 1;
+      var match = routines.filter(function (r) { return r.weekdays && r.weekdays.indexOf(day) !== -1; })[0];
+      if (match) found = { routine: match, day: day, date: addDays(new Date(), offset) };
+    }
+    if (!found) { card.hidden = true; return; }
+    var routine = found.routine;
+    var cycle = null;
+    routine.exercises.forEach(function (rex) {
+      var ex = OvrykDB.getExerciseById(rex.exerciseId);
+      if (!cycle && ex && ex.category === 'Lifting') cycle = OvrykDB.getForceCycle(rex.exerciseId);
+    });
+    var n = routine.exercises.length;
+    var meta = [];
+    if (cycle) meta.push('Semaine ' + cycle.semaine_actuelle + ' sur ' + cycleLength(cycle.cycle_actif));
+    meta.push(n + ' exercice' + (n > 1 ? 's' : ''));
+    var dow = WEEKDAY_NAMES_FR[found.day - 1].slice(0, 3);
+    document.getElementById('dash-next-session-dow').textContent = dow;
+    document.getElementById('dash-next-session-num').textContent = found.date.getDate();
+    document.getElementById('dash-next-session-title').textContent = routine.name || 'Routine sans titre';
+    document.getElementById('dash-next-session-meta').textContent = meta.join(' · ');
+    card.setAttribute('aria-label', 'Prochaine séance, ' + WEEKDAY_NAMES_FR[found.day - 1].toLowerCase() + ' ' + found.date.getDate() + ' : ' + (routine.name || 'Routine sans titre') + '. Ouvrir le programme');
+    card.onclick = function () { setActiveView('routine'); };
+    card.hidden = false;
+  }
+
+  /* Routine du jour ou prochaine routine en rotation */
+  function renderDashboardSessionCardPlan(routine) {
+    var startGym = getSeanceStartGym();
+    var session = buildSessionFromRoutine(routine, startGym);
+    var cycleSex = session.exercises.filter(function (sex) { return sex.cycleWeekUsed != null; })[0] || null;
+    var hasLifting = session.exercises.some(function (sex) { return sex.category === 'Lifting'; });
+    var cardEl = document.getElementById('dash-session-card');
+    cardEl.classList.toggle('is-cycle-day', !!cycleSex);
+
+    var badgesEl = document.getElementById('dash-session-badges');
+    var chip = cycleSex
+      ? cycleLabel(cycleSex.cycleIdUsed) + ' · Semaine ' + cycleSex.cycleWeekUsed + ' sur ' + cycleLength(cycleSex.cycleIdUsed)
+      : (hasLifting ? 'Sans cycle' : 'Muscu pure · Sans cycle');
+    badgesEl.innerHTML = '<span class="dash-hero-chip">' + escapeHTML(chip) + '</span>';
+
+    if (cycleSex) {
+      document.getElementById('dash-session-title').textContent = cycleSex.exerciseName || 'Exercice';
+      document.getElementById('dash-session-meta').textContent = routine.name || 'Routine sans titre';
+      setDashHeroBubble('1RM', cycleSex.oneRepMaxSnapshot != null ? formatKgFr(cycleSex.oneRepMaxSnapshot) : null);
+      renderDashHeroCycle(cycleSex);
+      document.getElementById('dash-next-session').hidden = true;
+    } else {
+      document.getElementById('dash-session-title').textContent = routine.name || 'Routine sans titre';
+      document.getElementById('dash-session-meta').textContent = hasLifting ? 'Haltéro hors cycle aujourd\'hui' : 'Pas de haltéro aujourd\'hui';
+      setDashHeroBubble('Min', routine.exercises.length ? estimateRoutineDurationMinutes(routine) : null);
+      renderDashHeroVolume(session);
+      renderDashNextSession();
+    }
+
+    renderDashProgramme(routine, session);
 
     /* livraison 4 : même pilule que l'écran de départ, même état partagé
        (setSeanceStartGym). Aucune écriture avant le lancement. */
@@ -18094,7 +18775,7 @@
     }
 
     var ctaBtn = document.getElementById('dash-session-cta');
-    ctaBtn.textContent = 'Commencer la séance';
+    setDashCtaLabel(ctaBtn, 'Démarrer la séance');
     ctaBtn.onclick = function () {
       launchRoutineSession(routine, function () { setActiveView('seance'); }, getSeanceStartGym());
     };
@@ -18122,6 +18803,10 @@
     var cardEl = document.getElementById('dash-session-card');
     var panelEl = document.getElementById('dash-day-panel');
     var routines = OvrykDB.getRoutines();
+    /* "Au programme" et "Prochaine séance" n'existent qu'avec la carte du
+       jour (renderDashboardSessionCardPlan les réaffiche) */
+    document.getElementById('dash-programme').hidden = true;
+    document.getElementById('dash-next-session').hidden = true;
 
     if (routines.length === 0) {
       emptyEl.hidden = false;
@@ -18292,11 +18977,24 @@
   function renderDashboardWeekStripWired() {
     renderDashboardWeekStrip('dash-week-strip', dashboardSelectedDay);
     var cells = document.querySelectorAll('#dash-week-strip .dash-week-day');
+    var monday = startOfWeek(new Date());
     cells.forEach(function (cell) {
-      cell.addEventListener('click', function () {
-        dashboardSelectedDay = Number(cell.dataset.weekday);
+      var day = Number(cell.dataset.weekday);
+      var select = function () {
+        dashboardSelectedDay = day;
         renderDashboardWeekStripWired();
         renderDashboardHero();
+        var again = document.querySelector('#dash-week-strip .dash-week-day[data-weekday="' + day + '"]');
+        if (again && document.activeElement === document.body) again.focus();
+      };
+      cell.setAttribute('role', 'button');
+      cell.setAttribute('tabindex', '0');
+      cell.setAttribute('aria-pressed', dashboardSelectedDay === day ? 'true' : 'false');
+      cell.setAttribute('aria-label', WEEKDAY_NAMES_FR[day - 1] + ' ' + addDays(monday, day - 1).getDate() +
+        (cell.querySelector('.dash-week-day-dot') ? ', séance faite' : '') + (cell.classList.contains('is-today') ? ", aujourd'hui" : ''));
+      cell.addEventListener('click', select);
+      cell.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); select(); }
       });
     });
   }
@@ -20306,7 +21004,7 @@
 </script>
 <script>
   /* v164 : à garder égal à CACHE_VERSION dans sw.js (contrôlé par smoke.py) */
-  var APP_VERSION = 'v164';
+  var APP_VERSION = 'v165';
   document.getElementById('app-version-value').textContent = 'Version ' + APP_VERSION;
 
   /* Désinscrit le service worker et vide ses caches (ovryk-static-*), puis
